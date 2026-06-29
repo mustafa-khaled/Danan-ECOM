@@ -1,0 +1,18 @@
+{
+  "name": "dadan-dijital",
+  "private": true,
+  "packageManager": "pnpm@9.15.4",
+  "scripts": {
+    "dev": "turbo dev",
+    "build": "turbo build",
+    "lint": "turbo lint",
+    "test": "turbo test",
+    "typecheck": "turbo typecheck",
+    "db:generate": "turbo db:generate",
+    "db:migrate": "turbo db:migrate",
+    "db:seed": "pnpm --filter @dadan/db db:seed"
+  },
+  "devDependencies": {
+    "turbo": "^2.4.4"
+  }
+}

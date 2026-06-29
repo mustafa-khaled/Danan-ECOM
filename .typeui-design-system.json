@@ -1,0 +1,11 @@
+{
+  "slug": "luxury",
+  "name": "Luxury",
+  "variant": "registry",
+  "source": "registry",
+  "registrySlug": "luxury",
+  "skillFolderName": "typeui-design-system",
+  "installedAt": "2026-06-24T00:00:00.000Z",
+  "installMethod": "typeui.sh pull luxury -p cursor -f skill",
+  "note": "Workspace MCP install blocked on free tier (free_limit). Installed via CLI pull."
+}

@@ -1,0 +1,18 @@
+@import "@dadan/ui/styles/globals.css";
+
+/* Access gate background geometry */
+.access-gate-bg {
+  background-color: var(--color-void);
+  background-image:
+    radial-gradient(circle at 20% 20%, rgba(201, 169, 110, 0.08), transparent 28%),
+    radial-gradient(circle at 80% 70%, rgba(201, 169, 110, 0.06), transparent 24%),
+    linear-gradient(135deg, rgba(201, 169, 110, 0.04) 0%, transparent 45%);
+}
+
+.access-gate-grid {
+  background-image:
+    linear-gradient(rgba(201, 169, 110, 0.05) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(201, 169, 110, 0.05) 1px, transparent 1px);
+  background-size: 48px 48px;
+  mask-image: radial-gradient(circle at center, black, transparent 75%);
+}

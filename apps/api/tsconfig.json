@@ -1,0 +1,8 @@
+{
+  "extends": "@dadan/config/typescript/nestjs",
+  "compilerOptions": {
+    "outDir": "./dist",
+    "baseUrl": "./"
+  },
+  "include": ["src", "test"]
+}

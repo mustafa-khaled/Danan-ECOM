@@ -1,0 +1,10 @@
+{
+  "extends": "@dadan/config/typescript/base",
+  "compilerOptions": {
+    "jsx": "react-jsx",
+    "lib": ["DOM", "ES2022"],
+    "outDir": "dist",
+    "rootDir": "src"
+  },
+  "include": ["src"]
+}
