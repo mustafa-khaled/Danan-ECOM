@@ -7,6 +7,8 @@ import { AcquisitionType, ActorType, PieceStatus } from "@dadan/db";
 import { AuditService } from "../audit/audit.service";
 import { CertificatesService } from "../certificates/certificates.service";
 import { PrismaService } from "../prisma/prisma.service";
+import { StorageService } from "../storage/storage.service";
+import { VisibilityService } from "../visibility/visibility.service";
 import { SerialNumberService } from "./serial-number.service";
 import { paginationParams } from "../common/constants";
 
@@ -17,6 +19,8 @@ export class PiecesService {
     private readonly serialNumbers: SerialNumberService,
     private readonly certificates: CertificatesService,
     private readonly audit: AuditService,
+    private readonly storage: StorageService,
+    private readonly visibility: VisibilityService,
   ) {}
 
   async getWardrobe(clientId: string) {
@@ -39,24 +43,33 @@ export class PiecesService {
       orderBy: { updatedAt: "desc" },
     });
 
-    return pieces
-      .map((p) => ({
-        id: p.id,
-        serialNumber: p.serialNumber,
-        status: p.status,
-        design: {
-          name: p.design.name,
-          images: p.design.imageUrls,
-          specifications: p.design.specifications,
-          collection: p.design.collection.name,
-        },
-        certificate: p.certificates[0] ?? null,
-        acquiredAt: p.ownershipRecords[0]?.acquiredAt ?? p.registeredAt,
-      }))
-      .sort(
-        (a, b) =>
-          new Date(b.acquiredAt).getTime() - new Date(a.acquiredAt).getTime(),
-      );
+    return Promise.all(
+      pieces
+        .map((p) => ({
+          id: p.id,
+          serialNumber: p.serialNumber,
+          status: p.status,
+          design: {
+            name: p.design.name,
+            images: p.design.imageUrls,
+            specifications: p.design.specifications,
+            collection: p.design.collection.name,
+          },
+          certificate: p.certificates[0] ?? null,
+          acquiredAt: p.ownershipRecords[0]?.acquiredAt ?? p.registeredAt,
+        }))
+        .sort(
+          (a, b) =>
+            new Date(b.acquiredAt).getTime() - new Date(a.acquiredAt).getTime(),
+        )
+        .map(async (entry) => ({
+          ...entry,
+          design: {
+            ...entry.design,
+            images: await this.storage.resolvePublicUrls(entry.design.images),
+          },
+        })),
+    );
   }
 
   async getWardrobePiece(clientId: string, pieceId: string) {
@@ -84,11 +97,16 @@ export class PiecesService {
 
     if (!piece) throw new NotFoundException("Piece not found");
 
+    const signedImageUrls = await this.storage.resolvePublicUrls(piece.design.imageUrls);
+
     return {
       id: piece.id,
       serialNumber: piece.serialNumber,
       status: piece.status,
-      design: piece.design,
+      design: {
+        ...piece.design,
+        imageUrls: signedImageUrls,
+      },
       ownershipHistory: piece.ownershipRecords.map((r) => ({
         acquiredAt: r.acquiredAt,
         transferredAt: r.transferredAt,
@@ -112,18 +130,38 @@ export class PiecesService {
       orderBy: { savedAt: "desc" },
     });
 
-    return saved.map((s) => ({
-      savedAt: s.savedAt,
-      piece: {
-        id: s.piece.id,
-        serialNumber: s.piece.serialNumber,
-        status: s.piece.status,
-        design: s.piece.design,
-      },
-    }));
+    return Promise.all(
+      saved.map(async (s) => ({
+        savedAt: s.savedAt,
+        piece: {
+          id: s.piece.id,
+          serialNumber: s.piece.serialNumber,
+          status: s.piece.status,
+          design: {
+            ...s.piece.design,
+            imageUrls: await this.storage.resolvePublicUrls(s.piece.design.imageUrls),
+          },
+        },
+      })),
+    );
   }
 
-  async savePiece(clientId: string, pieceId: string) {
+  async savePiece(clientId: string, clientGroups: string[], pieceId: string) {
+    const piece = await this.prisma.db.piece.findUnique({
+      where: { id: pieceId },
+      include: { design: { include: { collection: true } } },
+    });
+    // Only allow saving pieces the client can actually see in the catalog.
+    if (
+      !piece ||
+      !piece.design.isActive ||
+      !piece.design.collection.isVisible ||
+      !this.visibility.canAccess(clientGroups, piece.design.visibilityGroups) ||
+      !this.visibility.canAccess(clientGroups, piece.design.collection.visibilityGroups)
+    ) {
+      throw new NotFoundException("Piece not found");
+    }
+
     await this.prisma.db.savedPiece.upsert({
       where: { clientId_pieceId: { clientId, pieceId } },
       create: { clientId, pieceId },
@@ -226,7 +264,15 @@ export class PiecesService {
             collection: true,
           },
         },
-        currentOwner: true,
+        currentOwner: {
+          select: {
+            id: true,
+            displayName: true,
+            email: true,
+            houseKeyPrefix: true,
+            isActive: true,
+          },
+        },
         ownershipRecords: {
           include: { client: { select: { displayName: true, id: true } } },
           orderBy: { acquiredAt: "asc" },

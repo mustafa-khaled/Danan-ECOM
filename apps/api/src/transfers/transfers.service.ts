@@ -1,5 +1,7 @@
 import {
   BadRequestException,
+  HttpException,
+  HttpStatus,
   Injectable,
   NotFoundException,
   UnauthorizedException,
@@ -17,8 +19,14 @@ import { AuditService } from "../audit/audit.service";
 import { CertificatesService } from "../certificates/certificates.service";
 import { NotificationsService } from "../notifications/notifications.service";
 import { PrismaService } from "../prisma/prisma.service";
-import { paginationParams } from "../common/constants";
-import { AUTH_FAILURE_MESSAGE } from "../common/constants";
+import { RedisService } from "../redis/redis.service";
+import { StorageService } from "../storage/storage.service";
+import {
+  paginationParams,
+  AUTH_FAILURE_MESSAGE,
+  RATE_LIMIT_MAX,
+  RATE_LIMIT_WINDOW_SECONDS,
+} from "../common/constants";
 
 @Injectable()
 export class TransfersService {
@@ -28,6 +36,8 @@ export class TransfersService {
     private readonly audit: AuditService,
     private readonly certificates: CertificatesService,
     private readonly notifications: NotificationsService,
+    private readonly redis: RedisService,
+    private readonly storage: StorageService,
   ) {}
 
   async initiate(
@@ -39,6 +49,16 @@ export class TransfersService {
     },
     ipAddress?: string,
   ) {
+    const rateLimitKey = `transfer:initiate:${clientId}`;
+    const limited = await this.redis.isRateLimited(
+      rateLimitKey,
+      RATE_LIMIT_MAX,
+      RATE_LIMIT_WINDOW_SECONDS,
+    );
+    if (limited) {
+      throw new HttpException("Too many transfer attempts", HttpStatus.TOO_MANY_REQUESTS);
+    }
+
     const piece = await this.prisma.db.piece.findFirst({
       where: { id: data.pieceId, currentOwnerId: clientId },
       include: { design: true },
@@ -46,6 +66,10 @@ export class TransfersService {
     if (!piece) throw new NotFoundException("Piece not found");
     if (piece.status === PieceStatus.TRANSFER_PENDING) {
       throw new BadRequestException("Transfer already in progress");
+    }
+    if (piece.status !== PieceStatus.OWNED) {
+      // Blocks RETIRED (and any future non-owned states) from being transferred.
+      throw new BadRequestException("Piece cannot be transferred in its current state");
     }
 
     const activeTransfer = await this.prisma.db.transferRequest.findFirst({
@@ -110,7 +134,7 @@ export class TransfersService {
         id: transfer.piece.id,
         serialNumber: transfer.piece.serialNumber,
         name: transfer.piece.design.name,
-        image: transfer.piece.design.imageUrls[0] ?? null,
+        image: await this.storage.resolvePublicUrl(transfer.piece.design.imageUrls[0]),
       },
       recipientDisplayName: maskDisplayName(transfer.toClient.displayName),
     };
@@ -147,7 +171,10 @@ export class TransfersService {
 
   async confirmRecipient(transferId: string, clientId: string, ipAddress?: string) {
     const transfer = await this.getTransferForRecipient(transferId, clientId);
+    // Two-step transition performed atomically: the recipient confirmation
+    // immediately moves the transfer into DADAN review, so validate both hops.
     this.assertTransition(transfer.status, TransferStatus.RECIPIENT_CONFIRMED);
+    this.assertTransition(TransferStatus.RECIPIENT_CONFIRMED, TransferStatus.DADAN_REVIEW);
 
     const updated = await this.prisma.db.transferRequest.update({
       where: { id: transferId },
@@ -260,7 +287,17 @@ export class TransfersService {
       },
     });
     if (!transfer) throw new NotFoundException("Transfer not found");
-    return transfer;
+
+    return {
+      ...transfer,
+      piece: {
+        ...transfer.piece,
+        design: {
+          ...transfer.piece.design,
+          imageUrls: await this.storage.resolvePublicUrls(transfer.piece.design.imageUrls),
+        },
+      },
+    };
   }
 
   async listAdminTransfers(
@@ -287,10 +324,19 @@ export class TransfersService {
     ]);
 
     return {
-      items: items.map((t) => ({
-        ...t,
-        needsReview: t.status === TransferStatus.DADAN_REVIEW,
-      })),
+      items: await Promise.all(
+        items.map(async (t) => ({
+          ...t,
+          needsReview: t.status === TransferStatus.DADAN_REVIEW,
+          piece: {
+            ...t.piece,
+            design: {
+              ...t.piece.design,
+              imageUrls: await this.storage.resolvePublicUrls(t.piece.design.imageUrls),
+            },
+          },
+        })),
+      ),
       total,
       page: p,
       limit: l,
@@ -298,12 +344,21 @@ export class TransfersService {
   }
 
   async getAdminTransfer(id: string) {
+    // Select only safe client fields; never expose the houseKey bcrypt hash.
+    const safeClientSelect = {
+      id: true,
+      displayName: true,
+      email: true,
+      phone: true,
+      houseKeyPrefix: true,
+      isActive: true,
+    };
     const transfer = await this.prisma.db.transferRequest.findUnique({
       where: { id },
       include: {
         piece: { include: { design: true } },
-        fromClient: true,
-        toClient: true,
+        fromClient: { select: safeClientSelect },
+        toClient: { select: safeClientSelect },
       },
     });
     if (!transfer) throw new NotFoundException("Transfer not found");
@@ -362,11 +417,7 @@ export class TransfersService {
       });
     });
 
-    void this.certificates.regenerateCertificate(
-      transfer.pieceId,
-      transfer.toClientId,
-      adminId,
-    );
+    this.regenerateCertificateWithRetry(transfer.pieceId, transfer.toClientId, adminId, id);
 
     await this.audit.log({
       actorType: ActorType.ADMIN,
@@ -402,6 +453,9 @@ export class TransfersService {
       where: { id },
     });
     if (!transfer) throw new NotFoundException("Transfer not found");
+    if (transfer.status !== TransferStatus.DADAN_REVIEW) {
+      throw new BadRequestException("Transfer is not awaiting review");
+    }
 
     await this.prisma.db.$transaction(async (tx) => {
       await tx.transferRequest.update({
@@ -491,6 +545,45 @@ export class TransfersService {
         return AcquisitionType.GIFT;
       case TransferType.INHERITANCE:
         return AcquisitionType.INHERITANCE;
+    }
+  }
+
+  private async regenerateCertificateWithRetry(
+    pieceId: string,
+    newOwnerId: string,
+    adminId: string,
+    transferId: string,
+    attempt = 1,
+  ): Promise<void> {
+    const maxAttempts = 3;
+    try {
+      await this.certificates.regenerateCertificate(pieceId, newOwnerId, adminId);
+      await this.audit.log({
+        actorType: ActorType.SYSTEM,
+        actorId: "system",
+        action: "CERTIFICATE_REGENERATED",
+        targetType: "Piece",
+        targetId: pieceId,
+        metadata: { transferId, newOwnerId },
+      });
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : String(error);
+      
+      if (attempt < maxAttempts) {
+        const delay = Math.pow(2, attempt) * 1000;
+        setTimeout(() => {
+          this.regenerateCertificateWithRetry(pieceId, newOwnerId, adminId, transferId, attempt + 1);
+        }, delay);
+      } else {
+        await this.audit.log({
+          actorType: ActorType.SYSTEM,
+          actorId: "system",
+          action: "CERTIFICATE_REGENERATION_FAILED",
+          targetType: "Piece",
+          targetId: pieceId,
+          metadata: { transferId, newOwnerId, error: errorMessage, attempts: maxAttempts },
+        });
+      }
     }
   }
 }

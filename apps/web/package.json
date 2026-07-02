@@ -25,5 +25,8 @@
     "eslint": "^9.20.1",
     "eslint-config-next": "^15.2.0",
     "typescript": "^5.7.3"
+  },
+  "lint-staged": {
+    "*.{js,ts,jsx,tsx,cjs,mjs}": "eslint --fix"
   }
 }

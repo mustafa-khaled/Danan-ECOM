@@ -1,0 +1,44 @@
+---
+description: NestJS unit test patterns and dependency injection
+globs: apps/api/test/**/*.spec.ts
+alwaysApply: false
+---
+
+# NestJS Test Dependency Injection
+
+When mocking dependencies in NestJS tests, use **class tokens** not string tokens.
+
+```typescript
+// ❌ BAD - String tokens don't match class-based injection
+{ provide: "PrismaHealthIndicator", useValue: mockPrismaHealth }
+
+// ✅ GOOD - Import and use the actual class as token
+import { PrismaHealthIndicator } from "../src/health/prisma.health";
+{ provide: PrismaHealthIndicator, useValue: mockPrismaHealth }
+```
+
+## Why This Matters
+
+NestJS uses the class itself as the injection token when you inject by type:
+
+```typescript
+constructor(private prismaHealth: PrismaHealthIndicator) {}
+// token = PrismaHealthIndicator class, NOT the string "PrismaHealthIndicator"
+```
+
+## Test Setup Pattern
+
+```typescript
+import { Test, TestingModule } from "@nestjs/testing";
+import { MyController } from "../src/my/my.controller";
+import { MyService } from "../src/my/my.service";
+
+const mockMyService = { someMethod: jest.fn() };
+
+const app: TestingModule = await Test.createTestingModule({
+  controllers: [MyController],
+  providers: [
+    { provide: MyService, useValue: mockMyService },  // Class token
+  ],
+}).compile();
+```

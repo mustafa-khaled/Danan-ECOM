@@ -26,7 +26,7 @@ export class ClientSavedController {
     @CurrentClient() client: ClientSession,
     @Param("pieceId") pieceId: string,
   ) {
-    return this.pieces.savePiece(client.clientId, pieceId);
+    return this.pieces.savePiece(client.clientId, client.visibilityGroups, pieceId);
   }
 
   @Delete(":pieceId")

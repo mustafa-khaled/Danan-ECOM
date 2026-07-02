@@ -160,7 +160,7 @@ export class CertificatesService {
     };
   }
 
-  async downloadCertificate(clientId: string, pieceId: string): Promise<Buffer> {
+  async getCertificateDownloadUrl(clientId: string, pieceId: string): Promise<string> {
     const piece = await this.prisma.db.piece.findFirst({
       where: { id: pieceId, currentOwnerId: clientId },
     });
@@ -171,7 +171,7 @@ export class CertificatesService {
     });
     if (!certificate?.pdfUrl) throw new NotFoundException("Certificate not found");
 
-    return this.storage.download(certificate.pdfUrl);
+    return this.storage.getSignedUrl(certificate.pdfUrl, { expiresInSeconds: 3600 });
   }
 
   async listCertificates(page?: number, limit?: number) {

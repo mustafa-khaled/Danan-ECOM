@@ -19,6 +19,13 @@ export class ClientsService {
     private readonly visibility: VisibilityService,
   ) {}
 
+  /** Never let the bcrypt House Key hash leave the API. */
+  private stripHouseKey<T extends { houseKey: string }>(client: T): Omit<T, "houseKey"> {
+    const { houseKey, ...safe } = client;
+    void houseKey;
+    return safe;
+  }
+
   async getProfile(clientId: string) {
     const client = await this.prisma.db.client.findUnique({
       where: { id: clientId },
@@ -121,7 +128,7 @@ export class ClientsService {
       ipAddress,
     });
 
-    return { client, houseKey: plainKey };
+    return { client: this.stripHouseKey(client), houseKey: plainKey };
   }
 
   async getClientById(id: string) {
@@ -145,8 +152,7 @@ export class ClientsService {
     });
     if (!client) throw new NotFoundException("Client not found");
 
-    const { houseKey: _hk, ...safe } = client;
-    return safe;
+    return this.stripHouseKey(client);
   }
 
   async updateClient(
@@ -185,7 +191,7 @@ export class ClientsService {
       ipAddress,
     });
 
-    return client;
+    return this.stripHouseKey(client);
   }
 
   async updateVisibilityGroups(
@@ -198,7 +204,7 @@ export class ClientsService {
     const client = await this.prisma.db.client.findUnique({ where: { id } });
     if (!client) throw new NotFoundException("Client not found");
 
-    let groups = new Set(client.visibilityGroups.map(normalizeVisibilityGroup));
+    const groups = new Set(client.visibilityGroups.map(normalizeVisibilityGroup));
     add?.forEach((g) => groups.add(normalizeVisibilityGroup(g)));
     remove?.forEach((g) => groups.delete(normalizeVisibilityGroup(g)));
 
@@ -217,7 +223,7 @@ export class ClientsService {
       ipAddress,
     });
 
-    return updated;
+    return this.stripHouseKey(updated);
   }
 
   async rotateKey(adminId: string, id: string, ipAddress?: string) {

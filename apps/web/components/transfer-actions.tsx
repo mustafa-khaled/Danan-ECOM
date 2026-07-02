@@ -36,9 +36,9 @@ export function TransferActions({ transferId, status, role }: TransferActionsPro
 
   const canConfirmSender = role === "sender" && status === "INITIATED";
   const canConfirmRecipient = role === "recipient" && status === "SENDER_CONFIRMED";
+  // Only the sender may cancel (the API rejects recipient cancellations).
   const canCancel =
-    (role === "sender" && ["INITIATED", "SENDER_CONFIRMED"].includes(status)) ||
-    (role === "recipient" && status === "SENDER_CONFIRMED");
+    role === "sender" && ["INITIATED", "SENDER_CONFIRMED"].includes(status);
 
   if (!canConfirmSender && !canConfirmRecipient && !canCancel) {
     return null;

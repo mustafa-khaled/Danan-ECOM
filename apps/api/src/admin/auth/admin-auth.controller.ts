@@ -12,6 +12,7 @@ import { AdminAuthService } from "./admin-auth.service";
 import { AdminLoginDto } from "./dto/admin-login.dto";
 import { AdminGuard } from "./guards/admin.guard";
 import { CurrentAdmin } from "./decorators/current-admin.decorator";
+import { AllowViewerWrite } from "./decorators/allow-viewer-write.decorator";
 import type { AdminSession } from "@dadan/types";
 import {
   ADMIN_COOKIE,
@@ -34,7 +35,8 @@ export class AdminAuthController {
 
     res.cookie(ADMIN_COOKIE, token, cookieOptions(24 * 60 * 60 * 1000));
 
-    return { ...admin, token };
+    // The httpOnly cookie is the only token transport; never expose the JWT in the body.
+    return admin;
   }
 
   @Get("me")
@@ -45,12 +47,17 @@ export class AdminAuthController {
 
   @Post("logout")
   @UseGuards(AdminGuard)
+  @AllowViewerWrite()
   async logout(
     @CurrentAdmin() admin: AdminSession,
     @Req() req: Request,
     @Res({ passthrough: true }) res: Response,
   ) {
-    await this.adminAuth.logout(admin.adminId, getClientIp(req));
+    const cookies = req.cookies as Record<string, string> | undefined;
+    const token =
+      req.headers.authorization?.replace(/^Bearer /, "") ??
+      cookies?.[ADMIN_COOKIE];
+    await this.adminAuth.logout(admin.adminId, getClientIp(req), token);
     res.clearCookie(ADMIN_COOKIE);
     return { success: true };
   }

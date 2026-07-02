@@ -11,16 +11,25 @@ import type { AdminSession } from "@dadan/types";
 import type { AdminRole } from "@dadan/db";
 import type { Request } from "express";
 import { ROLES_KEY } from "../decorators/roles.decorator";
+import { ALLOW_VIEWER_WRITE_KEY } from "../decorators/allow-viewer-write.decorator";
+import { PrismaService } from "../../../prisma/prisma.service";
+import { RedisService } from "../../../redis/redis.service";
 import {
   ADMIN_COOKIE,
   AUTH_FAILURE_MESSAGE,
+  JWT_AUDIENCE_ADMIN,
+  tokenDenyListKey,
 } from "../../../common/constants";
+
+const SAFE_METHODS = new Set(["GET", "HEAD", "OPTIONS"]);
 
 @Injectable()
 export class AdminGuard implements CanActivate {
   constructor(
     private readonly jwt: JwtService,
     private readonly reflector: Reflector,
+    private readonly redis: RedisService,
+    private readonly prisma: PrismaService,
   ) {}
 
   async canActivate(context: ExecutionContext): Promise<boolean> {
@@ -37,13 +46,35 @@ export class AdminGuard implements CanActivate {
         email: string;
         role: AdminRole;
         displayName: string;
+        aud?: string;
+        jti?: string;
       }>(token);
+
+      if (payload.aud !== JWT_AUDIENCE_ADMIN) {
+        throw new UnauthorizedException(AUTH_FAILURE_MESSAGE);
+      }
+
+      if (payload.jti && (await this.redis.exists(tokenDenyListKey(payload.jti)))) {
+        throw new UnauthorizedException(AUTH_FAILURE_MESSAGE);
+      }
+
+      // Re-check the admin in the DB so deactivation and role changes
+      // (e.g. STAFF demoted to VIEWER) take effect immediately instead of
+      // when the 24h JWT expires.
+      const admin = await this.prisma.db.adminUser.findUnique({
+        where: { id: payload.sub },
+        select: { isActive: true, role: true, email: true, displayName: true },
+      });
+      if (!admin || !admin.isActive) {
+        throw new UnauthorizedException(AUTH_FAILURE_MESSAGE);
+      }
+      const role = admin.role;
 
       request.admin = {
         adminId: payload.sub,
-        email: payload.email,
-        role: payload.role,
-        displayName: payload.displayName,
+        email: admin.email,
+        role,
+        displayName: admin.displayName,
       };
 
       const requiredRoles = this.reflector.getAllAndOverride<AdminRole[]>(
@@ -52,7 +83,18 @@ export class AdminGuard implements CanActivate {
       );
 
       if (requiredRoles?.length) {
-        if (!requiredRoles.includes(payload.role)) {
+        if (!requiredRoles.includes(role)) {
+          throw new ForbiddenException("Insufficient permissions");
+        }
+      }
+
+      // VIEWER is read-only: block all mutating requests unless explicitly exempted.
+      if (role === "VIEWER" && !SAFE_METHODS.has(request.method)) {
+        const allowViewerWrite = this.reflector.getAllAndOverride<boolean>(
+          ALLOW_VIEWER_WRITE_KEY,
+          [context.getHandler(), context.getClass()],
+        );
+        if (!allowViewerWrite) {
           throw new ForbiddenException("Insufficient permissions");
         }
       }

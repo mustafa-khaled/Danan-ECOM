@@ -9,6 +9,7 @@ import { AuditService } from "../audit/audit.service";
 import { CertificatesService } from "../certificates/certificates.service";
 import { NotificationsService } from "../notifications/notifications.service";
 import { PrismaService } from "../prisma/prisma.service";
+import { StorageService } from "../storage/storage.service";
 import { paginationParams } from "../common/constants";
 
 @Injectable()
@@ -18,6 +19,7 @@ export class OrdersService {
     private readonly certificates: CertificatesService,
     private readonly audit: AuditService,
     private readonly notifications: NotificationsService,
+    private readonly storage: StorageService,
   ) {}
 
   async createPaidOrder(params: {
@@ -106,7 +108,7 @@ export class OrdersService {
         metadata: { orderId: order.id, clientId: params.clientId },
       });
 
-      void this.certificates.generateCertificate(item.pieceId, params.clientId);
+      this.generateCertificateWithRetry(item.pieceId, params.clientId, order.id);
     }
 
     const client = await this.prisma.db.client.findUnique({
@@ -117,6 +119,44 @@ export class OrdersService {
     }
 
     return order;
+  }
+
+  private async generateCertificateWithRetry(
+    pieceId: string,
+    clientId: string,
+    orderId: string,
+    attempt = 1,
+  ): Promise<void> {
+    const maxAttempts = 3;
+    try {
+      await this.certificates.generateCertificate(pieceId, clientId);
+      await this.audit.log({
+        actorType: ActorType.SYSTEM,
+        actorId: "system",
+        action: "CERTIFICATE_GENERATED",
+        targetType: "Piece",
+        targetId: pieceId,
+        metadata: { orderId, clientId },
+      });
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : String(error);
+      
+      if (attempt < maxAttempts) {
+        const delay = Math.pow(2, attempt) * 1000;
+        setTimeout(() => {
+          this.generateCertificateWithRetry(pieceId, clientId, orderId, attempt + 1);
+        }, delay);
+      } else {
+        await this.audit.log({
+          actorType: ActorType.SYSTEM,
+          actorId: "system",
+          action: "CERTIFICATE_GENERATION_FAILED",
+          targetType: "Piece",
+          targetId: pieceId,
+          metadata: { orderId, clientId, error: errorMessage, attempts: maxAttempts },
+        });
+      }
+    }
   }
 
   async getClientOrders(clientId: string, page?: number, limit?: number) {
@@ -136,7 +176,25 @@ export class OrdersService {
       this.prisma.db.order.count({ where: { clientId } }),
     ]);
 
-    return { items, total, page: p, limit: l };
+    return {
+      items: await Promise.all(
+        items.map(async (order) => ({
+          ...order,
+          items: await Promise.all(
+            order.items.map(async (item) => ({
+              ...item,
+              design: {
+                ...item.design,
+                imageUrls: await this.storage.resolvePublicUrls(item.design.imageUrls),
+              },
+            })),
+          ),
+        })),
+      ),
+      total,
+      page: p,
+      limit: l,
+    };
   }
 
   async getClientOrder(clientId: string, orderId: string) {
@@ -149,7 +207,19 @@ export class OrdersService {
       },
     });
     if (!order) throw new NotFoundException("Order not found");
-    return order;
+
+    return {
+      ...order,
+      items: await Promise.all(
+        order.items.map(async (item) => ({
+          ...item,
+          design: {
+            ...item.design,
+            imageUrls: await this.storage.resolvePublicUrls(item.design.imageUrls),
+          },
+        })),
+      ),
+    };
   }
 
   async cancelOrder(clientId: string, orderId: string) {
@@ -200,7 +270,16 @@ export class OrdersService {
     const order = await this.prisma.db.order.findUnique({
       where: { id },
       include: {
-        client: true,
+        client: {
+          select: {
+            id: true,
+            displayName: true,
+            email: true,
+            phone: true,
+            houseKeyPrefix: true,
+            isActive: true,
+          },
+        },
         items: { include: { piece: true, design: true } },
       },
     });

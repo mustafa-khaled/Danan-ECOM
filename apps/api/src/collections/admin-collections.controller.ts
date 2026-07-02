@@ -51,6 +51,31 @@ class CreateDesignDto {
   @IsOptional() @IsArray() @IsString({ each: true }) visibilityGroups?: string[];
 }
 
+export class UpdateCollectionDto {
+  @IsOptional() @IsString() name?: string;
+  @IsOptional() @IsString() slug?: string;
+  @IsOptional() @IsString() description?: string;
+  @IsOptional() @IsString() coverImageUrl?: string;
+  @IsOptional() @IsBoolean() isVisible?: boolean;
+  @IsOptional() @IsNumber() sortOrder?: number;
+  @IsOptional() @IsArray() @IsString({ each: true }) visibilityGroups?: string[];
+}
+
+export class UpdateDesignDto {
+  @IsOptional() @IsString() name?: string;
+  @IsOptional() @IsString() slug?: string;
+  @IsOptional() @IsString() collectionId?: string;
+  @IsOptional() @IsString() @MinLength(1) story?: string;
+  @IsOptional() @IsString() material?: string;
+  @IsOptional() @IsNumber() weight?: number;
+  @IsOptional() @IsString() dimensions?: string;
+  @IsOptional() @IsNumber() basePrice?: number;
+  @IsOptional() @IsString() currency?: string;
+  @IsOptional() @IsBoolean() isActive?: boolean;
+  @IsOptional() @IsArray() @IsString({ each: true }) imageUrls?: string[];
+  @IsOptional() @IsArray() @IsString({ each: true }) visibilityGroups?: string[];
+}
+
 class SpecItemDto {
   @IsString() key!: string;
   @IsString() value!: string;
@@ -82,10 +107,10 @@ export class AdminCollectionsController {
   updateCollection(
     @CurrentAdmin() admin: AdminSession,
     @Param("id") id: string,
-    @Body() dto: Record<string, unknown>,
+    @Body() dto: UpdateCollectionDto,
     @Req() req: Request,
   ) {
-    return this.collections.updateCollection(admin.adminId, id, dto, getClientIp(req));
+    return this.collections.updateCollection(admin.adminId, id, { ...dto }, getClientIp(req));
   }
 
   @Delete("collections/:id")
@@ -110,10 +135,10 @@ export class AdminCollectionsController {
   updateDesign(
     @CurrentAdmin() admin: AdminSession,
     @Param("id") id: string,
-    @Body() dto: Record<string, unknown>,
+    @Body() dto: UpdateDesignDto,
     @Req() req: Request,
   ) {
-    return this.collections.updateDesign(admin.adminId, id, dto, getClientIp(req));
+    return this.collections.updateDesign(admin.adminId, id, { ...dto }, getClientIp(req));
   }
 
   @Delete("designs/:id")
@@ -126,7 +151,10 @@ export class AdminCollectionsController {
   }
 
   @Post("designs/:id/images")
-  @UseInterceptors(FileInterceptor("file"))
+  @UseInterceptors(
+    // Reject oversized uploads during streaming, before buffering in memory.
+    FileInterceptor("file", { limits: { fileSize: 20 * 1024 * 1024, files: 1 } }),
+  )
   uploadImage(
     @CurrentAdmin() admin: AdminSession,
     @Param("id") id: string,

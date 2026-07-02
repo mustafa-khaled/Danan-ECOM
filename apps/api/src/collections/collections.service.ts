@@ -32,30 +32,32 @@ export class CollectionsService {
       },
     });
 
-    return collections
-      .filter((c) => this.visibility.canAccess(clientGroups, c.visibilityGroups))
-      .map((c) => {
-        const visibleDesigns = c.designs.filter((d) =>
-          this.visibility.canAccess(clientGroups, d.visibilityGroups),
-        );
-        const pieceCount = visibleDesigns.reduce(
-          (sum, d) =>
-            sum +
-            d.pieces.filter((p) =>
-              this.visibility.canAccess(clientGroups, d.visibilityGroups),
-            ).length,
-          0,
-        );
-        return {
-          id: c.id,
-          name: c.name,
-          slug: c.slug,
-          description: c.description,
-          coverImageUrl: c.coverImageUrl,
-          sortOrder: c.sortOrder,
-          pieceCount,
-        };
-      });
+    return Promise.all(
+      collections
+        .filter((c) => this.visibility.canAccess(clientGroups, c.visibilityGroups))
+        .map(async (c) => {
+          const visibleDesigns = c.designs.filter((d) =>
+            this.visibility.canAccess(clientGroups, d.visibilityGroups),
+          );
+          const pieceCount = visibleDesigns.reduce(
+            (sum, d) =>
+              sum +
+              d.pieces.filter((_p) =>
+                this.visibility.canAccess(clientGroups, d.visibilityGroups),
+              ).length,
+            0,
+          );
+          return {
+            id: c.id,
+            name: c.name,
+            slug: c.slug,
+            description: c.description,
+            coverImageUrl: await this.storage.resolvePublicUrl(c.coverImageUrl),
+            sortOrder: c.sortOrder,
+            pieceCount,
+          };
+        }),
+    );
   }
 
   async getCollectionBySlug(
@@ -94,16 +96,18 @@ export class CollectionsService {
       name: collection.name,
       slug: collection.slug,
       description: collection.description,
-      coverImageUrl: collection.coverImageUrl,
-      designs: paginated.map((d) => ({
-        id: d.id,
-        name: d.name,
-        slug: d.slug,
-        material: d.material,
-        basePrice: d.basePrice,
-        currency: d.currency,
-        imageUrls: d.imageUrls,
-      })),
+      coverImageUrl: await this.storage.resolvePublicUrl(collection.coverImageUrl),
+      designs: await Promise.all(
+        paginated.map(async (d) => ({
+          id: d.id,
+          name: d.name,
+          slug: d.slug,
+          material: d.material,
+          basePrice: d.basePrice,
+          currency: d.currency,
+          imageUrls: await this.storage.resolvePublicUrls(d.imageUrls),
+        })),
+      ),
       total: visibleDesigns.length,
       page: p,
       limit: l,
@@ -138,7 +142,7 @@ export class CollectionsService {
       material: design.material,
       weight: design.weight,
       dimensions: design.dimensions,
-      imageUrls: design.imageUrls,
+      imageUrls: await this.storage.resolvePublicUrls(design.imageUrls),
       basePrice: design.basePrice,
       currency: design.currency,
       collection: {

@@ -10,9 +10,16 @@
     "typecheck": "turbo typecheck",
     "db:generate": "turbo db:generate",
     "db:migrate": "turbo db:migrate",
-    "db:seed": "pnpm --filter @dadan/db db:seed"
+    "db:seed": "pnpm --filter @dadan/db db:seed",
+    "prepare": "husky"
   },
   "devDependencies": {
+    "husky": "^9.1.7",
+    "lint-staged": "^17.0.8",
     "turbo": "^2.4.4"
+  },
+  "lint-staged": {
+    "*.{js,ts,jsx,tsx,cjs,mjs}": "bash -c 'ESLINT_USE_FLAT_CONFIG=false eslint --fix \"$@\"' _",
+    "*.{json,md,yaml,yml}": "prettier --write"
   }
 }

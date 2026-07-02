@@ -2,9 +2,9 @@ import { Module } from "@nestjs/common";
 import { ConfigModule } from "@nestjs/config";
 import { validateEnv } from "./config/env.validation";
 import { ScheduleModule } from "@nestjs/schedule";
-import { AppController } from "./app.controller";
 import { PrismaModule } from "./prisma/prisma.module";
 import { RedisModule } from "./redis/redis.module";
+import { HealthModule } from "./health/health.module";
 import { AuditModule } from "./audit/audit.module";
 import { VisibilityModule } from "./visibility/visibility.module";
 import { StorageModule } from "./storage/storage.module";
@@ -30,6 +30,7 @@ import { TransfersModule } from "./transfers/transfers.module";
     ScheduleModule.forRoot(),
     PrismaModule,
     RedisModule,
+    HealthModule,
     AuditModule,
     VisibilityModule,
     StorageModule,
@@ -45,6 +46,5 @@ import { TransfersModule } from "./transfers/transfers.module";
     VerifyModule,
     TransfersModule,
   ],
-  controllers: [AppController],
 })
 export class AppModule {}

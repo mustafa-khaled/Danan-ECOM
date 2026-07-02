@@ -88,6 +88,8 @@ model Client {
   orders           Order[]
   ownershipRecords OwnershipRecord[]
   certificates     Certificate[]
+
+  @@index([houseKeyPrefix, isActive])
 }
 
 model Collection {
@@ -126,6 +128,8 @@ model Design {
   pieces         Piece[]
   specifications DesignSpecification[]
   orderItems     OrderItem[]
+
+  @@index([collectionId])
 }
 
 model DesignSpecification {
@@ -156,6 +160,9 @@ model Piece {
   verificationLogs   VerificationLog[]
   orderItems         OrderItem[]
   savedByClients     SavedPiece[]
+
+  @@index([currentOwnerId])
+  @@index([designId, status])
 }
 
 /// Append-only ownership history — never delete records (enforce in service layer).
@@ -190,6 +197,8 @@ model Certificate {
   piece             Piece             @relation(fields: [pieceId], references: [id])
   owner             Client            @relation(fields: [ownerId], references: [id])
   ownershipRecords  OwnershipRecord[]
+
+  @@index([pieceId, isActive])
 }
 
 model Order {
@@ -207,6 +216,8 @@ model Order {
 
   client Client      @relation(fields: [clientId], references: [id])
   items  OrderItem[]
+
+  @@index([clientId, status])
 }
 
 model OrderItem {
@@ -252,6 +263,11 @@ model TransferRequest {
   fromClient  Client     @relation("TransferSender", fields: [fromClientId], references: [id])
   toClient    Client     @relation("TransferRecipient", fields: [toClientId], references: [id])
   reviewedBy  AdminUser? @relation(fields: [dadanReviewedBy], references: [id])
+
+  @@index([pieceId, status])
+  @@index([fromClientId])
+  @@index([toClientId])
+  @@index([status])
 }
 
 model VerificationLog {
@@ -299,4 +315,5 @@ model CartItem {
   expiresAt DateTime
 
   @@index([clientId])
+  @@index([expiresAt])
 }

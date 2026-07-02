@@ -33,6 +33,14 @@ const notoNaskhArabic = Noto_Naskh_Arabic({
 export const metadata: Metadata = {
   title: "DADAN Dijital",
   description: "Private luxury digital jewelry ownership",
+  robots: {
+    index: false,
+    follow: false,
+    googleBot: {
+      index: false,
+      follow: false,
+    },
+  },
 };
 
 export default function RootLayout({
@@ -42,8 +50,6 @@ export default function RootLayout({
 }>) {
   return (
     <html
-      lang="ar"
-      dir="rtl"
       className={`${inter.variable} ${cormorant.variable} ${ibmPlexMono.variable} ${notoNaskhArabic.variable}`}
     >
       <body>{children}</body>

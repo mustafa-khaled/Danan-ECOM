@@ -1,27 +1,38 @@
 export const CLIENT_COOKIE = "dadan_session";
 export const ADMIN_COOKIE = "dadan_admin_session";
 export const AUTH_FAILURE_MESSAGE = "Unauthorized";
-export const SESSION_DURATION_SECONDS = 30 * 24 * 60 * 60;
+export const JWT_AUDIENCE_CLIENT = "dadan:client";
+export const JWT_AUDIENCE_ADMIN = "dadan:admin";
+// Client session length in days; configurable via CLIENT_SESSION_DAYS (default 7).
+const CLIENT_SESSION_DAYS = parseInt(process.env.CLIENT_SESSION_DAYS ?? "7", 10);
+export const SESSION_DURATION_SECONDS = CLIENT_SESSION_DAYS * 24 * 60 * 60;
 export const RATE_LIMIT_MAX = 5;
 export const RATE_LIMIT_WINDOW_SECONDS = 15 * 60;
+
+/** Redis key for the JWT deny-list (tokens revoked before their natural expiry). */
+export function tokenDenyListKey(jti: string): string {
+  return `auth:denylist:${jti}`;
+}
 
 export function getClientIp(req: {
   ip?: string;
   headers?: Record<string, string | string[] | undefined>;
 }): string {
-  const forwarded = req.headers?.["x-forwarded-for"];
-  if (typeof forwarded === "string") {
-    return forwarded.split(",")[0]?.trim() ?? "unknown";
-  }
+  // req.ip already resolves X-Forwarded-For safely via Express "trust proxy"
+  // (set in main.ts). Reading the header directly would be spoofable.
   return req.ip ?? "unknown";
 }
 
 export function cookieOptions(maxAgeMs: number) {
   const isProduction = process.env.NODE_ENV === "production";
+  const cookieSecure = process.env.COOKIE_SECURE;
+  const secure = cookieSecure !== undefined 
+    ? cookieSecure === "true" 
+    : isProduction;
   return {
     httpOnly: true,
-    secure: isProduction,
-    sameSite: (isProduction ? "strict" : "lax") as "strict" | "lax",
+    secure,
+    sameSite: (secure ? "strict" : "lax") as "strict" | "lax",
     maxAge: maxAgeMs,
     path: "/",
   };

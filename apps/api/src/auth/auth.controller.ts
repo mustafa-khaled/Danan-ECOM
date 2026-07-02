@@ -39,7 +39,8 @@ export class AuthController {
       cookieOptions(SESSION_DURATION_SECONDS * 1000),
     );
 
-    return { ...client, token };
+    // The httpOnly cookie is the only token transport; never expose the JWT in the body.
+    return client;
   }
 
   @Post("logout")
@@ -49,7 +50,11 @@ export class AuthController {
     @Req() req: Request,
     @Res({ passthrough: true }) res: Response,
   ) {
-    await this.authService.logout(client.clientId, getClientIp(req));
+    const cookies = req.cookies as Record<string, string> | undefined;
+    const token =
+      req.headers.authorization?.replace(/^Bearer /, "") ??
+      cookies?.[CLIENT_COOKIE];
+    await this.authService.logout(client.clientId, getClientIp(req), token);
     res.clearCookie(CLIENT_COOKIE);
     return { success: true };
   }

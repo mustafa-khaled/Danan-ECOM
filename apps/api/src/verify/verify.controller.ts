@@ -1,31 +1,54 @@
-import { Controller, Get, Query, Req } from "@nestjs/common";
+import { Body, Controller, Get, Post, Query, Req } from "@nestjs/common";
+import { JwtService } from "@nestjs/jwt";
+import { IsString, MaxLength, MinLength } from "class-validator";
 import type { Request } from "express";
 import { VerifyService } from "./verify.service";
-import { getClientIp } from "../common/constants";
+import { CLIENT_COOKIE, getClientIp } from "../common/constants";
+
+class VerifyDto {
+  @IsString() @MinLength(1) @MaxLength(64) serial!: string;
+  @IsString() @MinLength(1) @MaxLength(128) token!: string;
+}
 
 @Controller("verify")
 export class VerifyController {
-  constructor(private readonly verifyService: VerifyService) {}
+  constructor(
+    private readonly verifyService: VerifyService,
+    private readonly jwt: JwtService,
+  ) {}
 
+  /** GET is kept for QR-code links printed on certificates. */
   @Get()
-  handleVerify(
-    @Query("serial") serial: string,
-    @Query("token") token: string,
-    @Req() req: Request,
-  ) {
-    const cookies = req.cookies as Record<string, string> | undefined;
-    let clientId: string | undefined;
-    if (cookies?.dadan_session) {
-      try {
-        const payload = JSON.parse(
-          Buffer.from(cookies.dadan_session.split(".")[1]!, "base64url").toString(),
-        ) as { sub?: string };
-        clientId = payload.sub;
-      } catch {
-        clientId = undefined;
-      }
-    }
+  async handleVerifyGet(@Query() query: VerifyDto, @Req() req: Request) {
+    return this.verifyService.verify(
+      query.serial,
+      query.token,
+      getClientIp(req),
+      await this.resolveClientId(req),
+    );
+  }
 
-    return this.verifyService.verify(serial, token, getClientIp(req), clientId);
+  /** POST variant for the in-app verify form, keeping the token out of URLs. */
+  @Post()
+  async handleVerifyPost(@Body() dto: VerifyDto, @Req() req: Request) {
+    return this.verifyService.verify(
+      dto.serial,
+      dto.token,
+      getClientIp(req),
+      await this.resolveClientId(req),
+    );
+  }
+
+  /** Optionally attribute the verification to a logged-in client (signature-checked). */
+  private async resolveClientId(req: Request): Promise<string | undefined> {
+    const cookies = req.cookies as Record<string, string> | undefined;
+    const session = cookies?.[CLIENT_COOKIE];
+    if (!session) return undefined;
+    try {
+      const payload = await this.jwt.verifyAsync<{ sub?: string }>(session);
+      return payload.sub;
+    } catch {
+      return undefined;
+    }
   }
 }

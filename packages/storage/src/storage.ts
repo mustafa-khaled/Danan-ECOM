@@ -21,28 +21,35 @@ import {
 let client: S3Client | null = null;
 let bucket = "";
 
+function isR2Endpoint(endpoint: string): boolean {
+  return endpoint.includes(".r2.cloudflarestorage.com");
+}
+
 function getClient(config?: StorageConfig): { s3: S3Client; bucket: string } {
   if (client && bucket) {
     return { s3: client, bucket };
   }
 
+  const endpoint = config?.endpoint ?? process.env.S3_ENDPOINT ?? "";
+  const r2 = isR2Endpoint(endpoint);
+
   const cfg: StorageConfig = config ?? {
-    endpoint: process.env.S3_ENDPOINT ?? "http://localhost:9000",
+    endpoint: endpoint || "https://localhost",
     bucket: process.env.S3_BUCKET ?? "dadan-assets",
-    accessKey: process.env.S3_ACCESS_KEY ?? "minioadmin",
-    secretKey: process.env.S3_SECRET_KEY ?? "minioadmin",
-    region: "us-east-1",
+    accessKey: process.env.S3_ACCESS_KEY ?? "",
+    secretKey: process.env.S3_SECRET_KEY ?? "",
+    region: process.env.S3_REGION ?? (r2 ? "auto" : "us-east-1"),
   };
 
   bucket = cfg.bucket;
   client = new S3Client({
     endpoint: cfg.endpoint,
-    region: cfg.region ?? "us-east-1",
+    region: cfg.region ?? (r2 ? "auto" : "us-east-1"),
     credentials: {
       accessKeyId: cfg.accessKey,
       secretAccessKey: cfg.secretKey,
     },
-    forcePathStyle: true,
+    forcePathStyle: !r2,
   });
 
   return { s3: client, bucket };

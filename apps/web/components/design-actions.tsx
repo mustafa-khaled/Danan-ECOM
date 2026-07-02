@@ -21,7 +21,7 @@ export function DesignActions({ pieceId, initialSaved = false }: DesignActionsPr
     setError(null);
     try {
       await addToCart(pieceId);
-      router.push("/cart");
+      router.push("/beta/cart");
       router.refresh();
     } catch (err) {
       setError(err instanceof ApiError ? err.message : "Could not add to cart");

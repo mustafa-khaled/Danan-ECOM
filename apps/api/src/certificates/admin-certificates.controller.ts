@@ -5,17 +5,14 @@ import {
   Param,
   Post,
   Query,
-  Req,
   UseGuards,
 } from "@nestjs/common";
 import { AdminRole } from "@dadan/db";
-import type { Request } from "express";
 import { CertificatesService } from "./certificates.service";
 import { AdminGuard } from "../admin/auth/guards/admin.guard";
 import { Roles } from "../admin/auth/decorators/roles.decorator";
 import { CurrentAdmin } from "../admin/auth/decorators/current-admin.decorator";
 import type { AdminSession } from "@dadan/types";
-import { getClientIp } from "../common/constants";
 import { PrismaService } from "../prisma/prisma.service";
 
 @Controller("admin/certificates")
@@ -31,7 +28,6 @@ export class AdminCertificatesController {
   async regenerate(
     @CurrentAdmin() admin: AdminSession,
     @Param("pieceId") pieceId: string,
-    @Req() req: Request,
   ) {
     const piece = await this.prisma.db.piece.findUnique({ where: { id: pieceId } });
     if (!piece?.currentOwnerId) {

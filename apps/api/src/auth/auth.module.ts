@@ -4,6 +4,7 @@ import { ConfigModule, ConfigService } from "@nestjs/config";
 import { AuthService } from "./auth.service";
 import { AuthController } from "./auth.controller";
 import { ClientGuard } from "./guards/client.guard";
+import { SESSION_DURATION_SECONDS } from "../common/constants";
 
 @Module({
   imports: [
@@ -12,7 +13,7 @@ import { ClientGuard } from "./guards/client.guard";
       inject: [ConfigService],
       useFactory: (config: ConfigService) => ({
         secret: config.getOrThrow<string>("JWT_SECRET"),
-        signOptions: { expiresIn: 30 * 24 * 60 * 60 },
+        signOptions: { expiresIn: SESSION_DURATION_SECONDS },
       }),
     }),
   ],

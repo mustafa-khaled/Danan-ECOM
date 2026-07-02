@@ -12,6 +12,12 @@ interface CheckoutFormProps {
   currency: string;
 }
 
+// Payment mode is baked into the bundle at build time. "mock" uses the API's
+// mock provider token; anything else disables checkout until a real payment
+// element (e.g. Stripe Elements) is integrated.
+const PAYMENT_MODE = process.env.NEXT_PUBLIC_PAYMENT_MODE ?? "mock";
+const VAT_RATE = Number(process.env.NEXT_PUBLIC_VAT_RATE ?? "0.15");
+
 export function CheckoutForm({ total, currency }: CheckoutFormProps) {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
@@ -22,6 +28,11 @@ export function CheckoutForm({ total, currency }: CheckoutFormProps) {
     event.preventDefault();
     if (step === 1) {
       setStep(2);
+      return;
+    }
+
+    if (PAYMENT_MODE !== "mock") {
+      setError("Online payment is not yet available. Please contact DADAN to complete your purchase.");
       return;
     }
 
@@ -46,7 +57,7 @@ export function CheckoutForm({ total, currency }: CheckoutFormProps) {
         paymentMethod: "CARD",
         paymentToken: "mock_token_success",
       })) as { orderId: string };
-      router.push(`/orders/${result.orderId}`);
+      router.push(`/beta/orders/${result.orderId}`);
       router.refresh();
     } catch (err) {
       setError(err instanceof ApiError ? err.message : "Checkout failed");
@@ -55,7 +66,7 @@ export function CheckoutForm({ total, currency }: CheckoutFormProps) {
     }
   }
 
-  const vat = total * 0.15;
+  const vat = total * VAT_RATE;
   const grandTotal = total + vat;
 
   return (
@@ -73,7 +84,7 @@ export function CheckoutForm({ total, currency }: CheckoutFormProps) {
               <dd>{formatPrice(total, currency)}</dd>
             </div>
             <div className="flex justify-between">
-              <dt className="text-[var(--color-ivory-muted)]">VAT (15%)</dt>
+              <dt className="text-[var(--color-ivory-muted)]">VAT ({Math.round(VAT_RATE * 100)}%)</dt>
               <dd>{formatPrice(vat, currency)}</dd>
             </div>
             <div className="flex justify-between font-display text-lg text-[var(--color-gold-light)]">
@@ -95,9 +106,11 @@ export function CheckoutForm({ total, currency }: CheckoutFormProps) {
             <Field label="Postal Code" name="postalCode" required />
             <Field label="Country" name="country" defaultValue="SA" required />
           </div>
-          <p className="mt-6 text-xs text-[var(--color-ivory-muted)]">
-            Payment is processed securely via mock gateway for this preview.
-          </p>
+          {PAYMENT_MODE === "mock" ? (
+            <p className="mt-6 text-xs text-[var(--color-ivory-muted)]">
+              Payment is processed securely via mock gateway for this preview.
+            </p>
+          ) : null}
         </section>
       )}
 

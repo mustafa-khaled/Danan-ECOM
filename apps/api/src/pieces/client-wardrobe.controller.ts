@@ -1,9 +1,7 @@
 import {
   Controller,
-  Delete,
   Get,
   Param,
-  Post,
   UseGuards,
 } from "@nestjs/common";
 import { PiecesService } from "./pieces.service";

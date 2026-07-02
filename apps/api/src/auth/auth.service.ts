@@ -1,4 +1,4 @@
-import { randomBytes } from "node:crypto";
+import { randomBytes, randomUUID } from "node:crypto";
 import {
   HttpException,
   HttpStatus,
@@ -15,9 +15,11 @@ import { PrismaService } from "../prisma/prisma.service";
 import { RedisService } from "../redis/redis.service";
 import {
   AUTH_FAILURE_MESSAGE,
+  JWT_AUDIENCE_CLIENT,
   RATE_LIMIT_MAX,
   RATE_LIMIT_WINDOW_SECONDS,
   SESSION_DURATION_SECONDS,
+  tokenDenyListKey,
 } from "../common/constants";
 
 @Injectable()
@@ -49,12 +51,17 @@ export class AuthService {
     }
 
     const normalizedKey = houseKey.trim();
-    const clients = await this.prisma.db.client.findMany({
-      where: { isActive: true },
+    const keyPrefix = normalizedKey.slice(0, 4);
+    
+    const candidates = await this.prisma.db.client.findMany({
+      where: { 
+        isActive: true,
+        houseKeyPrefix: keyPrefix,
+      },
     });
 
-    let matched: (typeof clients)[0] | null = null;
-    for (const client of clients) {
+    let matched: (typeof candidates)[0] | null = null;
+    for (const client of candidates) {
       const isMatch = await bcrypt.compare(normalizedKey, client.houseKey);
       if (isMatch) {
         matched = client;
@@ -70,6 +77,8 @@ export class AuthService {
       sub: matched.id,
       displayName: matched.displayName,
       visibilityGroups: matched.visibilityGroups,
+      aud: JWT_AUDIENCE_CLIENT,
+      jti: randomUUID(),
     };
 
     const token = await this.jwt.signAsync(payload, {
@@ -95,7 +104,10 @@ export class AuthService {
     };
   }
 
-  async logout(clientId: string, ipAddress: string) {
+  async logout(clientId: string, ipAddress: string, token?: string) {
+    if (token) {
+      await this.revokeToken(token);
+    }
     await this.audit.log({
       actorType: ActorType.CLIENT,
       actorId: clientId,
@@ -106,9 +118,22 @@ export class AuthService {
     });
   }
 
+  /** Deny-list the token's jti in Redis until its natural expiry. */
+  private async revokeToken(token: string) {
+    const payload = this.jwt.decode<{ jti?: string; exp?: number } | null>(token);
+    if (!payload?.jti || !payload.exp) return;
+    const remainingSeconds = payload.exp - Math.floor(Date.now() / 1000);
+    if (remainingSeconds <= 0) return;
+    await this.redis.setWithExpiry(
+      tokenDenyListKey(payload.jti),
+      "1",
+      remainingSeconds,
+    );
+  }
+
   async getMe(clientId: string) {
-    const client = await this.prisma.db.client.findUnique({
-      where: { id: clientId },
+    const client = await this.prisma.db.client.findFirst({
+      where: { id: clientId, isActive: true },
       select: {
         id: true,
         displayName: true,
@@ -120,9 +145,7 @@ export class AuthService {
       },
     });
 
-    if (!client || !(await this.prisma.db.client.findFirst({
-      where: { id: clientId, isActive: true },
-    }))) {
+    if (!client) {
       throw new UnauthorizedException(AUTH_FAILURE_MESSAGE);
     }
 
@@ -139,14 +162,17 @@ export class AuthService {
 
   async findClientByHouseKey(houseKey: string, excludeClientId?: string) {
     const normalizedKey = houseKey.trim();
-    const clients = await this.prisma.db.client.findMany({
+    const keyPrefix = normalizedKey.slice(0, 4);
+    
+    const candidates = await this.prisma.db.client.findMany({
       where: {
         isActive: true,
+        houseKeyPrefix: keyPrefix,
         ...(excludeClientId ? { id: { not: excludeClientId } } : {}),
       },
     });
 
-    for (const client of clients) {
+    for (const client of candidates) {
       const isMatch = await bcrypt.compare(normalizedKey, client.houseKey);
       if (isMatch) return client;
     }

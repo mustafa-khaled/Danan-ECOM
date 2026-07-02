@@ -33,7 +33,7 @@ export class CartController {
     @CurrentClient() client: ClientSession,
     @Body() dto: AddToCartDto,
   ) {
-    return this.cart.addToCart(client.clientId, dto.pieceId);
+    return this.cart.addToCart(client.clientId, client.visibilityGroups, dto.pieceId);
   }
 
   @Delete(":pieceId")
