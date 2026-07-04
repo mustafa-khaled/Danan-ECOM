@@ -165,4 +165,4 @@ jobs:
           format: table
           exit-code: 0
           severity: HIGH,CRITICAL
-          scanners: vuln,secret,iac
+          scanners: vuln,secret,misconfig
