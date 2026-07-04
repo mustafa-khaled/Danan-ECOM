@@ -16,7 +16,7 @@
 #     by each entrypoint (postgres/nginx init, nobody else).
 #   - read_only: true on every service — application code cannot be modified
 #     at runtime. Writable paths (/tmp, sockets, caches) are provided via
-#     tmpfs mounts or named volumes where persistence is needed.
+#     tmpfs mounts or bind mounts where persistence is needed.
 #   - tmpfs mounts for runtime-writable directories that do not need to
 #     survive restarts (/tmp, PID directories, nginx cache).
 #   - stop_grace_period tuned per service (Postgres needs longest — WAL
@@ -32,7 +32,6 @@
 # =============================================================================
 
 services:
-
   # -----------------------------------------------------------------------
   # postgres — primary database
   # -----------------------------------------------------------------------
@@ -43,7 +42,7 @@ services:
   # FOWNER, SETGID, and SETUID to set up the data directory and drop
   # privileges to the postgres user.
   #
-  # read_only: data directory is a named volume; Unix socket and temp files
+  # read_only: data directory is a bind mount; Unix socket and temp files
   # use tmpfs.
   # -----------------------------------------------------------------------
   postgres:
@@ -73,7 +72,7 @@ services:
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?POSTGRES_PASSWORD is required}
       POSTGRES_DB: dadan
     volumes:
-      - postgres_data:/var/lib/postgresql/data
+      - /opt/dadan/data/postgres:/var/lib/postgresql/data
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U dadan -d dadan"]
       interval: 10s
@@ -96,9 +95,9 @@ services:
   #
   # Capabilities: redis runs as the redis user (Dockerfile USER redis).
   # No special capabilities are required — it binds to port 6379 (unprivileged)
-  # and writes to /data (volume) and /tmp (tmpfs).
+  # and writes to /data (bind mount) and /tmp (tmpfs).
   #
-  # read_only: AOF data directory is a named volume; temp files use tmpfs.
+  # read_only: AOF data directory is a bind mount; temp files use tmpfs.
   # -----------------------------------------------------------------------
   redis:
     image: redis:7-alpine
@@ -120,7 +119,7 @@ services:
       - --appendonly yes
       - --requirepass ${REDIS_PASSWORD}
     volumes:
-      - redis_data:/data
+      - /opt/dadan/data/redis:/data
     healthcheck:
       test: ["CMD", "redis-cli", "ping"]
       interval: 10s
@@ -161,6 +160,8 @@ services:
     read_only: true
     tmpfs:
       - /tmp
+    volumes:
+      - /opt/dadan/data/uploads:/app/uploads
     stop_grace_period: 30s
     mem_limit: 512m
     mem_reservation: 128m
@@ -328,16 +329,6 @@ services:
         max-file: "3"
     networks:
       - dadan
-
-# ---------------------------------------------------------------------------
-# Persistent volumes
-# ---------------------------------------------------------------------------
-# postgres_data: database files (critical — back up via pg_dump)
-# redis_data:    AOF persistence (rate-limit state; loss is non-critical)
-# ---------------------------------------------------------------------------
-volumes:
-  postgres_data:
-  redis_data:
 
 # ---------------------------------------------------------------------------
 # Explicit bridge network
