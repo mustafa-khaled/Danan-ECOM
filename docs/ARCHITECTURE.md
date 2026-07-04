@@ -1,7 +1,7 @@
 # DADAN Dijital — Architecture
 
 > **Platform:** Closed, invitation-only luxury digital jewelry ownership house  
-> **Stack:** Next.js 15 · NestJS · PostgreSQL · Prisma · Redis · Cloudflare R2  
+> **Stack:** Next.js 15 · NestJS · PostgreSQL · Prisma · Redis · pluggable Storage  
 > **Last updated:** July 2026
 
 ---
@@ -50,7 +50,7 @@ flowchart TB
   subgraph infra [Infrastructure]
     PG[(PostgreSQL 16)]
     RD[(Redis 7)]
-    R2[(Cloudflare R2<br/>dadan-assets)]
+    FS[(Local storage<br/>/app/uploads)]
   end
 
   B --> NG
@@ -60,7 +60,7 @@ flowchart TB
   WEB -->|"/backend/* rewrite"| API
   API --> DB
   API --> RD
-  API --> R2
+  API --> FS
 
   WEB --> UI
   API --> UTILS
@@ -85,7 +85,7 @@ packages/
   ui/       Shared React component library (luxury design tokens)
   types/    Shared TypeScript interfaces and enums
   utils/    Shared pure utilities (serial number, certificate, transfer logic)
-  storage/  Cloudflare R2 upload, signed URLs, key conventions
+  storage/  Local storage + pluggable providers (Strategy Pattern)
   config/   Shared ESLint, Prettier, TypeScript base configs
 ```
 
@@ -97,7 +97,7 @@ packages/
 | **UI library** | `packages/ui`      | Shared luxury components (`PrivateLayout`, `AdminLayout`, etc.)        |
 | **Types**      | `packages/types`   | Shared TS interfaces (sessions, shipping, API shapes)                  |
 | **Utils**      | `packages/utils`   | Pure domain helpers (serial numbers, visibility, transfer transitions) |
-| **Storage**    | `packages/storage` | R2/S3 upload, signed URLs, key conventions                             |
+| **Storage**    | `packages/storage` | Local / S3 upload, API URLs, key conventions (Strategy Pattern)        |
 | **Config**     | `packages/config`  | Shared ESLint + TypeScript configs                                     |
 
 ---
@@ -142,12 +142,15 @@ flowchart TD
 
 ---
 
-## Storage (Cloudflare R2)
+## Storage (pluggable provider)
 
-- **No self-hosted MinIO** — all environments use Cloudflare R2 (S3-compatible API).
-- **Free tier:** 10 GB storage, 1M writes, 10M reads/month, zero egress fees.
-- **Private bucket** — assets served via presigned URLs generated at read time.
-- DB stores **object keys only**; API resolves keys to signed URLs in read responses.
+Storage uses a **Strategy Pattern**: a `StorageProvider` interface defines all operations, and the active provider is selected at startup via `STORAGE_PROVIDER` env.
+
+### Current provider
+
+- **LocalStorageProvider** — files stored on the VPS filesystem at `/app/uploads`.
+- DB stores **object keys only** (`designs/{id}/{uuid}.jpg`); API resolves keys to URLs in read responses via `getSignedUrl()`.
+- For local storage, URLs are API paths: `/api/uploads/{key}`.
 
 | Field                      | Example key                            |
 | -------------------------- | -------------------------------------- |
@@ -155,7 +158,11 @@ flowchart TD
 | `Design.imageUrls[]`       | `designs/{designId}/{uuid}.jpg`        |
 | `Collection.coverImageUrl` | `collections/{collectionId}/cover.jpg` |
 
-Env vars: `S3_ENDPOINT`, `S3_BUCKET`, `S3_ACCESS_KEY`, `S3_SECRET_KEY`, `S3_REGION=auto`.
+Env vars: `STORAGE_PROVIDER=local`, `STORAGE_LOCAL_PATH=/app/uploads`.
+
+### Future providers
+
+The same interface supports `S3CompatibleProvider` (Cloudflare R2, AWS S3, Hetzner Object Storage) — swap the env vars, zero application code changes.
 
 ---
 
@@ -178,7 +185,7 @@ Apps run via `pnpm dev` (Turbo). R2 credentials required in `.env`.
 
 ### Production (`docker-compose.prod.yml`)
 
-Containerized: **postgres, redis, api, web, nginx**. R2 is external (no storage container).
+Containerized: **postgres, redis, api, web, nginx**. Storage is local (no external dependency).
 
 | Path    | Target                    |
 | ------- | ------------------------- |
@@ -214,5 +221,5 @@ apps/api ──┬── @dadan/db (Prisma)
            ├── @dadan/storage
            ├── PostgreSQL
            ├── Redis
-           └── Cloudflare R2
+           └── Local / S3 storage (via @dadan/storage)
 ```

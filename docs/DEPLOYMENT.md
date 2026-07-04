@@ -30,10 +30,10 @@ Internet
 │     ┌─────┼─────┐                                   │
 │     │     │     │                                   │
 │     ▼     ▼     ▼                                   │
-│  ┌────┐ ┌────┐ ┌──────────────────┐                │
-│  │ pg │ │redis│ │ S3-compatible   │                │
-│  │:5432│ │:6379│ │ object storage  │                │
-│  └────┘ └────┘ └──────────────────┘                │
+ │  ┌────┐ ┌────┐                                   │
+│  │ pg │ │redis│                                   │
+│  │:5432│ │:6379│                                   │
+│  └────┘ └────┘                                   │
 │                                                     │
 │  Bind mounts on host:                               │
 │    /opt/dadan/data/postgres                         │
@@ -90,7 +90,7 @@ Persistent data is stored on the host filesystem at:
 
 - SSH key pair (Ed25519 recommended)
 - GitHub account with access to the private repository
-- S3-compatible object storage account (Cloudflare R2, AWS S3, or any S3 endpoint)
+- (Optional) S3-compatible object storage account — skip if using local storage
 - Stripe account (for payment processing — optional during setup)
 
 ### Firewall ports to open
@@ -332,33 +332,37 @@ nano .env
 
 ### 5.3 All environment variables
 
-| Variable                   | Description                                          | Required | Default                         | Example                                         |
-| -------------------------- | ---------------------------------------------------- | -------- | ------------------------------- | ----------------------------------------------- |
-| `POSTGRES_PASSWORD`        | PostgreSQL database password                         | **Yes**  | —                               | `a1b2c3d4e5f6...` (hex 24)                      |
-| `REDIS_PASSWORD`           | Redis password (leave empty to disable auth)         | No       | `(empty)`                       | `abc123...`                                     |
-| `JWT_SECRET`               | HMAC secret for JWT tokens (min 32 chars)            | **Yes**  | —                               | `uH83j...` (base64 48)                          |
-| `CERT_SIGNING_SECRET`      | HMAC secret for certificate QR tokens (min 16 chars) | **Yes**  | —                               | `kL9mN...` (base64 32)                          |
-| `HOUSE_KEY_SALT`           | bcrypt salt rounds for House Key hashing             | No       | `12`                            | `12`                                            |
-| `CLIENT_SESSION_DAYS`      | JWT expiry for client users                          | No       | `7`                             | `7`                                             |
-| `COOKIE_SECURE`            | Set `true` when using HTTPS, `false` for HTTP        | **Yes**  | `false`                         | `true`                                          |
-| `BASE_URL`                 | Public base URL (used in certificate links, CORS)    | **Yes**  | —                               | `https://dadan.example.com`                     |
-| `WEB_ORIGIN`               | CORS origin (must match browser address bar)         | **Yes**  | —                               | `https://dadan.example.com`                     |
-| `S3_ENDPOINT`              | S3-compatible storage endpoint URL                   | **Yes**  | —                               | `https://<ACCOUNT_ID>.r2.cloudflarestorage.com` |
-| `S3_BUCKET`                | S3 bucket name for uploads                           | No       | `dadan-assets`                  | `dadan-assets-prod`                             |
-| `S3_ACCESS_KEY`            | S3 access key ID                                     | **Yes**  | —                               | `AKIAIOSFODNN7EXAMPLE`                          |
-| `S3_SECRET_KEY`            | S3 secret access key                                 | **Yes**  | —                               | `wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY`      |
-| `S3_REGION`                | S3 region (use `auto` for R2)                        | No       | `auto`                          | `auto`                                          |
-| `PAYMENT_PROVIDER_KEY`     | Stripe secret key (`sk_live_...` or `sk_test_...`)   | No       | `(empty)`                       | `sk_live_...`                                   |
-| `PAYMENT_PROVIDER_SECRET`  | Stripe webhook signing secret                        | No       | `(empty)`                       | `whsec_...`                                     |
-| `VAT_RATE`                 | VAT rate as decimal (0.15 = 15%)                     | No       | `0.15`                          | `0.15`                                          |
-| `NEXT_PUBLIC_PAYMENT_MODE` | Checkout mode: `mock` or leave empty for Stripe      | No       | `mock`                          | `mock`                                          |
-| `ADMIN_EMAIL`              | Admin email address (used in system notifications)   | No       | `(empty)`                       | `admin@dadan.sa`                                |
-| `SMTP_HOST`                | SMTP server hostname                                 | No       | `(empty)`                       | `smtp.sendgrid.net`                             |
-| `SMTP_PORT`                | SMTP server port                                     | No       | `(empty)`                       | `587`                                           |
-| `SMTP_USER`                | SMTP username                                        | No       | `(empty)`                       | `apikey`                                        |
-| `SMTP_PASS`                | SMTP password                                        | No       | `(empty)`                       | `SG.xxxxx...`                                   |
-| `PDF_WATERMARK_TEXT`       | Watermark text on certificate PDFs                   | No       | `DADAN DIJITAL — AUTHENTICATED` | `DADAN DIJITAL — AUTHENTICATED`                 |
-| `HTTP_PORT`                | Host port for nginx                                  | No       | `80`                            | `80`                                            |
+| Variable              | Description                                          | Required | Default        | Example                                         |
+| --------------------- | ---------------------------------------------------- | -------- | -------------- | ----------------------------------------------- |
+| `POSTGRES_PASSWORD`   | PostgreSQL database password                         | **Yes**  | —              | `a1b2c3d4e5f6...` (hex 24)                      |
+| `REDIS_PASSWORD`      | Redis password (leave empty to disable auth)         | No       | `(empty)`      | `abc123...`                                     |
+| `JWT_SECRET`          | HMAC secret for JWT tokens (min 32 chars)            | **Yes**  | —              | `uH83j...` (base64 48)                          |
+| `CERT_SIGNING_SECRET` | HMAC secret for certificate QR tokens (min 16 chars) | **Yes**  | —              | `kL9mN...` (base64 32)                          |
+| `HOUSE_KEY_SALT`      | bcrypt salt rounds for House Key hashing             | No       | `12`           | `12`                                            |
+| `CLIENT_SESSION_DAYS` | JWT expiry for client users                          | No       | `7`            | `7`                                             |
+| `COOKIE_SECURE`       | Set `true` when using HTTPS, `false` for HTTP        | **Yes**  | `false`        | `true`                                          |
+| `BASE_URL`            | Public base URL (used in certificate links, CORS)    | **Yes**  | —              | `https://dadan.example.com`                     |
+| `WEB_ORIGIN`          | CORS origin (must match browser address bar)         | **Yes**  | —              | `https://dadan.example.com`                     |
+| `STORAGE_PROVIDER`    | Storage backend: `local`, `s3`, `r2`, or `hetzner`   | No       | `local`        | `local`                                         |
+| `STORAGE_LOCAL_PATH`  | Root directory for local file storage                | No       | `/app/uploads` | `/app/uploads`                                  |
+| `S3_ENDPOINT`         | S3-compatible endpoint URL (when not using local)    | No\*     | —              | `https://<ACCOUNT_ID>.r2.cloudflarestorage.com` |
+| `S3_BUCKET`           | S3 bucket name                                       | No\*     | `dadan-assets` | `dadan-assets-prod`                             |
+| `S3_ACCESS_KEY`       | S3 access key ID                                     | No\*     | —              | `AKIAIOSFODNN7EXAMPLE`                          |
+| `S3_SECRET_KEY`       | S3 secret access key                                 | No\*     | —              | `wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY`      |
+| `S3_REGION`           | S3 region (use `auto` for R2)                        | No       | `auto`         | `auto`                                          |
+
+> - Required only when `STORAGE_PROVIDER` is `s3`, `r2`, or `hetzner`. Ignored for `local`.
+>   | `PAYMENT_PROVIDER_KEY` | Stripe secret key (`sk_live_...` or `sk_test_...`) | No | `(empty)` | `sk_live_...` |
+>   | `PAYMENT_PROVIDER_SECRET` | Stripe webhook signing secret | No | `(empty)` | `whsec_...` |
+>   | `VAT_RATE` | VAT rate as decimal (0.15 = 15%) | No | `0.15` | `0.15` |
+>   | `NEXT_PUBLIC_PAYMENT_MODE` | Checkout mode: `mock` or leave empty for Stripe | No | `mock` | `mock` |
+>   | `ADMIN_EMAIL` | Admin email address (used in system notifications) | No | `(empty)` | `admin@dadan.sa` |
+>   | `SMTP_HOST` | SMTP server hostname | No | `(empty)` | `smtp.sendgrid.net` |
+>   | `SMTP_PORT` | SMTP server port | No | `(empty)` | `587` |
+>   | `SMTP_USER` | SMTP username | No | `(empty)` | `apikey` |
+>   | `SMTP_PASS` | SMTP password | No | `(empty)` | `SG.xxxxx...` |
+>   | `PDF_WATERMARK_TEXT` | Watermark text on certificate PDFs | No | `DADAN DIJITAL — AUTHENTICATED` | `DADAN DIJITAL — AUTHENTICATED` |
+>   | `HTTP_PORT` | Host port for nginx | No | `80` | `80` |
 
 ### 5.4 Example .env (production)
 
@@ -372,11 +376,13 @@ CLIENT_SESSION_DAYS=7
 COOKIE_SECURE=true
 BASE_URL=https://dadan.example.com
 WEB_ORIGIN=https://dadan.example.com
-S3_ENDPOINT=https://<ACCOUNT_ID>.r2.cloudflarestorage.com
-S3_BUCKET=dadan-assets-prod
-S3_ACCESS_KEY=your-access-key-id
-S3_SECRET_KEY=your-secret-access-key
-S3_REGION=auto
+STORAGE_PROVIDER=local
+STORAGE_LOCAL_PATH=/app/uploads
+# S3_ENDPOINT=https://<ACCOUNT_ID>.r2.cloudflarestorage.com  # uncomment for S3
+# S3_BUCKET=dadan-assets-prod
+# S3_ACCESS_KEY=your-access-key-id
+# S3_SECRET_KEY=your-secret-access-key
+# S3_REGION=auto
 PAYMENT_PROVIDER_KEY=sk_live_...
 PAYMENT_PROVIDER_SECRET=whsec_...
 VAT_RATE=0.15
@@ -508,7 +514,7 @@ Total first-time startup: 1-3 minutes. Subsequent starts are faster (no migratio
 | ---------- | ---------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------ |
 | `postgres` | Primary relational database. Stores users, certificates, collections, payments.                                                                | —                              |
 | `redis`    | In-memory cache. Rate limiting counters, JWT deny-list, session state.                                                                         | —                              |
-| `api`      | NestJS REST API. Handles all business logic, authentication, file serving via presigned S3 URLs.                                               | postgres, redis, S3 (external) |
+| `api`      | NestJS REST API. Handles all business logic, authentication, file serving via local API URLs.                                                  | postgres, redis, local storage |
 | `web`      | Next.js application. Server-side renders pages for client-facing site and admin dashboard.                                                     | api (internal HTTP)            |
 | `nginx`    | Reverse proxy. Single public entry point. Routes `/api/*` → api:4000, `/*` → web:3000. Adds rate limiting, security headers, gzip compression. | web, api                       |
 
@@ -1261,7 +1267,7 @@ docker compose -f docker-compose.prod.yml rm -fs api
 docker compose -f docker-compose.prod.yml up -d --build api
 
 # Check environment variables in a running container
-docker compose -f docker-compose.prod.yml exec api env | grep -E 'JWT|S3|POSTGRES'
+docker compose -f docker-compose.prod.yml exec api env | grep -E 'JWT|STORAGE|POSTGRES'
 
 # Full rebuild without cache
 docker compose -f docker-compose.prod.yml build --no-cache --pull

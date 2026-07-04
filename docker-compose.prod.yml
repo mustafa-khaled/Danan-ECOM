@@ -155,7 +155,7 @@ services:
       NODE_ENV: production
       PORT: 4000
       DATABASE_URL: postgresql://dadan:${POSTGRES_PASSWORD:?POSTGRES_PASSWORD is required}@postgres:5432/dadan
-      REDIS_URL: redis://redis:6379
+      REDIS_URL: redis://:${REDIS_PASSWORD}@redis:6379
       JWT_SECRET: ${JWT_SECRET:?JWT_SECRET is required}
       CERT_SIGNING_SECRET: ${CERT_SIGNING_SECRET:?CERT_SIGNING_SECRET is required}
       HOUSE_KEY_SALT: ${HOUSE_KEY_SALT:-12}

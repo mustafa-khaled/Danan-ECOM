@@ -6,12 +6,12 @@
 
 ## Related documents
 
-| Document                                                               | Purpose                         |
-| ---------------------------------------------------------------------- | ------------------------------- |
-| [DADAN_DIJITAL_PROMPT_GUIDE.md](./DADAN_DIJITAL_PROMPT_GUIDE.md)       | Implementation prompts (00–14)  |
-| [packages/db/prisma/schema.prisma](./packages/db/prisma/schema.prisma) | Database schema source of truth |
-| [packages/db/README.md](./packages/db/README.md)                       | Seed data and dev credentials   |
-| [packages/storage/src/storage.ts](./packages/storage/src/storage.ts)   | S3/MinIO object storage rules   |
+| Document                                                                                                                         | Purpose                                      |
+| -------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------- |
+| [DADAN_DIJITAL_PROMPT_GUIDE.md](./DADAN_DIJITAL_PROMPT_GUIDE.md)                                                                 | Implementation prompts (00–14)               |
+| [packages/db/prisma/schema.prisma](./packages/db/prisma/schema.prisma)                                                           | Database schema source of truth              |
+| [packages/db/README.md](./packages/db/README.md)                                                                                 | Seed data and dev credentials                |
+| [packages/storage/src/interfaces/storage-provider.interface.ts](./packages/storage/src/interfaces/storage-provider.interface.ts) | Storage provider contract (Strategy Pattern) |
 
 This document describes **what the platform does and which rules are non-negotiable**. It does not cover Docker setup, CI, or UI component specs.
 
@@ -94,7 +94,7 @@ Client and admin sessions are **fully separate** — different JWTs, different c
 
 ### 2.3 Storage field semantics
 
-Database fields store **S3 object keys only** — never public MinIO URLs.
+Database fields store **object keys only** — never public URLs.
 
 | Field                      | Stores             | Example key                            |
 | -------------------------- | ------------------ | -------------------------------------- |

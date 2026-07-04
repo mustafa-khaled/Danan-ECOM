@@ -7,14 +7,14 @@ Closed, invitation-only luxury digital jewelry ownership platform.
 - Node.js 20+
 - pnpm 9+
 - Docker & Docker Compose
-- Cloudflare account with R2 bucket (free tier)
+- Docker & Docker Compose (no external object storage required)
 
 ## Local setup
 
 ```bash
 pnpm install
 cp .env.example .env
-# Fill in Cloudflare R2 credentials in .env (see S3_* vars)
+# Storage defaults to local filesystem (/app/uploads) — no config needed
 docker compose up -d
 pnpm db:generate
 pnpm db:migrate
@@ -24,16 +24,16 @@ pnpm dev
 
 ## Services
 
-| Service        | URL                                      |
-| -------------- | ---------------------------------------- |
-| Web (client + admin) | http://localhost:3000              |
-| Admin dashboard    | http://localhost:3000/admin/login  |
-| API            | http://localhost:4000                    |
-| API health     | http://localhost:4000/health             |
-| PostgreSQL     | localhost:5433                           |
-| Redis          | localhost:6379                           |
+| Service              | URL                               |
+| -------------------- | --------------------------------- |
+| Web (client + admin) | http://localhost:3000             |
+| Admin dashboard      | http://localhost:3000/admin/login |
+| API                  | http://localhost:4000             |
+| API health           | http://localhost:4000/health      |
+| PostgreSQL           | localhost:5433                    |
+| Redis                | localhost:6379                    |
 
-Object storage uses **Cloudflare R2** (S3-compatible). Create a dev bucket (`dadan-assets-dev`) and API token in the Cloudflare dashboard, then set `S3_*` variables in `.env`.
+Uploads are stored **locally** at `/app/uploads` (mounted from `./uploads` in dev, `/opt/dadan/data/uploads` in production). No external object storage is required. Set `STORAGE_PROVIDER=s3` + `S3_*` vars to switch to S3-compatible storage.
 
 ## Monorepo structure
 
@@ -46,30 +46,41 @@ packages/
   ui/       Shared React components
   types/    Shared TypeScript types
   utils/    Shared utilities
-  storage/  Cloudflare R2 / S3-compatible storage
+  storage/  Local / S3-compatible storage (Strategy Pattern)
   config/   ESLint, Prettier, TypeScript configs
 ```
 
 ## Scripts
 
-| Command           | Description                    |
-| ----------------- | ------------------------------ |
-| `pnpm dev`        | Start all apps in dev mode     |
-| `pnpm build`      | Build all apps and packages    |
-| `pnpm lint`       | Lint all workspaces            |
-| `pnpm typecheck`  | Type-check all workspaces      |
-| `pnpm test`       | Run tests                      |
-| `pnpm db:generate`| Generate Prisma client         |
-| `pnpm db:migrate` | Run Prisma migrations (dev)    |
+| Command            | Description                 |
+| ------------------ | --------------------------- |
+| `pnpm dev`         | Start all apps in dev mode  |
+| `pnpm build`       | Build all apps and packages |
+| `pnpm lint`        | Lint all workspaces         |
+| `pnpm typecheck`   | Type-check all workspaces   |
+| `pnpm test`        | Run tests                   |
+| `pnpm db:generate` | Generate Prisma client      |
+| `pnpm db:migrate`  | Run Prisma migrations (dev) |
 
-## Cloudflare R2 setup
+## Storage setup
 
-1. Cloudflare Dashboard → **R2 Object Storage** → create bucket (`dadan-assets-dev` for local dev)
-2. **Manage R2 API Tokens** → create token with Object Read & Write
-3. Set in `.env`:
-   - `S3_ENDPOINT=https://<ACCOUNT_ID>.r2.cloudflarestorage.com`
-   - `S3_BUCKET=dadan-assets-dev`
-   - `S3_ACCESS_KEY` / `S3_SECRET_KEY` from the token
-   - `S3_REGION=auto`
+Storage is provider-agnostic and configured via environment variables.
 
-Production uses bucket `dadan-assets` with the same env var pattern.
+### Local (default)
+
+No configuration needed. Files are stored at `/app/uploads` inside the API container.
+
+```env
+STORAGE_PROVIDER=local
+```
+
+### S3-compatible (Cloudflare R2, AWS S3, Hetzner)
+
+```env
+STORAGE_PROVIDER=s3
+S3_ENDPOINT=https://<ACCOUNT_ID>.r2.cloudflarestorage.com
+S3_BUCKET=dadan-assets-dev
+S3_ACCESS_KEY=your-access-key
+S3_SECRET_KEY=your-secret-key
+S3_REGION=auto
+```

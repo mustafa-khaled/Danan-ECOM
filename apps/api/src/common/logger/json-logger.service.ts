@@ -38,7 +38,7 @@ export class JsonLogger extends ConsoleLogger {
     const entry: LogEntry = {
       timestamp: new Date().toISOString(),
       level,
-      message: typeof message === "object" ? message : String(message),
+      message: message instanceof Error ? message.message : typeof message === "object" ? message : String(message),
     };
 
     if (level === "error" && optional.length >= 2) {

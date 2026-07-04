@@ -55,7 +55,7 @@ Root-level setup:
 - turbo.json with pipeline: build, dev, lint, test, db:generate, db:migrate
 - pnpm workspaces
 - .env.example with all required environment variables
-- Docker Compose file for local: postgres, redis, minio (S3-compatible)
+- Docker Compose file for local: postgres, redis (storage is local by default)
 - GitHub Actions CI: lint → typecheck → test → build (all apps)
 - .gitignore including .env files, node_modules, .next, dist
 
@@ -64,10 +64,12 @@ DATABASE_URL
 REDIS_URL
 JWT_SECRET
 HOUSE_KEY_SALT        # bcrypt salt rounds for House Key hashing
-S3_ENDPOINT
-S3_BUCKET
-S3_ACCESS_KEY
-S3_SECRET_KEY
+STORAGE_PROVIDER       # local | s3 | r2 | hetzner
+STORAGE_LOCAL_PATH     # default: /app/uploads
+# S3_ENDPOINT           # uncomment only when STORAGE_PROVIDER != local
+# S3_BUCKET
+# S3_ACCESS_KEY
+# S3_SECRET_KEY
 PAYMENT_PROVIDER_KEY
 PAYMENT_PROVIDER_SECRET
 BASE_URL
@@ -1243,7 +1245,7 @@ Docker:
 - apps/api/Dockerfile (multi-stage: builder + production)
 - apps/web/Dockerfile (multi-stage: builder + production)
 - apps/admin/Dockerfile (multi-stage)
-- docker-compose.prod.yml: api, web, admin, nginx, postgres, redis, minio
+- docker-compose.prod.yml: api, web, nginx, postgres, redis
 
 nginx/nginx.conf:
 - Reverse proxy: / → web app, /api → NestJS API, /admin → admin app

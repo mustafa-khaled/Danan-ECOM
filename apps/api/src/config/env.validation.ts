@@ -37,10 +37,10 @@ export const envSchema = z
   })
   .refine(
     (data) => {
-      if (data.NODE_ENV === "production") {
+      if (data.NODE_ENV === "production" && data.PAYMENT_PROVIDER_KEY) {
         return (
-          data.PAYMENT_PROVIDER_KEY?.startsWith("sk_live_") ||
-          data.PAYMENT_PROVIDER_KEY?.startsWith("sk_test_")
+          data.PAYMENT_PROVIDER_KEY.startsWith("sk_live_") ||
+          data.PAYMENT_PROVIDER_KEY.startsWith("sk_test_")
         );
       }
       return true;
