@@ -22,7 +22,7 @@ function mimeFromKey(key: string): string {
 
 @Controller("uploads")
 export class UploadsController {
-  @Get(":key(*)")
+  @Get("*key")
   async serveFile(@Param("key") key: string, @Res() res: Response): Promise<void> {
     const stream = await storage.createReadStream(key);
     const contentType = mimeFromKey(key);
