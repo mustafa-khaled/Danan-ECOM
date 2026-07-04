@@ -16,10 +16,7 @@
     "typecheck": "tsc --noEmit",
     "lint": "ESLINT_USE_FLAT_CONFIG=false eslint \"src/**/*.ts\""
   },
-  "dependencies": {
-    "@aws-sdk/client-s3": "^3.750.0",
-    "@aws-sdk/s3-request-presigner": "^3.750.0"
-  },
+  "dependencies": {},
   "devDependencies": {
     "@dadan/config": "workspace:*",
     "@types/node": "^22.13.4",

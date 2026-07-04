@@ -1,6 +1,6 @@
 import { PrismaClient } from "../generated/client";
 import * as bcrypt from "bcrypt";
-import { seedR2Placeholders } from "./seed-assets";
+import { seedPlaceholders } from "./seed-assets";
 
 const prisma = new PrismaClient();
 
@@ -17,7 +17,7 @@ async function hashPassword(plain: string): Promise<string> {
 async function main() {
   console.log("Seeding DADAN Dijital database...");
 
-  await seedR2Placeholders();
+  await seedPlaceholders();
 
   const adminPassword = await hashPassword("AdminPass123!");
 

@@ -13,13 +13,18 @@ const PLACEHOLDER_JPEG = Buffer.from(
   "base64",
 );
 
-export async function seedR2Placeholders(): Promise<void> {
-  if (!process.env.S3_ENDPOINT || !process.env.S3_ACCESS_KEY || !process.env.S3_SECRET_KEY) {
-    console.log("Skipping R2 seed assets (S3 env not configured)");
-    return;
+export async function seedPlaceholders(): Promise<void> {
+  const provider = process.env.STORAGE_PROVIDER ?? "local";
+
+  if (provider !== "local") {
+    const missing = [!process.env.S3_ENDPOINT, !process.env.S3_ACCESS_KEY, !process.env.S3_SECRET_KEY];
+    if (missing.some(Boolean)) {
+      console.log("Skipping seed assets (remote storage not configured)");
+      return;
+    }
   }
 
-  console.log("Uploading seed placeholder images to R2...");
+  console.log("Uploading seed placeholder images...");
 
   for (const key of PLACEHOLDER_KEYS) {
     const exists = await storage.exists(key);

@@ -1,9 +1,12 @@
 export interface StorageConfig {
-  endpoint: string;
-  bucket: string;
-  accessKey: string;
-  secretKey: string;
+  provider?: "local" | "s3" | "r2" | "hetzner";
+  localPath?: string;
+  endpoint?: string;
+  bucket?: string;
+  accessKey?: string;
+  secretKey?: string;
   region?: string;
+  forcePathStyle?: boolean;
 }
 
 export interface UploadOptions {
