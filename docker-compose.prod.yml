@@ -1,7 +1,73 @@
+# =============================================================================
+# DADAN Dijital — Production Docker Compose
+#
+# Target: docker compose (v2) on a single Ubuntu VPS — NOT Docker Swarm.
+#
+# Key design decisions:
+#   - Explicit dadan bridge network replaces the implicit default
+#   - deploy: blocks removed (they are Swarm-only and silently ignored by
+#     docker compose); replaced with service-level mem_limit / cpus /
+#     mem_reservation which apply with docker compose up.
+#   - init: true on every service — Docker wraps the process with tini for
+#     reliable PID 1 signal handling and zombie reaping.
+#   - security_opt no-new-privileges prevents privilege escalation
+#     inside containers.
+#   - cap_drop: ALL on every service, with only the minimum cap_add needed
+#     by each entrypoint (postgres/nginx init, nobody else).
+#   - read_only: true on every service — application code cannot be modified
+#     at runtime. Writable paths (/tmp, sockets, caches) are provided via
+#     tmpfs mounts or named volumes where persistence is needed.
+#   - tmpfs mounts for runtime-writable directories that do not need to
+#     survive restarts (/tmp, PID directories, nginx cache).
+#   - stop_grace_period tuned per service (Postgres needs longest — WAL
+#     flush; nginx can stop almost instantly).
+#   - Logging rotation (10 MB per file, 3 rotated files) prevents disk
+#     exhaustion from container stdout.
+#   - healthcheck start_period gives each service time to initialise before
+#     the first check runs, avoiding false alarms during boot.
+#   - env_file only on api — the only service that consumes app-level
+#     environment variables. Postgres/Redis/web/nginx get only the specific
+#     variables they need (explicit environment: blocks), keeping the
+#     attack surface minimal.
+# =============================================================================
+
 services:
+
+  # -----------------------------------------------------------------------
+  # postgres — primary database
+  # -----------------------------------------------------------------------
+  # Internal only: no ports exposed to the host. Accessible only by other
+  # services on the dadan network.
+  #
+  # Capabilities: the entrypoint (gosu + chown) requires CHOWN, DAC_OVERRIDE,
+  # FOWNER, SETGID, and SETUID to set up the data directory and drop
+  # privileges to the postgres user.
+  #
+  # read_only: data directory is a named volume; Unix socket and temp files
+  # use tmpfs.
+  # -----------------------------------------------------------------------
   postgres:
     image: postgres:16-alpine
     restart: unless-stopped
+    init: true
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+    cap_add:
+      - CHOWN
+      - DAC_OVERRIDE
+      - FOWNER
+      - SETGID
+      - SETUID
+    read_only: true
+    tmpfs:
+      - /tmp
+      - /var/run/postgresql
+    stop_grace_period: 60s
+    mem_limit: 1g
+    mem_reservation: 256m
+    cpus: "1.0"
     environment:
       POSTGRES_USER: dadan
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?POSTGRES_PASSWORD is required}
@@ -10,46 +76,101 @@ services:
       - postgres_data:/var/lib/postgresql/data
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U dadan -d dadan"]
-      interval: 5s
+      interval: 10s
       timeout: 5s
       retries: 10
-    deploy:
-      resources:
-        limits:
-          cpus: "1"
-          memory: 1G
-        reservations:
-          memory: 256M
+      start_period: 30s
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
+    networks:
+      - dadan
 
+  # -----------------------------------------------------------------------
+  # redis — rate limiting, JWT deny-list, session cache
+  # -----------------------------------------------------------------------
+  # Internal only: no ports exposed. AOF persistence enabled so rate-limit
+  # state survives container restarts.
+  #
+  # Capabilities: redis runs as the redis user (Dockerfile USER redis).
+  # No special capabilities are required — it binds to port 6379 (unprivileged)
+  # and writes to /data (volume) and /tmp (tmpfs).
+  #
+  # read_only: AOF data directory is a named volume; temp files use tmpfs.
+  # -----------------------------------------------------------------------
   redis:
     image: redis:7-alpine
     restart: unless-stopped
-    command: redis-server --appendonly yes
+    init: true
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+    read_only: true
+    tmpfs:
+      - /tmp
+    stop_grace_period: 30s
+    mem_limit: 256m
+    mem_reservation: 64m
+    cpus: "0.5"
+    command:
+      - redis-server
+      - --appendonly yes
+      - --requirepass ${REDIS_PASSWORD}
     volumes:
       - redis_data:/data
     healthcheck:
       test: ["CMD", "redis-cli", "ping"]
-      interval: 5s
+      interval: 10s
       timeout: 3s
       retries: 10
-    deploy:
-      resources:
-        limits:
-          cpus: "0.5"
-          memory: 256M
-        reservations:
-          memory: 64M
+      start_period: 10s
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
+    networks:
+      - dadan
 
+  # -----------------------------------------------------------------------
+  # api — NestJS REST API
+  # -----------------------------------------------------------------------
+  # Exposed only internally (expose: 4000); reachable by nginx and web via
+  # the dadan network. Loads .env as env_file for convenience while keeping
+  # critical variables declared explicitly for startup validation (:?).
+  #
+  # Capabilities: runs as the nestjs user. No special capabilities needed
+  # (port 4000 is unprivileged, no filesystem writes required).
+  #
+  # read_only: application code cannot be modified at runtime. /tmp is a
+  # tmpfs for Node.js / Prisma temp files.
+  # -----------------------------------------------------------------------
   api:
     build:
       context: .
       dockerfile: apps/api/Dockerfile
     restart: unless-stopped
+    init: true
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+    read_only: true
+    tmpfs:
+      - /tmp
+    stop_grace_period: 30s
+    mem_limit: 512m
+    mem_reservation: 128m
+    cpus: "1.0"
     depends_on:
       postgres:
         condition: service_healthy
       redis:
         condition: service_healthy
+    env_file: .env
     environment:
       NODE_ENV: production
       PORT: 4000
@@ -80,16 +201,30 @@ services:
       interval: 10s
       timeout: 5s
       retries: 5
+      start_period: 40s
     expose:
       - "4000"
-    deploy:
-      resources:
-        limits:
-          cpus: "1"
-          memory: 512M
-        reservations:
-          memory: 128M
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
+    networks:
+      - dadan
 
+  # -----------------------------------------------------------------------
+  # web — Next.js (client app + admin dashboard)
+  # -----------------------------------------------------------------------
+  # Exposed internally (expose: 3000). NEXT_PUBLIC_* values are baked at
+  # build time via build args; the runtime environment only needs NODE_ENV
+  # and API_URL for server-side API calls.
+  #
+  # Capabilities: runs as the nextjs user. No special capabilities needed
+  # (port 3000 is unprivileged).
+  #
+  # read_only: Next.js standalone output is immutable at runtime. /tmp is
+  # a tmpfs for Node.js temp files.
+  # -----------------------------------------------------------------------
   web:
     build:
       context: .
@@ -100,6 +235,18 @@ services:
         NEXT_PUBLIC_PAYMENT_MODE: ${NEXT_PUBLIC_PAYMENT_MODE:-mock}
         NEXT_PUBLIC_VAT_RATE: ${VAT_RATE:-0.15}
     restart: unless-stopped
+    init: true
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+    read_only: true
+    tmpfs:
+      - /tmp
+    stop_grace_period: 30s
+    mem_limit: 512m
+    mem_reservation: 128m
+    cpus: "1.0"
     depends_on:
       api:
         condition: service_healthy
@@ -111,19 +258,53 @@ services:
       interval: 10s
       timeout: 5s
       retries: 5
+      start_period: 30s
     expose:
       - "3000"
-    deploy:
-      resources:
-        limits:
-          cpus: "1"
-          memory: 512M
-        reservations:
-          memory: 128M
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
+    networks:
+      - dadan
 
+  # -----------------------------------------------------------------------
+  # nginx — reverse proxy / TLS termination / rate limiting
+  # -----------------------------------------------------------------------
+  # The ONLY service with host-facing ports. Everything else routes through
+  # nginx. Configuration is bind-mounted from the repo (read-only).
+  #
+  # Capabilities: the master process (root) needs NET_BIND_SERVICE to bind
+  # to port 80, plus SETGID/SETUID to drop privileges for worker processes.
+  # CHOWN and DAC_OVERRIDE are needed for temp directory creation.
+  #
+  # read_only: nginx binary and config are immutable. Temp files, cache,
+  # and PID file use tmpfs.
+  # -----------------------------------------------------------------------
   nginx:
     image: nginx:1.27-alpine
     restart: unless-stopped
+    init: true
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+    cap_add:
+      - CHOWN
+      - DAC_OVERRIDE
+      - SETGID
+      - SETUID
+      - NET_BIND_SERVICE
+    read_only: true
+    tmpfs:
+      - /tmp
+      - /var/run
+      - /var/cache/nginx
+    stop_grace_period: 10s
+    mem_limit: 128m
+    mem_reservation: 32m
+    cpus: "0.5"
     ports:
       - "${HTTP_PORT:-80}:80"
     volumes:
@@ -134,20 +315,37 @@ services:
       api:
         condition: service_healthy
     healthcheck:
-      # /api/ is stripped by nginx, so this reaches the API's /health/live route.
       test:
         ["CMD", "wget", "-q", "--spider", "http://localhost/api/health/live"]
       interval: 30s
       timeout: 10s
       retries: 3
-    deploy:
-      resources:
-        limits:
-          cpus: "0.5"
-          memory: 128M
-        reservations:
-          memory: 32M
+      start_period: 10s
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
+    networks:
+      - dadan
 
+# ---------------------------------------------------------------------------
+# Persistent volumes
+# ---------------------------------------------------------------------------
+# postgres_data: database files (critical — back up via pg_dump)
+# redis_data:    AOF persistence (rate-limit state; loss is non-critical)
+# ---------------------------------------------------------------------------
 volumes:
   postgres_data:
   redis_data:
+
+# ---------------------------------------------------------------------------
+# Explicit bridge network
+# ---------------------------------------------------------------------------
+# All services attach to this single network. Only nginx publishes host
+# ports; postgres and redis are reachable only by name resolution within
+# this network, keeping them internal.
+# ---------------------------------------------------------------------------
+networks:
+  dadan:
+    driver: bridge

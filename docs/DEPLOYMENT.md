@@ -1,6 +1,6 @@
 # DADAN Dijital — Single-Server Deployment Guide
 
-This guide walks through deploying the entire DADAN platform (API + web app + database + Redis + reverse proxy) on **one Linux server** using Docker Compose. Every command is meant to be copy-pasteable.
+This guide walks through deploying the entire DADAN platform (API + web app + database + Redis + reverse proxy) on **one Linux server** using Docker Compose. Every command is meant to be copy-pasteable from a root or `deploy` user shell.
 
 **What runs on the server after this guide:**
 
@@ -8,7 +8,7 @@ This guide walks through deploying the entire DADAN platform (API + web app + da
 | ---------- | -------------------------------- | ------------------------------------------------ | --------------- |
 | `nginx`    | nginx:1.27-alpine                | Public entry point, reverse proxy, rate limiting | 80 (published)  |
 | `web`      | built from `apps/web/Dockerfile` | Next.js app (client + `/admin`)                  | 3000            |
-| `api`      | built from `apps/api/Dockerfile` | NestJS API (runs DB migrations on start)         | 4000            |
+| `api`      | built from `apps/api/Dockerfile` | NestJS API, runs DB migrations on start          | 4000            |
 | `postgres` | postgres:16-alpine               | Database                                         | 5432            |
 | `redis`    | redis:7-alpine                   | Rate limits, JWT deny-list                       | 6379            |
 
@@ -18,49 +18,53 @@ Only nginx is exposed to the internet. Routing: `/` and `/admin` go to the web a
 
 ---
 
-## 1. Server prerequisites
+## 1. Server preparation
 
-Minimum recommended: **2 vCPU, 4 GB RAM, 40 GB SSD**, Ubuntu 22.04/24.04 LTS.
+### 1.1 Minimum requirements
 
-### 1.1 Create a non-root user (if you only have root)
+- **2 vCPU, 4 GB RAM, 40 GB SSD**
+- **Ubuntu 22.04 or 24.04 LTS**
+- Root or sudo access
+- A non-root user with SSH key access (recommended name: `deploy`)
+
+### 1.2 Create a deploy user (if you only have root)
 
 ```bash
 adduser deploy
 usermod -aG sudo deploy
-# Copy your SSH key so you can log in as deploy:
 rsync --archive --chown=deploy:deploy ~/.ssh /home/deploy
 ```
 
 Log out and back in as `deploy`.
 
-### 1.2 Install Docker Engine + Compose plugin
+### 1.3 Install Docker Engine + Compose plugin
 
 ```bash
-# Official Docker install script
 curl -fsSL https://get.docker.com -o get-docker.sh
 sudo sh get-docker.sh
-
-# Let your user run docker without sudo (log out/in afterwards)
 sudo usermod -aG docker $USER
+```
 
-# Verify
+Log out and back in, then verify:
+
+```bash
 docker --version
 docker compose version
 ```
 
-### 1.3 Firewall
+### 1.4 Firewall
 
 ```bash
 sudo ufw allow OpenSSH
 sudo ufw allow 80/tcp
-sudo ufw allow 443/tcp    # only needed if you terminate TLS on the server (section 6B)
+sudo ufw allow 443/tcp        # only if terminating TLS on the server (section 5B)
 sudo ufw enable
 sudo ufw status
 ```
 
 Do **not** open 3000, 4000, 5432, or 6379 — those stay internal to the Docker network.
 
-### 1.4 Basic hardening (recommended)
+### 1.5 Basic hardening
 
 ```bash
 # Automatic security updates
@@ -70,6 +74,10 @@ sudo dpkg-reconfigure -plow unattended-upgrades
 # Disable SSH password login (make sure your key works first!)
 sudo sed -i 's/^#\?PasswordAuthentication.*/PasswordAuthentication no/' /etc/ssh/sshd_config
 sudo systemctl restart ssh
+
+# Reduce swappiness for Docker
+sudo sysctl -w vm.swappiness=10
+echo "vm.swappiness=10" | sudo tee -a /etc/sysctl.conf
 ```
 
 ---
@@ -87,7 +95,7 @@ sudo systemctl restart ssh
 
 ---
 
-## 3. Get the code onto the server
+## 3. Clone the repository
 
 ```bash
 cd ~
@@ -95,37 +103,35 @@ git clone <YOUR_REPO_URL> danan
 cd danan
 ```
 
-For later updates you will `git pull` in this directory and rebuild (section 8).
+For later updates you will use `./deploy.sh` from this directory (section 7).
 
 ---
 
-## 4. Create the production `.env`
+## 4. Environment variables
 
-The production compose file (`docker-compose.prod.yml`) reads variables from a `.env` file in the repo root. Create it:
+The production compose file (`docker-compose.prod.yml`) reads variables from a `.env` file in the repo root.
+
+### 4.1 Generate secrets
 
 ```bash
 cd ~/danan
-touch .env
-chmod 600 .env    # only your user can read it
-nano .env
-```
-
-### 4.1 Generate the secrets first
-
-Run these and paste the output into the file below:
-
-```bash
 openssl rand -hex 24        # -> POSTGRES_PASSWORD
 openssl rand -base64 48     # -> JWT_SECRET
 openssl rand -base64 32     # -> CERT_SIGNING_SECRET
 ```
 
-### 4.2 Production `.env` template
+### 4.2 Create `.env`
+
+```bash
+touch .env
+chmod 600 .env    # only your user can read it
+nano .env
+```
+
+Paste the following template, replacing each `<...>` with the generated values and your real configuration:
 
 ```bash
 # ---------- Database ----------
-# Password for the Postgres container. DATABASE_URL is assembled automatically
-# inside docker-compose.prod.yml - you only set the password here.
 POSTGRES_PASSWORD=<output of openssl rand -hex 24>
 
 # ---------- Secrets ----------
@@ -136,14 +142,10 @@ CLIENT_SESSION_DAYS=7
 
 # ---------- Public URLs ----------
 # Set BOTH to the exact public origin users will visit.
-# With a domain + HTTPS:            https://dadan.example.com
-# IP-only (section 6C):             http://203.0.113.10
 BASE_URL=https://dadan.example.com
 WEB_ORIGIN=https://dadan.example.com
 
 # ---------- Cookies ----------
-# true when the site is served over HTTPS (sections 6A/6B).
-# MUST be false for IP-only plain HTTP (section 6C), otherwise login breaks.
 COOKIE_SECURE=true
 
 # ---------- Cloudflare R2 (from section 2) ----------
@@ -154,16 +156,12 @@ S3_SECRET_KEY=<r2 secret access key>
 S3_REGION=auto
 
 # ---------- Payments ----------
-# Production REQUIRES a valid Stripe secret key (sk_live_* or sk_test_*).
-# The API refuses to start in production without one.
-PAYMENT_PROVIDER_KEY=sk_test_...
+PAYMENT_PROVIDER_KEY=sk_live_...
 PAYMENT_PROVIDER_SECRET=whsec_...
 VAT_RATE=0.15
-# Keep "mock" until Stripe Elements is integrated in the web checkout;
-# any other value disables the online checkout button with a notice.
 NEXT_PUBLIC_PAYMENT_MODE=mock
 
-# ---------- Email (optional; leave empty to log emails instead of sending) ----------
+# ---------- Email (optional; leave empty to log instead) ----------
 ADMIN_EMAIL=admin@dadan.sa
 SMTP_HOST=
 SMTP_PORT=
@@ -172,14 +170,14 @@ SMTP_PASS=
 
 # ---------- Misc ----------
 PDF_WATERMARK_TEXT=DADAN DIJITAL — AUTHENTICATED
-# Host port nginx binds to (leave 80 unless something else uses it)
 HTTP_PORT=80
+REDIS_PASSWORD=
 ```
 
-Notes:
-
-- `NEXT_PUBLIC_API_URL` is **not** set here for production — `docker-compose.prod.yml` passes `/api` as a build argument automatically, matching the nginx route.
-- `DATABASE_URL` and `REDIS_URL` are also **not** needed — the compose file wires the containers together internally.
+**Important notes:**
+- `NEXT_PUBLIC_API_URL` is **not** set here — `docker-compose.prod.yml` passes `/api` as a build argument automatically.
+- `DATABASE_URL` and `REDIS_URL` are also **not** needed — the compose file wires internal container names.
+- Store a copy of this `.env` in a password manager. Losing `CERT_SIGNING_SECRET` invalidates every certificate QR token.
 
 ---
 
@@ -220,9 +218,9 @@ docker compose -f docker-compose.prod.yml logs -f web
 docker compose -f docker-compose.prod.yml logs -f nginx
 ```
 
-### 5.3 Create the first SUPER_ADMIN (do NOT run the seed)
+### 5.3 Create the first SUPER_ADMIN
 
-The dev seed (`pnpm db:seed`) creates demo clients with published keys and a well-known admin password — **never run it against production**. Instead, create your real admin directly:
+**Never run `pnpm db:seed` against production** — it creates demo data with well-known passwords. Instead, create your real admin directly:
 
 ```bash
 docker compose -f docker-compose.prod.yml exec \
@@ -249,188 +247,162 @@ const { prisma } = require("@dadan/db");
 })().catch((e) => { console.error(e); process.exit(1); });'
 ```
 
-Then log in at `https://your-domain/admin/login` and create clients, collections, designs, and pieces through the admin API. Clear the shell history afterwards if you typed the password inline: `history -c`.
+Then log in at `https://your-domain/admin/login`. Clear shell history afterwards if you typed the password inline: `history -c`.
 
 ---
 
-## 6. Making it reachable: domain/TLS options
+## 6. Making it reachable: domain / TLS options
 
 Pick **one** of the three options below.
 
-### Option A — Domain behind Cloudflare (recommended, easiest TLS)
+### 6A — Domain behind Cloudflare (recommended, easiest TLS)
 
 Since you already use Cloudflare for R2, this is the least work:
 
-1. Add a DNS **A record** for your domain/subdomain pointing to the server IP, with the **orange cloud (proxied) enabled**.
-2. In Cloudflare **SSL/TLS settings choose "Full"** (not "Flexible" — Flexible sends plain HTTP with `X-Forwarded-Proto: https` mismatches and can cause redirect loops). With "Full", install a Cloudflare **Origin Certificate** on the server (Cloudflare dashboard → SSL/TLS → Origin Server → Create Certificate) and follow Option B's nginx TLS setup using that certificate instead of Let's Encrypt — or use "Full (strict)" the same way.
-   - Quick alternative: choose **"Flexible"** only if you cannot install a certificate; the repo's nginx already redirects `X-Forwarded-Proto: http` traffic to HTTPS. Be aware Flexible means Cloudflare→server traffic is unencrypted.
-3. Set in `.env`: `BASE_URL`/`WEB_ORIGIN` to `https://your-domain`, `COOKIE_SECURE=true`.
-4. Rebuild and restart (section 8) if you changed `.env`.
+1. Add a DNS **A record** for your domain/subdomain pointing to the server IP, with the **orange cloud (proxied)** enabled.
+2. In Cloudflare **SSL/TLS** settings choose **"Full"** (strict). This requires an origin certificate:
+   - Cloudflare dashboard → **SSL/TLS → Origin Server → Create Certificate**.
+   - Save the certificate and private key to the server (e.g. `/etc/ssl/cloudflare/`).
+   - Follow the TLS nginx setup in section 6B using these files instead of Let's Encrypt.
+3. `.env` settings:
+   ```
+   BASE_URL=https://your-domain
+   WEB_ORIGIN=https://your-domain
+   COOKIE_SECURE=true
+   ```
+4. Rebuild and restart (section 7).
 
-### Option B — Domain with Let's Encrypt on the server
+### 6B — Domain with Let's Encrypt on the server
 
 Use this if the domain points **directly** at the server (grey cloud / no Cloudflare proxy).
 
-1. Point your DNS A record at the server IP and wait for it to propagate (`dig +short your-domain`).
+1. Point your DNS at the server IP and wait for propagation: `dig +short your-domain`.
+2. Get a certificate:
 
-2. Get a certificate with certbot in standalone mode (nginx must be stopped for a minute):
+   ```bash
+   sudo apt install -y certbot
+   docker compose -f docker-compose.prod.yml stop nginx
+   sudo certbot certonly --standalone -d your-domain --agree-tos -m you@yourcompany.com
+   ```
 
-```bash
-sudo apt install -y certbot
-docker compose -f docker-compose.prod.yml stop nginx
-sudo certbot certonly --standalone -d your-domain --agree-tos -m you@yourcompany.com
-```
+   Certificates land in `/etc/letsencrypt/live/your-domain/`.
 
-Certificates land in `/etc/letsencrypt/live/your-domain/`.
+3. Create `nginx/nginx-tls.conf` — a copy of `nginx/nginx.conf` with a TLS server block on port 443. See the template in `docs/DEPLOYMENT_LE.md` or copy from the existing `nginx/nginx.conf` and add a `listen 443 ssl;` server block.
 
-3. Create a TLS-enabled nginx config `nginx/nginx-tls.conf` (copy of `nginx/nginx.conf` with a 443 server). Full file:
+4. Create `docker-compose.tls.yml` in the repo root:
 
-```nginx
-worker_processes auto;
-
-events {
-  worker_connections 1024;
-}
-
-http {
-  include /etc/nginx/mime.types;
-  default_type application/octet-stream;
-
-  sendfile on;
-  keepalive_timeout 65;
-
-  limit_req_zone $binary_remote_addr zone=api_limit:10m rate=20r/s;
-  limit_req_zone $binary_remote_addr zone=general_limit:10m rate=60r/s;
-
-  upstream web_app {
-    server web:3000;
-  }
-
-  upstream api_app {
-    server api:4000;
-  }
-
-  # Redirect all HTTP to HTTPS
-  server {
-    listen 80;
-    server_name _;
-    return 301 https://$host$request_uri;
-  }
-
-  server {
-    listen 443 ssl;
-    http2 on;
-    server_name your-domain;
-
-    ssl_certificate     /etc/letsencrypt/live/your-domain/fullchain.pem;
-    ssl_certificate_key /etc/letsencrypt/live/your-domain/privkey.pem;
-    ssl_protocols TLSv1.2 TLSv1.3;
-
-    add_header X-Frame-Options "DENY" always;
-    add_header X-Content-Type-Options "nosniff" always;
-    add_header Referrer-Policy "strict-origin-when-cross-origin" always;
-    add_header Strict-Transport-Security "max-age=31536000; includeSubDomains" always;
-
-    location /api/ {
-      limit_req zone=api_limit burst=40 nodelay;
-      proxy_pass http://api_app/;
-      proxy_http_version 1.1;
-      proxy_set_header Host $host;
-      proxy_set_header X-Real-IP $remote_addr;
-      proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
-      proxy_set_header X-Forwarded-Proto https;
-    }
-
-    location / {
-      limit_req zone=general_limit burst=100 nodelay;
-      proxy_pass http://web_app;
-      proxy_http_version 1.1;
-      proxy_set_header Host $host;
-      proxy_set_header X-Real-IP $remote_addr;
-      proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
-      proxy_set_header X-Forwarded-Proto https;
-    }
-  }
-}
-```
-
-4. Create a compose override `docker-compose.tls.yml` in the repo root:
-
-```yaml
-services:
-  nginx:
-    ports:
-      - "80:80"
-      - "443:443"
-    volumes:
-      - ./nginx/nginx-tls.conf:/etc/nginx/nginx.conf:ro
-      - /etc/letsencrypt:/etc/letsencrypt:ro
-    healthcheck:
-      test:
-        [
-          "CMD",
-          "wget",
-          "-q",
-          "--spider",
-          "--no-check-certificate",
-          "https://localhost/api/health/live",
-        ]
-```
+   ```yaml
+   services:
+     nginx:
+       ports:
+         - "80:80"
+         - "443:443"
+       volumes:
+         - ./nginx/nginx-tls.conf:/etc/nginx/nginx.conf:ro
+         - /etc/letsencrypt:/etc/letsencrypt:ro
+       healthcheck:
+         test:
+           - "CMD"
+           - "wget"
+           - "-q"
+           - "--spider"
+           - "--no-check-certificate"
+           - "https://localhost/api/health/live"
+   ```
 
 5. Start with both files (use this pair for every compose command from now on):
 
-```bash
-docker compose -f docker-compose.prod.yml -f docker-compose.tls.yml up -d
+   ```bash
+   docker compose -f docker-compose.prod.yml -f docker-compose.tls.yml up -d
+   ```
+
+6. Auto-renewal hooks:
+
+   ```bash
+   sudo tee /etc/letsencrypt/renewal-hooks/deploy/reload-nginx.sh > /dev/null <<'EOF'
+   #!/bin/sh
+   cd /home/deploy/danan && docker compose -f docker-compose.prod.yml -f docker-compose.tls.yml restart nginx
+   EOF
+   sudo chmod +x /etc/letsencrypt/renewal-hooks/deploy/reload-nginx.sh
+
+   sudo tee /etc/letsencrypt/renewal-hooks/pre/stop-nginx.sh > /dev/null <<'EOF'
+   #!/bin/sh
+   cd /home/deploy/danan && docker compose -f docker-compose.prod.yml -f docker-compose.tls.yml stop nginx
+   EOF
+   sudo tee /etc/letsencrypt/renewal-hooks/post/start-nginx.sh > /dev/null <<'EOF'
+   #!/bin/sh
+   cd /home/deploy/danan && docker compose -f docker-compose.prod.yml -f docker-compose.tls.yml start nginx
+   EOF
+   sudo chmod +x /etc/letsencrypt/renewal-hooks/pre/stop-nginx.sh /etc/letsencrypt/renewal-hooks/post/start-nginx.sh
+   ```
+
+7. Test renewal: `sudo certbot renew --dry-run`.
+
+### 6C — IP only, plain HTTP (temporary / testing)
+
+Works out of the box with the stock `docker-compose.prod.yml`. `.env` settings:
+
 ```
-
-6. Auto-renewal — certbot renews via a systemd timer, but nginx must reload to pick up new certs. Add a renewal hook:
-
-```bash
-sudo tee /etc/letsencrypt/renewal-hooks/deploy/reload-nginx.sh > /dev/null <<'EOF'
-#!/bin/sh
-cd /home/deploy/danan && docker compose -f docker-compose.prod.yml -f docker-compose.tls.yml restart nginx
-EOF
-sudo chmod +x /etc/letsencrypt/renewal-hooks/deploy/reload-nginx.sh
-```
-
-Note: renewals in standalone mode need port 80 free; since our nginx serves port 80, switch renewals to webroot mode or briefly stop nginx via a pre-hook. Simplest pre/post hooks:
-
-```bash
-sudo tee /etc/letsencrypt/renewal-hooks/pre/stop-nginx.sh > /dev/null <<'EOF'
-#!/bin/sh
-cd /home/deploy/danan && docker compose -f docker-compose.prod.yml -f docker-compose.tls.yml stop nginx
-EOF
-sudo tee /etc/letsencrypt/renewal-hooks/post/start-nginx.sh > /dev/null <<'EOF'
-#!/bin/sh
-cd /home/deploy/danan && docker compose -f docker-compose.prod.yml -f docker-compose.tls.yml start nginx
-EOF
-sudo chmod +x /etc/letsencrypt/renewal-hooks/pre/stop-nginx.sh /etc/letsencrypt/renewal-hooks/post/start-nginx.sh
-```
-
-7. `.env`: `BASE_URL`/`WEB_ORIGIN` = `https://your-domain`, `COOKIE_SECURE=true`. Rebuild (section 8).
-
-### Option C — IP only, plain HTTP (temporary / testing)
-
-Works out of the box with the stock `docker-compose.prod.yml`, but with important caveats:
-
-1. `.env` settings:
-
-```bash
 BASE_URL=http://<SERVER_IP>
 WEB_ORIGIN=http://<SERVER_IP>
-COOKIE_SECURE=false      # REQUIRED - Secure cookies are dropped over plain HTTP
+COOKIE_SECURE=false
 ```
 
-2. Understand the risks while running this way:
-   - Sessions, House Keys, and admin passwords travel **unencrypted**. Do not onboard real clients or use real House Keys until TLS is on.
-   - Certificate QR verify links will embed the IP-based `BASE_URL`; certificates generated now will need regeneration after you move to a domain.
-3. When you later get a domain: update `BASE_URL`, `WEB_ORIGIN`, `COOKIE_SECURE=true` in `.env`, then follow Option A or B and rebuild (section 8). Regenerate any issued certificates (SUPER_ADMIN: `POST /api/admin/certificates/regenerate/:pieceId`) so their QR links point at the new domain.
+**Risks:** Sessions, House Keys, and admin passwords travel unencrypted. Do not onboard real clients until TLS is on. Certificate QR links embed the IP-based URL and will need regeneration if you later move to a domain.
 
 ---
 
-## 7. Backups
+## 7. Updating / redeploying
 
-### 7.1 Database — nightly `pg_dump`
+Use `deploy.sh` for a single-command deploy with automatic rollback:
+
+```bash
+cd ~/danan
+
+# Standard deploy (pulls, builds, restarts, verifies health)
+./deploy.sh
+
+# With TLS compose override
+./deploy.sh -t
+
+# Skip pre-deploy backup (faster for quick fixes)
+./deploy.sh -s
+
+# Dry-run (show what would happen)
+./deploy.sh -d
+```
+
+**What `deploy.sh` does:**
+
+| Step | Description |
+|------|-------------|
+| Pre-flight | Checks git, docker, docker compose, clean working tree, valid compose files |
+| State record | Saves current commit hash and container health snapshot |
+| Pre-deploy backup | `pg_dump` → `pre-deploy-dadan-*.sql.gz` (skip with `-s`) |
+| `git pull` | Fetches latest code. Idempotent — no-op if already at latest |
+| Build | `docker compose build` (BuildKit cache reuse) |
+| Restart | `docker compose up -d` (only recreates changed containers) |
+| Health poll | Waits up to 120s per service: postgres → redis → api → web → nginx |
+| On failure | Auto-rollback: `git checkout` previous commit → rebuild → restart → re-verify |
+| Success | Prints coloured summary, prunes old Docker images |
+
+### Manual rollback
+
+```bash
+git log --oneline -5
+git checkout <good-commit>
+docker compose -f docker-compose.prod.yml up -d --build
+```
+
+**Database note:** Prisma migrations are forward-only. Rolling back code that depends on a newer schema usually still works (columns are additive), but check `packages/db/prisma/migrations/` before rolling back across a migration boundary. Worst case, restore the DB from a backup (section 8).
+
+---
+
+## 8. Backup
+
+Two scripts at the repo root handle backup and restore. They require no external dependencies beyond bash/coreutils/gzip/docker and log every action.
+
+### 8.1 Database — nightly `backup.sh`
 
 ```bash
 mkdir -p ~/backups
@@ -441,119 +413,381 @@ Add:
 
 ```cron
 # Nightly Postgres dump at 03:15, keep 14 days
-15 3 * * * docker compose -f /home/deploy/danan/docker-compose.prod.yml exec -T postgres pg_dump -U dadan dadan | gzip > /home/deploy/backups/dadan-$(date +\%F).sql.gz && find /home/deploy/backups -name 'dadan-*.sql.gz' -mtime +14 -delete
+15 3 * * * /home/deploy/danan/backup.sh -v >> /home/deploy/danan/cron.log 2>&1
 ```
 
-Copy backups **off the server** regularly (e.g. `rclone` to R2 or any object storage):
+**What `backup.sh` does:**
+1. Validates Docker, docker compose, and the compose file exist.
+2. Checks the `postgres` container is healthy before proceeding.
+3. Runs `pg_dump --clean --if-exists` via `docker compose exec -T`, pipes through `gzip`, writes a timestamped file (`dadan-YYYY-MM-DD_HHMMSS.sql.gz`).
+4. Validates the archive (`gunzip -t`).
+5. Prunes backups older than the retention period (default 14 days; set with `-k`).
+6. Logs everything to `~/backups/backup.log`.
+
+Full usage:
+
+```bash
+./backup.sh                              # defaults: ~/backups, 14-day retention
+./backup.sh -o /custom/path              # custom output directory
+./backup.sh -f docker-compose.tls.yml    # alternate compose file
+./backup.sh -k 30                        # keep 30 days
+./backup.sh -v                           # verbose
+```
+
+### Off-site copies
+
+Copy backups off the server regularly (e.g. `rclone` to R2):
 
 ```bash
 # Example with rclone configured for R2:
 # rclone copy ~/backups r2:dadan-backups/db
 ```
 
-### 7.2 Restore procedure
+### 8.2 Restore
 
 ```bash
-gunzip -c ~/backups/dadan-2026-07-02.sql.gz | \
-  docker compose -f docker-compose.prod.yml exec -T postgres psql -U dadan dadan
+# List available backups (newest first)
+./restore.sh
+
+# Restore a specific backup
+./restore.sh dadan-2026-07-04_031500.sql.gz
 ```
 
-### 7.3 R2 assets
+**Safety features:**
+1. Validates the gzip archive with `gunzip -t` before touching the database.
+2. Shows a summary (file size, creation date, target database) and requires typing `yes` to confirm.
+3. **Automatically creates a pre-restore snapshot** (`pre-restore-dadan-*.sql.gz`) so you can roll back instantly.
+4. After restore, queries `information_schema.tables` to verify the database has content.
+5. If validation fails, prints the exact command to restore the pre-restore snapshot.
 
-R2 already stores images and certificate PDFs redundantly. Certificate PDFs can also be regenerated from the DB at any time, so DB backups are the critical piece.
+### 8.3 R2 assets
 
-### 7.4 The `.env` file
+Cloudflare R2 already stores images and certificate PDFs redundantly. Certificate PDFs can be regenerated from the DB at any time, so DB backups are the critical piece.
 
-Keep an encrypted copy of `.env` somewhere safe (password manager). Losing `CERT_SIGNING_SECRET` invalidates every issued certificate QR token; losing `JWT_SECRET` just logs everyone out.
+### 8.4 `.env` file
+
+Keep an encrypted copy of `.env` in a password manager. Losing `CERT_SIGNING_SECRET` invalidates every issued certificate QR token; losing `JWT_SECRET` logs everyone out until a new one is set.
 
 ---
 
-## 8. Updating / redeploying
+## 9. Scaling
 
-```bash
-cd ~/danan
-git pull
+The current architecture is single-server Docker Compose. It is not designed for horizontal scaling out of the box, but you can optimise within these limits.
 
-# Rebuild only what changed and restart. Migrations run automatically on API start.
-docker compose -f docker-compose.prod.yml up -d --build
+### 9.1 Vertical scaling (upgrading the server)
 
-# (Add -f docker-compose.tls.yml if you use Option B)
+| Resource | Minimum | Recommended |
+|----------|---------|-------------|
+| vCPU | 2 | 4 |
+| RAM | 4 GB | 8 GB |
+| Disk | 40 GB SSD | 80 GB SSD |
+
+### 9.2 Tuning resource limits
+
+Resource limits per service are set in `docker-compose.prod.yml`. If you hit memory limits (container restarts with code 137), increase `mem_limit` for the affected service:
+
+```yaml
+api:
+  mem_limit: 1g      # default: 512m
+  mem_reservation: 256m
+  cpus: "2.0"        # default: "1.0"
 ```
 
-Zero-ish downtime notes:
+### 9.3 Connection pooling
 
-- `docker compose up -d --build` recreates only containers whose image changed.
-- The API entrypoint runs `prisma migrate deploy` before serving; brief API unavailability (~seconds) during restart is expected.
-- If you changed any `NEXT_PUBLIC_*` value or `VAT_RATE` in `.env`, the **web image must be rebuilt** (these are baked in at build time): `docker compose -f docker-compose.prod.yml build web && docker compose -f docker-compose.prod.yml up -d web`.
+The API connects to PostgreSQL directly via Prisma. Under high load (50+ concurrent requests), Postgres may exhaust `max_connections`. To scale without changing the architecture:
 
-### Rollback
+- Increase `max_connections` in `postgres` configuration (via postgres image env or custom config).
+- Add PgBouncer as a sidecar container — see `dokku/` or `pgbouncer` Docker image.
 
-```bash
-git log --oneline -5          # find the last good commit
-git checkout <good-commit>
-docker compose -f docker-compose.prod.yml up -d --build
-```
+### 9.4 Redis
 
-Database note: Prisma migrations are forward-only. Rolling back code that depends on a newer schema usually still works (columns are additive so far), but check `packages/db/prisma/migrations/` before rolling back across a migration boundary. Worst case, restore the DB from the nightly dump (7.2).
+Redis usage is light (rate limiting, JWT deny-list). The default `256m` limit is sufficient for tens of thousands of rate-limit entries.
+
+### 9.5 Monitoring for scaling decisions
+
+Enable the monitoring stack (section 10) to track per-container CPU and memory usage over time. When any service consistently hits 80%+ of its `mem_limit` or `cpus`, increase its allocation.
+
+### 9.6 When to consider multi-server
+
+Signs that single-server is becoming a bottleneck:
+
+- CPU or memory usage exceeds 80% consistently.
+- Postgres query times degrade under load.
+- Disk I/O latency increases (monitor with iostat).
+- TLS termination + proxy + app + database on one machine causes resource contention.
+
+At that point, consider: splitting Postgres/Redis to a separate server, adding a CDN for static assets, or migrating to a container orchestrator (Kubernetes, Nomad).
 
 ---
 
-## 9. Operations cheat sheet
+## 10. Observability
+
+### 10.1 Always-on features (no setup required)
+
+| Feature | Implementation |
+|---------|---------------|
+| Health endpoint | `GET /api/health` (Prisma + Redis) |
+| Liveness probe | `GET /api/health/live` (lightweight) |
+| Readiness probe | `GET /api/health/ready` (Prisma + Redis) |
+| JSON access log (API) | `apps/api/src/common/logger/json-logger.service.ts` |
+| Request ID tracing | `x-request-id` header on every response |
+| JSON access log (nginx) | `log_format json` in `nginx/nginx.conf` |
+
+### 10.2 Monitoring stack (optional)
+
+Enable Prometheus + Grafana + Loki + cAdvisor + Promtail with a single flag:
 
 ```bash
-# Status of everything
+docker compose -f docker-compose.prod.yml -f docker-compose.monitoring.yml up -d
+```
+
+This adds:
+
+| Service | Function | Port |
+|---------|----------|------|
+| cAdvisor | Container resource metrics | 8080 (internal) |
+| Prometheus | Time-series database | 9090 (internal) |
+| Loki | Log aggregation | 3100 (internal) |
+| Promtail | Ships Docker logs to Loki | — |
+| Grafana | Dashboards (metrics + logs) | 3001 (localhost only) |
+
+Access Grafana via SSH tunnel: `ssh -L 3001:localhost:3001 deploy@your-server`. Default login: `admin` / `admin`.
+
+Full details in [MONITORING.md](MONITORING.md).
+
+---
+
+## 11. Operations cheat sheet
+
+```bash
+# Status
 docker compose -f docker-compose.prod.yml ps
 
-# Tail logs (all / one service)
+# Logs (all / one service)
 docker compose -f docker-compose.prod.yml logs -f --tail=100
 docker compose -f docker-compose.prod.yml logs -f api
 
-# Restart one service
+# Restart a single service
 docker compose -f docker-compose.prod.yml restart api
 
-# Shell into the API container
+# Shell into a container
 docker compose -f docker-compose.prod.yml exec api sh
-
-# psql console
 docker compose -f docker-compose.prod.yml exec postgres psql -U dadan dadan
-
-# Redis console
 docker compose -f docker-compose.prod.yml exec redis redis-cli
 
-# Disk usage of images/volumes; prune old build layers
+# Disk usage
 docker system df
 docker image prune -f
+
+# Full rebuild without cache
+docker compose -f docker-compose.prod.yml build --no-cache
+docker compose -f docker-compose.prod.yml up -d
 ```
 
 ---
 
-## 10. Troubleshooting
+## 12. Troubleshooting
 
-| Symptom                                                               | Likely cause                                                                                              | Fix                                                                                                                                            |
-| --------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------- | ----------- |
-| `api` container restarting, logs show `Environment validation failed` | Missing/invalid var in `.env` (e.g. `JWT_SECRET` < 32 chars, missing `S3_*`, no Stripe key in production) | Fix `.env`, then `docker compose -f docker-compose.prod.yml up -d api`                                                                         |
-| `api` unhealthy, logs show Prisma `P1001`                             | Postgres not ready or wrong `POSTGRES_PASSWORD` after a volume already exists                             | Password is set on first volume creation; either keep the original password or reset the volume (`docker compose down -v` — **destroys data**) |
-| Login works but you're logged out immediately / cookie never set      | `COOKIE_SECURE=true` while serving plain HTTP                                                             | Set `COOKIE_SECURE=false` (HTTP) or enable TLS                                                                                                 |
-| Browser API calls fail with CORS errors                               | `WEB_ORIGIN`/`BASE_URL` don't match the URL in the address bar exactly (scheme, host, port)               | Correct them in `.env`, restart `api`                                                                                                          |
-| All API requests 404 through the proxy                                | Web was built with the wrong `NEXT_PUBLIC_API_URL`                                                        | Must be `/api` in production (the compose file passes it automatically); rebuild `web`                                                         |
-| Images/certificates fail to load                                      | Bad R2 credentials or bucket name                                                                         | Check `S3_*` vars; `docker compose ... logs api                                                                                                | grep -i s3` |
-| `nginx` unhealthy                                                     | API not healthy (healthcheck goes through `/api/health/live`)                                             | Fix the API first; nginx recovers automatically                                                                                                |
-| 429 Too Many Requests                                                 | nginx rate limits (20 r/s API, 60 r/s general) or app-level limits (5 login attempts / 15 min)            | Expected under abuse; adjust `nginx/nginx.conf` zones if legitimate traffic is hit                                                             |
-| Emails not arriving                                                   | SMTP vars empty (emails are only logged)                                                                  | Fill `SMTP_*` in `.env`, restart `api`                                                                                                         |
-| Disk filling up                                                       | Old Docker build layers                                                                                   | `docker image prune -f`; check backup retention                                                                                                |
+### 12.1 Container states and what they mean
+
+```
+$ docker compose ps
+NAME                STATUS
+dadan-postgres-1    Up 3 days (healthy)
+dadan-redis-1       Up 3 days (healthy)
+dadan-api-1         Up 2 days (healthy)
+dadan-web-1         Up 2 days (healthy)
+dadan-nginx-1       Up 2 days (healthy)
+```
+
+| STATUS | Meaning |
+|--------|---------|
+| `Up (healthy)` | Running and passing health checks |
+| `Up (unhealthy)` | Running but failing health checks (usually a dep is down) |
+| `Restarting` | Docker restart policy triggered (crash loop) |
+| `Exited (1)` | Container exited with error — check logs |
+
+### 12.2 Symptom → cause → fix
+
+| Symptom | Likely cause | Fix |
+|---------|-------------|-----|
+| `api` restarting, logs show `Environment validation failed` | Missing/invalid `.env` var | Fix `.env`, then `docker compose up -d api` |
+| `api` unhealthy, logs show Prisma `P1001` | Postgres not ready or wrong `POSTGRES_PASSWORD` after volume re-create | Keep the original password or reset the volume (`docker compose down -v` — **destroys data**) |
+| Login works but you're logged out immediately | `COOKIE_SECURE=true` over plain HTTP | Set `COOKIE_SECURE=false` (HTTP) or enable TLS |
+| Browser API calls fail with CORS errors | `WEB_ORIGIN`/`BASE_URL` don't match the URL in the address bar | Correct them in `.env`, restart `api` |
+| All API requests 404 through nginx | Web built with wrong `NEXT_PUBLIC_API_URL` | Must be `/api` in production (compose passes it automatically); rebuild `web` |
+| Images/certificates fail to load | Bad R2 credentials or bucket name | Check `S3_*` vars; `docker compose logs api \| grep -i s3` |
+| `nginx` unhealthy | API not healthy (healthcheck goes through `/api/health/live`) | Fix the API first; nginx recovers automatically |
+| `429 Too Many Requests` | nginx rate limits (20 r/s API, 60 r/s general) | Adjust `nginx/nginx.conf` zones if legitimate traffic is hitting limits |
+| Emails not arriving | SMTP vars empty | Fill `SMTP_*` in `.env`, restart `api` |
+| Container exits with code 137 | Out of memory (OOM killed) | Increase `mem_limit` for that service in compose |
+| Disk filling up | Old Docker build layers or backups | `docker image prune -f`; check backup retention (`-k` flag) |
+| `api` slow after running for days | Memory leak or Postgres query degradation | Restart the API: `docker compose restart api`; if recurring, profile with Grafana (section 10) |
+
+### 12.3 Emergency commands
+
+```bash
+# Restart everything
+docker compose -f docker-compose.prod.yml restart
+
+# Stop everything (preserves volumes)
+docker compose -f docker-compose.prod.yml down
+
+# Stop everything and delete volumes (DATA LOSS — only for fresh start)
+docker compose -f docker-compose.prod.yml down -v
+
+# Reset a single service (rebuild from scratch)
+docker compose -f docker-compose.prod.yml rm -fs api
+docker compose -f docker-compose.prod.yml up -d --build api
+
+# Inspect environment variables in a running container
+docker compose -f docker-compose.prod.yml exec api env | grep -E 'JWT|S3|POSTGRES'
+```
 
 ---
 
-## 11. Production go-live checklist
+## 13. Disaster recovery
+
+### 13.1 Recovery tiers
+
+| Tier | RPO (data loss) | RTO (downtime) | How |
+|------|-----------------|----------------|-----|
+| Nightly backup | Up to 24 hours | ~30 minutes | `./restore.sh` from `~/backups` |
+| Pre-deploy backup | ~5 minutes | ~30 minutes | `./restore.sh` from `pre-deploy-*.sql.gz` |
+| Full server rebuild | Up to 24 hours | ~2 hours | Re-provision server + restore from off-site copy |
+
+### 13.2 Full server failure
+
+If the server is completely lost (disk failure, ransomware, provider termination):
+
+1. Provision a new Ubuntu server (section 1).
+2. Install Docker (section 1.3).
+3. Clone the repository (section 3), checkout the same commit.
+4. Create `.env` with the same secrets (from your password manager backup).
+5. Restore the latest database dump:
+
+   ```bash
+   # If off-site copy exists (e.g. R2):
+   rclone copy r2:dadan-backups/db/dadan-2026-07-04_031500.sql.gz ~/backups/
+
+   # Restore
+   cd ~/danan
+   docker compose -f docker-compose.prod.yml up -d postgres redis
+   ./restore.sh ~/backups/dadan-2026-07-04_031500.sql.gz
+   ```
+
+6. Start everything:
+
+   ```bash
+   docker compose -f docker-compose.prod.yml up -d --build
+   ```
+
+### 13.3 Database corruption
+
+1. Stop all services that depend on the database:
+
+   ```bash
+   docker compose -f docker-compose.prod.yml stop api web nginx
+   ```
+
+2. Restore from the most recent known-good backup:
+
+   ```bash
+   ./restore.sh dadan-2026-07-04_031500.sql.gz
+   ```
+
+3. Start everything again:
+
+   ```bash
+   docker compose -f docker-compose.prod.yml start
+   ```
+
+### 13.4 Accidental `.env` deletion
+
+Your `.env` should be backed up in a password manager. If lost and no backup exists:
+
+1. Generate new secrets (section 4.1).
+2. Update `.env` with the new secrets.
+3. If `POSTGRES_PASSWORD` changed, the postgres volume will reject the new password. Either:
+   - Reset the volume: `docker compose down -v && docker compose up -d --build` (**destroys all data**), then restore from backup (section 13.3).
+   - Or recover the old password from the running container: `docker compose exec postgres env | grep POSTGRES_PASSWORD`.
+
+### 13.5 Failed deployment (migration incompatibility)
+
+Prisma migrations are forward-only. If a deployment applies a migration and the new code fails health checks, `deploy.sh` rolls back the code automatically. However, the database schema remains on the newer version.
+
+**If the rollback code is incompatible with the new schema:**
+
+1. Verify the API logs: `docker compose logs api --tail=50`.
+2. If the API fails due to schema mismatch, restore the pre-deploy backup that `deploy.sh` created automatically:
+
+   ```bash
+   ./restore.sh pre-deploy-dadan-2026-07-04_121500.sql.gz
+   ```
+
+3. Re-deploy after fixing the issue.
+
+### 13.6 Monitoring for early warning
+
+Enable the monitoring stack (section 10) to detect anomalies before they become disasters:
+
+- Grafana alerts for disk usage >80%.
+- Container restart counters in cAdvisor.
+- API error rate spikes in Loki (query: `{container_name=~".*api.*"} |= "error"`).
+
+---
+
+## 14. Production go-live checklist
+
+### Environment & secrets
 
 - [ ] `.env` uses freshly generated secrets (never the dev/example values), `chmod 600`
-- [ ] `COOKIE_SECURE=true` and site served over HTTPS (Option A or B)
-- [ ] `BASE_URL` and `WEB_ORIGIN` match the public URL exactly
-- [ ] Real Stripe key set (`sk_live_*`) — note the web checkout still uses the mock flow until Stripe Elements is integrated (see `docs/REVIEW_FINDINGS.md`)
-- [ ] Dev seed **not** run; real SUPER_ADMIN created via section 5.3
-- [ ] Firewall: only 22/80/443 open
-- [ ] Nightly DB backup cron installed and a restore has been tested once
-- [ ] `docker compose ps` shows all services healthy
-- [ ] `/api/health` returns `"status":"ok"` from outside the server
-- [ ] Admin login works, viewer/staff accounts created with least privilege
-- [ ] TLS auto-renewal hook tested (`sudo certbot renew --dry-run`) if using Option B
+- [ ] `POSTGRES_PASSWORD`, `JWT_SECRET`, `CERT_SIGNING_SECRET` are strong and unique
+- [ ] `.env` is backed up in a password manager
+- [ ] `COOKIE_SECURE=true` and site served over HTTPS (section 6A or 6B)
+- [ ] `BASE_URL` and `WEB_ORIGIN` match the public URL exactly (scheme, host, port)
+
+### Infrastructure
+
+- [ ] Firewall: only 22/80/443 open (section 1.4)
+- [ ] SSH password login disabled (section 1.5)
+- [ ] Automatic security updates configured (section 1.5)
+- [ ] Docker installed and `deploy` user can run `docker compose` without sudo
+
+### Application
+
+- [ ] Dev seed **not** run against production
+- [ ] REAL SUPER_ADMIN created via section 5.3 (not the seed admin)
+- [ ] Stripe key is a real `sk_live_*` key (not test key) — note the web checkout still uses the mock flow until Stripe Elements is integrated
+- [ ] Staff / viewer accounts created with least privilege
+
+### TLS (pick one)
+
+- [ ] **Option A** (Cloudflare): DNS proxied, origin certificate installed, SSL/TLS set to Full
+- [ ] **Option B** (Let's Encrypt): Certificate obtained, auto-renewal hooks installed, `certbot renew --dry-run` passes
+- [ ] **Option C** (IP only): Understood that this is temporary and insecure
+
+### Backup & recovery
+
+- [ ] Nightly DB backup cron installed (section 8.1)
+- [ ] Backup retention policy confirmed (default 14 days)
+- [ ] Off-site copy configured (e.g. `rclone` to R2)
+- [ ] A restore has been **tested once** (run `./restore.sh` with a recent backup on a staging server or locally)
+- [ ] Team knows how to do a full server rebuild (section 13.2)
+
+### Verification
+
+- [ ] `docker compose ps` shows all 5 services healthy
+- [ ] `curl http://localhost/api/health` returns `{"status":"ok",...}` from the server
+- [ ] `curl -sI http://localhost` returns `HTTP/1.1 200` or `302`
+- [ ] Admin login works at `https://your-domain/admin/login`
+- [ ] Client-facing pages load without errors
+- [ ] Certificate verification flow works (scan QR code)
+
+### Ongoing operations
+
+- [ ] `./deploy.sh` tested from the project directory
+- [ ] Monitoring stack evaluated for production use (section 10.2)
+- [ ] Resource limits reviewed (section 9.2)
+- [ ] Team has access to server logs (`docker compose logs`) and knows common troubleshooting steps (section 12)

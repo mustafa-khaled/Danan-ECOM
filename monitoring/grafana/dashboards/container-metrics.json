@@ -1,0 +1,144 @@
+{
+  "__inputs": [],
+  "__requires": [],
+  "title": "Container Metrics — Dadan",
+  "description": "Real-time CPU, memory, network, and disk I/O for all Docker containers",
+  "tags": ["dadan", "docker", "containers"],
+  "timezone": "browser",
+  "editable": true,
+  "graphTooltip": 1,
+  "panels": [
+    {
+      "collapsed": false,
+      "title": "CPU",
+      "panels": [
+        {
+          "id": 1,
+          "title": "CPU Usage",
+          "type": "timeseries",
+          "gridPos": { "h": 8, "w": 12, "x": 0, "y": 0 },
+          "targets": [
+            {
+              "expr": "rate(container_cpu_usage_seconds_total{name=~\".+\"}[$__rate_interval]) * 100",
+              "legendFormat": "{{name}}",
+              "intervalFactor": 1
+            }
+          ],
+          "fieldConfig": {
+            "defaults": {
+              "unit": "percent",
+              "min": 0,
+              "custom": { "displayMode": "table" }
+            }
+          }
+        }
+      ]
+    },
+    {
+      "collapsed": false,
+      "title": "Memory",
+      "panels": [
+        {
+          "id": 2,
+          "title": "Memory Usage",
+          "type": "timeseries",
+          "gridPos": { "h": 8, "w": 12, "x": 0, "y": 1 },
+          "targets": [
+            {
+              "expr": "container_memory_rss{name=~\".+\"}",
+              "legendFormat": "{{name}}",
+              "intervalFactor": 1
+            }
+          ],
+          "fieldConfig": {
+            "defaults": {
+              "unit": "bytes",
+              "custom": { "displayMode": "table" }
+            }
+          }
+        },
+        {
+          "id": 3,
+          "title": "Memory Usage (% of limit)",
+          "type": "timeseries",
+          "gridPos": { "h": 8, "w": 12, "x": 12, "y": 1 },
+          "targets": [
+            {
+              "expr": "container_memory_rss{name=~\".+\"} / on(name) container_spec_memory_limit_bytes{name=~\".+\"} * 100",
+              "legendFormat": "{{name}}",
+              "intervalFactor": 1
+            }
+          ],
+          "fieldConfig": {
+            "defaults": {
+              "unit": "percent",
+              "min": 0,
+              "max": 100,
+              "custom": { "displayMode": "table" }
+            }
+          }
+        }
+      ]
+    },
+    {
+      "collapsed": false,
+      "title": "Network",
+      "panels": [
+        {
+          "id": 4,
+          "title": "Network I/O",
+          "type": "timeseries",
+          "gridPos": { "h": 8, "w": 12, "x": 0, "y": 2 },
+          "targets": [
+            {
+              "expr": "rate(container_network_receive_bytes_total{name=~\".+\"}[$__rate_interval])",
+              "legendFormat": "RX: {{name}}",
+              "intervalFactor": 1
+            },
+            {
+              "expr": "rate(container_network_transmit_bytes_total{name=~\".+\"}[$__rate_interval])",
+              "legendFormat": "TX: {{name}}",
+              "intervalFactor": 1
+            }
+          ],
+          "fieldConfig": {
+            "defaults": {
+              "unit": "Bps",
+              "custom": { "displayMode": "table" }
+            }
+          }
+        }
+      ]
+    },
+    {
+      "collapsed": false,
+      "title": "Disk",
+      "panels": [
+        {
+          "id": 5,
+          "title": "Disk I/O",
+          "type": "timeseries",
+          "gridPos": { "h": 8, "w": 12, "x": 0, "y": 3 },
+          "targets": [
+            {
+              "expr": "rate(container_fs_reads_bytes_total{name=~\".+\"}[$__rate_interval])",
+              "legendFormat": "Read: {{name}}",
+              "intervalFactor": 1
+            },
+            {
+              "expr": "rate(container_fs_writes_bytes_total{name=~\".+\"}[$__rate_interval])",
+              "legendFormat": "Write: {{name}}",
+              "intervalFactor": 1
+            }
+          ],
+          "fieldConfig": {
+            "defaults": {
+              "unit": "Bps",
+              "custom": { "displayMode": "table" }
+            }
+          }
+        }
+      ]
+    }
+  ]
+}

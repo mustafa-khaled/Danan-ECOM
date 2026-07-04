@@ -1,0 +1,234 @@
+# =============================================================================
+# DADAN Dijital — Monitoring Stack (optional override)
+#
+# Adds Prometheus (metrics), Loki (logs), Promtail (log shipper), cAdvisor
+# (container metrics), and Grafana (dashboards) to the production deployment.
+#
+# Usage:
+#   docker compose -f docker-compose.prod.yml -f docker-compose.monitoring.yml up -d
+#
+# Or with TLS:
+#   docker compose -f docker-compose.prod.yml -f docker-compose.tls.yml \
+#     -f docker-compose.monitoring.yml up -d
+#
+# Grafana is exposed on port 3001 to avoid conflicting with the web app (3000).
+# Prometheus (9090), Loki (3100), and cAdvisor (8080) stay internal — reachable
+# only within the dadan network.
+#
+# Persistence:
+#   prometheus_data  — metric time-series (survives restarts)
+#   grafana_data     — dashboards, users, settings
+#   loki_data        — log chunks and indexes
+#
+# Resources:
+#   The monitoring stack adds ~0.5 CPU and ~600 MB RAM under normal load.
+#   Adjust mem_limit values if the server is resource-constrained.
+# =============================================================================
+
+services:
+
+  # ---------------------------------------------------------------------------
+  # prometheus — metric time-series database
+  # ---------------------------------------------------------------------------
+  # Scrapes cAdvisor (container metrics) and can be extended to scrape the
+  # API directly once a /metrics endpoint is added.
+  # ---------------------------------------------------------------------------
+  prometheus:
+    image: prom/prometheus:v2.55.0
+    restart: unless-stopped
+    init: true
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+    mem_limit: 256m
+    mem_reservation: 64m
+    cpus: "0.5"
+    volumes:
+      - ./monitoring/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - prometheus_data:/prometheus
+    command:
+      - --config.file=/etc/prometheus/prometheus.yml
+      - --storage.tsdb.retention.time=30d
+      - --web.console.libraries=/etc/prometheus/console_libraries
+      - --web.console.templates=/etc/prometheus/consoles
+    healthcheck:
+      test: ["CMD", "wget", "-q", "--spider", "http://localhost:9090/-/healthy"]
+      interval: 15s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
+    networks:
+      - dadan
+
+  # ---------------------------------------------------------------------------
+  # grafana — visualisation dashboards
+  # ---------------------------------------------------------------------------
+  # Auto-provisioned with a Prometheus datasource + a container-metrics
+  # dashboard. Default login: admin / admin (change on first login).
+  # ---------------------------------------------------------------------------
+  grafana:
+    image: grafana/grafana:11.4.0
+    restart: unless-stopped
+    init: true
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+    mem_limit: 256m
+    mem_reservation: 64m
+    cpus: "0.5"
+    volumes:
+      - grafana_data:/var/lib/grafana
+      - ./monitoring/grafana/datasources:/etc/grafana/provisioning/datasources:ro
+      - ./monitoring/grafana/dashboards:/etc/grafana/provisioning/dashboards:ro
+    ports:
+      - "127.0.0.1:3001:3000"
+    environment:
+      GF_SERVER_SERVE_FROM_SUB_PATH: "true"
+      GF_AUTH_ANONYMOUS_ENABLED: "false"
+      GF_SECURITY_ADMIN_PASSWORD: ${GRAFANA_PASSWORD:-admin}
+    healthcheck:
+      test: ["CMD", "wget", "-q", "--spider", "http://localhost:3000/api/health"]
+      interval: 15s
+      timeout: 5s
+      retries: 3
+      start_period: 15s
+    depends_on:
+      prometheus:
+        condition: service_healthy
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
+    networks:
+      - dadan
+
+  # ---------------------------------------------------------------------------
+  # loki — log aggregation (replaces docker logs for search)
+  # ---------------------------------------------------------------------------
+  # Receives logs from Promtail. Exposes an HTTP API for log queries from
+  # Grafana. Stores compressed chunks and an index on loki_data.
+  # ---------------------------------------------------------------------------
+  loki:
+    image: grafana/loki:3.2.0
+    restart: unless-stopped
+    init: true
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+    mem_limit: 256m
+    mem_reservation: 64m
+    cpus: "0.5"
+    volumes:
+      - ./monitoring/loki/loki-config.yml:/etc/loki/config.yml:ro
+      - loki_data:/loki
+    command:
+      - -config.file=/etc/loki/config.yml
+    healthcheck:
+      test: ["CMD", "wget", "-q", "--spider", "http://localhost:3100/ready"]
+      interval: 15s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
+    networks:
+      - dadan
+
+  # ---------------------------------------------------------------------------
+  # promtail — ships Docker container logs to Loki
+  # ---------------------------------------------------------------------------
+  # Reads Docker's log files from the host filesystem. Needs access to
+  # /var/lib/docker/containers (read-only) to tail every container's logs.
+  # Also scrapes the API's JSON log format for structured querying.
+  # ---------------------------------------------------------------------------
+  promtail:
+    image: grafana/promtail:3.2.0
+    restart: unless-stopped
+    init: true
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+    read_only: true
+    mem_limit: 128m
+    mem_reservation: 32m
+    cpus: "0.25"
+    volumes:
+      - ./monitoring/promtail/promtail-config.yml:/etc/promtail/config.yml:ro
+      - /var/lib/docker/containers:/var/lib/docker/containers:ro
+      - /var/log:/var/log:ro
+    command:
+      - -config.file=/etc/promtail/config.yml
+    depends_on:
+      loki:
+        condition: service_healthy
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
+    networks:
+      - dadan
+
+  # ---------------------------------------------------------------------------
+  # cadvisor — container resource metrics exporter
+  # ---------------------------------------------------------------------------
+  # Exposes CPU, memory, network, and disk metrics for every running container
+  # in a Prometheus-compatible format at /metrics.
+  # ---------------------------------------------------------------------------
+  cadvisor:
+    image: gcr.io/cadvisor/cadvisor:v0.51.0
+    restart: unless-stopped
+    init: true
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+    cap_add:
+      - SYS_PTRACE
+    read_only: true
+    mem_limit: 128m
+    mem_reservation: 32m
+    cpus: "0.25"
+    volumes:
+      - /:/rootfs:ro
+      - /var/run:/var/run:ro
+      - /sys:/sys:ro
+      - /var/lib/docker:/var/lib/docker:ro
+      - /dev/disk:/dev/disk:ro
+    devices:
+      - /dev/kmsg
+    healthcheck:
+      test: ["CMD", "wget", "-q", "--spider", "http://localhost:8080/healthz"]
+      interval: 15s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+    privileged: false
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
+    networks:
+      - dadan
+
+# ---------------------------------------------------------------------------
+# Persistent volumes
+# ---------------------------------------------------------------------------
+volumes:
+  prometheus_data:
+  grafana_data:
+  loki_data:

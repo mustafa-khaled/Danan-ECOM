@@ -1,3 +1,14 @@
+# =============================================================================
+# DADAN Dijital — CI Pipeline
+#
+# Runs on every push/PR to main. Four parallel jobs:
+#   code-quality — lint + typecheck + test
+#   build        — pnpm build (after code-quality)
+#   docker-build — Docker image build verification (after code-quality)
+#   security     — dependency audit + filesystem vulnerability scan
+#
+# NOT included: automatic deployment. Deploy via deploy.sh from the server.
+# =============================================================================
 name: CI
 
 on:
@@ -6,28 +17,43 @@ on:
   pull_request:
     branches: [main]
 
+# Cancel in-progress runs on new push (saves runner minutes)
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 env:
   DATABASE_URL: postgresql://dadan:dadan@localhost:5432/dadan
+  DOCKER_BUILDKIT: 1
 
 jobs:
-  ci:
+  # ---------------------------------------------------------------------------
+  # Code quality: lint, typecheck, test
+  # ---------------------------------------------------------------------------
+  code-quality:
+    name: Lint & Typecheck & Test
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
 
-      - name: Setup pnpm
-        uses: pnpm/action-setup@v4
+      - uses: pnpm/action-setup@v4
 
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
+      - uses: actions/setup-node@v4
         with:
           node-version: 20
           cache: pnpm
 
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
+
+      - name: Turbo cache
+        uses: actions/cache@v4
+        with:
+          path: .turbo
+          key: turbo-${{ runner.os }}-${{ github.sha }}
+          restore-keys: |
+            turbo-${{ runner.os }}-
 
       - name: Lint
         run: pnpm lint
@@ -38,5 +64,105 @@ jobs:
       - name: Test
         run: pnpm test
 
+  # ---------------------------------------------------------------------------
+  # Build — pnpm build (depends on code-quality)
+  # ---------------------------------------------------------------------------
+  build:
+    name: Build
+    needs: code-quality
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Turbo cache
+        uses: actions/cache@v4
+        with:
+          path: .turbo
+          key: turbo-${{ runner.os }}-${{ github.sha }}
+          restore-keys: |
+            turbo-${{ runner.os }}-
+
       - name: Build
         run: pnpm build
+
+  # ---------------------------------------------------------------------------
+  # Docker build verification — ensures Dockerfiles compile correctly
+  # ---------------------------------------------------------------------------
+  docker-build:
+    name: Docker build
+    needs: code-quality
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Build API image
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: apps/api/Dockerfile
+          push: false
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      - name: Build Web image
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: apps/web/Dockerfile
+          push: false
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+  # ---------------------------------------------------------------------------
+  # Security scanning — dependency audit + filesystem scan
+  # ---------------------------------------------------------------------------
+  security:
+    name: Security scan
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: pnpm audit
+        run: |
+          pnpm audit --audit-level=high; code=$?
+          if [ $code -eq 0 ]; then
+            echo "No high or critical vulnerabilities found."
+          else
+            echo "High or critical vulnerabilities found. Review the audit output above."
+          fi
+
+      - name: Trivy filesystem scan
+        uses: aquasecurity/trivy-action@0.29.0
+        with:
+          scan-type: fs
+          scan-ref: .
+          format: table
+          exit-code: 0
+          severity: HIGH,CRITICAL
+          scanners: vuln,secret,iac

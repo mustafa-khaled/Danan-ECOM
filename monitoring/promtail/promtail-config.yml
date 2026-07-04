@@ -1,0 +1,55 @@
+# =============================================================================
+# Promtail configuration — ships Docker container logs to Loki
+#
+# Reads Docker's JSON log files directly from the host filesystem
+# (/var/lib/docker/containers). Each container's logs are tagged with
+# the container name and image for filtering in Grafana.
+#
+# The JSON pipeline stage parses structured logs from the API (JsonLogger)
+# and nginx (JSON access log), extracting level, method, status, etc. as
+# Loki labels for efficient querying.
+# =============================================================================
+server:
+  http_listen_port: 9080
+  grpc_listen_port: 0
+
+positions:
+  filename: /tmp/positions.yaml
+
+clients:
+  - url: http://loki:3100/loki/api/v1/push
+
+scrape_configs:
+  # -----------------------------------------------------------------------
+  # Docker container logs via the JSON file driver
+  # -----------------------------------------------------------------------
+  - job_name: "docker"
+    static_configs:
+      - targets: ["localhost"]
+        labels:
+          job: "docker"
+          __path__: /var/lib/docker/containers/*/*-json.log
+
+    pipeline_stages:
+      # Parse Docker's JSON log format ({"log":"...","stream":"stdout","time":"..."})
+      - json:
+          expressions:
+            log: log
+            stream: stream
+            attrs: attrs
+
+      # Drop the raw JSON wrapper — Promtail attaches it as "log" field
+      - json:
+          source: log
+          expressions:
+            level: level
+            timestamp: timestamp
+
+      # Add container name and image as labels from Docker's attrs field
+      - json:
+          source: attrs
+          expressions:
+            container_name: "tag"
+      - labels:
+          stream:
+          container_name:

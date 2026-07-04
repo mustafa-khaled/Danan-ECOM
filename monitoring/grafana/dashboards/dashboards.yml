@@ -1,0 +1,19 @@
+# =============================================================================
+# Grafana — auto-provisioned dashboards
+#
+# Dashboards in this directory are created automatically when Grafana starts.
+# The container-metrics dashboard provides real-time CPU, memory, network,
+# and disk I/O for every Docker container in the dadan project.
+# =============================================================================
+apiVersion: 1
+
+providers:
+  - name: "default"
+    orgId: 1
+    folder: "Dadan"
+    type: file
+    disableDeletion: false
+    updateIntervalSeconds: 30
+    allowUiUpdates: true
+    options:
+      path: /etc/grafana/provisioning/dashboards

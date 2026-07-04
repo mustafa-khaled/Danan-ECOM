@@ -1,0 +1,33 @@
+# =============================================================================
+# Prometheus configuration
+#
+# Scrapes cAdvisor for container metrics (CPU, memory, network, disk) and will
+# scrape the NestJS API directly once a /metrics endpoint is added.
+#
+# The `dadan` network uses 172.16.0.0/12 by default (Docker bridge), so
+# service discovery via DNS works: cadvisor:8080, api:4000, etc.
+# =============================================================================
+global:
+  scrape_interval: 15s
+  evaluation_interval: 15s
+
+scrape_configs:
+  # cAdvisor — per-container resource metrics
+  - job_name: "cadvisor"
+    static_configs:
+      - targets: ["cadvisor:8080"]
+        labels:
+          app: "dadan"
+
+  # Prometheus self-metrics
+  - job_name: "prometheus"
+    static_configs:
+      - targets: ["localhost:9090"]
+
+  # Uncomment once a /metrics endpoint is added to the NestJS API:
+  # - job_name: "api"
+  #   static_configs:
+  #     - targets: ["api:4000"]
+  #       labels:
+  #         app: "dadan"
+  #         service: "api"

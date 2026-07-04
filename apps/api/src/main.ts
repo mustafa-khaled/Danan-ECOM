@@ -5,13 +5,22 @@ import cookieParser from "cookie-parser";
 import helmet from "helmet";
 import { AppModule } from "./app.module";
 import { GlobalExceptionFilter } from "./common/filters/http-exception.filter";
+import { JsonLogger } from "./common/logger/json-logger.service";
+import { requestIdMiddleware } from "./common/middleware/request-id.middleware";
+import { requestLoggerMiddleware } from "./common/middleware/request-logger.middleware";
 
 async function bootstrap() {
-  const app = await NestFactory.create<NestExpressApplication>(AppModule);
+  const app = await NestFactory.create<NestExpressApplication>(AppModule, {
+    logger: new JsonLogger(),
+  });
 
   // Behind exactly one proxy hop (nginx) in production, so request.ip
   // reflects the real client IP and Redis rate limits key correctly.
   app.set("trust proxy", 1);
+
+  // Request ID (generates x-request-id if not present) + request logging
+  app.use(requestIdMiddleware);
+  app.use(requestLoggerMiddleware);
 
   app.use(helmet());
   app.use(cookieParser());
