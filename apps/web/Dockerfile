@@ -104,7 +104,7 @@ COPY --from=builder /app/apps/web/.next/standalone ./
 COPY --from=builder /app/apps/web/.next/static ./apps/web/.next/static
 
 HEALTHCHECK --interval=30s --timeout=10s --start-period=40s --retries=5 \
-  CMD wget -q --spider http://localhost:3000 || exit 1
+  CMD wget -q --spider http://127.0.0.1:3000 || exit 1
 
 USER nextjs
 EXPOSE 3000
