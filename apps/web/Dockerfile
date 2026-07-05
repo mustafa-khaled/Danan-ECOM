@@ -102,6 +102,7 @@ RUN addgroup --system --gid 1001 nodejs && \
 
 COPY --from=builder /app/apps/web/.next/standalone ./
 COPY --from=builder /app/apps/web/.next/static ./apps/web/.next/static
+COPY --from=builder /app/apps/web/public ./apps/web/public
 
 HEALTHCHECK --interval=30s --timeout=10s --start-period=40s --retries=5 \
   CMD wget -q --spider http://127.0.0.1:3000 || exit 1

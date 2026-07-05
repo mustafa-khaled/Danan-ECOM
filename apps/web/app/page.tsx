@@ -10,7 +10,7 @@ export default function ComingSoonPage() {
         {/* Background Image Wrapper with Ken Burns Zoom */}
         <div className="absolute inset-0 z-0 overflow-hidden">
           <Image
-            src="/assets/coming-soon-desktop.png"
+            src="/assets/coming-soon-desktop.jpg"
             alt="DADAN background"
             fill
             priority
@@ -65,7 +65,7 @@ export default function ComingSoonPage() {
         {/* Background Image Wrapper with Ken Burns Zoom */}
         <div className="absolute inset-0 z-0 overflow-hidden">
           <Image
-            src="/assets/coming-soon-mobile.png"
+            src="/assets/coming-soon-mobile.jpg"
             alt="DADAN background"
             fill
             priority
