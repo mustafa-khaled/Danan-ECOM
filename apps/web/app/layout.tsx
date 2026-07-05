@@ -1,5 +1,10 @@
 import type { Metadata } from "next";
-import { Cormorant_Garamond, IBM_Plex_Mono, Inter, Noto_Naskh_Arabic } from "next/font/google";
+import {
+  Cormorant_Garamond,
+  IBM_Plex_Mono,
+  Inter,
+  Noto_Naskh_Arabic,
+} from "next/font/google";
 import "@dadan/ui/styles/globals.css";
 import "./globals.css";
 
@@ -33,6 +38,14 @@ const notoNaskhArabic = Noto_Naskh_Arabic({
 export const metadata: Metadata = {
   title: "DADAN Dijital",
   description: "Private luxury digital jewelry ownership",
+  icons: {
+    icon: [
+      { url: "/favicon.ico" },
+      { url: "/favicon-32x32.png", sizes: "32x32", type: "image/png" },
+      { url: "/favicon-16x16.png", sizes: "16x16", type: "image/png" },
+    ],
+    apple: "/apple-touch-icon.png",
+  },
   robots: {
     index: false,
     follow: false,

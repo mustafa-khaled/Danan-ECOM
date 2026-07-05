@@ -16,3 +16,109 @@
   background-size: 48px 48px;
   mask-image: radial-gradient(circle at center, black, transparent 75%);
 }
+
+/* Premium Luxury Animations */
+@keyframes kenburns {
+  0% {
+    transform: scale(1.02);
+  }
+  50% {
+    transform: scale(1.07);
+  }
+  100% {
+    transform: scale(1.02);
+  }
+}
+
+@keyframes kenburns-mobile {
+  0% {
+    transform: scale(1.0);
+  }
+  50% {
+    transform: scale(1.04);
+  }
+  100% {
+    transform: scale(1.0);
+  }
+}
+
+@keyframes slideUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes drawLineLeft {
+  from {
+    transform: scaleX(0);
+  }
+  to {
+    transform: scaleX(1);
+  }
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+.animate-kenburns {
+  animation: kenburns 28s ease-in-out infinite;
+}
+
+.animate-kenburns-mobile {
+  animation: kenburns-mobile 28s ease-in-out infinite;
+}
+
+.animate-slide-up {
+  opacity: 0;
+  animation: slideUp 1.6s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+.animate-draw-line-left {
+  opacity: 0;
+  transform-origin: left;
+  animation: 
+    fadeIn 0.5s ease-out forwards,
+    drawLineLeft 1.8s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+.animate-draw-line-right {
+  opacity: 0;
+  transform-origin: right;
+  animation: 
+    fadeIn 0.5s ease-out forwards,
+    drawLineLeft 1.8s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+.animate-fade-in {
+  opacity: 0;
+  animation: fadeIn 2s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+/* Animation Delays */
+.delay-300 {
+  animation-delay: 300ms;
+}
+.delay-500 {
+  animation-delay: 500ms;
+}
+.delay-700 {
+  animation-delay: 700ms;
+}
+.delay-900 {
+  animation-delay: 900ms;
+}
+.delay-1000 {
+  animation-delay: 1000ms;
+}
+
