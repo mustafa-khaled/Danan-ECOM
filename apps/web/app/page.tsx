@@ -36,7 +36,8 @@ export default function ComingSoonPage() {
         </header>
 
         {/* Bottom Content / Footer */}
-        <footer className="absolute z-20 left-[41px] bottom-[30%] w-[1840px] max-w-[calc(100%-82px)] h-[24px] flex justify-between items-center px-0 pb-0">
+        <footer className="absolute bottom-[30%] left-1/2 z-20 flex w-full max-w-[1840px] -translate-x-1/2 items-center justify-between px-[41px]">
+          {" "}
           {/* Left Block: Full experience ─── is coming soon */}
           <div className="flex items-center gap-6 animate-slide-up delay-300">
             <span className="font-body text-[20px] leading-none tracking-[-0.05em] uppercase text-ivory font-normal">
@@ -47,7 +48,6 @@ export default function ComingSoonPage() {
               is coming soon
             </span>
           </div>
-
           {/* Right Block: ─── Stay tuned. */}
           <div className="flex items-center gap-6 animate-slide-up delay-500">
             <span className="w-16 h-[0.5px] bg-ivory/20 origin-right animate-draw-line-right delay-900" />
@@ -109,4 +109,3 @@ export default function ComingSoonPage() {
     </main>
   );
 }
-
