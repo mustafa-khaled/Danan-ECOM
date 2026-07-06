@@ -37,9 +37,10 @@
 
   /* Typography */
   --font-display: "Cormorant Garamond", Georgia, "Times New Roman", serif;
+  --font-english: "EB Garamond", Georgia, "Times New Roman", serif;
   --font-body: "Inter", system-ui, -apple-system, sans-serif;
   --font-mono: "IBM Plex Mono", ui-monospace, monospace;
-  --font-arabic: "Noto Naskh Arabic", "Segoe UI", Tahoma, sans-serif;
+  --font-arabic: "Amiri", "Noto Naskh Arabic", "Segoe UI", Tahoma, serif;
 
   /* Spacing — 4px base (DADAN) aligned to 8pt Luxury grid */
   --spacing-1: 0.25rem;
@@ -85,9 +86,10 @@
   --color-emerald: #1a5c3a;
 
   --font-display: "Cormorant Garamond", Georgia, "Times New Roman", serif;
+  --font-english: "EB Garamond", Georgia, "Times New Roman", serif;
   --font-body: "Inter", system-ui, -apple-system, sans-serif;
   --font-mono: "IBM Plex Mono", ui-monospace, monospace;
-  --font-arabic: "Noto Naskh Arabic", "Segoe UI", Tahoma, sans-serif;
+  --font-arabic: "Amiri", "Noto Naskh Arabic", "Segoe UI", Tahoma, serif;
 
   --radius-panel: 2px;
   --radius-item: calc(var(--radius-panel));
@@ -127,6 +129,10 @@ body {
 
 .font-display {
   font-family: var(--font-display);
+}
+
+.font-english {
+  font-family: var(--font-english);
 }
 
 .font-mono {

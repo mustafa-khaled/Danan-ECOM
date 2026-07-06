@@ -1,9 +1,10 @@
 import type { Metadata } from "next";
 import {
   Cormorant_Garamond,
+  EB_Garamond,
   IBM_Plex_Mono,
   Inter,
-  Noto_Naskh_Arabic,
+  Amiri,
 } from "next/font/google";
 import "@dadan/ui/styles/globals.css";
 import "./globals.css";
@@ -11,6 +12,13 @@ import "./globals.css";
 const inter = Inter({
   subsets: ["latin"],
   variable: "--font-body",
+  display: "swap",
+});
+
+const ebGaramond = EB_Garamond({
+  subsets: ["latin"],
+  weight: ["400", "500", "600", "700"],
+  variable: "--font-english",
   display: "swap",
 });
 
@@ -28,15 +36,15 @@ const ibmPlexMono = IBM_Plex_Mono({
   display: "swap",
 });
 
-const notoNaskhArabic = Noto_Naskh_Arabic({
-  subsets: ["arabic"],
-  weight: ["400", "500", "600", "700"],
+const amiri = Amiri({
+  subsets: ["arabic", "latin"],
+  weight: ["400", "700"],
   variable: "--font-arabic",
   display: "swap",
 });
 
 export const metadata: Metadata = {
-  title: "DADAN Dijital",
+  title: "Dadan",
   description: "Private luxury digital jewelry ownership",
   icons: {
     icon: [
@@ -63,7 +71,7 @@ export default function RootLayout({
 }>) {
   return (
     <html
-      className={`${inter.variable} ${cormorant.variable} ${ibmPlexMono.variable} ${notoNaskhArabic.variable}`}
+      className={`${inter.variable} ${ebGaramond.variable} ${cormorant.variable} ${ibmPlexMono.variable} ${amiri.variable}`}
     >
       <body>{children}</body>
     </html>
