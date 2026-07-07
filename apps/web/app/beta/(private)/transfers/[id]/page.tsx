@@ -1,3 +1,4 @@
+import Image from "next/image";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { GoldDivider, PrivateLayout, SerialBadge, StatusPill } from "@dadan/ui";
@@ -58,13 +59,14 @@ export default async function TransferDetailPage({ params }: TransferDetailPageP
         <section className="rounded-[var(--radius-panel)] border border-[var(--color-border)] bg-[var(--color-surface)] p-6">
           <h2 className="font-display text-xl text-[var(--color-ivory)]">Piece</h2>
           <GoldDivider className="my-4" />
-          <div className="aspect-[4/3] overflow-hidden rounded-[var(--radius-item)] bg-[var(--color-void)]">
+          <div className="relative aspect-[4/3] overflow-hidden rounded-[var(--radius-item)] bg-[var(--color-void)]">
             {transfer.piece.design.imageUrls[0] ? (
-              // eslint-disable-next-line @next/next/no-img-element
-              <img
+              <Image
                 src={transfer.piece.design.imageUrls[0]}
                 alt={transfer.piece.design.name}
-                className="h-full w-full object-cover"
+                fill
+                sizes="(max-width: 1024px) 100vw, 50vw"
+                className="object-cover"
               />
             ) : (
               <div className="flex h-full min-h-48 items-center justify-center font-display text-2xl text-[var(--color-ivory-muted)]">

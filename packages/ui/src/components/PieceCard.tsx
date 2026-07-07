@@ -1,3 +1,4 @@
+import Image from "next/image";
 import { SerialBadge } from "./SerialBadge";
 
 export interface PieceCardData {
@@ -18,13 +19,14 @@ export interface PieceCardProps {
 export function PieceCard({ piece, className = "", onSelect }: PieceCardProps) {
   const content = (
     <>
-      <div className="aspect-[4/5] overflow-hidden bg-[var(--color-void)]">
+      <div className="relative aspect-[4/5] overflow-hidden bg-[var(--color-void)]">
         {piece.imageUrl ? (
-          // eslint-disable-next-line @next/next/no-img-element
-          <img
+          <Image
             src={piece.imageUrl}
             alt={piece.name}
-            className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-[1.02]"
+            fill
+            sizes="(max-width: 768px) 50vw, 33vw"
+            className="object-cover transition-transform duration-300 group-hover:scale-[1.02]"
           />
         ) : (
           <div className="flex h-full items-center justify-center text-[var(--color-ivory-muted)]">

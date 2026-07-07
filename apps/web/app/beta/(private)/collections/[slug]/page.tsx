@@ -1,3 +1,4 @@
+import Image from "next/image";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { GoldDivider, PieceCard, PrivateLayout } from "@dadan/ui";
@@ -44,13 +45,14 @@ export default async function CollectionDetailPage({ params }: CollectionDetailP
       </nav>
 
       <header className="mb-10 overflow-hidden rounded-[var(--radius-panel)] border border-[var(--color-border)] bg-[var(--color-surface)]">
-        <div className="aspect-[21/9] bg-[var(--color-void)]">
+        <div className="relative aspect-[21/9] bg-[var(--color-void)]">
           {collection.coverImageUrl ? (
-            // eslint-disable-next-line @next/next/no-img-element
-            <img
+            <Image
               src={collection.coverImageUrl}
               alt={collection.name}
-              className="h-full w-full object-cover"
+              fill
+              sizes="100vw"
+              className="object-cover"
             />
           ) : (
             <div className="flex h-full min-h-48 items-center justify-center font-display text-4xl text-[var(--color-ivory-muted)]">

@@ -1,3 +1,4 @@
+import Image from "next/image";
 import Link from "next/link";
 import { GoldDivider, PrivateLayout, SerialBadge } from "@dadan/ui";
 import { CartItemActions } from "../../../../components/cart-item-actions";
@@ -46,13 +47,14 @@ export default async function CartPage() {
                   key={item.id}
                   className="flex flex-col gap-4 rounded-[var(--radius-panel)] border border-[var(--color-border)] bg-[var(--color-surface)] p-4 sm:flex-row sm:items-center"
                 >
-                  <div className="h-24 w-20 shrink-0 overflow-hidden rounded-[var(--radius-item)] bg-[var(--color-void)]">
+                  <div className="relative h-24 w-20 shrink-0 overflow-hidden rounded-[var(--radius-item)] bg-[var(--color-void)]">
                     {piece.design.imageUrls[0] ? (
-                      // eslint-disable-next-line @next/next/no-img-element
-                      <img
+                      <Image
                         src={piece.design.imageUrls[0]}
                         alt={piece.design.name}
-                        className="h-full w-full object-cover"
+                        fill
+                        sizes="80px"
+                        className="object-cover"
                       />
                     ) : null}
                   </div>

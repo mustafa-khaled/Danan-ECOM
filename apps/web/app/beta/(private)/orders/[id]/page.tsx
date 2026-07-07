@@ -1,3 +1,4 @@
+import Image from "next/image";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { GoldDivider, PrivateLayout, SerialBadge, StatusPill } from "@dadan/ui";
@@ -55,13 +56,14 @@ export default async function OrderDetailPage({ params }: OrderDetailPageProps) 
           <ul className="space-y-4">
             {order.items.map((item) => (
               <li key={item.piece.id} className="flex gap-4">
-                <div className="h-20 w-16 shrink-0 overflow-hidden rounded-[var(--radius-item)] bg-[var(--color-void)]">
+                <div className="relative h-20 w-16 shrink-0 overflow-hidden rounded-[var(--radius-item)] bg-[var(--color-void)]">
                   {item.design.imageUrls[0] ? (
-                    // eslint-disable-next-line @next/next/no-img-element
-                    <img
+                    <Image
                       src={item.design.imageUrls[0]}
                       alt={item.design.name}
-                      className="h-full w-full object-cover"
+                      fill
+                      sizes="64px"
+                      className="object-cover"
                     />
                   ) : null}
                 </div>

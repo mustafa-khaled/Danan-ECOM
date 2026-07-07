@@ -1,3 +1,4 @@
+import Image from "next/image";
 import Link from "next/link";
 import { PrivateLayout } from "@dadan/ui";
 import { EmptyState } from "../../../../components/empty-state";
@@ -33,13 +34,14 @@ export default async function CollectionsPage() {
               href={`/beta/collections/${collection.slug}`}
               className="group overflow-hidden rounded-[var(--radius-panel)] border border-[var(--color-border)] bg-[var(--color-surface)] shadow-[var(--shadow-luxury)] transition-colors hover:border-[var(--color-gold)]"
             >
-              <div className="aspect-[4/3] bg-[var(--color-void)]">
+              <div className="relative aspect-[4/3] bg-[var(--color-void)]">
                 {collection.coverImageUrl ? (
-                  // eslint-disable-next-line @next/next/no-img-element
-                  <img
+                  <Image
                     src={collection.coverImageUrl}
                     alt={collection.name}
-                    className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-[1.02]"
+                    fill
+                    sizes="(max-width: 768px) 100vw, (max-width: 1024px) 50vw, 33vw"
+                    className="object-cover transition-transform duration-300 group-hover:scale-[1.02]"
                   />
                 ) : (
                   <div className="flex h-full items-center justify-center font-display text-2xl text-[var(--color-ivory-muted)]">

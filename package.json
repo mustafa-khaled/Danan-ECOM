@@ -27,5 +27,8 @@
   "lint-staged": {
     "*.{js,ts,jsx,tsx,cjs,mjs}": "bash -c 'ESLINT_USE_FLAT_CONFIG=false eslint --fix \"$@\"' _",
     "*.{json,md,yaml,yml}": "prettier --write"
+  },
+  "dependencies": {
+    "eslint-plugin-import": "^2.32.0"
   }
 }

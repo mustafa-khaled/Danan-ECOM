@@ -1,3 +1,4 @@
+import Image from "next/image";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { GoldDivider, PrivateLayout, SerialBadge, StatusPill } from "@dadan/ui";
@@ -49,13 +50,14 @@ export default async function WardrobePiecePage({ params }: WardrobePiecePagePro
       </nav>
 
       <div className="grid gap-10 lg:grid-cols-2">
-        <div className="aspect-[4/5] overflow-hidden rounded-[var(--radius-panel)] border border-[var(--color-border)] bg-[var(--color-void)]">
+        <div className="relative aspect-[4/5] overflow-hidden rounded-[var(--radius-panel)] border border-[var(--color-border)] bg-[var(--color-void)]">
           {design.imageUrls[0] ? (
-            // eslint-disable-next-line @next/next/no-img-element
-            <img
+            <Image
               src={design.imageUrls[0]}
               alt={design.name}
-              className="h-full w-full object-cover"
+              fill
+              sizes="(max-width: 1024px) 100vw, 50vw"
+              className="object-cover"
             />
           ) : (
             <div className="flex h-full items-center justify-center font-display text-4xl text-[var(--color-ivory-muted)]">

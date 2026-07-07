@@ -1,3 +1,4 @@
+import Image from "next/image";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { GoldDivider, PrivateLayout, SerialBadge, StatusPill } from "@dadan/ui";
@@ -58,13 +59,14 @@ export default async function DesignDetailPage({ params }: DesignDetailPageProps
 
       <div className="grid gap-10 lg:grid-cols-2">
         <section>
-          <div className="aspect-[4/5] overflow-hidden rounded-[var(--radius-panel)] border border-[var(--color-border)] bg-[var(--color-void)]">
+          <div className="relative aspect-[4/5] overflow-hidden rounded-[var(--radius-panel)] border border-[var(--color-border)] bg-[var(--color-void)]">
             {design.imageUrls[0] ? (
-              // eslint-disable-next-line @next/next/no-img-element
-              <img
+              <Image
                 src={design.imageUrls[0]}
                 alt={design.name}
-                className="h-full w-full object-cover"
+                fill
+                sizes="(max-width: 1024px) 100vw, 50vw"
+                className="object-cover"
               />
             ) : (
               <div className="flex h-full items-center justify-center font-display text-4xl text-[var(--color-ivory-muted)]">
@@ -74,13 +76,14 @@ export default async function DesignDetailPage({ params }: DesignDetailPageProps
           </div>
           {design.imageUrls.length > 1 ? (
             <div className="mt-4 flex gap-3 overflow-x-auto">
-              {design.imageUrls.slice(1, 5).map((url) => (
-                // eslint-disable-next-line @next/next/no-img-element
-                <img
+              {design.imageUrls.slice(1, 5).map((url, i) => (
+                <Image
                   key={url}
                   src={url}
-                  alt=""
-                  className="h-20 w-16 shrink-0 rounded-[var(--radius-item)] border border-[var(--color-border)] object-cover"
+                  alt={`${design.name} thumbnail ${i + 1}`}
+                  width={64}
+                  height={80}
+                  className="shrink-0 rounded-[var(--radius-item)] border border-[var(--color-border)] object-cover"
                 />
               ))}
             </div>

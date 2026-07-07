@@ -14,7 +14,7 @@ export default function ComingSoonPage() {
             alt="DADAN background"
             fill
             priority
-            quality={100}
+            quality={75}
             className="object-cover object-center"
           />
           {/* Gentle dark gradient overlay for optimal readability */}
@@ -29,7 +29,7 @@ export default function ComingSoonPage() {
               alt="DADAN"
               fill
               priority
-              quality={100}
+              quality={75}
               className="object-contain"
             />
           </div>
@@ -62,7 +62,7 @@ export default function ComingSoonPage() {
             alt="DADAN background"
             fill
             priority
-            quality={100}
+            quality={75}
             className="object-cover object-[22%]"
           />
           {/* Gentle dark gradient overlay for optimal readability */}
@@ -77,7 +77,7 @@ export default function ComingSoonPage() {
               alt="DADAN"
               fill
               priority
-              quality={100}
+              quality={75}
               className="object-contain"
             />
           </div>
