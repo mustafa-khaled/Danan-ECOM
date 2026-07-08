@@ -50,8 +50,8 @@ done
 # ---------------------------------------------------------------------------
 log() {
   local msg="[$(date '+%Y-%m-%d %H:%M:%S')] $*"
-  echo "$msg" >> "$LOG_FILE"
-  $VERBOSE && echo "$msg"
+  echo "$msg" >> "$LOG_FILE" || true
+  [ "$VERBOSE" = true ] && echo "$msg"
 }
 
 error() {
