@@ -51,13 +51,15 @@ done
 log() {
   local msg="[$(date '+%Y-%m-%d %H:%M:%S')] $*"
   echo "$msg" >> "$LOG_FILE" || true
-  [ "$VERBOSE" = true ] && echo "$msg"
+  if [ "$VERBOSE" = true ]; then
+    echo "$msg"
+  fi
 }
 
 error() {
   local msg="[$(date '+%Y-%m-%d %H:%M:%S')] ERROR: $*"
   echo "$msg" >&2
-  echo "$msg" >> "$LOG_FILE"
+  echo "$msg" >> "$LOG_FILE" || true
 }
 
 # ---------------------------------------------------------------------------
