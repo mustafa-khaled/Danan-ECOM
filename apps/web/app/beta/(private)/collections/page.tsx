@@ -1,10 +1,10 @@
 import Image from "next/image";
 import Link from "next/link";
-import { PrivateLayout } from "@dadan/ui";
+import { PrivateLayout } from "@/components/ui";
 import { EmptyState } from "../../../../components/empty-state";
-import { fetchCollections } from "../../../../lib/api";
-import { privateNavItems } from "../../../../lib/nav";
-import { getSessionCookieHeader, requireClientSession } from "../../../../lib/session";
+import { fetchCollections } from "@/features/collections";
+import { privateNavItems } from "@/shared/lib/nav";
+import { getSessionCookieHeader, requireClientSession } from "@/features/auth/server/session";
 
 export default async function CollectionsPage() {
   const profile = await requireClientSession();

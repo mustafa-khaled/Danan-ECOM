@@ -1,7 +1,7 @@
 import Link from "next/link";
-import { AdminLayout } from "@dadan/ui";
+import { AdminLayout } from "@/components/ui";
 import { AdminLogoutButton } from "../../../components/admin-logout-button";
-import { requireAdminSession } from "../../../lib/session/admin";
+import { requireAdminSession } from "@/features/auth/server/admin-session";
 
 const navItems = [
   { href: "/admin/dashboard", label: "Dashboard" },

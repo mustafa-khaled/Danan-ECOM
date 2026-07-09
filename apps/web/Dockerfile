@@ -43,8 +43,6 @@ FROM base AS deps
 COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
 COPY apps/api/package.json apps/api/
 COPY apps/web/package.json apps/web/
-COPY packages/ui/package.json packages/ui/
-COPY packages/types/package.json packages/types/
 COPY packages/config/package.json packages/config/
 COPY packages/db/package.json packages/db/
 COPY packages/storage/package.json packages/storage/
@@ -65,7 +63,6 @@ RUN --mount=type=cache,target=/root/.local/share/pnpm/store \
 # ---------------------------------------------------------------------------
 FROM deps AS builder
 COPY apps/web apps/web
-COPY packages packages
 ENV NEXT_TELEMETRY_DISABLED=1
 ARG API_URL=http://api:4000
 ARG NEXT_PUBLIC_API_URL=/api

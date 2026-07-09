@@ -1,9 +1,9 @@
 import Link from "next/link";
-import { PieceCard, PrivateLayout } from "@dadan/ui";
+import { PieceCard, PrivateLayout } from "@/components/ui";
 import { EmptyState } from "../../../../components/empty-state";
-import { fetchSaved } from "../../../../lib/api";
-import { privateNavItems } from "../../../../lib/nav";
-import { getSessionCookieHeader, requireClientSession } from "../../../../lib/session";
+import { fetchSaved } from "@/features/saved";
+import { privateNavItems } from "@/shared/lib/nav";
+import { getSessionCookieHeader, requireClientSession } from "@/features/auth/server/session";
 
 export default async function SavedPage() {
   const profile = await requireClientSession();

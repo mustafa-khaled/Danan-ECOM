@@ -21,7 +21,7 @@ try {
 
 const nextConfig: NextConfig = {
   output: "standalone",
-  transpilePackages: ["@dadan/ui", "@dadan/types"],
+  transpilePackages: [],
   images: {
     formats: ["image/webp", "image/avif"],
     remotePatterns,

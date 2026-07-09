@@ -1,10 +1,10 @@
 import Link from "next/link";
-import { PrivateLayout } from "@dadan/ui";
+import { PrivateLayout } from "@/components/ui";
 import { CheckoutForm } from "../../../../components/checkout-form";
 import { EmptyState } from "../../../../components/empty-state";
-import { fetchCart } from "../../../../lib/api";
-import { privateNavItems } from "../../../../lib/nav";
-import { getSessionCookieHeader, requireClientSession } from "../../../../lib/session";
+import { fetchCart } from "@/features/cart";
+import { privateNavItems } from "@/shared/lib/nav";
+import { getSessionCookieHeader, requireClientSession } from "@/features/auth/server/session";
 
 export default async function CheckoutPage() {
   const profile = await requireClientSession();

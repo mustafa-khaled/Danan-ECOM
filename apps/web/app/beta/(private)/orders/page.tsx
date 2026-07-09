@@ -1,9 +1,10 @@
 import Link from "next/link";
-import { PrivateLayout, StatusPill } from "@dadan/ui";
+import { PrivateLayout, StatusPill } from "@/components/ui";
 import { EmptyState } from "../../../../components/empty-state";
-import { fetchOrders } from "../../../../lib/api";
-import { formatPrice, privateNavItems } from "../../../../lib/nav";
-import { getSessionCookieHeader, requireClientSession } from "../../../../lib/session";
+import { fetchOrders } from "@/features/orders";
+import { formatPrice } from "@/shared/utils/format";
+import { privateNavItems } from "@/shared/lib/nav";
+import { getSessionCookieHeader, requireClientSession } from "@/features/auth/server/session";
 
 export default async function OrdersPage() {
   const profile = await requireClientSession();

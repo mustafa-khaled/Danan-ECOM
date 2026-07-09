@@ -2,27 +2,27 @@
 
 import { useRouter } from "next/navigation";
 import { FormEvent, useState } from "react";
-import type { ShippingAddress } from "@dadan/types";
-import { GoldDivider, LuxuryButton } from "@dadan/ui";
-import { ApiError, checkout } from "../lib/api";
-import { formatPrice } from "../lib/nav";
+import type { ShippingAddress } from "@/types";
+import { GoldDivider, LuxuryButton } from "@/components/ui";
+import { formatPrice } from "@/shared/utils/format";
+import { useCheckout } from "@/features/checkout";
 
 interface CheckoutFormProps {
   total: number;
   currency: string;
 }
 
-// Payment mode is baked into the bundle at build time. "mock" uses the API's
-// mock provider token; anything else disables checkout until a real payment
-// element (e.g. Stripe Elements) is integrated.
 const PAYMENT_MODE = process.env.NEXT_PUBLIC_PAYMENT_MODE ?? "mock";
 const VAT_RATE = Number(process.env.NEXT_PUBLIC_VAT_RATE ?? "0.15");
 
 export function CheckoutForm({ total, currency }: CheckoutFormProps) {
   const router = useRouter();
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
   const [step, setStep] = useState<1 | 2>(1);
+  const {
+    mutateAsync: checkout,
+    isPending,
+    error,
+  } = useCheckout();
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -32,12 +32,9 @@ export function CheckoutForm({ total, currency }: CheckoutFormProps) {
     }
 
     if (PAYMENT_MODE !== "mock") {
-      setError("Online payment is not yet available. Please contact DADAN to complete your purchase.");
       return;
     }
 
-    setLoading(true);
-    setError(null);
     const form = new FormData(event.currentTarget);
 
     const shippingAddress: ShippingAddress = {
@@ -52,17 +49,14 @@ export function CheckoutForm({ total, currency }: CheckoutFormProps) {
     };
 
     try {
-      const result = (await checkout({
+      const result = await checkout({
         shippingAddress,
         paymentMethod: "CARD",
         paymentToken: "mock_token_success",
-      })) as { orderId: string };
+      });
       router.push(`/beta/orders/${result.orderId}`);
-      router.refresh();
-    } catch (err) {
-      setError(err instanceof ApiError ? err.message : "Checkout failed");
-    } finally {
-      setLoading(false);
+    } catch {
+      /* error is rendered via the mutation's `error` state */
     }
   }
 
@@ -116,7 +110,7 @@ export function CheckoutForm({ total, currency }: CheckoutFormProps) {
 
       {error ? (
         <p role="alert" className="text-sm text-[var(--color-ruby)]">
-          {error}
+          {error instanceof Error ? error.message : "Checkout failed"}
         </p>
       ) : null}
 
@@ -126,7 +120,7 @@ export function CheckoutForm({ total, currency }: CheckoutFormProps) {
             Back
           </LuxuryButton>
         ) : null}
-        <LuxuryButton type="submit" loading={loading}>
+        <LuxuryButton type="submit" loading={isPending}>
           {step === 1 ? "Confirm and Continue" : "Complete Purchase"}
         </LuxuryButton>
       </div>

@@ -1,11 +1,13 @@
 import Image from "next/image";
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { GoldDivider, PrivateLayout, SerialBadge, StatusPill } from "@dadan/ui";
+import { GoldDivider, PrivateLayout, SerialBadge, StatusPill } from "@/components/ui";
 import { TransferActions } from "../../../../../components/transfer-actions";
-import { ApiError, fetchTransfer } from "../../../../../lib/api";
-import { formatTransferStatus, privateNavItems } from "../../../../../lib/nav";
-import { getSessionCookieHeader, requireClientSession } from "../../../../../lib/session";
+import { ApiError } from "@/shared/lib/send-request";
+import { fetchTransfer } from "@/features/transfers";
+import { formatTransferStatus } from "@/shared/utils/format";
+import { privateNavItems } from "@/shared/lib/nav";
+import { getSessionCookieHeader, requireClientSession } from "@/features/auth/server/session";
 
 interface TransferDetailPageProps {
   params: Promise<{ id: string }>;

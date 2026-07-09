@@ -15,30 +15,30 @@ export default function Error({
   }, [error]);
 
   return (
-    <div className="min-h-screen bg-background flex items-center justify-center px-4">
-      <div className="max-w-md w-full text-center">
-        <h1 className="font-display text-4xl text-foreground mb-4">
+    <div className="flex min-h-screen items-center justify-center bg-void px-4">
+      <div className="w-full max-w-md text-center">
+        <h1 className="mb-4 font-display text-4xl text-ivory">
           Something went wrong
         </h1>
-        <p className="text-muted-foreground mb-8">
+        <p className="mb-8 text-ivory-muted">
           We encountered an unexpected error. Please try again or contact support
           if the problem persists.
         </p>
         {error.digest && (
-          <p className="text-xs text-muted-foreground mb-6 font-mono">
+          <p className="mb-6 font-mono text-xs text-ivory-muted">
             Error ID: {error.digest}
           </p>
         )}
-        <div className="flex flex-col sm:flex-row gap-4 justify-center">
+        <div className="flex flex-col justify-center gap-4 sm:flex-row">
           <button
             onClick={reset}
-            className="px-6 py-3 bg-foreground text-background font-medium rounded hover:opacity-90 transition-opacity"
+            className="rounded-[var(--radius-button)] bg-ivory px-6 py-3 font-medium text-void transition-opacity hover:opacity-90"
           >
             Try Again
           </button>
           <Link
             href="/"
-            className="px-6 py-3 border border-border text-foreground font-medium rounded hover:bg-muted transition-colors"
+            className="rounded-[var(--radius-button)] border border-border bg-transparent px-6 py-3 font-medium text-ivory transition-colors hover:bg-surface"
           >
             Go Home
           </Link>

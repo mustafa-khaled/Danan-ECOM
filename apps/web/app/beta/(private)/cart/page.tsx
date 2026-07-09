@@ -1,11 +1,12 @@
 import Image from "next/image";
 import Link from "next/link";
-import { GoldDivider, PrivateLayout, SerialBadge } from "@dadan/ui";
+import { GoldDivider, PrivateLayout, SerialBadge } from "@/components/ui";
 import { CartItemActions } from "../../../../components/cart-item-actions";
 import { EmptyState } from "../../../../components/empty-state";
-import { fetchCart } from "../../../../lib/api";
-import { formatPrice, privateNavItems } from "../../../../lib/nav";
-import { getSessionCookieHeader, requireClientSession } from "../../../../lib/session";
+import { fetchCart } from "@/features/cart";
+import { formatPrice } from "@/shared/utils/format";
+import { privateNavItems } from "@/shared/lib/nav";
+import { getSessionCookieHeader, requireClientSession } from "@/features/auth/server/session";
 
 export default async function CartPage() {
   const profile = await requireClientSession();

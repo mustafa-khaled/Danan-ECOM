@@ -1,5 +1,5 @@
-import { ClientProvider } from "../../../lib/client-context";
-import { requireClientSession } from "../../../lib/session";
+import { ClientProvider } from "@/shared/providers/client-context";
+import { requireClientSession } from "@/features/auth/server/session";
 
 export default async function PrivateLayout({
   children,
@@ -9,7 +9,7 @@ export default async function PrivateLayout({
   const profile = await requireClientSession();
 
   return (
-    <div lang="ar" dir="rtl" className="client-shell min-h-dvh">
+    <div lang="ar" dir="rtl" className="min-h-dvh">
       <ClientProvider
         value={{
           clientId: profile.id,

@@ -1,10 +1,12 @@
 import Image from "next/image";
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { GoldDivider, PrivateLayout, SerialBadge, StatusPill } from "@dadan/ui";
-import { ApiError, fetchOrder } from "../../../../../lib/api";
-import { formatPrice, privateNavItems } from "../../../../../lib/nav";
-import { getSessionCookieHeader, requireClientSession } from "../../../../../lib/session";
+import { GoldDivider, PrivateLayout, SerialBadge, StatusPill } from "@/components/ui";
+import { ApiError } from "@/shared/lib/send-request";
+import { fetchOrder } from "@/features/orders";
+import { formatPrice } from "@/shared/utils/format";
+import { privateNavItems } from "@/shared/lib/nav";
+import { getSessionCookieHeader, requireClientSession } from "@/features/auth/server/session";
 
 interface OrderDetailPageProps {
   params: Promise<{ id: string }>;

@@ -2,30 +2,27 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { LuxuryButton } from "@dadan/ui";
-import { adminLogin } from "../../../lib/api/admin";
-import { ApiError } from "../../../lib/api/shared";
+import { LuxuryButton } from "@/components/ui";
+import { useLogin } from "@/features/auth";
 
 export function LoginForm() {
   const router = useRouter();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [error, setError] = useState<string | null>(null);
-  const [loading, setLoading] = useState(false);
+  const {
+    mutateAsync: login,
+    isPending,
+    error,
+  } = useLogin();
 
   async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    setError(null);
-    setLoading(true);
-
     try {
-      await adminLogin(email, password);
+      await login({ email, password });
       router.replace("/admin/dashboard");
       router.refresh();
-    } catch (err) {
-      setError(err instanceof ApiError ? err.message : "Sign in failed");
-    } finally {
-      setLoading(false);
+    } catch {
+      /* error is rendered via the mutation's `error` state */
     }
   }
 
@@ -71,11 +68,11 @@ export function LoginForm() {
 
       {error ? (
         <p className="text-sm text-[var(--color-ruby)]" role="alert">
-          {error}
+          {error instanceof Error ? error.message : "Sign in failed"}
         </p>
       ) : null}
 
-      <LuxuryButton type="submit" loading={loading} className="w-full">
+      <LuxuryButton type="submit" loading={isPending} className="w-full">
         Sign in
       </LuxuryButton>
     </form>

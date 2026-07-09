@@ -2,8 +2,8 @@
 
 import { useRouter } from "next/navigation";
 import { FormEvent, useState } from "react";
-import { GoldDivider, LuxuryButton } from "@dadan/ui";
-import { ApiError, initiateTransfer } from "../lib/api";
+import { GoldDivider, LuxuryButton } from "@/components/ui";
+import { useInitiateTransfer } from "@/features/transfers";
 
 interface TransferInitiateProps {
   pieceId: string;
@@ -20,13 +20,14 @@ const TRANSFER_TYPES = [
 export function TransferInitiate({ pieceId, pieceName, serialNumber }: TransferInitiateProps) {
   const router = useRouter();
   const [open, setOpen] = useState(false);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const {
+    mutateAsync: initiateTransfer,
+    isPending,
+    error,
+  } = useInitiateTransfer();
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    setLoading(true);
-    setError(null);
 
     const form = new FormData(event.currentTarget);
     const recipientHouseKey = String(form.get("recipientHouseKey") ?? "").trim();
@@ -38,10 +39,8 @@ export function TransferInitiate({ pieceId, pieceName, serialNumber }: TransferI
     try {
       const result = await initiateTransfer({ pieceId, transferType, recipientHouseKey });
       router.push(`/beta/transfers/${result.transferId}`);
-      router.refresh();
-    } catch (err) {
-      setError(err instanceof ApiError ? err.message : "Transfer could not be initiated");
-      setLoading(false);
+    } catch {
+      /* error is rendered via the mutation's `error` state */
     }
   }
 
@@ -93,11 +92,11 @@ export function TransferInitiate({ pieceId, pieceName, serialNumber }: TransferI
         </label>
         {error ? (
           <p role="alert" className="text-sm text-[var(--color-ruby)]">
-            {error}
+            {error instanceof Error ? error.message : "Transfer could not be initiated"}
           </p>
         ) : null}
         <div className="flex flex-wrap gap-3">
-          <LuxuryButton type="submit" loading={loading}>
+          <LuxuryButton type="submit" loading={isPending}>
             Initiate Transfer
           </LuxuryButton>
           <LuxuryButton type="button" variant="ghost" onClick={() => setOpen(false)}>

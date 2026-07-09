@@ -1,9 +1,9 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { useState } from "react";
-import { LuxuryButton } from "@dadan/ui";
-import { addToCart, ApiError, savePiece, unsavePiece } from "../lib/api";
+import { LuxuryButton } from "@/components/ui";
+import { useAddToCart } from "@/features/cart";
+import { useSavePiece, useUnsavePiece } from "@/features/saved";
 
 interface DesignActionsProps {
   pieceId: string;
@@ -12,54 +12,54 @@ interface DesignActionsProps {
 
 export function DesignActions({ pieceId, initialSaved = false }: DesignActionsProps) {
   const router = useRouter();
-  const [saved, setSaved] = useState(initialSaved);
-  const [loading, setLoading] = useState<"cart" | "save" | null>(null);
-  const [error, setError] = useState<string | null>(null);
+  const {
+    mutateAsync: addToCart,
+    isPending: isAddingToCart,
+    error: addToCartError,
+  } = useAddToCart();
+  const {
+    mutateAsync: savePiece,
+    isPending: isSaving,
+  } = useSavePiece();
+  const {
+    mutateAsync: unsavePiece,
+    isPending: isUnsaving,
+  } = useUnsavePiece();
 
   async function handleAddToCart() {
-    setLoading("cart");
-    setError(null);
     try {
       await addToCart(pieceId);
       router.push("/beta/cart");
-      router.refresh();
-    } catch (err) {
-      setError(err instanceof ApiError ? err.message : "Could not add to cart");
-    } finally {
-      setLoading(null);
+    } catch {
+      /* error is rendered via the mutation's `error` state */
     }
   }
 
   async function handleToggleSave() {
-    setLoading("save");
-    setError(null);
     try {
-      if (saved) {
+      if (initialSaved) {
         await unsavePiece(pieceId);
-        setSaved(false);
       } else {
         await savePiece(pieceId);
-        setSaved(true);
       }
-      router.refresh();
-    } catch (err) {
-      setError(err instanceof ApiError ? err.message : "Could not update saved");
-    } finally {
-      setLoading(null);
+    } catch {
+      /* error is rendered via the mutation's `error` state */
     }
   }
 
+  const error = addToCartError;
+
   return (
     <div className="flex flex-wrap gap-3">
-      <LuxuryButton loading={loading === "cart"} onClick={handleAddToCart}>
+      <LuxuryButton loading={isAddingToCart} onClick={handleAddToCart}>
         Add to Cart
       </LuxuryButton>
-      <LuxuryButton variant="ghost" loading={loading === "save"} onClick={handleToggleSave}>
-        {saved ? "Unsave" : "Save"}
+      <LuxuryButton variant="ghost" loading={isSaving || isUnsaving} onClick={handleToggleSave}>
+        {initialSaved ? "Unsave" : "Save"}
       </LuxuryButton>
       {error ? (
         <p role="alert" className="w-full text-sm text-[var(--color-ruby)]">
-          {error}
+          {error instanceof Error ? error.message : "Could not add to cart"}
         </p>
       ) : null}
     </div>

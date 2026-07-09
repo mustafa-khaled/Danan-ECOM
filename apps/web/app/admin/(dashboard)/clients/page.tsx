@@ -1,10 +1,10 @@
-import { StatusPill } from "@dadan/ui";
-import { fetchClients } from "../../../../lib/api/admin";
-import { getAdminCookieHeader } from "../../../../lib/session/admin";
+import { StatusPill } from "@/components/ui";
+import { fetchAdminClients } from "@/features/admin";
+import { getAdminCookieHeader } from "@/features/auth/server/admin-session";
 
 export default async function ClientsPage() {
   const cookieHeader = await getAdminCookieHeader();
-  const { items, total } = await fetchClients(1, 50, cookieHeader);
+  const { items, total } = await fetchAdminClients(1, 50, cookieHeader);
 
   return (
     <div className="space-y-6">

@@ -1,6 +1,6 @@
-import { StatusPill } from "@dadan/ui";
-import { fetchTransfers } from "../../../../lib/api/admin";
-import { getAdminCookieHeader } from "../../../../lib/session/admin";
+import { StatusPill } from "@/components/ui";
+import { fetchAdminTransfers } from "@/features/admin";
+import { getAdminCookieHeader } from "@/features/auth/server/admin-session";
 
 function formatStatus(status: string) {
   return status.replace(/_/g, " ");
@@ -8,7 +8,7 @@ function formatStatus(status: string) {
 
 export default async function TransfersPage() {
   const cookieHeader = await getAdminCookieHeader();
-  const { items, total } = await fetchTransfers(1, 50, undefined, cookieHeader);
+  const { items, total } = await fetchAdminTransfers(1, 50, undefined, cookieHeader);
 
   return (
     <div className="space-y-6">

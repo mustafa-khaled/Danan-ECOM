@@ -1,14 +1,12 @@
 import Image from "next/image";
 import Link from "next/link";
-import { GoldDivider, PieceCard, PrivateLayout } from "@dadan/ui";
+import { GoldDivider, PieceCard, PrivateLayout } from "@/components/ui";
 import { EmptyState } from "../../../../components/empty-state";
-import {
-  fetchCollections,
-  fetchSaved,
-  fetchWardrobe,
-} from "../../../../lib/api";
-import { privateNavItems } from "../../../../lib/nav";
-import { getSessionCookieHeader, requireClientSession } from "../../../../lib/session";
+import { fetchCollections } from "@/features/collections";
+import { fetchSaved } from "@/features/saved";
+import { fetchWardrobe } from "@/features/wardrobe";
+import { privateNavItems } from "@/shared/lib/nav";
+import { getSessionCookieHeader, requireClientSession } from "@/features/auth/server/session";
 
 export default async function HomePage() {
   const profile = await requireClientSession();

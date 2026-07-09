@@ -10,16 +10,16 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
-    "@dadan/types": "workspace:*",
-    "@dadan/ui": "workspace:*",
+    "@tanstack/react-query": "^5.101.2",
+    "@tanstack/react-query-devtools": "^5.101.2",
     "next": "^15.2.0",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
     "sharp": "^0.33.2"
   },
   "devDependencies": {
-    "@tailwindcss/postcss": "^4.0.9",
     "@dadan/config": "workspace:*",
+    "@tailwindcss/postcss": "^4.0.9",
     "@types/node": "^22.13.4",
     "@types/react": "^19.0.10",
     "@types/react-dom": "^19.0.4",

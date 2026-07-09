@@ -1,6 +1,6 @@
-import { StatusPill } from "@dadan/ui";
-import { fetchOrders } from "../../../../lib/api/admin";
-import { getAdminCookieHeader } from "../../../../lib/session/admin";
+import { StatusPill } from "@/components/ui";
+import { fetchAdminOrders } from "@/features/admin";
+import { getAdminCookieHeader } from "@/features/auth/server/admin-session";
 
 function formatAmount(amount: string | number, currency: string) {
   const value = typeof amount === "string" ? Number(amount) : amount;
@@ -13,7 +13,7 @@ function formatAmount(amount: string | number, currency: string) {
 
 export default async function OrdersPage() {
   const cookieHeader = await getAdminCookieHeader();
-  const { items, total } = await fetchOrders(1, 50, cookieHeader);
+  const { items, total } = await fetchAdminOrders(1, 50, cookieHeader);
 
   return (
     <div className="space-y-6">

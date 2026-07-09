@@ -1,9 +1,9 @@
 "use client";
 
 import { useState } from "react";
-import type { CertificateData } from "@dadan/ui";
-import { CertificateModal, LuxuryButton } from "@dadan/ui";
-import { ApiError, fetchCertificate } from "../lib/api";
+import type { CertificateData } from "@/components/ui";
+import { CertificateModal, LuxuryButton } from "@/components/ui";
+import { usePieceCertificate } from "@/features/certificates";
 
 interface CertificateViewerProps {
   pieceId: string;
@@ -13,36 +13,36 @@ interface CertificateViewerProps {
 
 export function CertificateViewer({ pieceId, pieceName, serialNumber }: CertificateViewerProps) {
   const [open, setOpen] = useState(false);
-  const [loading, setLoading] = useState(false);
-  const [certificate, setCertificate] = useState<CertificateData | null>(null);
-  const [error, setError] = useState<string | null>(null);
+  const {
+    mutateAsync: fetchCertificate,
+    data: rawCertificate,
+    isPending,
+    error,
+  } = usePieceCertificate();
 
   async function handleOpen() {
-    setLoading(true);
-    setError(null);
     try {
       const data = await fetchCertificate(pieceId);
-      setCertificate({
-        ...data,
-        pieceName,
-        serialNumber,
-      });
-      setOpen(true);
-    } catch (err) {
-      setError(err instanceof ApiError ? err.message : "Certificate unavailable");
-    } finally {
-      setLoading(false);
+      if (data) {
+        setOpen(true);
+      }
+    } catch {
+      /* error is rendered via the mutation's `error` state */
     }
   }
 
+  const certificate: CertificateData | null = rawCertificate
+    ? { ...rawCertificate, pieceName, serialNumber }
+    : null;
+
   return (
     <>
-      <LuxuryButton variant="ghost" loading={loading} onClick={handleOpen}>
+      <LuxuryButton variant="ghost" loading={isPending} onClick={handleOpen}>
         View Certificate
       </LuxuryButton>
       {error ? (
         <p role="alert" className="mt-2 text-sm text-[var(--color-ruby)]">
-          {error}
+          {error instanceof Error ? error.message : "Certificate unavailable"}
         </p>
       ) : null}
       <CertificateModal open={open} onClose={() => setOpen(false)} certificate={certificate} />

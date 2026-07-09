@@ -3,17 +3,12 @@ import {
   Cormorant_Garamond,
   EB_Garamond,
   IBM_Plex_Mono,
-  Inter,
   Amiri,
+  Manrope,
 } from "next/font/google";
-import "@dadan/ui/styles/globals.css";
+import "../styles/theme.css";
 import "./globals.css";
-
-const inter = Inter({
-  subsets: ["latin"],
-  variable: "--font-body",
-  display: "swap",
-});
+import { Providers } from "./providers";
 
 const ebGaramond = EB_Garamond({
   subsets: ["latin"],
@@ -40,6 +35,12 @@ const amiri = Amiri({
   subsets: ["arabic", "latin"],
   weight: ["400", "700"],
   variable: "--font-arabic",
+  display: "swap",
+});
+
+const manrope = Manrope({
+  subsets: ["latin"],
+  variable: "--font-manrope",
   display: "swap",
 });
 
@@ -71,9 +72,11 @@ export default function RootLayout({
 }>) {
   return (
     <html
-      className={`${inter.variable} ${ebGaramond.variable} ${cormorant.variable} ${ibmPlexMono.variable} ${amiri.variable}`}
+      className={`${ebGaramond.variable} ${cormorant.variable} ${ibmPlexMono.variable} ${amiri.variable} ${manrope.variable}`}
     >
-      <body>{children}</body>
+      <body className="font-manrope">
+        <Providers>{children}</Providers>
+      </body>
     </html>
   );
 }

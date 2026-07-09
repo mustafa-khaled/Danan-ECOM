@@ -1,10 +1,10 @@
-import { SerialBadge, StatusPill } from "@dadan/ui";
-import { fetchPieces } from "../../../../lib/api/admin";
-import { getAdminCookieHeader } from "../../../../lib/session/admin";
+import { SerialBadge, StatusPill } from "@/components/ui";
+import { fetchAdminPieces } from "@/features/admin";
+import { getAdminCookieHeader } from "@/features/auth/server/admin-session";
 
 export default async function PiecesPage() {
   const cookieHeader = await getAdminCookieHeader();
-  const { items, total } = await fetchPieces(1, 50, cookieHeader);
+  const { items, total } = await fetchAdminPieces(1, 50, cookieHeader);
 
   return (
     <div className="space-y-6">

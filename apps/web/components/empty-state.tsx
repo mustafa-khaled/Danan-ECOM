@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { LuxuryButton } from "@dadan/ui";
+import { LuxuryButton } from "@/components/ui";
 
 interface EmptyStateProps {
   title: string;

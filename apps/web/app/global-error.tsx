@@ -16,12 +16,12 @@ export default function GlobalError({
 
   return (
     <html lang="en">
-      <body style={{ margin: 0, fontFamily: "system-ui, sans-serif" }}>
+      <body style={{ margin: 0, fontFamily: "'Manrope', system-ui, sans-serif" }}>
         <div
           style={{
             minHeight: "100vh",
             backgroundColor: "#0a0a0a",
-            color: "#fafafa",
+            color: "#f5f0e8",
             display: "flex",
             alignItems: "center",
             justifyContent: "center",
@@ -40,7 +40,7 @@ export default function GlobalError({
             </h1>
             <p
               style={{
-                color: "#a1a1aa",
+                color: "#9e9a93",
                 marginBottom: "2rem",
                 lineHeight: 1.6,
               }}
@@ -51,7 +51,7 @@ export default function GlobalError({
               <p
                 style={{
                   fontSize: "0.75rem",
-                  color: "#71717a",
+                  color: "#9e9a93",
                   marginBottom: "1.5rem",
                   fontFamily: "monospace",
                 }}
@@ -71,10 +71,10 @@ export default function GlobalError({
                 onClick={reset}
                 style={{
                   padding: "0.75rem 1.5rem",
-                  backgroundColor: "#fafafa",
+                  backgroundColor: "#f5f0e8",
                   color: "#0a0a0a",
                   border: "none",
-                  borderRadius: "0.375rem",
+                  borderRadius: "2px",
                   fontWeight: 500,
                   cursor: "pointer",
                   fontSize: "1rem",
@@ -87,9 +87,9 @@ export default function GlobalError({
                 style={{
                   padding: "0.75rem 1.5rem",
                   backgroundColor: "transparent",
-                  color: "#fafafa",
-                  border: "1px solid #27272a",
-                  borderRadius: "0.375rem",
+                  color: "#f5f0e8",
+                  border: "1px solid #2a2a2a",
+                  borderRadius: "2px",
                   fontWeight: 500,
                   textDecoration: "none",
                   fontSize: "1rem",

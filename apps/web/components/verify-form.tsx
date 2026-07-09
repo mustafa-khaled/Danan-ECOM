@@ -1,29 +1,25 @@
 "use client";
 
 import { FormEvent, useState } from "react";
-import { GoldDivider, LuxuryButton, SerialBadge, StatusPill } from "@dadan/ui";
-import { ApiError, verifySerial } from "../lib/api";
+import { GoldDivider, LuxuryButton, SerialBadge, StatusPill } from "@/components/ui";
+import { useVerifySerial } from "@/features/verify";
 
 export function VerifyForm() {
   const [serial, setSerial] = useState("");
   const [token, setToken] = useState("");
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const [result, setResult] = useState<Record<string, unknown> | null>(null);
+  const {
+    mutateAsync: verifySerial,
+    data: result,
+    isPending,
+    error,
+  } = useVerifySerial();
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    setLoading(true);
-    setError(null);
-    setResult(null);
-
     try {
-      const data = await verifySerial(serial.trim(), token.trim());
-      setResult(data);
-    } catch (err) {
-      setError(err instanceof ApiError ? err.message : "Verification failed");
-    } finally {
-      setLoading(false);
+      await verifySerial({ serial: serial.trim(), token: token.trim() });
+    } catch {
+      /* error is rendered via the mutation's `error` state */
     }
   }
 
@@ -60,10 +56,10 @@ export function VerifyForm() {
         </label>
         {error ? (
           <p role="alert" className="text-sm text-[var(--color-ruby)]">
-            {error}
+            {error instanceof Error ? error.message : "Verification failed"}
           </p>
         ) : null}
-        <LuxuryButton type="submit" loading={loading}>
+        <LuxuryButton type="submit" loading={isPending}>
           Verify Authenticity
         </LuxuryButton>
       </form>

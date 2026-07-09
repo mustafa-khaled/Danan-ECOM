@@ -1,14 +1,8 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { useState } from "react";
-import { LuxuryButton } from "@dadan/ui";
-import {
-  ApiError,
-  cancelTransfer,
-  confirmTransferRecipient,
-  confirmTransferSender,
-} from "../lib/api";
+import { LuxuryButton } from "@/components/ui";
+import { useConfirmTransferSender, useConfirmTransferRecipient, useCancelTransfer } from "@/features/transfers";
 
 interface TransferActionsProps {
   transferId: string;
@@ -18,27 +12,28 @@ interface TransferActionsProps {
 
 export function TransferActions({ transferId, status, role }: TransferActionsProps) {
   const router = useRouter();
-  const [loading, setLoading] = useState<string | null>(null);
-  const [error, setError] = useState<string | null>(null);
-
-  async function run(action: () => Promise<unknown>, key: string) {
-    setLoading(key);
-    setError(null);
-    try {
-      await action();
-      router.refresh();
-    } catch (err) {
-      setError(err instanceof ApiError ? err.message : "Action failed");
-    } finally {
-      setLoading(null);
-    }
-  }
+  const {
+    mutateAsync: confirmSender,
+    isPending: isConfirmingSender,
+    error: confirmSenderError,
+  } = useConfirmTransferSender();
+  const {
+    mutateAsync: confirmRecipient,
+    isPending: isConfirmingRecipient,
+    error: confirmRecipientError,
+  } = useConfirmTransferRecipient();
+  const {
+    mutateAsync: cancel,
+    isPending: isCancelling,
+    error: cancelError,
+  } = useCancelTransfer();
 
   const canConfirmSender = role === "sender" && status === "INITIATED";
   const canConfirmRecipient = role === "recipient" && status === "SENDER_CONFIRMED";
-  // Only the sender may cancel (the API rejects recipient cancellations).
   const canCancel =
     role === "sender" && ["INITIATED", "SENDER_CONFIRMED"].includes(status);
+
+  const error = confirmSenderError ?? confirmRecipientError ?? cancelError;
 
   if (!canConfirmSender && !canConfirmRecipient && !canCancel) {
     return null;
@@ -48,16 +43,24 @@ export function TransferActions({ transferId, status, role }: TransferActionsPro
     <div className="flex flex-wrap gap-3">
       {canConfirmSender ? (
         <LuxuryButton
-          loading={loading === "sender"}
-          onClick={() => run(() => confirmTransferSender(transferId), "sender")}
+          loading={isConfirmingSender}
+          onClick={async () => {
+            try {
+              await confirmSender(transferId);
+            } catch { /* error rendered via mutation state */ }
+          }}
         >
           Confirm as Sender
         </LuxuryButton>
       ) : null}
       {canConfirmRecipient ? (
         <LuxuryButton
-          loading={loading === "recipient"}
-          onClick={() => run(() => confirmTransferRecipient(transferId), "recipient")}
+          loading={isConfirmingRecipient}
+          onClick={async () => {
+            try {
+              await confirmRecipient(transferId);
+            } catch { /* error rendered via mutation state */ }
+          }}
         >
           Confirm as Recipient
         </LuxuryButton>
@@ -65,15 +68,19 @@ export function TransferActions({ transferId, status, role }: TransferActionsPro
       {canCancel ? (
         <LuxuryButton
           variant="danger"
-          loading={loading === "cancel"}
-          onClick={() => run(() => cancelTransfer(transferId), "cancel")}
+          loading={isCancelling}
+          onClick={async () => {
+            try {
+              await cancel(transferId);
+            } catch { /* error rendered via mutation state */ }
+          }}
         >
           Cancel Transfer
         </LuxuryButton>
       ) : null}
       {error ? (
         <p role="alert" className="w-full text-sm text-[var(--color-ruby)]">
-          {error}
+          {error instanceof Error ? error.message : "Action failed"}
         </p>
       ) : null}
     </div>

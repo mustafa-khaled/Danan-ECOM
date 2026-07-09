@@ -37,13 +37,13 @@ export default function ComingSoonPage() {
 
         {/* Bottom Content / Footer */}
         <footer className="absolute z-20 px-[41px] w-full flex justify-between items-center bottom-[27%] text-center select-none">
-          <div className="animate-slide-up delay-500">
+          <div className="animate-slide-up [animation-delay:500ms]">
             <p className="font-english font-semibold text-[30px] leading-[100%] tracking-[-0.05em] text-ivory">
               Soon
             </p>
           </div>
 
-          <div className="animate-slide-up delay-300">
+          <div className="animate-slide-up [animation-delay:300ms]">
             <p className="font-arabic font-normal text-[24px] leading-[100%] tracking-[-0.05em] text-ivory mb-2">
               قريبا
             </p>
@@ -85,13 +85,13 @@ export default function ComingSoonPage() {
 
         {/* Bottom Content / Footer */}
         <footer className="absolute z-20 px-[51px] w-full flex justify-between items-center bottom-[18%] text-center select-none">
-          <div className="animate-slide-up delay-500">
+          <div className="animate-slide-up [animation-delay:500ms]">
             <p className="font-english font-semibold text-[30px] leading-[100%] tracking-[-0.05em] text-ivory">
               Soon
             </p>
           </div>
 
-          <div className="animate-slide-up delay-300">
+          <div className="animate-slide-up [animation-delay:300ms]">
             <p className="font-arabic font-normal text-[24px] leading-[100%] tracking-[-0.05em] text-ivory mb-2">
               قريبا
             </p>

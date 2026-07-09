@@ -40,7 +40,6 @@ flowchart TB
 
   subgraph shared [Shared packages]
     DB["@dadan/db<br/>Prisma"]
-    UI["@dadan/ui"]
     TYPES["@dadan/types"]
     UTILS["@dadan/utils"]
     STORAGE["@dadan/storage"]
@@ -211,8 +210,7 @@ Containerized: **postgres, redis, api, web, nginx**. Storage is local (no extern
 ## Dependency graph
 
 ```
-apps/web ──┬── @dadan/ui
-           ├── @dadan/types
+apps/web ──┬── @dadan/types
            └── (rewrites to) apps/api
 
 apps/api ──┬── @dadan/db (Prisma)

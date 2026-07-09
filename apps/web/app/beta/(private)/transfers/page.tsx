@@ -1,9 +1,10 @@
 import Link from "next/link";
-import { PrivateLayout, SerialBadge, StatusPill } from "@dadan/ui";
+import { PrivateLayout, SerialBadge, StatusPill } from "@/components/ui";
 import { EmptyState } from "../../../../components/empty-state";
-import { fetchTransfers } from "../../../../lib/api";
-import { formatTransferStatus, privateNavItems } from "../../../../lib/nav";
-import { getSessionCookieHeader, requireClientSession } from "../../../../lib/session";
+import { fetchTransfers } from "@/features/transfers";
+import { formatTransferStatus } from "@/shared/utils/format";
+import { privateNavItems } from "@/shared/lib/nav";
+import { getSessionCookieHeader, requireClientSession } from "@/features/auth/server/session";
 
 export default async function TransfersPage() {
   const profile = await requireClientSession();

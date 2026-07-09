@@ -1,11 +1,13 @@
 import Image from "next/image";
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { GoldDivider, PieceCard, PrivateLayout } from "@dadan/ui";
+import { GoldDivider, PieceCard, PrivateLayout } from "@/components/ui";
 import { EmptyState } from "../../../../../components/empty-state";
-import { ApiError, fetchCollection } from "../../../../../lib/api";
-import { formatPrice, privateNavItems } from "../../../../../lib/nav";
-import { getSessionCookieHeader, requireClientSession } from "../../../../../lib/session";
+import { ApiError } from "@/shared/lib/send-request";
+import { fetchCollection } from "@/features/collections";
+import { formatPrice } from "@/shared/utils/format";
+import { privateNavItems } from "@/shared/lib/nav";
+import { getSessionCookieHeader, requireClientSession } from "@/features/auth/server/session";
 
 interface CollectionDetailPageProps {
   params: Promise<{ slug: string }>;

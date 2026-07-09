@@ -1,11 +1,14 @@
 import Image from "next/image";
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { GoldDivider, PrivateLayout, SerialBadge, StatusPill } from "@dadan/ui";
+import { GoldDivider, PrivateLayout, SerialBadge, StatusPill } from "@/components/ui";
 import { DesignActions } from "../../../../../components/design-actions";
-import { ApiError, fetchDesign, fetchSaved } from "../../../../../lib/api";
-import { formatPrice, privateNavItems } from "../../../../../lib/nav";
-import { getSessionCookieHeader, requireClientSession } from "../../../../../lib/session";
+import { ApiError } from "@/shared/lib/send-request";
+import { fetchDesign } from "@/features/pieces";
+import { fetchSaved } from "@/features/saved";
+import { formatPrice } from "@/shared/utils/format";
+import { privateNavItems } from "@/shared/lib/nav";
+import { getSessionCookieHeader, requireClientSession } from "@/features/auth/server/session";
 
 interface DesignDetailPageProps {
   params: Promise<{ slug: string }>;

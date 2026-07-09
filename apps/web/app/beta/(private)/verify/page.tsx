@@ -1,7 +1,7 @@
-import { PrivateLayout } from "@dadan/ui";
+import { PrivateLayout } from "@/components/ui";
 import { VerifyForm } from "../../../../components/verify-form";
-import { privateNavItems } from "../../../../lib/nav";
-import { requireClientSession } from "../../../../lib/session";
+import { privateNavItems } from "@/shared/lib/nav";
+import { requireClientSession } from "@/features/auth/server/session";
 
 export default async function VerifyPage() {
   const profile = await requireClientSession();

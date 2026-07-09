@@ -1,12 +1,13 @@
 import Image from "next/image";
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { GoldDivider, PrivateLayout, SerialBadge, StatusPill } from "@dadan/ui";
+import { GoldDivider, PrivateLayout, SerialBadge, StatusPill } from "@/components/ui";
 import { CertificateViewer } from "../../../../../components/certificate-viewer";
 import { TransferInitiate } from "../../../../../components/transfer-initiate";
-import { ApiError, fetchWardrobePiece } from "../../../../../lib/api";
-import { privateNavItems } from "../../../../../lib/nav";
-import { getSessionCookieHeader, requireClientSession } from "../../../../../lib/session";
+import { ApiError } from "@/shared/lib/send-request";
+import { fetchWardrobePiece } from "@/features/wardrobe";
+import { privateNavItems } from "@/shared/lib/nav";
+import { getSessionCookieHeader, requireClientSession } from "@/features/auth/server/session";
 
 interface WardrobePiecePageProps {
   params: Promise<{ pieceId: string }>;

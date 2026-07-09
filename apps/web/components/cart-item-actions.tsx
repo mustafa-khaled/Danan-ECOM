@@ -1,32 +1,28 @@
 "use client";
 
-import { useRouter } from "next/navigation";
-import { useState } from "react";
-import { LuxuryButton } from "@dadan/ui";
-import { ApiError, removeFromCart } from "../lib/api";
+import { LuxuryButton } from "@/components/ui";
+import { useRemoveFromCart } from "@/features/cart";
 
 interface CartItemActionsProps {
   pieceId: string;
 }
 
 export function CartItemActions({ pieceId }: CartItemActionsProps) {
-  const router = useRouter();
-  const [loading, setLoading] = useState(false);
+  const {
+    mutateAsync: removeFromCart,
+    isPending,
+  } = useRemoveFromCart();
 
   async function handleRemove() {
-    setLoading(true);
     try {
       await removeFromCart(pieceId);
-      router.refresh();
-    } catch (err) {
-      console.error(err instanceof ApiError ? err.message : "Remove failed");
-    } finally {
-      setLoading(false);
+    } catch {
+      /* error is rendered via the mutation's `error` state */
     }
   }
 
   return (
-    <LuxuryButton variant="ghost" size="sm" loading={loading} onClick={handleRemove}>
+    <LuxuryButton variant="ghost" size="sm" loading={isPending} onClick={handleRemove}>
       Remove
     </LuxuryButton>
   );

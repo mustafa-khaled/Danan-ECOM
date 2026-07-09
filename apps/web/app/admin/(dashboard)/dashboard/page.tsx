@@ -1,16 +1,16 @@
 import Link from "next/link";
-import { StatusPill } from "@dadan/ui";
-import { fetchClients, fetchOrders, fetchPieces, fetchTransfers } from "../../../../lib/api/admin";
-import { getAdminCookieHeader } from "../../../../lib/session/admin";
+import { StatusPill } from "@/components/ui";
+import { fetchAdminClients, fetchAdminOrders, fetchAdminPieces, fetchAdminTransfers } from "@/features/admin";
+import { getAdminCookieHeader } from "@/features/auth/server/admin-session";
 
 export default async function DashboardPage() {
   const cookieHeader = await getAdminCookieHeader();
 
   const [clients, pieces, orders, reviewTransfers] = await Promise.all([
-    fetchClients(1, 1, cookieHeader),
-    fetchPieces(1, 1, cookieHeader),
-    fetchOrders(1, 1, cookieHeader),
-    fetchTransfers(1, 5, "DADAN_REVIEW", cookieHeader),
+    fetchAdminClients(1, 1, cookieHeader),
+    fetchAdminPieces(1, 1, cookieHeader),
+    fetchAdminOrders(1, 1, cookieHeader),
+    fetchAdminTransfers(1, 5, "DADAN_REVIEW", cookieHeader),
   ]);
 
   const stats = [

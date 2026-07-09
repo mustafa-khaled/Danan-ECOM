@@ -1,6 +1,6 @@
 import { redirect } from "next/navigation";
-import { GoldDivider } from "@dadan/ui";
-import { getAdminSession } from "../../../lib/session/admin";
+import { GoldDivider } from "@/components/ui";
+import { getAdminSession } from "@/features/auth/server/admin-session";
 import { LoginForm } from "./login-form";
 
 export default async function LoginPage() {
