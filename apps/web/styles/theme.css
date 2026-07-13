@@ -1,5 +1,10 @@
 @import "tailwindcss";
 
+/*
+  Font for headline EB Garamond
+  Font for body Manrope
+*/
+
 @theme {
   --color-void: #0a0a0a;
   --color-surface: #141414;
@@ -122,30 +127,56 @@ body {
 }
 
 @keyframes kenburns {
-  0% { transform: scale(1.02); }
-  50% { transform: scale(1.07); }
-  100% { transform: scale(1.02); }
+  0% {
+    transform: scale(1.02);
+  }
+  50% {
+    transform: scale(1.07);
+  }
+  100% {
+    transform: scale(1.02);
+  }
 }
 
 @keyframes kenburns-mobile {
-  0% { transform: scale(1.0); }
-  50% { transform: scale(1.04); }
-  100% { transform: scale(1.0); }
+  0% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.04);
+  }
+  100% {
+    transform: scale(1);
+  }
 }
 
 @keyframes slideUp {
-  from { opacity: 0; transform: translateY(20px); }
-  to { opacity: 1; transform: translateY(0); }
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 @keyframes drawLineLeft {
-  from { transform: scaleX(0); }
-  to { transform: scaleX(1); }
+  from {
+    transform: scaleX(0);
+  }
+  to {
+    transform: scaleX(1);
+  }
 }
 
 @keyframes fadeIn {
-  from { opacity: 0; }
-  to { opacity: 1; }
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
 }
 
 .animate-slide-up {
