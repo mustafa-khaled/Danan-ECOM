@@ -22,7 +22,8 @@
     "cart": "السلة",
     "orders": "الطلبات",
     "transfers": "التحويلات",
-    "profile": "الملف الشخصي"
+    "profile": "الملف الشخصي",
+    "notifications": "الإشعارات"
   },
   "greeting": {
     "morning": "صباح الخير",

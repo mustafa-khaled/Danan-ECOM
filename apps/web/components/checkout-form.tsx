@@ -1,15 +1,24 @@
 "use client";
 
+import dynamic from "next/dynamic";
 import { useLocale } from "next-intl";
 import { useRouter } from "next/navigation";
-import { FormEvent, useRef, useState } from "react";
+import { FormEvent, Suspense, useRef, useState } from "react";
 import { GoldDivider, LuxuryButton } from "@/components/ui";
 import { formatPrice } from "@/shared/utils/format";
 import { PAYMENT_MODE } from "@/shared/lib/constants";
 import { VAT_RATE } from "@/shared/lib/pricing";
-import { useCheckout, TapCardElement, type TapCardElementHandle } from "@/features/checkout";
+import { useCheckout, type TapCardElementHandle } from "@/features/checkout";
 import type { ShippingAddress } from "@/features/checkout/types";
 import { parseShippingAddressFromFormData } from "@/features/checkout/schemas/shipping-address";
+
+const TapCardElement = dynamic(
+  () =>
+    import("@/features/checkout/components/tap-card-element").then(
+      (mod) => ({ default: mod.TapCardElement }),
+    ),
+  { ssr: false },
+);
 
 interface CheckoutFormProps {
   total: number;
@@ -152,14 +161,16 @@ export function CheckoutForm({ total, currency }: CheckoutFormProps) {
             <h2 className="font-display text-xl text-[var(--color-ivory)]">Payment</h2>
             {isLivePayment ? (
               <div className="mt-6">
-                <TapCardElement
-                  ref={tapCardRef}
-                  amount={grandTotal}
-                  currency={currency}
-                  locale={locale}
-                  onSuccess={handleTokenSuccess}
-                  onError={handleTokenError}
-                />
+                <Suspense fallback={<div className="text-sm text-[var(--color-ivory-muted)]">Loading payment form...</div>}>
+                  <TapCardElement
+                    ref={tapCardRef}
+                    amount={grandTotal}
+                    currency={currency}
+                    locale={locale}
+                    onSuccess={handleTokenSuccess}
+                    onError={handleTokenError}
+                  />
+                </Suspense>
                 {cardError ? (
                   <p role="alert" className="mt-3 text-sm text-[var(--color-ruby)]">
                     {cardError}

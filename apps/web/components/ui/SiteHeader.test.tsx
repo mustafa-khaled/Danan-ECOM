@@ -31,13 +31,15 @@ describe("SiteHeader", () => {
     expect(screen.getByText("Wardrobe")).toBeInTheDocument();
   });
 
-  it("renders language switcher", () => {
+  it("renders language select with options", () => {
     render(
       <NextIntlClientProvider locale="en" messages={en}>
         <SiteHeader displayName="Ahmed" />
       </NextIntlClientProvider>,
     );
 
-    expect(screen.getAllByText("AR").length).toBeGreaterThan(0);
+    const selects = screen.getAllByLabelText("Select language");
+    expect(selects.length).toBeGreaterThan(0);
+    expect(selects[0]).toHaveValue("en");
   });
 });

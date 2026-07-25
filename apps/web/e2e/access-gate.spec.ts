@@ -2,6 +2,12 @@ import { test, expect } from "@playwright/test";
 
 const VALID_HOUSE_KEY = process.env.E2E_HOUSE_KEY ?? "dadan-vip-key-001";
 
+test.beforeEach(async ({ page }) => {
+  await page.context().addCookies([
+    { name: "NEXT_LOCALE", value: "en", domain: "localhost", path: "/" },
+  ]);
+});
+
 test.describe("Access Gate", () => {
   test("shows access gate page", async ({ page }) => {
     await page.goto("/beta");

@@ -36,7 +36,7 @@ export function WelcomeModal({ displayName }: WelcomeModalProps) {
         <button
           type="button"
           onClick={dismiss}
-          className="absolute end-4 top-4 z-10 flex size-8 items-center justify-center rounded-full bg-white/90 text-[var(--color-text)] transition-colors hover:bg-white"
+          className="absolute inset-e-4 top-4 z-10 flex size-8 items-center justify-center rounded-full bg-white/90 text-[var(--color-text)] transition-colors hover:bg-white"
           aria-label="Close"
         >
           ×

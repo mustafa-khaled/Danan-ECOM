@@ -67,6 +67,56 @@ export function LocaleSwitcher({ className, syncProfile = false }: LocaleSwitche
   );
 }
 
+interface LocaleSelectProps {
+  className?: string;
+  syncProfile?: boolean;
+}
+
+export function LocaleSelect({ className, syncProfile = false }: LocaleSelectProps) {
+  const locale = useLocale() as Locale;
+  const router = useRouter();
+  const [isPending, startTransition] = useTransition();
+  const { updateProfile } = useUpdateProfile();
+
+  function handleChange(event: React.ChangeEvent<HTMLSelectElement>) {
+    const nextLocale = event.target.value as Locale;
+    if (nextLocale === locale) return;
+
+    setLocaleCookie(nextLocale);
+
+    if (syncProfile) {
+      updateProfile({ locale: nextLocale });
+    }
+
+    startTransition(() => {
+      router.refresh();
+    });
+  }
+
+  return (
+    <select
+      value={locale}
+      onChange={handleChange}
+      disabled={isPending}
+      aria-label="Select language"
+      className={
+        className ??
+        "cursor-pointer appearance-none border-none bg-transparent pe-4 text-[0.8125rem] font-medium tracking-wide text-[var(--color-text)] outline-none disabled:opacity-50"
+      }
+      style={{
+        backgroundImage:
+          "url(\"data:image/svg+xml,%3Csvg width='10' height='6' viewBox='0 0 10 6' fill='none' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M1 1L5 5L9 1' stroke='%23555' stroke-width='1.2' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E\")",
+        backgroundRepeat: "no-repeat",
+        backgroundPosition: "right center",
+        backgroundSize: "10px 6px",
+      }}
+    >
+      <option value="en">EN</option>
+      <option value="ar">AR</option>
+    </select>
+  );
+}
+
 export function LocaleProvider({ children }: { children: ReactNode }) {
   return children;
 }

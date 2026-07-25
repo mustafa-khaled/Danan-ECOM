@@ -22,7 +22,8 @@
     "cart": "Cart",
     "orders": "Orders",
     "transfers": "Transfers",
-    "profile": "Profile"
+    "profile": "Profile",
+    "notifications": "Notifications"
   },
   "greeting": {
     "morning": "Morning",
