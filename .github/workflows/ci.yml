@@ -129,6 +129,9 @@ jobs:
         working-directory: packages/db
         run: pnpm exec prisma migrate deploy
 
+      - name: Build utils package (required by seed)
+        run: pnpm --filter @dadan/utils build
+
       - name: Build storage package for seed assets
         run: pnpm --filter @dadan/storage build
 
