@@ -4,7 +4,8 @@ import {
   NotFoundException,
 } from "@nestjs/common";
 import { AcquisitionType, ActorType, OrderStatus, PieceStatus } from "@dadan/db";
-import type { ShippingAddress } from "@dadan/types";
+import type { Locale, ShippingAddress } from "@dadan/types";
+import { localizeDesign } from "../common/i18n/localize";
 import { AuditService } from "../audit/audit.service";
 import { CertificatesService } from "../certificates/certificates.service";
 import { NotificationsService } from "../notifications/notifications.service";
@@ -28,6 +29,7 @@ export class OrdersService {
     totalAmount: number;
     currency: string;
     paymentProvider: string;
+    paymentMethod?: string;
     paymentReference: string;
     shippingAddress: ShippingAddress;
   }) {
@@ -54,6 +56,7 @@ export class OrdersService {
           totalAmount: params.totalAmount,
           currency: params.currency,
           paymentProvider: params.paymentProvider,
+          paymentMethod: params.paymentMethod,
           paymentReference: params.paymentReference,
           shippingAddress: params.shippingAddress as object,
           items: {
@@ -115,7 +118,10 @@ export class OrdersService {
       where: { id: params.clientId },
     });
     if (client) {
-      this.notifications.sendOrderPlacedEmail(client.email, { orderId: order.id });
+      this.notifications.sendOrderPlacedEmail(client.email, {
+        orderId: order.id,
+        locale: client.locale,
+      });
     }
 
     return order;
@@ -159,7 +165,12 @@ export class OrdersService {
     }
   }
 
-  async getClientOrders(clientId: string, page?: number, limit?: number) {
+  async getClientOrders(
+    clientId: string,
+    page?: number,
+    limit?: number,
+    locale: Locale = "ar",
+  ) {
     const { skip, take, page: p, limit: l } = paginationParams(page, limit);
     const [items, total] = await Promise.all([
       this.prisma.db.order.findMany({
@@ -184,7 +195,7 @@ export class OrdersService {
             order.items.map(async (item) => ({
               ...item,
               design: {
-                ...item.design,
+                ...localizeDesign(item.design, locale),
                 imageUrls: await this.storage.resolvePublicUrls(item.design.imageUrls),
               },
             })),
@@ -197,7 +208,11 @@ export class OrdersService {
     };
   }
 
-  async getClientOrder(clientId: string, orderId: string) {
+  async getClientOrder(
+    clientId: string,
+    orderId: string,
+    locale: Locale = "ar",
+  ) {
     const order = await this.prisma.db.order.findFirst({
       where: { id: orderId, clientId },
       include: {
@@ -206,7 +221,7 @@ export class OrdersService {
         },
       },
     });
-    if (!order) throw new NotFoundException("Order not found");
+    if (!order) throw new NotFoundException("errors.ORDER_NOT_FOUND");
 
     return {
       ...order,
@@ -214,7 +229,7 @@ export class OrdersService {
         order.items.map(async (item) => ({
           ...item,
           design: {
-            ...item.design,
+            ...localizeDesign(item.design, locale),
             imageUrls: await this.storage.resolvePublicUrls(item.design.imageUrls),
           },
         })),
@@ -226,9 +241,9 @@ export class OrdersService {
     const order = await this.prisma.db.order.findFirst({
       where: { id: orderId, clientId },
     });
-    if (!order) throw new NotFoundException("Order not found");
+    if (!order) throw new NotFoundException("errors.ORDER_NOT_FOUND");
     if (order.status !== OrderStatus.PENDING) {
-      throw new BadRequestException("Only pending orders can be cancelled");
+      throw new BadRequestException("errors.ORDER_NOT_CANCELLABLE");
     }
 
     return this.prisma.db.order.update({
@@ -283,7 +298,7 @@ export class OrdersService {
         items: { include: { piece: true, design: true } },
       },
     });
-    if (!order) throw new NotFoundException("Order not found");
+    if (!order) throw new NotFoundException("errors.ORDER_NOT_FOUND");
     return order;
   }
 

@@ -1,3 +1,5 @@
+import { NextIntlClientProvider } from "next-intl";
+import { getLocale, getMessages } from "next-intl/server";
 import type { Metadata } from "next";
 import {
   Cormorant_Garamond,
@@ -9,6 +11,8 @@ import {
 import "../styles/theme.css";
 import "./globals.css";
 import { Providers } from "./providers";
+import { getDirection } from "@/i18n/routing";
+import type { Locale } from "@/i18n/routing";
 
 const ebGaramond = EB_Garamond({
   subsets: ["latin"],
@@ -65,17 +69,25 @@ export const metadata: Metadata = {
   },
 };
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  const locale = (await getLocale()) as Locale;
+  const messages = await getMessages();
+  const dir = getDirection(locale);
+
   return (
     <html
+      lang={locale}
+      dir={dir}
       className={`${ebGaramond.variable} ${cormorant.variable} ${ibmPlexMono.variable} ${amiri.variable} ${manrope.variable}`}
     >
-      <body className="font-manrope">
-        <Providers>{children}</Providers>
+      <body className={locale === "ar" ? "font-arabic" : "font-manrope"}>
+        <NextIntlClientProvider messages={messages}>
+          <Providers>{children}</Providers>
+        </NextIntlClientProvider>
       </body>
     </html>
   );

@@ -47,7 +47,7 @@ export class AuthService {
       RATE_LIMIT_WINDOW_SECONDS,
     );
     if (limited) {
-      throw new HttpException("Too many attempts", HttpStatus.TOO_MANY_REQUESTS);
+      throw new HttpException("errors.TOO_MANY_REQUESTS", HttpStatus.TOO_MANY_REQUESTS);
     }
 
     const normalizedKey = houseKey.trim();
@@ -100,6 +100,7 @@ export class AuthService {
         clientId: matched.id,
         displayName: matched.displayName,
         visibilityGroups: matched.visibilityGroups,
+        locale: matched.locale === "en" ? ("en" as const) : ("ar" as const),
       },
     };
   }

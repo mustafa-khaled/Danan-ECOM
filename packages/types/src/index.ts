@@ -1,7 +1,10 @@
+export type Locale = "ar" | "en";
+
 export interface ClientSession {
   clientId: string;
   displayName: string;
   visibilityGroups: string[];
+  locale: Locale;
 }
 
 export interface AdminSession {
@@ -26,6 +29,7 @@ export interface ValidateKeyResponse {
   clientId: string;
   displayName: string;
   visibilityGroups: string[];
+  locale: Locale;
 }
 
 export interface ApiErrorBody {

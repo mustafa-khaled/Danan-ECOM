@@ -1,10 +1,18 @@
 import { StatusPill } from "@/components/ui";
+import { AdminPagination } from "@/components/admin-pagination";
 import { fetchAdminClients } from "@/features/admin";
 import { getAdminCookieHeader } from "@/features/auth/server/admin-session";
+import { ADMIN_PAGE_SIZE, parseAdminPage } from "@/shared/lib/parse-admin-page";
 
-export default async function ClientsPage() {
+export default async function ClientsPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ page?: string }>;
+}) {
+  const { page: pageParam } = await searchParams;
+  const page = parseAdminPage(pageParam);
   const cookieHeader = await getAdminCookieHeader();
-  const { items, total } = await fetchAdminClients(1, 50, cookieHeader);
+  const { items, total } = await fetchAdminClients(page, ADMIN_PAGE_SIZE, cookieHeader);
 
   return (
     <div className="space-y-6">
@@ -41,6 +49,13 @@ export default async function ClientsPage() {
           </tbody>
         </table>
       </div>
+
+      <AdminPagination
+        basePath="/admin/clients"
+        page={page}
+        limit={ADMIN_PAGE_SIZE}
+        total={total}
+      />
     </div>
   );
 }

@@ -1,10 +1,13 @@
 "use client";
 
 import { FormEvent, useState } from "react";
+import { useTranslations } from "next-intl";
 import { GoldDivider, LuxuryButton, SerialBadge, StatusPill } from "@/components/ui";
 import { useVerifySerial } from "@/features/verify";
 
 export function VerifyForm() {
+  const t = useTranslations("verify");
+  const pieceT = useTranslations("piece");
   const [serial, setSerial] = useState("");
   const [token, setToken] = useState("");
   const {
@@ -29,12 +32,10 @@ export function VerifyForm() {
         onSubmit={handleSubmit}
         className="max-w-xl space-y-4 rounded-[var(--radius-panel)] border border-[var(--color-border)] bg-[var(--color-surface)] p-6"
       >
-        <p className="text-sm text-[var(--color-ivory-muted)]">
-          Enter the serial number and verification token from your certificate.
-        </p>
+        <p className="text-sm text-[var(--color-ivory-muted)]">{t("instructions")}</p>
         <label className="block">
           <span className="mb-2 block text-xs tracking-[0.12em] uppercase text-[var(--color-ivory-muted)]">
-            Serial Number
+            {t("serialNumber")}
           </span>
           <input
             value={serial}
@@ -45,7 +46,7 @@ export function VerifyForm() {
         </label>
         <label className="block">
           <span className="mb-2 block text-xs tracking-[0.12em] uppercase text-[var(--color-ivory-muted)]">
-            Verification Token
+            {t("verificationToken")}
           </span>
           <input
             value={token}
@@ -56,11 +57,11 @@ export function VerifyForm() {
         </label>
         {error ? (
           <p role="alert" className="text-sm text-[var(--color-ruby)]">
-            {error instanceof Error ? error.message : "Verification failed"}
+            {error instanceof Error ? error.message : t("verificationFailed")}
           </p>
         ) : null}
         <LuxuryButton type="submit" loading={isPending}>
-          Verify Authenticity
+          {t("verify")}
         </LuxuryButton>
       </form>
 
@@ -69,16 +70,16 @@ export function VerifyForm() {
           <div className="flex items-center gap-3">
             <StatusPill status="APPROVED" />
             <p className="font-display text-xl text-[var(--color-ivory)]">
-              {String(result.pieceName ?? "Verified Piece")}
+              {String(result.pieceName ?? t("verifiedPiece"))}
             </p>
           </div>
           <GoldDivider className="my-4" />
           <SerialBadge serial={String(result.serialNumber ?? serial)} />
           <dl className="mt-4 space-y-2 text-sm">
-            <Row label="Collection" value={String(result.collection ?? "—")} />
-            <Row label="Material" value={String(result.material ?? "—")} />
-            <Row label="Weight" value={String(result.weight ?? "—")} />
-            <Row label="Dimensions" value={String(result.dimensions ?? "—")} />
+            <Row label={t("collection")} value={String(result.collection ?? "—")} />
+            <Row label={t("material")} value={String(result.material ?? "—")} />
+            <Row label={pieceT("weight")} value={String(result.weight ?? "—")} />
+            <Row label={t("dimensions")} value={String(result.dimensions ?? "—")} />
           </dl>
         </section>
       ) : null}

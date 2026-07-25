@@ -4,8 +4,6 @@ export { initiateTransfer } from "./api/initiate-transfer";
 export { confirmTransferSender } from "./api/confirm-transfer-sender";
 export { confirmTransferRecipient } from "./api/confirm-transfer-recipient";
 export { cancelTransfer } from "./api/cancel-transfer";
-export { useTransfers } from "./hooks/use-transfers";
-export { useTransfer } from "./hooks/use-transfer";
 export { useInitiateTransfer } from "./hooks/use-initiate-transfer";
 export { useConfirmTransferSender } from "./hooks/use-confirm-transfer-sender";
 export { useConfirmTransferRecipient } from "./hooks/use-confirm-transfer-recipient";

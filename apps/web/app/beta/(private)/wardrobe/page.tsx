@@ -1,48 +1,55 @@
 import Link from "next/link";
-import { PieceCard, PrivateLayout } from "@/components/ui";
-import { EmptyState } from "../../../../components/empty-state";
+import { getTranslations } from "next-intl/server";
+import { ClientShell, PieceCard, WardrobeLayout } from "@/components/ui";
+import { EmptyState } from "@/shared/components/feedback/empty-state";
 import { fetchWardrobe } from "@/features/wardrobe";
-import { privateNavItems } from "@/shared/lib/nav";
+import { fetchTransfers } from "@/features/transfers";
 import { getSessionCookieHeader, requireClientSession } from "@/features/auth/server/session";
 
 export default async function WardrobePage() {
   const profile = await requireClientSession();
   const cookie = await getSessionCookieHeader();
-  const wardrobe = await fetchWardrobe(cookie);
+  const [wardrobe, transfers] = await Promise.all([
+    fetchWardrobe(cookie),
+    fetchTransfers(cookie),
+  ]);
+  const t = await getTranslations("wardrobe");
+
+  const pendingTransfers = transfers.filter((tr) => tr.status === "PENDING").length;
 
   return (
-    <PrivateLayout clientName={profile.displayName} navItems={privateNavItems}>
-      <header className="mb-10 space-y-3">
-        <p className="text-xs tracking-[0.2em] uppercase text-[var(--color-gold-light)]">Owned</p>
-        <h1 className="font-display text-4xl text-[var(--color-ivory)]">Your Wardrobe</h1>
-        <p className="text-[var(--color-ivory-muted)]">
-          Pieces you own, with certificates and transfer history.
-        </p>
-      </header>
-
-      {wardrobe.length === 0 ? (
-        <EmptyState
-          title="Your wardrobe is empty"
-          description="Purchased and transferred pieces will appear here."
-          action={{ href: "/beta/collections", label: "Explore Collections" }}
-        />
-      ) : (
-        <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-          {wardrobe.map((item) => (
-            <Link key={item.id} href={`/beta/wardrobe/${item.id}`}>
-              <PieceCard
-                piece={{
-                  id: item.id,
-                  name: item.design.name,
-                  serialNumber: item.serialNumber,
-                  imageUrl: item.design.images[0],
-                  collectionName: item.design.collection,
-                }}
-              />
-            </Link>
-          ))}
-        </div>
-      )}
-    </PrivateLayout>
+    <ClientShell displayName={profile.displayName}>
+      <WardrobeLayout
+        displayName={profile.displayName}
+        ownedCount={wardrobe.length}
+        certificatesCount={wardrobe.length}
+        pendingTransfers={pendingTransfers}
+      >
+        {wardrobe.length === 0 ? (
+          <EmptyState
+            title={t("empty")}
+            description={t("emptyDescription")}
+            action={{ href: "/beta/collections", label: t("owned") }}
+          />
+        ) : (
+          <div className="grid gap-6 sm:grid-cols-2">
+            {wardrobe.map((item) => (
+              <Link key={item.id} href={`/beta/wardrobe/${item.id}`}>
+                <PieceCard
+                  piece={{
+                    id: item.id,
+                    name: item.design.name,
+                    serialNumber: item.serialNumber,
+                    imageUrl: item.design.images[0],
+                    collectionName: item.design.collection,
+                  }}
+                  badge="certificateActive"
+                />
+              </Link>
+            ))}
+          </div>
+        )}
+      </WardrobeLayout>
+    </ClientShell>
   );
 }

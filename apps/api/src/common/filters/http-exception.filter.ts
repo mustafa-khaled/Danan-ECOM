@@ -5,21 +5,30 @@ import {
   HttpException,
   HttpStatus,
   Logger,
+  Optional,
 } from "@nestjs/common";
 import type { Request, Response } from "express";
+import { I18nService } from "nestjs-i18n";
+import { resolveLocale } from "../i18n/locale";
 
 interface ErrorResponse {
   statusCode: number;
   message: string;
+  /** Stable machine-readable key (present when the error uses an i18n key). */
+  messageKey?: string;
   error: string;
   timestamp: string;
   path: string;
   requestId?: string;
 }
 
+const I18N_KEY_PATTERN = /^errors\.[A-Z0-9_]+$/;
+
 @Catch()
 export class GlobalExceptionFilter implements ExceptionFilter {
   private readonly logger = new Logger(GlobalExceptionFilter.name);
+
+  constructor(@Optional() private readonly i18n?: I18nService) {}
 
   catch(exception: unknown, host: ArgumentsHost) {
     const ctx = host.switchToHttp();
@@ -31,9 +40,9 @@ export class GlobalExceptionFilter implements ExceptionFilter {
       ? exception.getStatus()
       : HttpStatus.INTERNAL_SERVER_ERROR;
 
-    const message = isHttpException
+    const rawMessage = isHttpException
       ? this.extractMessage(exception)
-      : "Internal server error";
+      : "errors.INTERNAL_SERVER_ERROR";
 
     const errorName = isHttpException
       ? exception.name
@@ -41,11 +50,15 @@ export class GlobalExceptionFilter implements ExceptionFilter {
 
     const errorResponse: ErrorResponse = {
       statusCode: status,
-      message,
+      message: this.translate(rawMessage, request),
       error: errorName,
       timestamp: new Date().toISOString(),
       path: request.url,
     };
+
+    if (I18N_KEY_PATTERN.test(rawMessage)) {
+      errorResponse.messageKey = rawMessage;
+    }
 
     const requestId = request.headers["x-request-id"];
     if (typeof requestId === "string") {
@@ -55,6 +68,16 @@ export class GlobalExceptionFilter implements ExceptionFilter {
     this.logError(request, status, exception, requestId as string | undefined);
 
     response.status(status).json(errorResponse);
+  }
+
+  /** Translates `errors.*` keys to the request locale; passes other messages through. */
+  private translate(message: string, request: Request): string {
+    if (!this.i18n || !I18N_KEY_PATTERN.test(message)) {
+      return message;
+    }
+    const lang = resolveLocale(request);
+    const translated = this.i18n.t(message, { lang });
+    return typeof translated === "string" ? translated : message;
   }
 
   private extractMessage(exception: HttpException): string {

@@ -30,6 +30,7 @@
   "devDependencies": {
     "@dadan/config": "workspace:*",
     "@dadan/storage": "workspace:*",
+    "@dadan/utils": "workspace:*",
     "@types/bcrypt": "^5.0.2",
     "dotenv-cli": "^8.0.0",
     "eslint-config-prettier": "^10.0.1",

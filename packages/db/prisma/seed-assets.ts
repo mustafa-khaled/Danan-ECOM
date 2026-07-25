@@ -1,19 +1,27 @@
+import { readFile } from "node:fs/promises";
+import * as path from "node:path";
 import { storage } from "@dadan/storage";
 
-const PLACEHOLDER_KEYS = [
-  "designs/placeholder/noir-ring.jpg",
-  "designs/placeholder/noir-necklace.jpg",
-  "designs/placeholder/heritage-bracelet.jpg",
-  "designs/placeholder/heritage-earrings.jpg",
-] as const;
+/** Local asset filename -> storage key used by the seed catalog. */
+const SEED_IMAGES: Record<string, string> = {
+  "noir-ring.jpg": "designs/seed/noir-ring.jpg",
+  "noir-necklace.jpg": "designs/seed/noir-necklace.jpg",
+  "noir-earrings.jpg": "designs/seed/noir-earrings.jpg",
+  "heritage-bracelet.jpg": "designs/seed/heritage-bracelet.jpg",
+  "heritage-earrings.jpg": "designs/seed/heritage-earrings.jpg",
+  "heritage-pendant.jpg": "designs/seed/heritage-pendant.jpg",
+  "oasis-ring.jpg": "designs/seed/oasis-ring.jpg",
+  "oasis-bracelet.jpg": "designs/seed/oasis-bracelet.jpg",
+  "oasis-choker.jpg": "designs/seed/oasis-choker.jpg",
+};
 
-// Minimal valid 1x1 JPEG
-const PLACEHOLDER_JPEG = Buffer.from(
-  "/9j/4AAQSkZJRgABAQEASABIAAD/2wBDAP//////////////////////////////////////////////////////////////////////////////////////2wBDAf//////////////////////////////////////////////////////////////////////////////////////wAARCAABAAEDAREAAhEBAxEB/8QAFAABAAAAAAAAAAAAAAAAAAAAA//EABQQAQAAAAAAAAAAAAAAAAAAAAD/xAAUAQEAAAAAAAAAAAAAAAAAAAAA/8QAFBEBAAAAAAAAAAAAAAAAAAAAAP/aAAwDAQACEQMRAD8A0f/Z",
-  "base64",
-);
+export function seedImageKey(filename: string): string {
+  const key = SEED_IMAGES[filename];
+  if (!key) throw new Error(`Unknown seed image: ${filename}`);
+  return key;
+}
 
-export async function seedPlaceholders(): Promise<void> {
+export async function seedAssets(): Promise<void> {
   const provider = process.env.STORAGE_PROVIDER ?? "local";
 
   if (provider !== "local") {
@@ -24,16 +32,18 @@ export async function seedPlaceholders(): Promise<void> {
     }
   }
 
-  console.log("Uploading seed placeholder images...");
+  console.log("Uploading seed catalog images...");
+  const assetsDir = path.join(__dirname, "assets");
 
-  for (const key of PLACEHOLDER_KEYS) {
+  for (const [filename, key] of Object.entries(SEED_IMAGES)) {
     const exists = await storage.exists(key);
     if (exists) {
       console.log(`  skip ${key} (already exists)`);
       continue;
     }
 
-    await storage.upload(key, PLACEHOLDER_JPEG, { contentType: "image/jpeg" });
-    console.log(`  uploaded ${key}`);
+    const bytes = await readFile(path.join(assetsDir, filename));
+    await storage.upload(key, bytes, { contentType: "image/jpeg" });
+    console.log(`  uploaded ${key} (${(bytes.length / 1024).toFixed(0)} KB)`);
   }
 }

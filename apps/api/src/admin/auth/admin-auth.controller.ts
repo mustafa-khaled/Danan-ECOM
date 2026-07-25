@@ -13,6 +13,7 @@ import { AdminLoginDto } from "./dto/admin-login.dto";
 import { AdminGuard } from "./guards/admin.guard";
 import { CurrentAdmin } from "./decorators/current-admin.decorator";
 import { AllowViewerWrite } from "./decorators/allow-viewer-write.decorator";
+import { Public } from "../../common/decorators/public.decorator";
 import type { AdminSession } from "@dadan/types";
 import {
   ADMIN_COOKIE,
@@ -24,6 +25,7 @@ import {
 export class AdminAuthController {
   constructor(private readonly adminAuth: AdminAuthService) {}
 
+  @Public()
   @Post("login")
   async login(
     @Body() dto: AdminLoginDto,

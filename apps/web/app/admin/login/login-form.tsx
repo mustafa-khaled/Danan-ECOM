@@ -31,7 +31,7 @@ export function LoginForm() {
       <div className="space-y-2">
         <label
           htmlFor="email"
-          className="block text-xs tracking-[0.14em] uppercase text-[var(--color-ivory-muted)]"
+          className="block text-xs tracking-[0.14em] uppercase text-(--color-ivory-muted)"
         >
           Email
         </label>
@@ -43,14 +43,14 @@ export function LoginForm() {
           required
           value={email}
           onChange={(event) => setEmail(event.target.value)}
-          className="w-full rounded-[var(--radius-item)] border border-[var(--color-border)] bg-[var(--color-surface)] px-4 py-3 text-sm text-[var(--color-ivory)] outline-none focus-visible:shadow-[var(--shadow-focus)]"
+          className="w-full rounded-(--radius-item) border border-border bg-(--color-surface) px-4 py-3 text-sm text-(--color-ivory) outline-none focus-visible:shadow-(--shadow-focus)"
         />
       </div>
 
       <div className="space-y-2">
         <label
           htmlFor="password"
-          className="block text-xs tracking-[0.14em] uppercase text-[var(--color-ivory-muted)]"
+          className="block text-xs tracking-[0.14em] uppercase text-(--color-ivory-muted)"
         >
           Password
         </label>
@@ -62,12 +62,12 @@ export function LoginForm() {
           required
           value={password}
           onChange={(event) => setPassword(event.target.value)}
-          className="w-full rounded-[var(--radius-item)] border border-[var(--color-border)] bg-[var(--color-surface)] px-4 py-3 text-sm text-[var(--color-ivory)] outline-none focus-visible:shadow-[var(--shadow-focus)]"
+          className="w-full rounded-(--radius-item) border border-border bg-(--color-surface) px-4 py-3 text-sm text-(--color-ivory) outline-none focus-visible:shadow-(--shadow-focus)"
         />
       </div>
 
       {error ? (
-        <p className="text-sm text-[var(--color-ruby)]" role="alert">
+        <p className="text-sm text-(--color-ruby)" role="alert">
           {error instanceof Error ? error.message : "Sign in failed"}
         </p>
       ) : null}

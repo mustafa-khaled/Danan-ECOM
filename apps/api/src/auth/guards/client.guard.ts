@@ -53,7 +53,12 @@ export class ClientGuard implements CanActivate {
       // changes take effect immediately instead of when the JWT expires.
       const client = await this.prisma.db.client.findUnique({
         where: { id: payload.sub },
-        select: { isActive: true, displayName: true, visibilityGroups: true },
+        select: {
+          isActive: true,
+          displayName: true,
+          visibilityGroups: true,
+          locale: true,
+        },
       });
       if (!client || !client.isActive) {
         throw new UnauthorizedException(AUTH_FAILURE_MESSAGE);
@@ -63,6 +68,7 @@ export class ClientGuard implements CanActivate {
         clientId: payload.sub,
         displayName: client.displayName,
         visibilityGroups: client.visibilityGroups,
+        locale: client.locale === "en" ? "en" : "ar",
       };
       return true;
     } catch {

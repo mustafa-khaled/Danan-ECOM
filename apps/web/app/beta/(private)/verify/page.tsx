@@ -1,24 +1,20 @@
-import { PrivateLayout } from "@/components/ui";
-import { VerifyForm } from "../../../../components/verify-form";
-import { privateNavItems } from "@/shared/lib/nav";
+import { getTranslations } from "next-intl/server";
+import { ClientShell } from "@/components/ui";
+import { VerifyForm } from "@/components/verify-form";
 import { requireClientSession } from "@/features/auth/server/session";
 
 export default async function VerifyPage() {
   const profile = await requireClientSession();
+  const t = await getTranslations("verify");
 
   return (
-    <PrivateLayout clientName={profile.displayName} navItems={privateNavItems}>
+    <ClientShell displayName={profile.displayName}>
       <header className="mb-10 space-y-3">
-        <p className="text-xs tracking-[0.2em] uppercase text-[var(--color-gold-light)]">
-          Authenticity
-        </p>
-        <h1 className="font-display text-4xl text-[var(--color-ivory)]">Verify Certificate</h1>
-        <p className="max-w-2xl text-[var(--color-ivory-muted)]">
-          Confirm the authenticity of a DADAN piece using its serial number and verification token.
-        </p>
+        <h1 className="font-english text-4xl text-[var(--color-text)]">{t("title")}</h1>
+        <p className="max-w-2xl text-[var(--color-text-muted)]">{t("description")}</p>
       </header>
 
       <VerifyForm />
-    </PrivateLayout>
+    </ClientShell>
   );
 }

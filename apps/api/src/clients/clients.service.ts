@@ -39,7 +39,7 @@ export class ClientsService {
         createdAt: true,
       },
     });
-    if (!client) throw new NotFoundException("Client not found");
+    if (!client) throw new NotFoundException("errors.CLIENT_NOT_FOUND");
     return client;
   }
 
@@ -150,7 +150,7 @@ export class ClientsService {
         },
       },
     });
-    if (!client) throw new NotFoundException("Client not found");
+    if (!client) throw new NotFoundException("errors.CLIENT_NOT_FOUND");
 
     return this.stripHouseKey(client);
   }
@@ -202,7 +202,7 @@ export class ClientsService {
     ipAddress?: string,
   ) {
     const client = await this.prisma.db.client.findUnique({ where: { id } });
-    if (!client) throw new NotFoundException("Client not found");
+    if (!client) throw new NotFoundException("errors.CLIENT_NOT_FOUND");
 
     const groups = new Set(client.visibilityGroups.map(normalizeVisibilityGroup));
     add?.forEach((g) => groups.add(normalizeVisibilityGroup(g)));
@@ -228,7 +228,7 @@ export class ClientsService {
 
   async rotateKey(adminId: string, id: string, ipAddress?: string) {
     const client = await this.prisma.db.client.findUnique({ where: { id } });
-    if (!client) throw new NotFoundException("Client not found");
+    if (!client) throw new NotFoundException("errors.CLIENT_NOT_FOUND");
 
     const plainKey = this.auth.generateHouseKey();
     const hashed = await this.auth.hashHouseKey(plainKey);

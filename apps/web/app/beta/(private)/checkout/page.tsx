@@ -1,15 +1,16 @@
 import Link from "next/link";
-import { PrivateLayout } from "@/components/ui";
-import { CheckoutForm } from "../../../../components/checkout-form";
-import { EmptyState } from "../../../../components/empty-state";
+import { getTranslations } from "next-intl/server";
+import { ClientShell } from "@/components/ui";
+import { CheckoutForm } from "@/components/checkout-form";
+import { EmptyState } from "@/shared/components/feedback/empty-state";
 import { fetchCart } from "@/features/cart";
-import { privateNavItems } from "@/shared/lib/nav";
 import { getSessionCookieHeader, requireClientSession } from "@/features/auth/server/session";
 
 export default async function CheckoutPage() {
   const profile = await requireClientSession();
   const cookie = await getSessionCookieHeader();
   const items = await fetchCart(cookie);
+  const t = await getTranslations("checkout");
 
   const validItems = items.filter((item) => item.piece);
   const total = validItems.reduce(
@@ -19,31 +20,22 @@ export default async function CheckoutPage() {
   const currency = validItems[0]?.piece?.design.currency ?? "SAR";
 
   return (
-    <PrivateLayout clientName={profile.displayName} navItems={privateNavItems}>
+    <ClientShell displayName={profile.displayName}>
       <header className="mb-10 space-y-3">
-        <p className="text-xs tracking-[0.2em] uppercase text-[var(--color-gold-light)]">Checkout</p>
-        <h1 className="font-display text-4xl text-[var(--color-ivory)]">Complete Your Purchase</h1>
-        <p className="text-[var(--color-ivory-muted)]">
-          Each DADAN piece is unique. Review carefully before confirming.
-        </p>
+        <h1 className="font-english text-4xl text-[var(--color-text)]">{t("title")}</h1>
       </header>
 
       {validItems.length === 0 ? (
         <EmptyState
-          title="Nothing to checkout"
-          description="Your cart is empty. Add a piece before proceeding."
-          action={{ href: "/beta/cart", label: "View Cart" }}
+          title={t("empty")}
+          description={t("emptyDescription")}
+          action={{ href: "/beta/cart", label: t("title") }}
         />
       ) : (
         <div className="max-w-2xl">
           <CheckoutForm total={total} currency={currency} />
-          <p className="mt-6 text-center text-xs text-[var(--color-ivory-muted)]">
-            <Link href="/beta/cart" className="hover:text-[var(--color-gold-light)]">
-              Return to cart
-            </Link>
-          </p>
         </div>
       )}
-    </PrivateLayout>
+    </ClientShell>
   );
 }

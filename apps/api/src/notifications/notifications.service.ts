@@ -1,6 +1,16 @@
 import { Injectable, Logger } from "@nestjs/common";
 import { ConfigService } from "@nestjs/config";
+import { I18nService } from "nestjs-i18n";
+import type { Locale } from "@dadan/types";
 import * as nodemailer from "nodemailer";
+import { DEFAULT_LOCALE, isLocale } from "../common/i18n/locale";
+
+interface EmailContent {
+  subject: string;
+  heading: string;
+  body: string;
+  extraLine?: string;
+}
 
 @Injectable()
 export class NotificationsService {
@@ -9,7 +19,10 @@ export class NotificationsService {
   private readonly fromEmail: string;
   private readonly adminEmail: string | undefined;
 
-  constructor(config: ConfigService) {
+  constructor(
+    private readonly i18n: I18nService,
+    config: ConfigService,
+  ) {
     const smtpHost = config.get<string>("SMTP_HOST");
     const smtpPort = config.get<number>("SMTP_PORT");
     const smtpUser = config.get<string>("SMTP_USER");
@@ -32,6 +45,47 @@ export class NotificationsService {
     }
   }
 
+  private normalizeLocale(locale?: string): Locale {
+    return isLocale(locale) ? locale : DEFAULT_LOCALE;
+  }
+
+  private buildContent(
+    template: string,
+    locale: Locale,
+    args: Record<string, string>,
+    extra?: { key: string; args: Record<string, string> },
+  ): EmailContent {
+    const t = (key: string, a: Record<string, string> = args) =>
+      this.i18n.t(`emails.${template}.${key}`, { lang: locale, args: a });
+
+    return {
+      subject: t("subject"),
+      heading: t("heading"),
+      body: t("body"),
+      extraLine: extra ? t(extra.key, extra.args) : undefined,
+    };
+  }
+
+  private async sendTemplatedEmail(
+    to: string,
+    template: string,
+    locale: Locale,
+    args: Record<string, string>,
+    extra?: { key: string; args: Record<string, string> },
+  ) {
+    const content = this.buildContent(template, locale, args, extra);
+    const dir = locale === "ar" ? "rtl" : "ltr";
+    const text = content.extraLine
+      ? `${content.body}\n${content.extraLine}`
+      : content.body;
+    const html =
+      `<div dir="${dir}"><h2>${content.heading}</h2><p>${content.body}</p>` +
+      (content.extraLine ? `<p>${content.extraLine}</p>` : "") +
+      `</div>`;
+
+    await this.sendEmail(to, content.subject, text, html);
+  }
+
   private async sendEmail(to: string, subject: string, text: string, html?: string) {
     if (!this.transporter) {
       this.logger.log(`[Email to ${to}] ${subject}: ${text}`);
@@ -52,88 +106,65 @@ export class NotificationsService {
     }
   }
 
-  sendTransferInitiatedEmail(to: string, data: Record<string, unknown>) {
-    const transferId = data.transferId as string;
-    this.sendEmail(
+  sendTransferInitiatedEmail(to: string, data: { transferId: string; locale?: string }) {
+    void this.sendTemplatedEmail(to, "transferInitiated", this.normalizeLocale(data.locale), {
+      transferId: data.transferId,
+    });
+  }
+
+  sendTransferSenderConfirmedEmail(to: string, data: { transferId: string; locale?: string }) {
+    void this.sendTemplatedEmail(
       to,
-      "Transfer Initiated - DADAN Dijital",
-      `A transfer has been initiated. Transfer ID: ${transferId}`,
-      `<h2>Transfer Initiated</h2><p>A transfer has been initiated.</p><p>Transfer ID: <strong>${transferId}</strong></p>`,
+      "transferAwaitingConfirmation",
+      this.normalizeLocale(data.locale),
+      { transferId: data.transferId },
     );
   }
 
-  sendTransferSenderConfirmedEmail(to: string, data: Record<string, unknown>) {
-    const transferId = data.transferId as string;
-    this.sendEmail(
-      to,
-      "Transfer Awaiting Your Confirmation - DADAN Dijital",
-      `A transfer is awaiting your confirmation. Transfer ID: ${transferId}`,
-      `<h2>Transfer Awaiting Confirmation</h2><p>A transfer is awaiting your confirmation.</p><p>Transfer ID: <strong>${transferId}</strong></p>`,
-    );
+  sendTransferRecipientConfirmedEmail(to: string, data: { transferId: string; locale?: string }) {
+    void this.sendTemplatedEmail(to, "transferConfirmed", this.normalizeLocale(data.locale), {
+      transferId: data.transferId,
+    });
   }
 
-  sendTransferRecipientConfirmedEmail(to: string, data: Record<string, unknown>) {
-    const transferId = data.transferId as string;
-    this.sendEmail(
-      to,
-      "Transfer Confirmed - DADAN Dijital",
-      `The recipient has confirmed the transfer. Transfer ID: ${transferId}`,
-      `<h2>Transfer Confirmed</h2><p>The recipient has confirmed the transfer.</p><p>Transfer ID: <strong>${transferId}</strong></p>`,
-    );
-  }
-
-  sendTransferDadanReviewEmail(data: Record<string, unknown>) {
-    const transferId = data.transferId as string;
+  sendTransferDadanReviewEmail(data: { transferId: string }) {
     if (this.adminEmail) {
-      this.sendEmail(
-        this.adminEmail,
-        "Transfer Awaiting DADAN Review - DADAN Dijital",
-        `A transfer is awaiting DADAN review. Transfer ID: ${transferId}`,
-        `<h2>Transfer Awaiting Review</h2><p>A transfer is awaiting DADAN review.</p><p>Transfer ID: <strong>${transferId}</strong></p>`,
-      );
+      void this.sendTemplatedEmail(this.adminEmail, "transferDadanReview", DEFAULT_LOCALE, {
+        transferId: data.transferId,
+      });
     } else {
-      this.logger.log(`[notifications] TRANSFER_DADAN_REVIEW - Transfer ID: ${transferId}`);
+      this.logger.log(`[notifications] TRANSFER_DADAN_REVIEW - Transfer ID: ${data.transferId}`);
     }
   }
 
-  sendTransferApprovedEmail(to: string, data: Record<string, unknown>) {
-    const transferId = data.transferId as string;
-    this.sendEmail(
+  sendTransferApprovedEmail(to: string, data: { transferId: string; locale?: string }) {
+    void this.sendTemplatedEmail(to, "transferApproved", this.normalizeLocale(data.locale), {
+      transferId: data.transferId,
+    });
+  }
+
+  sendTransferRejectedEmail(
+    to: string,
+    data: { transferId: string; reason?: string; locale?: string },
+  ) {
+    void this.sendTemplatedEmail(
       to,
-      "Transfer Approved - DADAN Dijital",
-      `Your transfer has been approved. Transfer ID: ${transferId}`,
-      `<h2>Transfer Approved</h2><p>Your transfer has been approved.</p><p>Transfer ID: <strong>${transferId}</strong></p>`,
+      "transferRejected",
+      this.normalizeLocale(data.locale),
+      { transferId: data.transferId },
+      data.reason ? { key: "reason", args: { reason: data.reason } } : undefined,
     );
   }
 
-  sendTransferRejectedEmail(to: string, data: Record<string, unknown>) {
-    const transferId = data.transferId as string;
-    const reason = data.reason as string | undefined;
-    this.sendEmail(
-      to,
-      "Transfer Rejected - DADAN Dijital",
-      `Your transfer has been rejected. Transfer ID: ${transferId}${reason ? `. Reason: ${reason}` : ""}`,
-      `<h2>Transfer Rejected</h2><p>Your transfer has been rejected.</p><p>Transfer ID: <strong>${transferId}</strong></p>${reason ? `<p>Reason: ${reason}</p>` : ""}`,
-    );
+  sendTransferCancelledEmail(to: string, data: { transferId: string; locale?: string }) {
+    void this.sendTemplatedEmail(to, "transferCancelled", this.normalizeLocale(data.locale), {
+      transferId: data.transferId,
+    });
   }
 
-  sendTransferCancelledEmail(to: string, data: Record<string, unknown>) {
-    const transferId = data.transferId as string;
-    this.sendEmail(
-      to,
-      "Transfer Cancelled - DADAN Dijital",
-      `The transfer has been cancelled. Transfer ID: ${transferId}`,
-      `<h2>Transfer Cancelled</h2><p>The transfer has been cancelled.</p><p>Transfer ID: <strong>${transferId}</strong></p>`,
-    );
-  }
-
-  sendOrderPlacedEmail(to: string, data: Record<string, unknown>) {
-    const orderId = data.orderId as string;
-    this.sendEmail(
-      to,
-      "Order Confirmed - DADAN Dijital",
-      `Your order has been placed successfully. Order ID: ${orderId}`,
-      `<h2>Order Confirmed</h2><p>Your order has been placed successfully.</p><p>Order ID: <strong>${orderId}</strong></p>`,
-    );
+  sendOrderPlacedEmail(to: string, data: { orderId: string; locale?: string }) {
+    void this.sendTemplatedEmail(to, "orderPlaced", this.normalizeLocale(data.locale), {
+      orderId: data.orderId,
+    });
   }
 }

@@ -1,12 +1,11 @@
 import Image from "next/image";
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { GoldDivider, PrivateLayout, SerialBadge, StatusPill } from "@/components/ui";
-import { TransferActions } from "../../../../../components/transfer-actions";
+import { ClientShell, SerialBadge, StatusPill } from "@/components/ui";
+import { TransferActions } from "@/components/transfer-actions";
 import { ApiError } from "@/shared/lib/send-request";
 import { fetchTransfer } from "@/features/transfers";
 import { formatTransferStatus } from "@/shared/utils/format";
-import { privateNavItems } from "@/shared/lib/nav";
 import { getSessionCookieHeader, requireClientSession } from "@/features/auth/server/session";
 
 interface TransferDetailPageProps {
@@ -34,23 +33,23 @@ export default async function TransferDetailPage({ params }: TransferDetailPageP
         : "none";
 
   return (
-    <PrivateLayout clientName={profile.displayName} navItems={privateNavItems}>
+    <ClientShell displayName={profile.displayName}>
       <nav aria-label="Breadcrumb" className="mb-6 text-xs tracking-[0.12em] uppercase">
-        <ol className="flex flex-wrap items-center gap-2 text-[var(--color-ivory-muted)]">
+        <ol className="flex flex-wrap items-center gap-2 text-[var(--color-text-muted)]">
           <li>
-            <Link href="/beta/transfers" className="hover:text-[var(--color-gold-light)]">
+            <Link href="/beta/transfers" className="hover:text-[var(--color-accent)]">
               Transfers
             </Link>
           </li>
           <li aria-hidden="true">/</li>
-          <li className="text-[var(--color-ivory)]">{transfer.id.slice(0, 8).toUpperCase()}</li>
+          <li className="text-[var(--color-text)]">{transfer.id.slice(0, 8).toUpperCase()}</li>
         </ol>
       </nav>
 
       <header className="mb-8 flex flex-wrap items-start justify-between gap-4">
         <div>
-          <h1 className="font-display text-4xl text-[var(--color-ivory)]">Transfer Details</h1>
-          <p className="mt-2 text-sm text-[var(--color-ivory-muted)]">
+          <h1 className="font-english text-4xl text-[var(--color-text)]">Transfer Details</h1>
+          <p className="mt-2 text-sm text-[var(--color-text-muted)]">
             Initiated {new Date(transfer.initiatedAt).toLocaleString()}
           </p>
         </div>
@@ -58,10 +57,9 @@ export default async function TransferDetailPage({ params }: TransferDetailPageP
       </header>
 
       <div className="grid gap-8 lg:grid-cols-2">
-        <section className="rounded-[var(--radius-panel)] border border-[var(--color-border)] bg-[var(--color-surface)] p-6">
-          <h2 className="font-display text-xl text-[var(--color-ivory)]">Piece</h2>
-          <GoldDivider className="my-4" />
-          <div className="relative aspect-[4/3] overflow-hidden rounded-[var(--radius-item)] bg-[var(--color-void)]">
+        <section className="border border-[var(--color-border)] bg-white p-6">
+          <h2 className="font-english text-xl text-[var(--color-text)]">Piece</h2>
+          <div className="relative mt-4 aspect-[4/3] overflow-hidden bg-[var(--color-surface)]">
             {transfer.piece.design.imageUrls[0] ? (
               <Image
                 src={transfer.piece.design.imageUrls[0]}
@@ -71,12 +69,12 @@ export default async function TransferDetailPage({ params }: TransferDetailPageP
                 className="object-cover"
               />
             ) : (
-              <div className="flex h-full min-h-48 items-center justify-center font-display text-2xl text-[var(--color-ivory-muted)]">
+              <div className="flex h-full min-h-48 items-center justify-center font-display text-2xl text-[var(--color-text-muted)]">
                 DADAN
               </div>
             )}
           </div>
-          <p className="mt-4 font-display text-2xl text-[var(--color-ivory)]">
+          <p className="mt-4 font-english text-2xl text-[var(--color-text)]">
             {transfer.piece.design.name}
           </p>
           <div className="mt-3">
@@ -85,20 +83,19 @@ export default async function TransferDetailPage({ params }: TransferDetailPageP
         </section>
 
         <section className="space-y-6">
-          <div className="rounded-[var(--radius-panel)] border border-[var(--color-border)] bg-[var(--color-surface)] p-6">
-            <h2 className="font-display text-xl text-[var(--color-ivory)]">Parties</h2>
-            <GoldDivider className="my-4" />
-            <dl className="space-y-3 text-sm">
+          <div className="border border-[var(--color-border)] bg-white p-6">
+            <h2 className="font-english text-xl text-[var(--color-text)]">Parties</h2>
+            <dl className="mt-4 space-y-3 text-sm">
               <div className="flex justify-between">
-                <dt className="text-[var(--color-ivory-muted)]">From</dt>
+                <dt className="text-[var(--color-text-muted)]">From</dt>
                 <dd>{transfer.fromClient.displayName}</dd>
               </div>
               <div className="flex justify-between">
-                <dt className="text-[var(--color-ivory-muted)]">To</dt>
+                <dt className="text-[var(--color-text-muted)]">To</dt>
                 <dd>{transfer.toClient.displayName}</dd>
               </div>
               <div className="flex justify-between">
-                <dt className="text-[var(--color-ivory-muted)]">Type</dt>
+                <dt className="text-[var(--color-text-muted)]">Type</dt>
                 <dd>{transfer.transferType}</dd>
               </div>
             </dl>
@@ -107,6 +104,6 @@ export default async function TransferDetailPage({ params }: TransferDetailPageP
           <TransferActions transferId={transfer.id} status={transfer.status} role={role} />
         </section>
       </div>
-    </PrivateLayout>
+    </ClientShell>
   );
 }

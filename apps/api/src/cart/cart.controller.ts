@@ -11,7 +11,8 @@ import { IsString } from "class-validator";
 import { CartService } from "./cart.service";
 import { ClientGuard } from "../auth/guards/client.guard";
 import { CurrentClient } from "../auth/decorators/current-client.decorator";
-import type { ClientSession } from "@dadan/types";
+import { CurrentLocale } from "../common/i18n/locale";
+import type { ClientSession, Locale } from "@dadan/types";
 
 class AddToCartDto {
   @IsString()
@@ -24,16 +25,25 @@ export class CartController {
   constructor(private readonly cart: CartService) {}
 
   @Get()
-  getCart(@CurrentClient() client: ClientSession) {
-    return this.cart.getCart(client.clientId);
+  getCart(
+    @CurrentClient() client: ClientSession,
+    @CurrentLocale() locale: Locale,
+  ) {
+    return this.cart.getCart(client.clientId, locale);
   }
 
   @Post()
   addToCart(
     @CurrentClient() client: ClientSession,
+    @CurrentLocale() locale: Locale,
     @Body() dto: AddToCartDto,
   ) {
-    return this.cart.addToCart(client.clientId, client.visibilityGroups, dto.pieceId);
+    return this.cart.addToCart(
+      client.clientId,
+      client.visibilityGroups,
+      dto.pieceId,
+      locale,
+    );
   }
 
   @Delete(":pieceId")

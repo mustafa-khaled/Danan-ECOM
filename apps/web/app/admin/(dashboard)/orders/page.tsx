@@ -1,6 +1,8 @@
 import { StatusPill } from "@/components/ui";
+import { AdminPagination } from "@/components/admin-pagination";
 import { fetchAdminOrders } from "@/features/admin";
 import { getAdminCookieHeader } from "@/features/auth/server/admin-session";
+import { ADMIN_PAGE_SIZE, parseAdminPage } from "@/shared/lib/parse-admin-page";
 
 function formatAmount(amount: string | number, currency: string) {
   const value = typeof amount === "string" ? Number(amount) : amount;
@@ -11,9 +13,15 @@ function formatAmount(amount: string | number, currency: string) {
   }).format(value);
 }
 
-export default async function OrdersPage() {
+export default async function OrdersPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ page?: string }>;
+}) {
+  const { page: pageParam } = await searchParams;
+  const page = parseAdminPage(pageParam);
   const cookieHeader = await getAdminCookieHeader();
-  const { items, total } = await fetchAdminOrders(1, 50, cookieHeader);
+  const { items, total } = await fetchAdminOrders(page, ADMIN_PAGE_SIZE, cookieHeader);
 
   return (
     <div className="space-y-6">
@@ -59,6 +67,13 @@ export default async function OrdersPage() {
           </tbody>
         </table>
       </div>
+
+      <AdminPagination
+        basePath="/admin/orders"
+        page={page}
+        limit={ADMIN_PAGE_SIZE}
+        total={total}
+      />
     </div>
   );
 }

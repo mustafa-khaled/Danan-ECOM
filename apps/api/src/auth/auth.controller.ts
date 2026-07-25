@@ -12,6 +12,7 @@ import { AuthService } from "./auth.service";
 import { ValidateKeyDto } from "./dto/validate-key.dto";
 import { ClientGuard } from "./guards/client.guard";
 import { CurrentClient } from "./decorators/current-client.decorator";
+import { Public } from "../common/decorators/public.decorator";
 import type { ClientSession } from "@dadan/types";
 import {
   CLIENT_COOKIE,
@@ -24,6 +25,7 @@ import {
 export class AuthController {
   constructor(private readonly authService: AuthService) {}
 
+  @Public()
   @Post("validate-key")
   async validateKey(
     @Body() dto: ValidateKeyDto,

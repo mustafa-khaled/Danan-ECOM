@@ -9,7 +9,7 @@ export default async function PrivateLayout({
   const profile = await requireClientSession();
 
   return (
-    <div lang="ar" dir="rtl" className="min-h-dvh">
+    <div data-theme="client" className="min-h-dvh">
       <ClientProvider
         value={{
           clientId: profile.id,

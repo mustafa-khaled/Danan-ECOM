@@ -426,14 +426,16 @@ Within a single database transaction:
 
 ### 7.5 Payments
 
-**Enforced in:** `apps/api/src/payments/payments.service.ts`
+**Enforced in:** `apps/api/src/payments/payments.service.ts`, `apps/web/features/checkout/components/tap-card-element.tsx`
 
-Current implementation uses a **mock provider**:
+Provider selection is automatic based on `PAYMENT_PROVIDER_KEY`:
 
-- Token `"fail"` or prefix `fail_` → declined
-- Success → reference `mock_{timestamp}_{orderId}`
+- Empty / not `sk_*` → **mock provider**. Token `"fail"` or prefix `fail_` → declined; success → reference `mock_{timestamp}_{clientId}`.
+- `sk_test_*` / `sk_live_*` → **Tap Payments**. The API charges via `POST https://api.tap.company/v2/charges` with the token supplied by the frontend, verifies webhook `hashstring` HMACs, and reconciles orders from asynchronous charge events.
 
-Real Moyasar/Tap integration is specified in the prompt guide but not wired — env vars `PAYMENT_PROVIDER_KEY/SECRET` are unused.
+**Frontend tokenization** (`NEXT_PUBLIC_PAYMENT_MODE=live`): the checkout page renders Tap's Web Card SDK (`@tap-payments/card-sdk`) inside an iframe hosted by Tap — raw card data never reaches our frontend or backend. `tokenize()` returns a `tok_...` token that is submitted as `paymentToken` to `POST /client/checkout`, which is then passed straight through to `PaymentsService.charge`.
+
+**Known follow-up (not yet implemented):** 3-D Secure redirect flow and native Apple Pay. The current charge always uses `threeDSecure: false` (synchronous capture); a real 3DS/redirect flow requires the order to be created asynchronously (after a webhook or return-URL confirms `CAPTURED`), which is a backend change beyond frontend tokenization. MADA cards are already accepted end-to-end through the same card element (Tap auto-detects the brand from the BIN); a dedicated Apple Pay button needs separate Apple merchant/domain verification.
 
 ---
 
@@ -730,19 +732,19 @@ Verifiable business outcomes before marking a phase complete.
 
 Differences between **product spec** and **current code** — review before extending behavior.
 
-| Gap                        | Spec                                               | Current implementation                               |
-| -------------------------- | -------------------------------------------------- | ---------------------------------------------------- |
-| Payment provider           | Moyasar/Tap integration                            | Mock provider only; env keys unused                  |
-| Order cancel               | Client can cancel `PENDING` orders                 | Checkout creates `PAID`; cancel endpoint unreachable |
-| Order status FSM           | Implied workflow                                   | Admin can set any status freely                      |
-| Transfer reject guard      | Should reject from `DADAN_REVIEW`                  | No status prerequisite on reject                     |
-| Transfer recipient confirm | Status → `RECIPIENT_CONFIRMED` then `DADAN_REVIEW` | May skip `RECIPIENT_CONFIRMED` persistence           |
-| Saved pieces validation    | Should validate piece exists/visible               | No existence or visibility check                     |
-| `RETIRED` status           | Defined in schema                                  | Rarely used in services                              |
-| `VIEWER` admin role        | Read-only admin                                    | Same access as STAFF except `@Roles` endpoints       |
-| JWT revocation             | —                                                  | Logout is cookie-only; no server-side deny list      |
-| Admin login rate limit     | Recommended                                        | Not implemented                                      |
-| Storybook / E2E tests      | Prompt 08/14 deliverables                          | Partial or missing                                   |
+| Gap                        | Spec                                               | Current implementation                                                                               |
+| -------------------------- | -------------------------------------------------- | ---------------------------------------------------------------------------------------------------- |
+| Payment provider           | Tap Payments integration                           | Implemented (backend + frontend tokenization); 3DS redirect and Apple Pay not implemented — see §7.5 |
+| Order cancel               | Client can cancel `PENDING` orders                 | Checkout creates `PAID`; cancel endpoint unreachable                                                 |
+| Order status FSM           | Implied workflow                                   | Admin can set any status freely                                                                      |
+| Transfer reject guard      | Should reject from `DADAN_REVIEW`                  | No status prerequisite on reject                                                                     |
+| Transfer recipient confirm | Status → `RECIPIENT_CONFIRMED` then `DADAN_REVIEW` | May skip `RECIPIENT_CONFIRMED` persistence                                                           |
+| Saved pieces validation    | Should validate piece exists/visible               | No existence or visibility check                                                                     |
+| `RETIRED` status           | Defined in schema                                  | Rarely used in services                                                                              |
+| `VIEWER` admin role        | Read-only admin                                    | Same access as STAFF except `@Roles` endpoints                                                       |
+| JWT revocation             | —                                                  | Logout is cookie-only; no server-side deny list                                                      |
+| Admin login rate limit     | Recommended                                        | Not implemented                                                                                      |
+| Storybook / E2E tests      | Prompt 08/14 deliverables                          | Partial or missing                                                                                   |
 
 When fixing gaps, update this document and the relevant service in `apps/api/src/`.
 

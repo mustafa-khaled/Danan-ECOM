@@ -3,6 +3,7 @@ import {
   NotFoundException,
 } from "@nestjs/common";
 import { ActorType } from "@dadan/db";
+import type { Locale } from "@dadan/types";
 import { randomUUID } from "node:crypto";
 import { designImageKey, extFromMime } from "@dadan/storage";
 import { AuditService } from "../audit/audit.service";
@@ -10,6 +11,10 @@ import { PrismaService } from "../prisma/prisma.service";
 import { StorageService } from "../storage/storage.service";
 import { VisibilityService } from "../visibility/visibility.service";
 import { paginationParams } from "../common/constants";
+import {
+  localizeSpecifications,
+  pickLocalized,
+} from "../common/i18n/localize";
 
 @Injectable()
 export class CollectionsService {
@@ -20,7 +25,7 @@ export class CollectionsService {
     private readonly storage: StorageService,
   ) {}
 
-  async getVisibleCollections(clientGroups: string[]) {
+  async getVisibleCollections(clientGroups: string[], locale: Locale = "ar") {
     const collections = await this.prisma.db.collection.findMany({
       where: { isVisible: true },
       orderBy: { sortOrder: "asc" },
@@ -49,9 +54,9 @@ export class CollectionsService {
           );
           return {
             id: c.id,
-            name: c.name,
+            name: pickLocalized(locale, c.name, c.nameAr),
             slug: c.slug,
-            description: c.description,
+            description: pickLocalized(locale, c.description, c.descriptionAr),
             coverImageUrl: await this.storage.resolvePublicUrl(c.coverImageUrl),
             sortOrder: c.sortOrder,
             pieceCount,
@@ -65,6 +70,7 @@ export class CollectionsService {
     clientGroups: string[],
     page?: number,
     limit?: number,
+    locale: Locale = "ar",
   ) {
     const collection = await this.prisma.db.collection.findUnique({
       where: { slug },
@@ -81,7 +87,7 @@ export class CollectionsService {
       !collection.isVisible ||
       !this.visibility.canAccess(clientGroups, collection.visibilityGroups)
     ) {
-      throw new NotFoundException("Collection not found");
+      throw new NotFoundException("errors.COLLECTION_NOT_FOUND");
     }
 
     const visibleDesigns = collection.designs.filter((d) =>
@@ -93,16 +99,20 @@ export class CollectionsService {
 
     return {
       id: collection.id,
-      name: collection.name,
+      name: pickLocalized(locale, collection.name, collection.nameAr),
       slug: collection.slug,
-      description: collection.description,
+      description: pickLocalized(
+        locale,
+        collection.description,
+        collection.descriptionAr,
+      ),
       coverImageUrl: await this.storage.resolvePublicUrl(collection.coverImageUrl),
       designs: await Promise.all(
         paginated.map(async (d) => ({
           id: d.id,
-          name: d.name,
+          name: pickLocalized(locale, d.name, d.nameAr),
           slug: d.slug,
-          material: d.material,
+          material: pickLocalized(locale, d.material, d.materialAr),
           basePrice: d.basePrice,
           currency: d.currency,
           imageUrls: await this.storage.resolvePublicUrls(d.imageUrls),
@@ -114,7 +124,11 @@ export class CollectionsService {
     };
   }
 
-  async getDesignBySlug(slug: string, clientGroups: string[]) {
+  async getDesignBySlug(
+    slug: string,
+    clientGroups: string[],
+    locale: Locale = "ar",
+  ) {
     const design = await this.prisma.db.design.findUnique({
       where: { slug },
       include: {
@@ -131,26 +145,30 @@ export class CollectionsService {
       !this.visibility.canAccess(clientGroups, design.visibilityGroups) ||
       !this.visibility.canAccess(clientGroups, design.collection.visibilityGroups)
     ) {
-      throw new NotFoundException("Design not found");
+      throw new NotFoundException("errors.DESIGN_NOT_FOUND");
     }
 
     return {
       id: design.id,
-      name: design.name,
+      name: pickLocalized(locale, design.name, design.nameAr),
       slug: design.slug,
-      story: design.story,
-      material: design.material,
+      story: pickLocalized(locale, design.story, design.storyAr),
+      material: pickLocalized(locale, design.material, design.materialAr),
       weight: design.weight,
-      dimensions: design.dimensions,
+      dimensions: pickLocalized(locale, design.dimensions, design.dimensionsAr),
       imageUrls: await this.storage.resolvePublicUrls(design.imageUrls),
       basePrice: design.basePrice,
       currency: design.currency,
       collection: {
         id: design.collection.id,
-        name: design.collection.name,
+        name: pickLocalized(
+          locale,
+          design.collection.name,
+          design.collection.nameAr,
+        ),
         slug: design.collection.slug,
       },
-      specifications: design.specifications,
+      specifications: localizeSpecifications(design.specifications, locale),
       availablePieces: design.pieces.map((p) => ({
         id: p.id,
         serialNumber: p.serialNumber,
@@ -159,12 +177,116 @@ export class CollectionsService {
     };
   }
 
+  async listCollectionsAdmin(page?: number, limit?: number) {
+    const { skip, take, page: p, limit: l } = paginationParams(page, limit);
+    const [items, total] = await Promise.all([
+      this.prisma.db.collection.findMany({
+        skip,
+        take,
+        orderBy: { sortOrder: "asc" },
+        include: { _count: { select: { designs: true } } },
+      }),
+      this.prisma.db.collection.count(),
+    ]);
+
+    return {
+      items: await Promise.all(
+        items.map(async ({ _count, ...c }) => ({
+          ...c,
+          coverImageUrl: await this.storage.resolvePublicUrl(c.coverImageUrl),
+          designCount: _count.designs,
+        })),
+      ),
+      total,
+      page: p,
+      limit: l,
+    };
+  }
+
+  async getCollectionAdmin(id: string) {
+    const collection = await this.prisma.db.collection.findUnique({
+      where: { id },
+      include: {
+        designs: {
+          orderBy: { name: "asc" },
+          include: { _count: { select: { pieces: true } } },
+        },
+      },
+    });
+    if (!collection) throw new NotFoundException("errors.COLLECTION_NOT_FOUND");
+
+    return {
+      ...collection,
+      coverImageUrl: await this.storage.resolvePublicUrl(collection.coverImageUrl),
+      designs: await Promise.all(
+        collection.designs.map(async ({ _count, ...d }) => ({
+          ...d,
+          imageUrls: await this.storage.resolvePublicUrls(d.imageUrls),
+          pieceCount: _count.pieces,
+        })),
+      ),
+    };
+  }
+
+  async listDesignsAdmin(page?: number, limit?: number, collectionId?: string) {
+    const { skip, take, page: p, limit: l } = paginationParams(page, limit);
+    const where = collectionId ? { collectionId } : {};
+    const [items, total] = await Promise.all([
+      this.prisma.db.design.findMany({
+        where,
+        skip,
+        take,
+        orderBy: { name: "asc" },
+        include: {
+          collection: { select: { id: true, name: true, nameAr: true, slug: true } },
+          _count: { select: { pieces: true } },
+        },
+      }),
+      this.prisma.db.design.count({ where }),
+    ]);
+
+    return {
+      items: await Promise.all(
+        items.map(async ({ _count, ...d }) => ({
+          ...d,
+          imageUrls: await this.storage.resolvePublicUrls(d.imageUrls),
+          pieceCount: _count.pieces,
+        })),
+      ),
+      total,
+      page: p,
+      limit: l,
+    };
+  }
+
+  async getDesignAdmin(id: string) {
+    const design = await this.prisma.db.design.findUnique({
+      where: { id },
+      include: {
+        collection: true,
+        specifications: { orderBy: { sortOrder: "asc" } },
+        pieces: {
+          orderBy: { createdAt: "desc" },
+          include: { currentOwner: { select: { id: true, displayName: true } } },
+        },
+      },
+    });
+    if (!design) throw new NotFoundException("errors.DESIGN_NOT_FOUND");
+
+    return {
+      ...design,
+      imageUrls: await this.storage.resolvePublicUrls(design.imageUrls),
+    };
+  }
+
   async createCollection(
     adminId: string,
     data: {
       name: string;
+      nameAr: string;
       slug: string;
       description?: string;
+      descriptionAr?: string;
       coverImageUrl?: string;
       isVisible?: boolean;
       sortOrder?: number;
@@ -245,12 +367,16 @@ export class CollectionsService {
     adminId: string,
     data: {
       name: string;
+      nameAr: string;
       slug: string;
       collectionId: string;
       story: string;
+      storyAr: string;
       material: string;
+      materialAr?: string;
       weight: number;
       dimensions: string;
+      dimensionsAr?: string;
       basePrice: number;
       currency?: string;
       visibilityGroups?: string[];
@@ -338,7 +464,7 @@ export class CollectionsService {
     ipAddress?: string,
   ) {
     const design = await this.prisma.db.design.findUnique({ where: { id: designId } });
-    if (!design) throw new NotFoundException("Design not found");
+    if (!design) throw new NotFoundException("errors.DESIGN_NOT_FOUND");
 
     const fileId = randomUUID();
     const ext = extFromMime(contentType);
@@ -366,7 +492,13 @@ export class CollectionsService {
   async upsertSpecifications(
     adminId: string,
     designId: string,
-    specs: { key: string; value: string; sortOrder?: number }[],
+    specs: {
+      key: string;
+      keyAr?: string;
+      value: string;
+      valueAr?: string;
+      sortOrder?: number;
+    }[],
     ipAddress?: string,
   ) {
     await this.prisma.db.$transaction(async (tx) => {
@@ -377,14 +509,21 @@ export class CollectionsService {
         if (existing) {
           await tx.designSpecification.update({
             where: { id: existing.id },
-            data: { value: spec.value, sortOrder: spec.sortOrder ?? existing.sortOrder },
+            data: {
+              value: spec.value,
+              keyAr: spec.keyAr ?? existing.keyAr,
+              valueAr: spec.valueAr ?? existing.valueAr,
+              sortOrder: spec.sortOrder ?? existing.sortOrder,
+            },
           });
         } else {
           await tx.designSpecification.create({
             data: {
               designId,
               key: spec.key,
+              keyAr: spec.keyAr,
               value: spec.value,
+              valueAr: spec.valueAr,
               sortOrder: spec.sortOrder ?? 0,
             },
           });

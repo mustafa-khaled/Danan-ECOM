@@ -18,7 +18,7 @@ export default function ComingSoonPage() {
             className="object-cover object-center"
           />
           {/* Gentle dark gradient overlay for optimal readability */}
-          <div className="absolute inset-0 bg-gradient-to-b from-void/30 via-transparent to-void/40 z-10" />
+          <div className="absolute inset-0 bg-linear-to-b from-void/30 via-transparent to-void/40 z-10" />
         </div>
 
         {/* Header (Logo) */}
@@ -38,13 +38,13 @@ export default function ComingSoonPage() {
         {/* Bottom Content / Footer */}
         <footer className="absolute z-20 px-[41px] w-full flex justify-between items-center bottom-[27%] text-center select-none">
           <div className="animate-slide-up [animation-delay:500ms]">
-            <p className="font-english font-semibold text-[30px] leading-[100%] tracking-[-0.05em] text-ivory">
+            <p className="font-english font-semibold text-[30px] leading-[100%] tracking-tighter text-ivory">
               Soon
             </p>
           </div>
 
           <div className="animate-slide-up [animation-delay:300ms]">
-            <p className="font-arabic font-normal text-[24px] leading-[100%] tracking-[-0.05em] text-ivory mb-2">
+            <p className="font-arabic font-normal text-[24px] leading-[100%] tracking-tighter text-ivory mb-2">
               قريبا
             </p>
           </div>
@@ -66,7 +66,7 @@ export default function ComingSoonPage() {
             className="object-cover object-[22%]"
           />
           {/* Gentle dark gradient overlay for optimal readability */}
-          <div className="absolute inset-0 bg-gradient-to-b from-void/40 via-transparent to-void/50 z-10" />
+          <div className="absolute inset-0 bg-linear-to-b from-void/40 via-transparent to-void/50 z-10" />
         </div>
 
         {/* Header (Logo) */}
@@ -86,13 +86,13 @@ export default function ComingSoonPage() {
         {/* Bottom Content / Footer */}
         <footer className="absolute z-20 px-[51px] w-full flex justify-between items-center bottom-[18%] text-center select-none">
           <div className="animate-slide-up [animation-delay:500ms]">
-            <p className="font-english font-semibold text-[30px] leading-[100%] tracking-[-0.05em] text-ivory">
+            <p className="font-english font-semibold text-[30px] leading-[100%] tracking-tighter text-ivory">
               Soon
             </p>
           </div>
 
           <div className="animate-slide-up [animation-delay:300ms]">
-            <p className="font-arabic font-normal text-[24px] leading-[100%] tracking-[-0.05em] text-ivory mb-2">
+            <p className="font-arabic font-normal text-[24px] leading-[100%] tracking-tighter text-ivory mb-2">
               قريبا
             </p>
           </div>

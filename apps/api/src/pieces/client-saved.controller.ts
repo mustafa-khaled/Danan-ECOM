@@ -9,7 +9,8 @@ import {
 import { PiecesService } from "./pieces.service";
 import { ClientGuard } from "../auth/guards/client.guard";
 import { CurrentClient } from "../auth/decorators/current-client.decorator";
-import type { ClientSession } from "@dadan/types";
+import { CurrentLocale } from "../common/i18n/locale";
+import type { ClientSession, Locale } from "@dadan/types";
 
 @Controller("client/saved")
 @UseGuards(ClientGuard)
@@ -17,8 +18,11 @@ export class ClientSavedController {
   constructor(private readonly pieces: PiecesService) {}
 
   @Get()
-  list(@CurrentClient() client: ClientSession) {
-    return this.pieces.getSavedPieces(client.clientId);
+  list(
+    @CurrentClient() client: ClientSession,
+    @CurrentLocale() locale: Locale,
+  ) {
+    return this.pieces.getSavedPieces(client.clientId, locale);
   }
 
   @Post(":pieceId")

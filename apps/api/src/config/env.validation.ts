@@ -25,6 +25,7 @@ export const envSchema = z
     PDF_WATERMARK_TEXT: z.string().optional(),
     PAYMENT_PROVIDER_KEY: z.string().optional(),
     PAYMENT_PROVIDER_SECRET: z.string().optional(),
+    PAYMENT_WEBHOOK_URL: z.string().url().optional().or(z.literal("")),
     VAT_RATE: z.coerce.number().min(0).max(1).default(0.15),
     ADMIN_EMAIL: z.string().email().optional().or(z.literal("")),
     SMTP_HOST: z.string().optional(),
@@ -47,20 +48,8 @@ export const envSchema = z
     },
     {
       message:
-        "PAYMENT_PROVIDER_KEY must be a valid Stripe key (sk_live_* or sk_test_*) in production",
+        "PAYMENT_PROVIDER_KEY must be a valid Tap secret key (sk_live_* or sk_test_*) in production",
       path: ["PAYMENT_PROVIDER_KEY"],
-    },
-  )
-  .refine(
-    (data) => {
-      if (data.NODE_ENV === "production" && data.PAYMENT_PROVIDER_KEY) {
-        return !!data.PAYMENT_PROVIDER_SECRET;
-      }
-      return true;
-    },
-    {
-      message: "PAYMENT_PROVIDER_SECRET is required when PAYMENT_PROVIDER_KEY is set in production",
-      path: ["PAYMENT_PROVIDER_SECRET"],
     },
   );
 

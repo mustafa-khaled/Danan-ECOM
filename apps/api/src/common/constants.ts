@@ -1,6 +1,7 @@
 export const CLIENT_COOKIE = "dadan_session";
 export const ADMIN_COOKIE = "dadan_admin_session";
-export const AUTH_FAILURE_MESSAGE = "Unauthorized";
+// i18n message key; translated by the global exception filter.
+export const AUTH_FAILURE_MESSAGE = "errors.UNAUTHORIZED";
 export const JWT_AUDIENCE_CLIENT = "dadan:client";
 export const JWT_AUDIENCE_ADMIN = "dadan:admin";
 // Client session length in days; configurable via CLIENT_SESSION_DAYS (default 7).

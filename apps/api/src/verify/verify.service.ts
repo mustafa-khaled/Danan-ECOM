@@ -6,9 +6,14 @@ import {
 } from "@nestjs/common";
 import { ConfigService } from "@nestjs/config";
 import { VerificationResult } from "@dadan/db";
+import type { Locale } from "@dadan/types";
 import { verifyVerificationToken } from "@dadan/utils";
 import { PrismaService } from "../prisma/prisma.service";
 import { RedisService } from "../redis/redis.service";
+import {
+  localizeSpecifications,
+  pickLocalized,
+} from "../common/i18n/localize";
 
 @Injectable()
 export class VerifyService {
@@ -27,11 +32,12 @@ export class VerifyService {
     token: string,
     ipAddress: string,
     clientId?: string,
+    locale: Locale = "ar",
   ) {
     const rateLimitKey = `verify:${ipAddress}`;
     const limited = await this.redis.isRateLimited(rateLimitKey, 30, 60);
     if (limited) {
-      throw new HttpException("Too many requests", HttpStatus.TOO_MANY_REQUESTS);
+      throw new HttpException("errors.TOO_MANY_REQUESTS", HttpStatus.TOO_MANY_REQUESTS);
     }
 
     const piece = await this.prisma.db.piece.findUnique({
@@ -49,7 +55,7 @@ export class VerifyService {
 
     if (!piece || !piece.certificates[0]) {
       await this.logVerification(serial, null, VerificationResult.NOT_FOUND, ipAddress, clientId);
-      throw new NotFoundException("Certificate not found");
+      throw new NotFoundException("errors.CERTIFICATE_NOT_FOUND");
     }
 
     const certificate = piece.certificates[0];
@@ -62,19 +68,31 @@ export class VerifyService {
 
     if (!valid) {
       await this.logVerification(serial, piece.id, VerificationResult.NOT_FOUND, ipAddress, clientId);
-      throw new NotFoundException("Certificate not found");
+      throw new NotFoundException("errors.CERTIFICATE_NOT_FOUND");
     }
 
     await this.logVerification(serial, piece.id, VerificationResult.FOUND, ipAddress, clientId);
 
     return {
-      pieceName: piece.design.name,
-      collection: piece.design.collection.name,
+      pieceName: pickLocalized(locale, piece.design.name, piece.design.nameAr),
+      collection: pickLocalized(
+        locale,
+        piece.design.collection.name,
+        piece.design.collection.nameAr,
+      ),
       serialNumber: piece.serialNumber,
-      material: piece.design.material,
+      material: pickLocalized(
+        locale,
+        piece.design.material,
+        piece.design.materialAr,
+      ),
       weight: piece.design.weight,
-      dimensions: piece.design.dimensions,
-      specifications: piece.design.specifications,
+      dimensions: pickLocalized(
+        locale,
+        piece.design.dimensions,
+        piece.design.dimensionsAr,
+      ),
+      specifications: localizeSpecifications(piece.design.specifications, locale),
       issuedAt: certificate.issuedAt,
     };
   }

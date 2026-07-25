@@ -4,8 +4,10 @@ import {
   Param,
   Res,
 } from "@nestjs/common";
+import { SkipThrottle } from "@nestjs/throttler";
 import type { Response } from "express";
 import { storage } from "@dadan/storage";
+import { Public } from "../common/decorators/public.decorator";
 
 const EXTENSION_TO_MIME: Record<string, string> = {
   jpg: "image/jpeg",
@@ -20,6 +22,10 @@ function mimeFromKey(key: string): string {
   return EXTENSION_TO_MIME[ext] ?? "application/octet-stream";
 }
 
+// Image-heavy pages fetch many assets at once; the global IP throttle would
+// starve legitimate gallery loads.
+@Public()
+@SkipThrottle()
 @Controller("uploads")
 export class UploadsController {
   @Get("*key")

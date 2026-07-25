@@ -8,10 +8,11 @@ import {
 import { ConfigService } from "@nestjs/config";
 import { Cron, CronExpression } from "@nestjs/schedule";
 import { ActorType, PieceStatus } from "@dadan/db";
-import type { ShippingAddress } from "@dadan/types";
+import type { Locale, ShippingAddress } from "@dadan/types";
+import { localizeDesign, pickLocalized } from "../common/i18n/localize";
 import { AuditService } from "../audit/audit.service";
 import { OrdersService } from "../orders/orders.service";
-import { PaymentsService } from "../payments/payments.service";
+import { PaymentsService, PaymentMethod } from "../payments/payments.service";
 import { PrismaService } from "../prisma/prisma.service";
 import { StorageService } from "../storage/storage.service";
 import { VisibilityService } from "../visibility/visibility.service";
@@ -32,7 +33,7 @@ export class CartService {
     private readonly config: ConfigService,
   ) {}
 
-  async getCart(clientId: string) {
+  async getCart(clientId: string, locale: Locale = "ar") {
     const items = await this.prisma.db.cartItem.findMany({
       where: { clientId, expiresAt: { gt: new Date() } },
     });
@@ -58,6 +59,7 @@ export class CartService {
           };
         }
 
+        const { collection, ...designFields } = piece.design;
         return {
           id: item.id,
           addedAt: item.addedAt,
@@ -65,7 +67,12 @@ export class CartService {
           piece: {
             ...piece,
             design: {
-              ...piece.design,
+              ...localizeDesign(designFields, locale),
+              collection: {
+                id: collection.id,
+                name: pickLocalized(locale, collection.name, collection.nameAr),
+                slug: collection.slug,
+              },
               imageUrls: await this.storage.resolvePublicUrls(piece.design.imageUrls),
             },
           },
@@ -74,12 +81,17 @@ export class CartService {
     );
   }
 
-  async addToCart(clientId: string, clientGroups: string[], pieceId: string) {
+  async addToCart(
+    clientId: string,
+    clientGroups: string[],
+    pieceId: string,
+    locale: Locale = "ar",
+  ) {
     const piece = await this.prisma.db.piece.findUnique({
       where: { id: pieceId },
       include: { design: { include: { collection: true } } },
     });
-    if (!piece) throw new NotFoundException("Piece not found");
+    if (!piece) throw new NotFoundException("errors.PIECE_NOT_FOUND");
     // Respect catalog curation: a client must not be able to buy a piece
     // whose design/collection is hidden from them (same rules as getDesignBySlug).
     if (
@@ -88,13 +100,13 @@ export class CartService {
       !this.visibility.canAccess(clientGroups, piece.design.visibilityGroups) ||
       !this.visibility.canAccess(clientGroups, piece.design.collection.visibilityGroups)
     ) {
-      throw new NotFoundException("Piece not found");
+      throw new NotFoundException("errors.PIECE_NOT_FOUND");
     }
     if (piece.status !== PieceStatus.AVAILABLE) {
-      throw new BadRequestException("Piece is not available");
+      throw new BadRequestException("errors.PIECE_NOT_AVAILABLE");
     }
     if (piece.currentOwnerId) {
-      throw new BadRequestException("Piece is already owned");
+      throw new BadRequestException("errors.PIECE_ALREADY_OWNED");
     }
 
     const existingCart = await this.prisma.db.cartItem.findUnique({
@@ -102,7 +114,7 @@ export class CartService {
     });
     if (existingCart && existingCart.clientId !== clientId) {
       if (existingCart.expiresAt > new Date()) {
-        throw new BadRequestException("Piece is reserved in another cart");
+        throw new BadRequestException("errors.PIECE_RESERVED");
       }
       await this.prisma.db.cartItem.delete({ where: { id: existingCart.id } });
     }
@@ -115,7 +127,7 @@ export class CartService {
       update: { clientId, expiresAt, addedAt: new Date() },
     });
 
-    return this.getCart(clientId);
+    return this.getCart(clientId, locale);
   }
 
   async removeFromCart(clientId: string, pieceId: string) {
@@ -129,7 +141,7 @@ export class CartService {
     clientId: string,
     data: {
       shippingAddress: ShippingAddress;
-      paymentMethod: string;
+      paymentMethod: PaymentMethod;
       paymentToken: string;
     },
   ) {
@@ -138,8 +150,13 @@ export class CartService {
     });
 
     if (cartItems.length === 0) {
-      throw new BadRequestException("Cart is empty");
+      throw new BadRequestException("errors.CART_EMPTY");
     }
+
+    const client = await this.prisma.db.client.findUniqueOrThrow({
+      where: { id: clientId },
+      select: { displayName: true, email: true },
+    });
 
     const pieces = await this.prisma.db.piece.findMany({
       where: { id: { in: cartItems.map((i) => i.pieceId) } },
@@ -150,9 +167,7 @@ export class CartService {
     for (const item of cartItems) {
       const piece = pieceMap.get(item.pieceId);
       if (!piece || piece.status !== PieceStatus.AVAILABLE) {
-        throw new BadRequestException(
-          `Piece ${piece?.serialNumber ?? item.pieceId} is no longer available`,
-        );
+        throw new BadRequestException("errors.PIECE_NOT_AVAILABLE");
       }
     }
 
@@ -167,16 +182,18 @@ export class CartService {
     const totalAmount = Math.round((subtotal + vatAmount) * 100) / 100;
     const currency = pieces[0]!.design.currency;
 
-    const payment = await this.payments.charge(
-      data.paymentToken,
-      totalAmount,
+    const payment = await this.payments.charge({
+      token: data.paymentToken,
+      amount: totalAmount,
       currency,
-      { clientId, pieceIds: cartItems.map((i) => i.pieceId).join(",") },
-    );
+      paymentMethod: data.paymentMethod,
+      customer: { name: client.displayName, email: client.email },
+      metadata: { clientId, pieceIds: cartItems.map((i) => i.pieceId).join(",") },
+    });
 
     if (!payment.success) {
       throw new BadRequestException(
-        payment.failureMessage ?? "Payment failed",
+        payment.failureMessage ?? "errors.PAYMENT_FAILED",
       );
     }
 
@@ -188,6 +205,7 @@ export class CartService {
         totalAmount,
         currency,
         paymentProvider: this.payments.providerName,
+        paymentMethod: data.paymentMethod,
         paymentReference: payment.providerReference!,
         shippingAddress: data.shippingAddress,
       });
@@ -199,12 +217,11 @@ export class CartService {
         clientId,
         payment.providerReference!,
         totalAmount,
+        currency,
         error,
       );
       if (error instanceof BadRequestException) throw error;
-      throw new InternalServerErrorException(
-        "Checkout failed; your payment has been refunded",
-      );
+      throw new InternalServerErrorException("errors.CHECKOUT_REFUNDED");
     }
 
     return {
@@ -221,11 +238,12 @@ export class CartService {
     clientId: string,
     providerReference: string,
     amount: number,
+    currency: string,
     cause: unknown,
   ) {
     const causeMessage = cause instanceof Error ? cause.message : String(cause);
     try {
-      const refund = await this.payments.refund(providerReference, amount);
+      const refund = await this.payments.refund(providerReference, amount, currency);
       await this.audit.log({
         actorType: ActorType.SYSTEM,
         actorId: "system",

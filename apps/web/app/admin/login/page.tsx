@@ -10,11 +10,11 @@ export default async function LoginPage() {
   }
 
   return (
-    <div className="flex min-h-dvh items-center justify-center bg-[var(--color-void)] px-4 py-12">
-      <div className="w-full max-w-md border border-[var(--color-border)] bg-[var(--color-surface)] p-8">
+    <div className="flex min-h-dvh items-center justify-center bg-void px-4 py-12">
+      <div className="w-full max-w-md border border-border bg-(--color-surface) p-8">
         <div className="mb-6 text-center">
           <p className="font-display text-2xl tracking-[0.08em] uppercase">DADAN Admin</p>
-          <p className="mt-2 text-xs tracking-[0.14em] uppercase text-[var(--color-ivory-muted)]">
+          <p className="mt-2 text-xs tracking-[0.14em] uppercase text-(--color-ivory-muted)">
             Staff sign in
           </p>
         </div>

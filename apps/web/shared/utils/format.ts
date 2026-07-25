@@ -1,6 +1,11 @@
-export function formatPrice(amount: string | number, currency = "SAR"): string {
+export function formatPrice(
+  amount: string | number,
+  currency = "SAR",
+  locale: "ar" | "en" = "en",
+): string {
   const value = typeof amount === "string" ? parseFloat(amount) : amount;
-  return new Intl.NumberFormat("en-SA", {
+  const intlLocale = locale === "ar" ? "ar-SA" : "en-SA";
+  return new Intl.NumberFormat(intlLocale, {
     style: "currency",
     currency,
     minimumFractionDigits: 0,

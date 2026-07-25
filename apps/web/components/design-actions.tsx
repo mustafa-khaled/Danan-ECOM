@@ -1,6 +1,7 @@
 "use client";
 
 import { useRouter } from "next/navigation";
+import { useTranslations } from "next-intl";
 import { LuxuryButton } from "@/components/ui";
 import { useAddToCart } from "@/features/cart";
 import { useSavePiece, useUnsavePiece } from "@/features/saved";
@@ -12,6 +13,8 @@ interface DesignActionsProps {
 
 export function DesignActions({ pieceId, initialSaved = false }: DesignActionsProps) {
   const router = useRouter();
+  const t = useTranslations("piece");
+  const common = useTranslations("common");
   const {
     mutateAsync: addToCart,
     isPending: isAddingToCart,
@@ -52,14 +55,14 @@ export function DesignActions({ pieceId, initialSaved = false }: DesignActionsPr
   return (
     <div className="flex flex-wrap gap-3">
       <LuxuryButton loading={isAddingToCart} onClick={handleAddToCart}>
-        Add to Cart
+        {t("addToCart")}
       </LuxuryButton>
       <LuxuryButton variant="ghost" loading={isSaving || isUnsaving} onClick={handleToggleSave}>
-        {initialSaved ? "Unsave" : "Save"}
+        {initialSaved ? t("unsave") : common("save")}
       </LuxuryButton>
       {error ? (
         <p role="alert" className="w-full text-sm text-[var(--color-ruby)]">
-          {error instanceof Error ? error.message : "Could not add to cart"}
+          {error instanceof Error ? error.message : t("addToCartError")}
         </p>
       ) : null}
     </div>

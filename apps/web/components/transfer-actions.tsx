@@ -1,6 +1,6 @@
 "use client";
 
-import { useRouter } from "next/navigation";
+import { useTranslations } from "next-intl";
 import { LuxuryButton } from "@/components/ui";
 import { useConfirmTransferSender, useConfirmTransferRecipient, useCancelTransfer } from "@/features/transfers";
 
@@ -11,7 +11,7 @@ interface TransferActionsProps {
 }
 
 export function TransferActions({ transferId, status, role }: TransferActionsProps) {
-  const router = useRouter();
+  const t = useTranslations("transfers");
   const {
     mutateAsync: confirmSender,
     isPending: isConfirmingSender,
@@ -50,7 +50,7 @@ export function TransferActions({ transferId, status, role }: TransferActionsPro
             } catch { /* error rendered via mutation state */ }
           }}
         >
-          Confirm as Sender
+          {t("confirmAsSender")}
         </LuxuryButton>
       ) : null}
       {canConfirmRecipient ? (
@@ -62,7 +62,7 @@ export function TransferActions({ transferId, status, role }: TransferActionsPro
             } catch { /* error rendered via mutation state */ }
           }}
         >
-          Confirm as Recipient
+          {t("confirmAsRecipient")}
         </LuxuryButton>
       ) : null}
       {canCancel ? (
@@ -75,12 +75,12 @@ export function TransferActions({ transferId, status, role }: TransferActionsPro
             } catch { /* error rendered via mutation state */ }
           }}
         >
-          Cancel Transfer
+          {t("cancelTransfer")}
         </LuxuryButton>
       ) : null}
       {error ? (
         <p role="alert" className="w-full text-sm text-[var(--color-ruby)]">
-          {error instanceof Error ? error.message : "Action failed"}
+          {error instanceof Error ? error.message : t("actionFailed")}
         </p>
       ) : null}
     </div>

@@ -1,13 +1,14 @@
 import Image from "next/image";
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { GoldDivider, PieceCard, PrivateLayout } from "@/components/ui";
-import { EmptyState } from "../../../../../components/empty-state";
+import { getTranslations, getLocale } from "next-intl/server";
+import { ClientShell, PieceCard } from "@/components/ui";
+import { EmptyState } from "@/shared/components/feedback/empty-state";
 import { ApiError } from "@/shared/lib/send-request";
 import { fetchCollection } from "@/features/collections";
 import { formatPrice } from "@/shared/utils/format";
-import { privateNavItems } from "@/shared/lib/nav";
 import { getSessionCookieHeader, requireClientSession } from "@/features/auth/server/session";
+import type { Locale } from "@/i18n/routing";
 
 interface CollectionDetailPageProps {
   params: Promise<{ slug: string }>;
@@ -17,6 +18,8 @@ export default async function CollectionDetailPage({ params }: CollectionDetailP
   const { slug } = await params;
   const profile = await requireClientSession();
   const cookie = await getSessionCookieHeader();
+  const t = await getTranslations("collections");
+  const locale = (await getLocale()) as Locale;
 
   let collection;
   try {
@@ -27,27 +30,9 @@ export default async function CollectionDetailPage({ params }: CollectionDetailP
   }
 
   return (
-    <PrivateLayout clientName={profile.displayName} navItems={privateNavItems}>
-      <nav aria-label="Breadcrumb" className="mb-6 text-xs tracking-[0.12em] uppercase">
-        <ol className="flex flex-wrap items-center gap-2 text-[var(--color-ivory-muted)]">
-          <li>
-            <Link href="/beta/home" className="hover:text-[var(--color-gold-light)]">
-              Home
-            </Link>
-          </li>
-          <li aria-hidden="true">/</li>
-          <li>
-            <Link href="/beta/collections" className="hover:text-[var(--color-gold-light)]">
-              Collections
-            </Link>
-          </li>
-          <li aria-hidden="true">/</li>
-          <li className="text-[var(--color-ivory)]">{collection.name}</li>
-        </ol>
-      </nav>
-
-      <header className="mb-10 overflow-hidden rounded-[var(--radius-panel)] border border-[var(--color-border)] bg-[var(--color-surface)]">
-        <div className="relative aspect-[21/9] bg-[var(--color-void)]">
+    <ClientShell displayName={profile.displayName}>
+      <header className="mb-10 overflow-hidden border border-[var(--color-border)]">
+        <div className="relative aspect-[21/9] bg-[var(--color-surface)]">
           {collection.coverImageUrl ? (
             <Image
               src={collection.coverImageUrl}
@@ -57,28 +42,41 @@ export default async function CollectionDetailPage({ params }: CollectionDetailP
               className="object-cover"
             />
           ) : (
-            <div className="flex h-full min-h-48 items-center justify-center font-display text-4xl text-[var(--color-ivory-muted)]">
+            <div className="flex h-full min-h-48 items-center justify-center font-display text-4xl text-[var(--color-text-muted)]">
               DADAN
             </div>
           )}
         </div>
-        <div className="p-8">
-          <h1 className="font-display text-4xl text-[var(--color-ivory)]">{collection.name}</h1>
+        <div className="p-8 text-center">
+          <h1 className="font-english text-4xl text-[var(--color-text)]">{collection.name}</h1>
           {collection.description ? (
-            <p className="mt-4 max-w-3xl text-[var(--color-ivory-muted)]">{collection.description}</p>
+            <p className="mx-auto mt-4 max-w-2xl text-[var(--color-text-muted)]">
+              {collection.description}
+            </p>
           ) : null}
         </div>
       </header>
 
-      <GoldDivider className="mb-10" />
+      {collection.description ? (
+        <div className="mb-12 grid gap-8 md:grid-cols-2">
+          <div>
+            <h2 className="font-english text-xl text-[var(--color-text)]">{t("theStory")}</h2>
+            <p className="mt-4 text-[var(--color-text-muted)]">{collection.description}</p>
+          </div>
+          <div>
+            <h2 className="font-english text-xl text-[var(--color-text)]">{t("designInspiration")}</h2>
+            <p className="mt-4 text-[var(--color-text-muted)]">{collection.description}</p>
+          </div>
+        </div>
+      ) : null}
 
-      <h2 className="mb-6 font-display text-2xl text-[var(--color-ivory)]">Designs</h2>
+      <h2 className="mb-6 font-english text-2xl text-[var(--color-text)]">{t("pieces")}</h2>
 
       {collection.designs.length === 0 ? (
         <EmptyState
-          title="No designs in this collection"
-          description="Designs will appear here when they become available to your house."
-          action={{ href: "/beta/collections", label: "Back to Collections" }}
+          title={t("empty")}
+          description={t("emptyDescription")}
+          action={{ href: "/beta/collections", label: t("title") }}
         />
       ) : (
         <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
@@ -91,13 +89,14 @@ export default async function CollectionDetailPage({ params }: CollectionDetailP
                   serialNumber: "Available",
                   imageUrl: design.imageUrls[0],
                   collectionName: collection.name,
-                  price: formatPrice(design.basePrice, design.currency),
+                  price: formatPrice(design.basePrice, design.currency, locale),
                 }}
+                showExplore
               />
             </Link>
           ))}
         </div>
       )}
-    </PrivateLayout>
+    </ClientShell>
   );
 }

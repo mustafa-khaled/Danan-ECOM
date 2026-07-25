@@ -1,4 +1,6 @@
 import { randomUUID } from "node:crypto";
+import { readFileSync } from "node:fs";
+import * as path from "node:path";
 import {
   Injectable,
   NotFoundException,
@@ -6,7 +8,9 @@ import {
 import { ConfigService } from "@nestjs/config";
 import { ActorType } from "@dadan/db";
 import { PDFDocument, rgb, StandardFonts, degrees } from "pdf-lib";
+import fontkit from "@pdf-lib/fontkit";
 import * as QRCode from "qrcode";
+import { containsArabic, shapeArabicForPdf } from "./arabic-text";
 import {
   certificatePdfKey,
   ALLOWED_PDF_MIME,
@@ -25,6 +29,8 @@ export class CertificatesService {
   private readonly baseUrl: string;
   private readonly signingSecret: string;
   private readonly watermarkText: string;
+  /** Noto Naskh Arabic bytes, loaded once (bundled next to this module). */
+  private arabicFontBytes: Buffer | null | undefined;
 
   constructor(
     private readonly prisma: PrismaService,
@@ -56,10 +62,10 @@ export class CertificatesService {
       },
     });
 
-    if (!piece) throw new NotFoundException("Piece not found");
+    if (!piece) throw new NotFoundException("errors.PIECE_NOT_FOUND");
 
     const owner = await this.prisma.db.client.findUnique({ where: { id: ownerId } });
-    if (!owner) throw new NotFoundException("Owner not found");
+    if (!owner) throw new NotFoundException("errors.CLIENT_NOT_FOUND");
 
     const year = new Date().getFullYear();
     const certificateNumber = generateCertificateNumber(year);
@@ -86,11 +92,15 @@ export class CertificatesService {
 
     const pdfBuffer = await this.renderPdf({
       pieceName: piece.design.name,
+      pieceNameAr: piece.design.nameAr,
       collectionName: piece.design.collection.name,
+      collectionNameAr: piece.design.collection.nameAr,
       serialNumber: piece.serialNumber,
       material: piece.design.material,
+      materialAr: piece.design.materialAr,
       weight: piece.design.weight.toString(),
       dimensions: piece.design.dimensions,
+      dimensionsAr: piece.design.dimensionsAr,
       specifications: piece.design.specifications,
       ownerName: owner.displayName,
       certificateNumber,
@@ -141,12 +151,12 @@ export class CertificatesService {
     const piece = await this.prisma.db.piece.findFirst({
       where: { id: pieceId, currentOwnerId: clientId },
     });
-    if (!piece) throw new NotFoundException("Piece not found");
+    if (!piece) throw new NotFoundException("errors.PIECE_NOT_FOUND");
 
     const certificate = await this.prisma.db.certificate.findFirst({
       where: { pieceId, ownerId: clientId, isActive: true },
     });
-    if (!certificate) throw new NotFoundException("Certificate not found");
+    if (!certificate) throw new NotFoundException("errors.CERTIFICATE_NOT_FOUND");
 
     const pdfUrl = certificate.pdfUrl
       ? await this.storage.getSignedUrl(certificate.pdfUrl, { expiresInSeconds: 3600 })
@@ -164,12 +174,12 @@ export class CertificatesService {
     const piece = await this.prisma.db.piece.findFirst({
       where: { id: pieceId, currentOwnerId: clientId },
     });
-    if (!piece) throw new NotFoundException("Piece not found");
+    if (!piece) throw new NotFoundException("errors.PIECE_NOT_FOUND");
 
     const certificate = await this.prisma.db.certificate.findFirst({
       where: { pieceId, ownerId: clientId, isActive: true },
     });
-    if (!certificate?.pdfUrl) throw new NotFoundException("Certificate not found");
+    if (!certificate?.pdfUrl) throw new NotFoundException("errors.CERTIFICATE_NOT_FOUND");
 
     return this.storage.getSignedUrl(certificate.pdfUrl, { expiresInSeconds: 3600 });
   }
@@ -192,14 +202,31 @@ export class CertificatesService {
     return { items, total, page: p, limit: l };
   }
 
+  private loadArabicFontBytes(): Buffer | null {
+    if (this.arabicFontBytes !== undefined) return this.arabicFontBytes;
+    try {
+      this.arabicFontBytes = readFileSync(
+        path.join(__dirname, "fonts", "NotoNaskhArabic-Regular.ttf"),
+      );
+    } catch {
+      // Certificates degrade to English-only rather than failing generation.
+      this.arabicFontBytes = null;
+    }
+    return this.arabicFontBytes;
+  }
+
   private async renderPdf(params: {
     pieceName: string;
+    pieceNameAr: string | null;
     collectionName: string;
+    collectionNameAr: string | null;
     serialNumber: string;
     material: string;
+    materialAr: string | null;
     weight: string;
     dimensions: string;
-    specifications: { key: string; value: string }[];
+    dimensionsAr: string | null;
+    specifications: { key: string; keyAr: string | null; value: string; valueAr: string | null }[];
     ownerName: string;
     certificateNumber: string;
     issuedAt: Date;
@@ -207,11 +234,33 @@ export class CertificatesService {
     imageBytes: Buffer | null;
   }): Promise<Buffer> {
     const pdf = await PDFDocument.create();
+    pdf.registerFontkit(fontkit);
     const page = pdf.addPage([595, 842]);
     const { width, height } = page.getSize();
     const font = await pdf.embedFont(StandardFonts.TimesRoman);
     const fontBold = await pdf.embedFont(StandardFonts.TimesRomanBold);
     const mono = await pdf.embedFont(StandardFonts.Courier);
+
+    const arabicFontBytes = this.loadArabicFontBytes();
+    const arabicFont = arabicFontBytes
+      ? await pdf.embedFont(new Uint8Array(arabicFontBytes), { subset: true })
+      : null;
+
+    const drawArabic = (
+      text: string,
+      opts: { rightX: number; y: number; size: number; color: ReturnType<typeof rgb> },
+    ) => {
+      if (!arabicFont) return;
+      const shaped = shapeArabicForPdf(text);
+      const textWidth = arabicFont.widthOfTextAtSize(shaped, opts.size);
+      page.drawText(shaped, {
+        x: opts.rightX - textWidth,
+        y: opts.y,
+        size: opts.size,
+        font: arabicFont,
+        color: opts.color,
+      });
+    };
 
     page.drawRectangle({
       x: 0,
@@ -237,6 +286,20 @@ export class CertificatesService {
       color: rgb(1, 1, 1),
     });
 
+    // Arabic counterparts of the header, right-aligned (RTL reading edge).
+    drawArabic("دادن الرقمية", {
+      rightX: width - 50,
+      y: height - 60,
+      size: 20,
+      color: rgb(0.85, 0.75, 0.45),
+    });
+    drawArabic("شهادة أصالة", {
+      rightX: width - 50,
+      y: height - 95,
+      size: 15,
+      color: rgb(1, 1, 1),
+    });
+
     let yPos = height - 140;
 
     if (params.imageBytes) {
@@ -257,23 +320,30 @@ export class CertificatesService {
       }
     }
 
-    const fields: [string, string][] = [
-      ["Piece", params.pieceName],
-      ["Collection", params.collectionName],
-      ["Serial Number", params.serialNumber],
-      ["Material", params.material],
-      ["Weight", `${params.weight} g`],
-      ["Dimensions", params.dimensions],
-      ["Owner", params.ownerName],
-      ["Certificate No.", params.certificateNumber],
-      ["Issued", params.issuedAt.toISOString().split("T")[0]!],
+    // [label, English value, optional Arabic value shown right-aligned]
+    const fields: [string, string, string | null][] = [
+      ["Piece", params.pieceName, params.pieceNameAr],
+      ["Collection", params.collectionName, params.collectionNameAr],
+      ["Serial Number", params.serialNumber, null],
+      ["Material", params.material, params.materialAr],
+      ["Weight", `${params.weight} g`, null],
+      ["Dimensions", params.dimensions, params.dimensionsAr],
+      [
+        "Owner",
+        // Names written in Arabic script need shaping; keep them out of the
+        // Latin column and render on the Arabic side instead.
+        containsArabic(params.ownerName) ? "" : params.ownerName,
+        containsArabic(params.ownerName) ? params.ownerName : null,
+      ],
+      ["Certificate No.", params.certificateNumber, null],
+      ["Issued", params.issuedAt.toISOString().split("T")[0]!, null],
     ];
 
     for (const spec of params.specifications) {
-      fields.push([spec.key, spec.value]);
+      fields.push([spec.key, spec.value, spec.valueAr]);
     }
 
-    for (const [label, value] of fields) {
+    for (const [label, value, arValue] of fields) {
       page.drawText(`${label}:`, {
         x: 50,
         y: yPos,
@@ -281,13 +351,25 @@ export class CertificatesService {
         font: fontBold,
         color: rgb(0.85, 0.75, 0.45),
       });
-      page.drawText(value, {
-        x: 180,
-        y: yPos,
-        size: 11,
-        font: mono,
-        color: rgb(0.9, 0.9, 0.9),
-      });
+      if (value) {
+        page.drawText(value, {
+          x: 180,
+          y: yPos,
+          size: 11,
+          font: mono,
+          color: rgb(0.9, 0.9, 0.9),
+        });
+      }
+      if (arValue) {
+        // The QR code occupies the bottom-right corner; keep low rows clear of it.
+        const rightX = yPos < 150 ? width - 145 : width - 50;
+        drawArabic(arValue, {
+          rightX,
+          y: yPos,
+          size: 11,
+          color: rgb(0.75, 0.75, 0.75),
+        });
+      }
       yPos -= 22;
     }
 

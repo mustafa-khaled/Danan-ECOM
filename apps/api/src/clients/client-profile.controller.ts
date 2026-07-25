@@ -5,11 +5,12 @@ import {
   Patch,
   UseGuards,
 } from "@nestjs/common";
-import { IsOptional, IsString } from "class-validator";
+import { IsIn, IsOptional, IsString } from "class-validator";
 import { ClientsService } from "./clients.service";
 import { ClientGuard } from "../auth/guards/client.guard";
 import { CurrentClient } from "../auth/decorators/current-client.decorator";
 import type { ClientSession } from "@dadan/types";
+import { SUPPORTED_LOCALES } from "../common/i18n/locale";
 
 class UpdateProfileDto {
   @IsOptional()
@@ -17,7 +18,7 @@ class UpdateProfileDto {
   phone?: string;
 
   @IsOptional()
-  @IsString()
+  @IsIn([...SUPPORTED_LOCALES])
   locale?: string;
 }
 

@@ -62,6 +62,7 @@ RUN --mount=type=cache,target=/root/.local/share/pnpm/store \
 #   On subsequent builds only changed pages need recompilation.
 # ---------------------------------------------------------------------------
 FROM deps AS builder
+COPY packages/config packages/config
 COPY apps/web apps/web
 ENV NEXT_TELEMETRY_DISABLED=1
 ARG API_URL=http://api:4000

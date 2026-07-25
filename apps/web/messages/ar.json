@@ -1,0 +1,224 @@
+{
+  "common": {
+    "brand": "دادان",
+    "explorePiece": "استكشف القطعة",
+    "viewAll": "عرض الكل",
+    "loading": "جاري التحميل...",
+    "error": "حدث خطأ ما",
+    "retry": "حاول مرة أخرى",
+    "save": "حفظ",
+    "cancel": "إلغاء",
+    "submit": "إرسال",
+    "close": "إغلاق",
+    "sar": "ر.س"
+  },
+  "nav": {
+    "stories": "القصص",
+    "collections": "المجموعات",
+    "wardrobe": "خزانتي",
+    "verify": "التحقق",
+    "home": "الرئيسية",
+    "saved": "قائمة الأمنيات",
+    "cart": "السلة",
+    "orders": "الطلبات",
+    "transfers": "التحويلات",
+    "profile": "الملف الشخصي"
+  },
+  "greeting": {
+    "morning": "صباح الخير",
+    "afternoon": "مساء الخير",
+    "evening": "مساء الخير"
+  },
+  "accessGate": {
+    "title": "قصة تُروى",
+    "welcome": "مرحباً بك في بيت دادان",
+    "description": "أدخل مفتاح البيت للوصول إلى مجموعتك الخاصة.",
+    "houseKey": "مفتاح البيت",
+    "houseKeyPlaceholder": "أدخل مفتاح البيت",
+    "assistance": "تحتاج مساعدة؟",
+    "accessDenied": "تم رفض الدخول",
+    "rateLimited": "يرجى الانتظار قبل المحاولة مرة أخرى",
+    "entering": "جاري الدخول..."
+  },
+  "welcome": {
+    "title": "مرحباً بعودتك، {name}",
+    "description": "مجموعتك الخاصة بانتظارك. استكشف قطعاً صُنعت بإرث ودقة.",
+    "cta": "استكشف تجربتك"
+  },
+  "footer": {
+    "explore": "استكشف",
+    "theHouse": "البيت",
+    "assistance": "المساعدة",
+    "stories": "القصص",
+    "collections": "المجموعات",
+    "myCollection": "مجموعتي",
+    "about": "عن دادان",
+    "philosophy": "الفلسفة",
+    "ownership": "الملكية",
+    "contact": "تواصل معنا",
+    "houseAssistance": "مساعدة البيت",
+    "privacy": "الخصوصية",
+    "copyright": "© 2026 دادان. جميع الحقوق محفوظة.",
+    "tagline": "إرث. حرفية. ملكية."
+  },
+  "home": {
+    "continueExploring": "تابع الاستكشاف",
+    "selectedForYou": "مختارة لك",
+    "featuredCollection": "المجموعة المميزة",
+    "viewCollection": "عرض المجموعة",
+    "yourCollection": "مجموعتك",
+    "aboutDadan": "عن دادان",
+    "aboutDescription": "تحتفي دادان بالإرث السعودي من خلال حرفية المجوهرات المعاصرة.",
+    "welcomeBack": "مرحباً بعودتك",
+    "wardrobeEmpty": "خزانتك فارغة",
+    "wardrobeEmptyDescription": "ستظهر القطع المشتراة والمحولة هنا.",
+    "savedEmpty": "لا توجد قطع محفوظة",
+    "savedEmptyDescription": "احفظ القطع التي تعجبك للعودة إليها لاحقاً.",
+    "exploreCollections": "استكشف المجموعات"
+  },
+  "collections": {
+    "title": "المجموعات",
+    "empty": "لا توجد مجموعات",
+    "emptyDescription": "ستظهر المجموعات هنا عند توفرها.",
+    "theStory": "القصة",
+    "designInspiration": "إلهام التصميم",
+    "pieces": "القطع"
+  },
+  "piece": {
+    "addToCollection": "أضف إلى مجموعتك",
+    "addToFavourites": "أضف إلى قائمة الأمنيات",
+    "specs": "المواصفات",
+    "gold": "الذهب",
+    "diamonds": "الألماس",
+    "weight": "الوزن",
+    "origin": "المنشأ",
+    "storyOfProtection": "قصة الحماية",
+    "addToCart": "أضف إلى السلة",
+    "unsave": "إلغاء الحفظ",
+    "addToCartError": "تعذرت الإضافة إلى السلة"
+  },
+  "wardrobe": {
+    "title": "خزانتك",
+    "owned": "القطع المملوكة",
+    "certificates": "الشهادات",
+    "history": "السجل",
+    "transfers": "التحويلات",
+    "ownedPieces": "القطع المملوكة",
+    "certificatesCount": "الشهادات",
+    "pendingTransfers": "تحويلات معلقة",
+    "certificateActive": "شهادة نشطة",
+    "empty": "خزانتك فارغة",
+    "emptyDescription": "ستظهر القطع المشتراة والمحولة هنا.",
+    "transferOwnership": "تحويل الملكية",
+    "viewCertificate": "عرض الشهادة",
+    "verifyAuthenticity": "التحقق من الأصالة"
+  },
+  "transfers": {
+    "title": "التحويلات",
+    "empty": "لا توجد تحويلات",
+    "emptyDescription": "ستظهر تحويلات الملكية هنا.",
+    "pending": "معلق",
+    "completed": "مكتمل",
+    "viewDetails": "عرض التفاصيل",
+    "transferType": "نوع التحويل",
+    "recipient": "معرف البيت أو البريد الإلكتروني للمستلم",
+    "gift": "هدية",
+    "sale": "بيع",
+    "inheritance": "إرث",
+    "recipientHouseKey": "مفتاح بيت المستلم",
+    "initiateDescription": "قم بتحويل {pieceName} ({serialNumber}) إلى عميل آخر من دادان. يجب على المستلم مشاركة مفتاح بيته معك. يؤكد الطرفان الموافقة، ثم تتواصل دادان معهما وتوافق على التحويل.",
+    "initiateTransfer": "بدء التحويل",
+    "initiateError": "تعذر بدء التحويل",
+    "confirmAsSender": "تأكيد كطرف مُحوِّل",
+    "confirmAsRecipient": "تأكيد كطرف مستلم",
+    "cancelTransfer": "إلغاء التحويل",
+    "actionFailed": "فشل الإجراء"
+  },
+  "saved": {
+    "title": "قائمة أمنياتي",
+    "count": "{count} قطعة",
+    "empty": "لا توجد قطع محفوظة",
+    "emptyDescription": "احفظ القطع التي تعجبك للعودة إليها لاحقاً."
+  },
+  "profile": {
+    "title": "الملف الشخصي",
+    "overview": "نظرة عامة",
+    "personalInfo": "المعلومات الشخصية",
+    "myCollection": "مجموعتي",
+    "certificates": "الشهادات",
+    "wishlist": "قائمة الأمنيات",
+    "memberSince": "عضو منذ {date}",
+    "houseMembership": "عضوية البيت",
+    "houseKey": "مفتاح البيت",
+    "name": "الاسم",
+    "email": "البريد الإلكتروني",
+    "phone": "الهاتف",
+    "country": "البلد",
+    "gender": "الجنس",
+    "age": "العمر",
+    "collectionSummary": "ملخص المجموعة",
+    "ownedPieces": "{count} قطعة مملوكة"
+  },
+  "cart": {
+    "title": "السلة",
+    "empty": "سلتك فارغة",
+    "emptyDescription": "أضف قطعاً من المجموعات إلى سلتك.",
+    "subtotal": "المجموع الفرعي",
+    "vat": "ضريبة القيمة المضافة",
+    "total": "الإجمالي",
+    "checkout": "متابعة الدفع"
+  },
+  "checkout": {
+    "title": "الدفع",
+    "empty": "لا يوجد شيء للدفع",
+    "emptyDescription": "أضف عناصر إلى سلتك أولاً.",
+    "placeOrder": "تأكيد الطلب",
+    "processing": "جاري المعالجة..."
+  },
+  "orders": {
+    "title": "الطلبات",
+    "empty": "لا توجد طلبات",
+    "emptyDescription": "سيظهر سجل مشترياتك هنا."
+  },
+  "verify": {
+    "title": "التحقق من الأصالة",
+    "description": "أدخل الرقم التسلسلي للتحقق من قطعة دادان.",
+    "serialNumber": "الرقم التسلسلي",
+    "verify": "التحقق من الأصالة",
+    "verificationToken": "رمز التحقق",
+    "instructions": "أدخل الرقم التسلسلي ورمز التحقق من شهادتك.",
+    "verificationFailed": "فشل التحقق",
+    "verifiedPiece": "قطعة موثقة",
+    "collection": "المجموعة",
+    "material": "الخامة",
+    "dimensions": "الأبعاد"
+  },
+  "certificates": {
+    "title": "الشهادات",
+    "empty": "لا توجد شهادات",
+    "emptyDescription": "تُصدر الشهادات عند امتلاكك لقطعة.",
+    "view": "عرض",
+    "issued": "صُدرت {date}",
+    "certificateOfAuthenticity": "شهادة الأصالة",
+    "downloadPdf": "تحميل PDF",
+    "certificateNumber": "رقم الشهادة",
+    "issuedLabel": "تاريخ الإصدار",
+    "qrHint": "قم بمسح رمز الاستجابة السريعة على شهادتك الورقية أو استخدم صفحة التحقق لتأكيد الأصالة.",
+    "unavailable": "الشهادة غير متوفرة"
+  },
+  "history": {
+    "title": "سجل النشاط",
+    "empty": "لا يوجد نشاط",
+    "emptyDescription": "ستظهر أحداث الملكية هنا.",
+    "thisWeek": "هذا الأسبوع",
+    "certificateIssued": "صدرت شهادة الملكية"
+  },
+  "auth": {
+    "logout": "تسجيل الخروج"
+  },
+  "errors": {
+    "notFound": "الصفحة غير موجودة",
+    "notFoundDescription": "الصفحة التي تبحث عنها غير موجودة.",
+    "goHome": "الذهاب للرئيسية"
+  }
+}

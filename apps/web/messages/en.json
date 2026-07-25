@@ -1,0 +1,224 @@
+{
+  "common": {
+    "brand": "DADAN",
+    "explorePiece": "Explore Piece",
+    "viewAll": "View All",
+    "loading": "Loading...",
+    "error": "Something went wrong",
+    "retry": "Try again",
+    "save": "Save",
+    "cancel": "Cancel",
+    "submit": "Submit",
+    "close": "Close",
+    "sar": "SAR"
+  },
+  "nav": {
+    "stories": "Stories",
+    "collections": "Collections",
+    "wardrobe": "Wardrobe",
+    "verify": "Verify",
+    "home": "Home",
+    "saved": "Wish list",
+    "cart": "Cart",
+    "orders": "Orders",
+    "transfers": "Transfers",
+    "profile": "Profile"
+  },
+  "greeting": {
+    "morning": "Morning",
+    "afternoon": "Afternoon",
+    "evening": "Evening"
+  },
+  "accessGate": {
+    "title": "A Story Told",
+    "welcome": "Welcome to the House of DADAN",
+    "description": "Enter your House Key to access your private collection.",
+    "houseKey": "House Key",
+    "houseKeyPlaceholder": "Enter your House Key",
+    "assistance": "Need assistance?",
+    "accessDenied": "Access denied",
+    "rateLimited": "Please wait before trying again",
+    "entering": "Entering..."
+  },
+  "welcome": {
+    "title": "Welcome Back, {name}",
+    "description": "Your private collection awaits. Explore pieces crafted with heritage and precision.",
+    "cta": "Explore Your Experience"
+  },
+  "footer": {
+    "explore": "Explore",
+    "theHouse": "The House",
+    "assistance": "Assistance",
+    "stories": "Stories",
+    "collections": "Collections",
+    "myCollection": "My Collection",
+    "about": "About DADAN",
+    "philosophy": "Philosophy",
+    "ownership": "Ownership",
+    "contact": "Contact",
+    "houseAssistance": "House Assistance",
+    "privacy": "Privacy",
+    "copyright": "© 2026 DADAN. All rights reserved.",
+    "tagline": "Heritage. Craftsmanship. Ownership."
+  },
+  "home": {
+    "continueExploring": "Continue Exploring",
+    "selectedForYou": "Selected For You",
+    "featuredCollection": "Featured Collection",
+    "viewCollection": "View Collection",
+    "yourCollection": "Your Collection",
+    "aboutDadan": "About DADAN",
+    "aboutDescription": "DADAN celebrates Saudi heritage through contemporary jewelry craftsmanship.",
+    "welcomeBack": "Welcome back",
+    "wardrobeEmpty": "Your wardrobe is empty",
+    "wardrobeEmptyDescription": "Purchased and transferred pieces will appear here.",
+    "savedEmpty": "No saved pieces yet",
+    "savedEmptyDescription": "Save pieces you love to revisit them later.",
+    "exploreCollections": "Explore Collections"
+  },
+  "collections": {
+    "title": "Collections",
+    "empty": "No collections available",
+    "emptyDescription": "Collections will appear here when available.",
+    "theStory": "The Story",
+    "designInspiration": "Design Inspiration",
+    "pieces": "Pieces"
+  },
+  "piece": {
+    "addToCollection": "Add To Your Collection",
+    "addToFavourites": "Add To Favourites List",
+    "specs": "Specifications",
+    "gold": "Gold",
+    "diamonds": "Diamonds",
+    "weight": "Weight",
+    "origin": "Origin",
+    "storyOfProtection": "A Story of Protection",
+    "addToCart": "Add to Cart",
+    "unsave": "Unsave",
+    "addToCartError": "Could not add to cart"
+  },
+  "wardrobe": {
+    "title": "Your Wardrobe",
+    "owned": "Owned Pieces",
+    "certificates": "Certificates",
+    "history": "History",
+    "transfers": "Transfers",
+    "ownedPieces": "Owned Pieces",
+    "certificatesCount": "Certificates",
+    "pendingTransfers": "Pending Transfers",
+    "certificateActive": "Certificate Active",
+    "empty": "Your wardrobe is empty",
+    "emptyDescription": "Purchased and transferred pieces will appear here.",
+    "transferOwnership": "Transfer Ownership",
+    "viewCertificate": "View Certificate",
+    "verifyAuthenticity": "Verify Authenticity"
+  },
+  "transfers": {
+    "title": "Transfers",
+    "empty": "No transfers yet",
+    "emptyDescription": "Ownership transfers will appear here.",
+    "pending": "Pending",
+    "completed": "Completed",
+    "viewDetails": "View Details",
+    "transferType": "Transfer Type",
+    "recipient": "Recipient House ID or Email",
+    "gift": "Gift",
+    "sale": "Sale",
+    "inheritance": "Inheritance",
+    "recipientHouseKey": "Recipient House Key",
+    "initiateDescription": "Transfer {pieceName} ({serialNumber}) to another DADAN client. The recipient must share their House Key with you. Both parties confirm, then DADAN reviews and approves the transfer.",
+    "initiateTransfer": "Initiate Transfer",
+    "initiateError": "Transfer could not be initiated",
+    "confirmAsSender": "Confirm as Sender",
+    "confirmAsRecipient": "Confirm as Recipient",
+    "cancelTransfer": "Cancel Transfer",
+    "actionFailed": "Action failed"
+  },
+  "saved": {
+    "title": "My Wish list",
+    "count": "{count} Pieces",
+    "empty": "No saved pieces yet",
+    "emptyDescription": "Save pieces you love to revisit them later."
+  },
+  "profile": {
+    "title": "Profile",
+    "overview": "Overview",
+    "personalInfo": "Personal Information",
+    "myCollection": "My Collection",
+    "certificates": "Certificates",
+    "wishlist": "Wish list",
+    "memberSince": "Member since {date}",
+    "houseMembership": "House Membership",
+    "houseKey": "House Key",
+    "name": "Name",
+    "email": "Email",
+    "phone": "Phone",
+    "country": "Country",
+    "gender": "Gender",
+    "age": "Age",
+    "collectionSummary": "Collection Summary",
+    "ownedPieces": "{count} Owned Pieces"
+  },
+  "cart": {
+    "title": "Cart",
+    "empty": "Your cart is empty",
+    "emptyDescription": "Add pieces from collections to your cart.",
+    "subtotal": "Subtotal",
+    "vat": "VAT",
+    "total": "Total",
+    "checkout": "Proceed to Checkout"
+  },
+  "checkout": {
+    "title": "Checkout",
+    "empty": "Nothing to checkout",
+    "emptyDescription": "Add items to your cart first.",
+    "placeOrder": "Place Order",
+    "processing": "Processing..."
+  },
+  "orders": {
+    "title": "Orders",
+    "empty": "No orders yet",
+    "emptyDescription": "Your purchase history will appear here."
+  },
+  "verify": {
+    "title": "Verify Authenticity",
+    "description": "Enter a serial number to verify a DADAN piece.",
+    "serialNumber": "Serial Number",
+    "verify": "Verify Authenticity",
+    "verificationToken": "Verification Token",
+    "instructions": "Enter the serial number and verification token from your certificate.",
+    "verificationFailed": "Verification failed",
+    "verifiedPiece": "Verified Piece",
+    "collection": "Collection",
+    "material": "Material",
+    "dimensions": "Dimensions"
+  },
+  "certificates": {
+    "title": "Certificates",
+    "empty": "No certificates yet",
+    "emptyDescription": "Certificates are issued when you own a piece.",
+    "view": "View",
+    "issued": "Issued {date}",
+    "certificateOfAuthenticity": "Certificate of Authenticity",
+    "downloadPdf": "Download PDF",
+    "certificateNumber": "Certificate No.",
+    "issuedLabel": "Issued",
+    "qrHint": "Scan the QR code on your physical certificate or use Verify to confirm authenticity.",
+    "unavailable": "Certificate unavailable"
+  },
+  "history": {
+    "title": "Activity History",
+    "empty": "No activity yet",
+    "emptyDescription": "Ownership events will appear here.",
+    "thisWeek": "This Week",
+    "certificateIssued": "Ownership Certificate Issued"
+  },
+  "auth": {
+    "logout": "Log out"
+  },
+  "errors": {
+    "notFound": "Page not found",
+    "notFoundDescription": "The page you are looking for does not exist.",
+    "goHome": "Go to Home"
+  }
+}

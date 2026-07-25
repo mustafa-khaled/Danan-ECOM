@@ -13,7 +13,8 @@ import type { Request } from "express";
 import { TransfersService } from "./transfers.service";
 import { ClientGuard } from "../auth/guards/client.guard";
 import { CurrentClient } from "../auth/decorators/current-client.decorator";
-import type { ClientSession } from "@dadan/types";
+import { CurrentLocale } from "../common/i18n/locale";
+import type { ClientSession, Locale } from "@dadan/types";
 import { getClientIp } from "../common/constants";
 
 class InitiateTransferDto {
@@ -36,10 +37,11 @@ export class ClientTransfersController {
   @Post("initiate")
   initiate(
     @CurrentClient() client: ClientSession,
+    @CurrentLocale() locale: Locale,
     @Body() dto: InitiateTransferDto,
     @Req() req: Request,
   ) {
-    return this.transfers.initiate(client.clientId, dto, getClientIp(req));
+    return this.transfers.initiate(client.clientId, dto, getClientIp(req), locale);
   }
 
   @Post(":transferId/confirm-sender")
@@ -70,15 +72,19 @@ export class ClientTransfersController {
   }
 
   @Get()
-  list(@CurrentClient() client: ClientSession) {
-    return this.transfers.listClientTransfers(client.clientId);
+  list(
+    @CurrentClient() client: ClientSession,
+    @CurrentLocale() locale: Locale,
+  ) {
+    return this.transfers.listClientTransfers(client.clientId, locale);
   }
 
   @Get(":transferId")
   getOne(
     @CurrentClient() client: ClientSession,
+    @CurrentLocale() locale: Locale,
     @Param("transferId") transferId: string,
   ) {
-    return this.transfers.getClientTransfer(transferId, client.clientId);
+    return this.transfers.getClientTransfer(transferId, client.clientId, locale);
   }
 }

@@ -1,15 +1,8 @@
 import Link from "next/link";
 import { AdminLayout } from "@/components/ui";
-import { AdminLogoutButton } from "../../../components/admin-logout-button";
+import { AdminLogoutButton } from "@/components/admin-logout-button";
 import { requireAdminSession } from "@/features/auth/server/admin-session";
-
-const navItems = [
-  { href: "/admin/dashboard", label: "Dashboard" },
-  { href: "/admin/clients", label: "Clients" },
-  { href: "/admin/pieces", label: "Pieces" },
-  { href: "/admin/orders", label: "Orders" },
-  { href: "/admin/transfers", label: "Transfers" },
-];
+import { getAdminNavItems } from "@/shared/lib/admin-nav";
 
 export default async function DashboardLayout({
   children,
@@ -17,6 +10,7 @@ export default async function DashboardLayout({
   children: React.ReactNode;
 }) {
   const admin = await requireAdminSession();
+  const navItems = getAdminNavItems(admin.role);
 
   return (
     <AdminLayout title="DADAN Admin">
@@ -36,9 +30,16 @@ export default async function DashboardLayout({
           </ul>
         </nav>
         <div className="flex items-center gap-4">
-          <p className="text-xs tracking-[0.12em] uppercase text-[var(--color-ivory-muted)]">
-            {admin.displayName} · {admin.role.replace("_", " ")}
-          </p>
+          <div className="text-end">
+            <p className="text-xs tracking-[0.12em] uppercase text-[var(--color-ivory-muted)]">
+              {admin.displayName} · {admin.role.replace("_", " ")}
+            </p>
+            {admin.role === "VIEWER" ? (
+              <p className="text-[0.65rem] tracking-[0.1em] uppercase text-[var(--color-gold)]">
+                Read-only access
+              </p>
+            ) : null}
+          </div>
           <AdminLogoutButton />
         </div>
       </div>

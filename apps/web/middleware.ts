@@ -1,8 +1,12 @@
+import createIntlMiddleware from "next-intl/middleware";
 import { NextResponse, type NextRequest } from "next/server";
+import { routing } from "./i18n/routing";
+
+const intlMiddleware = createIntlMiddleware(routing);
 
 const PUBLIC_PATHS = ["/", "/beta"];
 
-export function middleware(request: NextRequest) {
+function handleAuth(request: NextRequest): NextResponse | null {
   const { pathname } = request.nextUrl;
 
   if (pathname.startsWith("/admin")) {
@@ -12,18 +16,18 @@ export function middleware(request: NextRequest) {
       if (hasAdminSession) {
         return NextResponse.redirect(new URL("/admin/dashboard", request.url));
       }
-      return NextResponse.next();
+      return null;
     }
 
     if (!hasAdminSession) {
       return NextResponse.redirect(new URL("/admin/login", request.url));
     }
 
-    return NextResponse.next();
+    return null;
   }
 
   if (PUBLIC_PATHS.includes(pathname)) {
-    return NextResponse.next();
+    return null;
   }
 
   if (pathname.startsWith("/beta")) {
@@ -34,6 +38,15 @@ export function middleware(request: NextRequest) {
       loginUrl.searchParams.set("next", pathname);
       return NextResponse.redirect(loginUrl);
     }
+  }
+
+  return null;
+}
+
+export function middleware(request: NextRequest) {
+  const authResponse = handleAuth(request);
+  if (authResponse) {
+    return authResponse;
   }
 
   return NextResponse.next();

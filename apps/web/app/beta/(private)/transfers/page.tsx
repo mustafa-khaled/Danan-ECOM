@@ -1,62 +1,69 @@
 import Link from "next/link";
-import { PrivateLayout, SerialBadge, StatusPill } from "@/components/ui";
-import { EmptyState } from "../../../../components/empty-state";
+import { getTranslations } from "next-intl/server";
+import { ClientShell, SerialBadge, StatusPill, WardrobeLayout } from "@/components/ui";
+import { EmptyState } from "@/shared/components/feedback/empty-state";
 import { fetchTransfers } from "@/features/transfers";
+import { fetchWardrobe } from "@/features/wardrobe";
 import { formatTransferStatus } from "@/shared/utils/format";
-import { privateNavItems } from "@/shared/lib/nav";
 import { getSessionCookieHeader, requireClientSession } from "@/features/auth/server/session";
 
 export default async function TransfersPage() {
   const profile = await requireClientSession();
   const cookie = await getSessionCookieHeader();
-  const transfers = await fetchTransfers(cookie);
+  const [transfers, wardrobe] = await Promise.all([
+    fetchTransfers(cookie),
+    fetchWardrobe(cookie),
+  ]);
+  const t = await getTranslations("transfers");
+  const tw = await getTranslations("wardrobe");
+
+  const pendingTransfers = transfers.filter((tr) => tr.status === "PENDING").length;
 
   return (
-    <PrivateLayout clientName={profile.displayName} navItems={privateNavItems}>
-      <header className="mb-10 space-y-3">
-        <p className="text-xs tracking-[0.2em] uppercase text-[var(--color-gold-light)]">Transfers</p>
-        <h1 className="font-display text-4xl text-[var(--color-ivory)]">Piece Transfers</h1>
-        <p className="text-[var(--color-ivory-muted)]">
-          Initiated and received transfers requiring your confirmation.
-        </p>
-      </header>
-
-      {transfers.length === 0 ? (
-        <EmptyState
-          title="No transfers"
-          description="Transfer requests you send or receive will appear here."
-          action={{ href: "/beta/wardrobe", label: "View Wardrobe" }}
-        />
-      ) : (
-        <ul className="space-y-4">
-          {transfers.map((transfer) => (
-            <li key={transfer.id}>
-              <Link
-                href={`/beta/transfers/${transfer.id}`}
-                className="block rounded-[var(--radius-panel)] border border-[var(--color-border)] bg-[var(--color-surface)] p-6 transition-colors hover:border-[var(--color-gold)]"
-              >
-                <div className="flex flex-wrap items-start justify-between gap-4">
-                  <div>
-                    <p className="font-display text-xl text-[var(--color-ivory)]">
-                      {transfer.piece.name}
-                    </p>
-                    <div className="mt-2">
-                      <SerialBadge serial={transfer.piece.serialNumber} />
+    <ClientShell displayName={profile.displayName}>
+      <WardrobeLayout
+        displayName={profile.displayName}
+        ownedCount={wardrobe.length}
+        certificatesCount={wardrobe.length}
+        pendingTransfers={pendingTransfers}
+      >
+        {transfers.length === 0 ? (
+          <EmptyState
+            title={t("empty")}
+            description={t("emptyDescription")}
+            action={{ href: "/beta/wardrobe", label: tw("title") }}
+          />
+        ) : (
+          <ul className="space-y-4">
+            {transfers.map((transfer) => (
+              <li key={transfer.id}>
+                <Link
+                  href={`/beta/transfers/${transfer.id}`}
+                  className="block border border-[var(--color-border)] bg-white p-6 transition-colors hover:border-[var(--color-accent)]"
+                >
+                  <div className="flex flex-wrap items-start justify-between gap-4">
+                    <div>
+                      <p className="font-english text-xl text-[var(--color-text)]">
+                        {transfer.piece.name}
+                      </p>
+                      <div className="mt-2">
+                        <SerialBadge serial={transfer.piece.serialNumber} />
+                      </div>
+                      <p className="mt-3 text-sm text-[var(--color-text-muted)]">
+                        {transfer.transferType} · {transfer.otherPartyDisplayName}
+                      </p>
+                      <p className="mt-1 text-xs text-[var(--color-text-muted)]">
+                        {new Date(transfer.initiatedAt).toLocaleDateString()}
+                      </p>
                     </div>
-                    <p className="mt-3 text-sm text-[var(--color-ivory-muted)]">
-                      With {transfer.otherPartyDisplayName} · {transfer.transferType}
-                    </p>
-                    <p className="mt-1 text-xs text-[var(--color-ivory-muted)]">
-                      {new Date(transfer.initiatedAt).toLocaleDateString()}
-                    </p>
+                    <StatusPill status={formatTransferStatus(transfer.status)} />
                   </div>
-                  <StatusPill status={formatTransferStatus(transfer.status)} />
-                </div>
-              </Link>
-            </li>
-          ))}
-        </ul>
-      )}
-    </PrivateLayout>
+                </Link>
+              </li>
+            ))}
+          </ul>
+        )}
+      </WardrobeLayout>
+    </ClientShell>
   );
 }

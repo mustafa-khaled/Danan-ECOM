@@ -4,6 +4,7 @@ import {
   NotFoundException,
 } from "@nestjs/common";
 import { AcquisitionType, ActorType, PieceStatus } from "@dadan/db";
+import type { Locale } from "@dadan/types";
 import { AuditService } from "../audit/audit.service";
 import { CertificatesService } from "../certificates/certificates.service";
 import { PrismaService } from "../prisma/prisma.service";
@@ -11,6 +12,11 @@ import { StorageService } from "../storage/storage.service";
 import { VisibilityService } from "../visibility/visibility.service";
 import { SerialNumberService } from "./serial-number.service";
 import { paginationParams } from "../common/constants";
+import {
+  localizeDesign,
+  localizeSpecifications,
+  pickLocalized,
+} from "../common/i18n/localize";
 
 @Injectable()
 export class PiecesService {
@@ -23,7 +29,7 @@ export class PiecesService {
     private readonly visibility: VisibilityService,
   ) {}
 
-  async getWardrobe(clientId: string) {
+  async getWardrobe(clientId: string, locale: Locale = "ar") {
     const pieces = await this.prisma.db.piece.findMany({
       where: { currentOwnerId: clientId },
       include: {
@@ -50,10 +56,17 @@ export class PiecesService {
           serialNumber: p.serialNumber,
           status: p.status,
           design: {
-            name: p.design.name,
+            name: pickLocalized(locale, p.design.name, p.design.nameAr),
             images: p.design.imageUrls,
-            specifications: p.design.specifications,
-            collection: p.design.collection.name,
+            specifications: localizeSpecifications(
+              p.design.specifications,
+              locale,
+            ),
+            collection: pickLocalized(
+              locale,
+              p.design.collection.name,
+              p.design.collection.nameAr,
+            ),
           },
           certificate: p.certificates[0] ?? null,
           acquiredAt: p.ownershipRecords[0]?.acquiredAt ?? p.registeredAt,
@@ -72,7 +85,11 @@ export class PiecesService {
     );
   }
 
-  async getWardrobePiece(clientId: string, pieceId: string) {
+  async getWardrobePiece(
+    clientId: string,
+    pieceId: string,
+    locale: Locale = "ar",
+  ) {
     const piece = await this.prisma.db.piece.findFirst({
       where: { id: pieceId, currentOwnerId: clientId },
       include: {
@@ -95,16 +112,18 @@ export class PiecesService {
       },
     });
 
-    if (!piece) throw new NotFoundException("Piece not found");
+    if (!piece) throw new NotFoundException("errors.PIECE_NOT_FOUND");
 
     const signedImageUrls = await this.storage.resolvePublicUrls(piece.design.imageUrls);
+    const { specifications, ...designFields } = piece.design;
 
     return {
       id: piece.id,
       serialNumber: piece.serialNumber,
       status: piece.status,
       design: {
-        ...piece.design,
+        ...localizeDesign(designFields, locale),
+        specifications: localizeSpecifications(specifications, locale),
         imageUrls: signedImageUrls,
       },
       ownershipHistory: piece.ownershipRecords.map((r) => ({
@@ -117,7 +136,7 @@ export class PiecesService {
     };
   }
 
-  async getSavedPieces(clientId: string) {
+  async getSavedPieces(clientId: string, locale: Locale = "ar") {
     const saved = await this.prisma.db.savedPiece.findMany({
       where: { clientId },
       include: {
@@ -131,18 +150,26 @@ export class PiecesService {
     });
 
     return Promise.all(
-      saved.map(async (s) => ({
-        savedAt: s.savedAt,
-        piece: {
-          id: s.piece.id,
-          serialNumber: s.piece.serialNumber,
-          status: s.piece.status,
-          design: {
-            ...s.piece.design,
-            imageUrls: await this.storage.resolvePublicUrls(s.piece.design.imageUrls),
+      saved.map(async (s) => {
+        const { collection, ...designFields } = s.piece.design;
+        return {
+          savedAt: s.savedAt,
+          piece: {
+            id: s.piece.id,
+            serialNumber: s.piece.serialNumber,
+            status: s.piece.status,
+            design: {
+              ...localizeDesign(designFields, locale),
+              collection: {
+                id: collection.id,
+                name: pickLocalized(locale, collection.name, collection.nameAr),
+                slug: collection.slug,
+              },
+              imageUrls: await this.storage.resolvePublicUrls(s.piece.design.imageUrls),
+            },
           },
-        },
-      })),
+        };
+      }),
     );
   }
 
@@ -159,7 +186,7 @@ export class PiecesService {
       !this.visibility.canAccess(clientGroups, piece.design.visibilityGroups) ||
       !this.visibility.canAccess(clientGroups, piece.design.collection.visibilityGroups)
     ) {
-      throw new NotFoundException("Piece not found");
+      throw new NotFoundException("errors.PIECE_NOT_FOUND");
     }
 
     await this.prisma.db.savedPiece.upsert({
@@ -281,7 +308,7 @@ export class PiecesService {
         transferRequests: { orderBy: { initiatedAt: "desc" } },
       },
     });
-    if (!piece) throw new NotFoundException("Piece not found");
+    if (!piece) throw new NotFoundException("errors.PIECE_NOT_FOUND");
     return piece;
   }
 
@@ -292,7 +319,7 @@ export class PiecesService {
     ipAddress?: string,
   ) {
     const piece = await this.prisma.db.piece.findUnique({ where: { id } });
-    if (!piece) throw new NotFoundException("Piece not found");
+    if (!piece) throw new NotFoundException("errors.PIECE_NOT_FOUND");
 
     if (data.status === PieceStatus.OWNED && !piece.currentOwnerId) {
       throw new BadRequestException("Cannot set OWNED without an owner");
@@ -323,7 +350,7 @@ export class PiecesService {
     ipAddress?: string,
   ) {
     const piece = await this.prisma.db.piece.findUnique({ where: { id } });
-    if (!piece) throw new NotFoundException("Piece not found");
+    if (!piece) throw new NotFoundException("errors.PIECE_NOT_FOUND");
     if (piece.status !== PieceStatus.AVAILABLE) {
       throw new BadRequestException("Piece is not available for assignment");
     }

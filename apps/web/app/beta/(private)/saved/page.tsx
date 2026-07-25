@@ -1,51 +1,53 @@
 import Link from "next/link";
-import { PieceCard, PrivateLayout } from "@/components/ui";
-import { EmptyState } from "../../../../components/empty-state";
+import { getTranslations } from "next-intl/server";
+import { AccountLayout, ClientShell, PieceCard } from "@/components/ui";
+import { EmptyState } from "@/shared/components/feedback/empty-state";
 import { fetchSaved } from "@/features/saved";
-import { privateNavItems } from "@/shared/lib/nav";
 import { getSessionCookieHeader, requireClientSession } from "@/features/auth/server/session";
 
 export default async function SavedPage() {
   const profile = await requireClientSession();
   const cookie = await getSessionCookieHeader();
   const saved = await fetchSaved(cookie);
+  const t = await getTranslations("saved");
 
   return (
-    <PrivateLayout clientName={profile.displayName} navItems={privateNavItems}>
-      <header className="mb-10 space-y-3">
-        <p className="text-xs tracking-[0.2em] uppercase text-[var(--color-gold-light)]">Bookmarked</p>
-        <h1 className="font-display text-4xl text-[var(--color-ivory)]">Saved Pieces</h1>
-        <p className="text-[var(--color-ivory-muted)]">Pieces you have saved for later.</p>
-      </header>
+    <ClientShell displayName={profile.displayName}>
+      <AccountLayout title={t("title")}>
+        <p className="mb-6 text-sm text-[var(--color-text-muted)]">
+          {t("count", { count: saved.length })}
+        </p>
 
-      {saved.length === 0 ? (
-        <EmptyState
-          title="Nothing saved yet"
-          description="Save pieces while browsing designs to build your shortlist."
-          action={{ href: "/beta/collections", label: "Browse Collections" }}
-        />
-      ) : (
-        <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-          {saved.map((entry) => {
-            const href = entry.piece.design.slug
-              ? `/beta/pieces/${entry.piece.design.slug}`
-              : `/beta/wardrobe/${entry.piece.id}`;
-            return (
-            <Link key={entry.piece.id} href={href}>
-              <PieceCard
-                piece={{
-                  id: entry.piece.id,
-                  name: entry.piece.design.name,
-                  serialNumber: entry.piece.serialNumber,
-                  imageUrl: entry.piece.design.imageUrls?.[0],
-                  collectionName: entry.piece.design.collection?.name,
-                }}
-              />
-            </Link>
-            );
-          })}
-        </div>
-      )}
-    </PrivateLayout>
+        {saved.length === 0 ? (
+          <EmptyState
+            title={t("empty")}
+            description={t("emptyDescription")}
+            action={{ href: "/beta/collections", label: t("title") }}
+          />
+        ) : (
+          <div className="grid gap-6 sm:grid-cols-2">
+            {saved.map((entry) => {
+              const href = entry.piece.design.slug
+                ? `/beta/pieces/${entry.piece.design.slug}`
+                : `/beta/wardrobe/${entry.piece.id}`;
+              return (
+                <Link key={entry.piece.id} href={href}>
+                  <PieceCard
+                    piece={{
+                      id: entry.piece.id,
+                      name: entry.piece.design.name,
+                      serialNumber: entry.piece.serialNumber,
+                      imageUrl: entry.piece.design.imageUrls?.[0],
+                      collectionName: entry.piece.design.collection?.name,
+                    }}
+                    showExplore
+                  />
+                </Link>
+              );
+            })}
+          </div>
+        )}
+      </AccountLayout>
+    </ClientShell>
   );
 }

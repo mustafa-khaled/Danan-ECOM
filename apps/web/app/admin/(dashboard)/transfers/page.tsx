@@ -1,14 +1,27 @@
 import { StatusPill } from "@/components/ui";
+import { AdminPagination } from "@/components/admin-pagination";
 import { fetchAdminTransfers } from "@/features/admin";
 import { getAdminCookieHeader } from "@/features/auth/server/admin-session";
+import { ADMIN_PAGE_SIZE, parseAdminPage } from "@/shared/lib/parse-admin-page";
 
 function formatStatus(status: string) {
   return status.replace(/_/g, " ");
 }
 
-export default async function TransfersPage() {
+export default async function TransfersPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ page?: string }>;
+}) {
+  const { page: pageParam } = await searchParams;
+  const page = parseAdminPage(pageParam);
   const cookieHeader = await getAdminCookieHeader();
-  const { items, total } = await fetchAdminTransfers(1, 50, undefined, cookieHeader);
+  const { items, total } = await fetchAdminTransfers(
+    page,
+    ADMIN_PAGE_SIZE,
+    undefined,
+    cookieHeader,
+  );
 
   return (
     <div className="space-y-6">
@@ -69,7 +82,11 @@ export default async function TransfersPage() {
                   <td className="px-4 py-4">
                     <StatusPill
                       status={isReview ? "DADAN REVIEW" : formatStatus(transfer.status)}
-                      className={isReview ? "border-[var(--color-warning)]/60 text-[var(--color-warning)]" : ""}
+                      className={
+                        isReview
+                          ? "border-[var(--color-warning)]/60 text-[var(--color-warning)]"
+                          : ""
+                      }
                     />
                   </td>
                 </tr>
@@ -78,6 +95,13 @@ export default async function TransfersPage() {
           </tbody>
         </table>
       </div>
+
+      <AdminPagination
+        basePath="/admin/transfers"
+        page={page}
+        limit={ADMIN_PAGE_SIZE}
+        total={total}
+      />
     </div>
   );
 }

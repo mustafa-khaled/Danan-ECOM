@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useTranslations } from "next-intl";
 import type { CertificateData } from "@/components/ui";
 import { CertificateModal, LuxuryButton } from "@/components/ui";
 import { usePieceCertificate } from "@/features/certificates";
@@ -12,6 +13,8 @@ interface CertificateViewerProps {
 }
 
 export function CertificateViewer({ pieceId, pieceName, serialNumber }: CertificateViewerProps) {
+  const t = useTranslations("certificates");
+  const wardrobeT = useTranslations("wardrobe");
   const [open, setOpen] = useState(false);
   const {
     mutateAsync: fetchCertificate,
@@ -38,11 +41,11 @@ export function CertificateViewer({ pieceId, pieceName, serialNumber }: Certific
   return (
     <>
       <LuxuryButton variant="ghost" loading={isPending} onClick={handleOpen}>
-        View Certificate
+        {wardrobeT("viewCertificate")}
       </LuxuryButton>
       {error ? (
         <p role="alert" className="mt-2 text-sm text-[var(--color-ruby)]">
-          {error instanceof Error ? error.message : "Certificate unavailable"}
+          {error instanceof Error ? error.message : t("unavailable")}
         </p>
       ) : null}
       <CertificateModal open={open} onClose={() => setOpen(false)} certificate={certificate} />

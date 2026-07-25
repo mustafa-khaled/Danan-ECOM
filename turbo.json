@@ -8,7 +8,26 @@
     "dev": {
       "dependsOn": ["^build"],
       "cache": false,
-      "persistent": true
+      "persistent": true,
+      "passThroughEnv": [
+        "DATABASE_URL",
+        "REDIS_URL",
+        "JWT_SECRET",
+        "CERT_SIGNING_SECRET",
+        "BASE_URL",
+        "WEB_ORIGIN",
+        "API_URL",
+        "NEXT_PUBLIC_API_URL",
+        "NEXT_PUBLIC_PAYMENT_MODE",
+        "NEXT_PUBLIC_VAT_RATE",
+        "COOKIE_SECURE",
+        "STORAGE_PROVIDER",
+        "STORAGE_LOCAL_PATH",
+        "HOUSE_KEY_SALT",
+        "CLIENT_SESSION_DAYS",
+        "NODE_ENV",
+        "PORT"
+      ]
     },
     "lint": {},
     "test": {},

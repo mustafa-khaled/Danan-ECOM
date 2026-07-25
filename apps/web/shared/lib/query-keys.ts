@@ -4,6 +4,11 @@ export const authKeys = {
   adminMe: () => [...authKeys.all, "admin-me"] as const,
 };
 
+export const profileKeys = {
+  all: ["profile"] as const,
+  detail: () => [...profileKeys.all, "detail"] as const,
+};
+
 export const collectionsKeys = {
   all: ["collections"] as const,
   lists: () => [...collectionsKeys.all, "list"] as const,

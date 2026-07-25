@@ -95,8 +95,12 @@ model Client {
 model Collection {
   id               String   @id @default(uuid())
   name             String
+  /// Arabic name; falls back to `name` when null.
+  nameAr           String?
   slug             String   @unique
   description      String?
+  /// Arabic description; falls back to `description` when null.
+  descriptionAr    String?
   coverImageUrl    String?
   isVisible        Boolean  @default(true)
   sortOrder        Int      @default(0)
@@ -110,12 +114,20 @@ model Collection {
 model Design {
   id               String   @id @default(uuid())
   name             String
+  /// Arabic name; falls back to `name` when null.
+  nameAr           String?
   slug             String   @unique
   collectionId     String
   story            String   @db.Text
+  /// Arabic story; falls back to `story` when null.
+  storyAr          String?  @db.Text
   material         String
+  /// Arabic material; falls back to `material` when null.
+  materialAr       String?
   weight           Decimal  @db.Decimal(10, 3)
   dimensions       String
+  /// Arabic dimensions; falls back to `dimensions` when null.
+  dimensionsAr     String?
   imageUrls        String[]
   basePrice        Decimal  @db.Decimal(12, 2)
   currency         String   @default("SAR")
@@ -133,11 +145,15 @@ model Design {
 }
 
 model DesignSpecification {
-  id        String @id @default(uuid())
+  id        String  @id @default(uuid())
   designId  String
   key       String
+  /// Arabic label; falls back to `key` when null.
+  keyAr     String?
   value     String
-  sortOrder Int    @default(0)
+  /// Arabic value; falls back to `value` when null.
+  valueAr   String?
+  sortOrder Int     @default(0)
 
   design Design @relation(fields: [designId], references: [id], onDelete: Cascade)
 }
@@ -208,6 +224,7 @@ model Order {
   totalAmount       Decimal     @db.Decimal(12, 2)
   currency          String      @default("SAR")
   paymentProvider   String
+  paymentMethod     String?
   paymentReference  String?
   shippingAddress   Json
   placedAt          DateTime    @default(now())
@@ -218,6 +235,7 @@ model Order {
   items  OrderItem[]
 
   @@index([clientId, status])
+  @@index([paymentReference])
 }
 
 model OrderItem {

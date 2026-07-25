@@ -9,8 +9,10 @@ export interface ShippingAddress {
   phone: string;
 }
 
+export type PaymentMethod = "CARD" | "MADA" | "APPLE_PAY";
+
 export interface CheckoutInput {
   shippingAddress: ShippingAddress;
-  paymentMethod: string;
+  paymentMethod: PaymentMethod;
   paymentToken: string;
 }

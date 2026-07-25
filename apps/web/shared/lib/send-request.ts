@@ -1,4 +1,5 @@
 import { getApiBase } from "./constants";
+import { invokeUnauthorizedHandler } from "./unauthorized-handler";
 
 export class ApiError extends Error {
   status: number;
@@ -29,15 +30,16 @@ function buildUrl(
   params?: Record<string, string | number | boolean | undefined | null>,
 ): string {
   const separator = base.endsWith("/") ? "" : "/";
-  const url = new URL(`${base}${separator}${path.replace(/^\//, "")}`);
-  if (params) {
-    for (const [key, value] of Object.entries(params)) {
-      if (value !== undefined && value !== null) {
-        url.searchParams.set(key, String(value));
-      }
+  const basePath = `${base}${separator}${path.replace(/^\//, "")}`;
+  if (!params) return basePath;
+  const sp = new URLSearchParams();
+  for (const [key, value] of Object.entries(params)) {
+    if (value !== undefined && value !== null) {
+      sp.set(key, String(value));
     }
   }
-  return url.toString();
+  const qs = sp.toString();
+  return qs ? `${basePath}?${qs}` : basePath;
 }
 
 export async function sendRequest<TResponse, TBody = unknown>(
@@ -103,6 +105,9 @@ async function parseResponse<T>(response: Response): Promise<T> {
   }
 
   if (!response.ok) {
+    if (response.status === 401) {
+      invokeUnauthorizedHandler();
+    }
     const errorBody = body as { message?: string; code?: string } | undefined;
     throw new ApiError(
       errorBody?.message ?? `HTTP ${response.status}`,

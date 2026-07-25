@@ -86,6 +86,31 @@
   --color-ivory-muted: #6b6560;
 }
 
+[data-theme="client"] {
+  color-scheme: light;
+  --color-bg: #ffffff;
+  --color-text: #1a1a1a;
+  --color-text-muted: #555555;
+  --color-border: #d4d4d4;
+  --color-surface: #f5f5f5;
+  --color-accent: #000000;
+  --color-form-field: #e9eff6;
+  --color-void: #ffffff;
+  --color-ivory: #1a1a1a;
+  --color-ivory-muted: #555555;
+  --color-gold: #000000;
+  --color-gold-light: #333333;
+  --color-muted: #f5f5f5;
+  --shadow-luxury: 0 1px 0 rgba(0, 0, 0, 0.06);
+  --shadow-focus: 0 0 0 2px #ffffff, 0 0 0 4px #000000;
+}
+
+[data-theme="client"] body,
+[data-theme="client"] {
+  background-color: var(--color-bg);
+  color: var(--color-text);
+}
+
 *,
 *::before,
 *::after {

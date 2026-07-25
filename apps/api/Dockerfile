@@ -48,7 +48,6 @@ COPY packages/storage/package.json packages/storage/
 COPY packages/types/package.json packages/types/
 COPY packages/utils/package.json packages/utils/
 COPY packages/config/package.json packages/config/
-COPY packages/ui/package.json packages/ui/
 COPY packages/db/prisma packages/db/prisma
 RUN --mount=type=cache,target=/root/.local/share/pnpm/store \
     pnpm install --frozen-lockfile

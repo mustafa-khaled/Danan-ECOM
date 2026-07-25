@@ -1,70 +1,102 @@
 "use client";
 
+import { useLocale } from "next-intl";
 import { useRouter } from "next/navigation";
-import { FormEvent, useState } from "react";
-import type { ShippingAddress } from "@/types";
+import { FormEvent, useRef, useState } from "react";
 import { GoldDivider, LuxuryButton } from "@/components/ui";
 import { formatPrice } from "@/shared/utils/format";
-import { useCheckout } from "@/features/checkout";
+import { PAYMENT_MODE } from "@/shared/lib/constants";
+import { VAT_RATE } from "@/shared/lib/pricing";
+import { useCheckout, TapCardElement, type TapCardElementHandle } from "@/features/checkout";
+import type { ShippingAddress } from "@/features/checkout/types";
+import { parseShippingAddressFromFormData } from "@/features/checkout/schemas/shipping-address";
 
 interface CheckoutFormProps {
   total: number;
   currency: string;
 }
 
-const PAYMENT_MODE = process.env.NEXT_PUBLIC_PAYMENT_MODE ?? "mock";
-const VAT_RATE = Number(process.env.NEXT_PUBLIC_VAT_RATE ?? "0.15");
-
 export function CheckoutForm({ total, currency }: CheckoutFormProps) {
   const router = useRouter();
+  const locale = useLocale() as "ar" | "en";
   const [step, setStep] = useState<1 | 2>(1);
+  const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
+  const [cardError, setCardError] = useState<string | null>(null);
+  const [isTokenizing, setIsTokenizing] = useState(false);
+  const shippingAddressRef = useRef<ShippingAddress | null>(null);
+  const tapCardRef = useRef<TapCardElementHandle>(null);
   const {
     mutateAsync: checkout,
     isPending,
     error,
   } = useCheckout();
 
+  const isLivePayment = PAYMENT_MODE === "live";
+
+  const vat = total * VAT_RATE;
+  const grandTotal = total + vat;
+
+  async function completeCheckout(shippingAddress: ShippingAddress, paymentToken: string) {
+    try {
+      const result = await checkout({
+        shippingAddress,
+        paymentMethod: "CARD",
+        paymentToken,
+      });
+      router.push(`/beta/orders/${result.orderId}`);
+    } catch {
+      /* error is rendered via the mutation's `error` state */
+    } finally {
+      setIsTokenizing(false);
+    }
+  }
+
+  function handleTokenSuccess(tokenId: string) {
+    const shippingAddress = shippingAddressRef.current;
+    if (!shippingAddress) {
+      setIsTokenizing(false);
+      return;
+    }
+    void completeCheckout(shippingAddress, tokenId);
+  }
+
+  function handleTokenError(message: string) {
+    setCardError(message);
+    setIsTokenizing(false);
+  }
+
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
+    setFieldErrors({});
+    setCardError(null);
+
     if (step === 1) {
       setStep(2);
       return;
     }
 
-    if (PAYMENT_MODE !== "mock") {
+    const form = new FormData(event.currentTarget);
+    const parsed = parseShippingAddressFromFormData(form);
+
+    if (!parsed.success) {
+      setFieldErrors(parsed.errors);
       return;
     }
 
-    const form = new FormData(event.currentTarget);
-
-    const shippingAddress: ShippingAddress = {
-      fullName: String(form.get("fullName") ?? ""),
-      line1: String(form.get("line1") ?? ""),
-      line2: String(form.get("line2") ?? "") || undefined,
-      city: String(form.get("city") ?? ""),
-      region: String(form.get("region") ?? ""),
-      country: String(form.get("country") ?? "SA"),
-      postalCode: String(form.get("postalCode") ?? ""),
-      phone: String(form.get("phone") ?? ""),
-    };
-
-    try {
-      const result = await checkout({
-        shippingAddress,
-        paymentMethod: "CARD",
-        paymentToken: "mock_token_success",
-      });
-      router.push(`/beta/orders/${result.orderId}`);
-    } catch {
-      /* error is rendered via the mutation's `error` state */
+    if (isLivePayment) {
+      shippingAddressRef.current = parsed.data;
+      setIsTokenizing(true);
+      tapCardRef.current?.tokenize();
+      return;
     }
+
+    await completeCheckout(parsed.data, "mock_token_success");
   }
 
-  const vat = total * VAT_RATE;
-  const grandTotal = total + vat;
+  const isSubmitting = isPending || isTokenizing;
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-8">
+    <form onSubmit={handleSubmit} className="space-y-8" noValidate>
       {step === 1 ? (
         <section className="rounded-[var(--radius-panel)] border border-[var(--color-border)] bg-[var(--color-surface)] p-6">
           <h2 className="font-display text-xl text-[var(--color-ivory)]">Order Review</h2>
@@ -88,24 +120,63 @@ export function CheckoutForm({ total, currency }: CheckoutFormProps) {
           </dl>
         </section>
       ) : (
-        <section className="rounded-[var(--radius-panel)] border border-[var(--color-border)] bg-[var(--color-surface)] p-6">
-          <h2 className="font-display text-xl text-[var(--color-ivory)]">Shipping Address</h2>
-          <div className="mt-6 grid gap-4 sm:grid-cols-2">
-            <Field label="Full Name" name="fullName" required className="sm:col-span-2" />
-            <Field label="Phone" name="phone" required />
-            <Field label="Address Line 1" name="line1" required className="sm:col-span-2" />
-            <Field label="Address Line 2" name="line2" className="sm:col-span-2" />
-            <Field label="City" name="city" required />
-            <Field label="Region" name="region" required />
-            <Field label="Postal Code" name="postalCode" required />
-            <Field label="Country" name="country" defaultValue="SA" required />
-          </div>
-          {PAYMENT_MODE === "mock" ? (
-            <p className="mt-6 text-xs text-[var(--color-ivory-muted)]">
-              Payment is processed securely via mock gateway for this preview.
-            </p>
-          ) : null}
-        </section>
+        <>
+          <section className="rounded-[var(--radius-panel)] border border-[var(--color-border)] bg-[var(--color-surface)] p-6">
+            <h2 className="font-display text-xl text-[var(--color-ivory)]">Shipping Address</h2>
+            <div className="mt-6 grid gap-4 sm:grid-cols-2">
+              <Field
+                label="Full Name"
+                name="fullName"
+                required
+                className="sm:col-span-2"
+                error={fieldErrors.fullName}
+              />
+              <Field label="Phone" name="phone" required error={fieldErrors.phone} />
+              <Field
+                label="Address Line 1"
+                name="line1"
+                required
+                className="sm:col-span-2"
+                error={fieldErrors.line1}
+              />
+              <Field
+                label="Address Line 2"
+                name="line2"
+                className="sm:col-span-2"
+                error={fieldErrors.line2}
+              />
+              <Field label="City" name="city" required error={fieldErrors.city} />
+              <Field label="Region" name="region" required error={fieldErrors.region} />
+              <Field label="Postal Code" name="postalCode" required error={fieldErrors.postalCode} />
+              <Field label="Country" name="country" defaultValue="SA" required error={fieldErrors.country} />
+            </div>
+          </section>
+
+          <section className="rounded-[var(--radius-panel)] border border-[var(--color-border)] bg-[var(--color-surface)] p-6">
+            <h2 className="font-display text-xl text-[var(--color-ivory)]">Payment</h2>
+            {isLivePayment ? (
+              <div className="mt-6">
+                <TapCardElement
+                  ref={tapCardRef}
+                  amount={grandTotal}
+                  currency={currency}
+                  locale={locale}
+                  onSuccess={handleTokenSuccess}
+                  onError={handleTokenError}
+                />
+                {cardError ? (
+                  <p role="alert" className="mt-3 text-sm text-[var(--color-ruby)]">
+                    {cardError}
+                  </p>
+                ) : null}
+              </div>
+            ) : (
+              <p className="mt-6 text-xs text-[var(--color-ivory-muted)]">
+                Payment is processed securely via mock gateway for this preview.
+              </p>
+            )}
+          </section>
+        </>
       )}
 
       {error ? (
@@ -116,12 +187,17 @@ export function CheckoutForm({ total, currency }: CheckoutFormProps) {
 
       <div className="flex flex-wrap gap-3">
         {step === 2 ? (
-          <LuxuryButton type="button" variant="ghost" onClick={() => setStep(1)}>
+          <LuxuryButton
+            type="button"
+            variant="ghost"
+            onClick={() => setStep(1)}
+            disabled={isSubmitting}
+          >
             Back
           </LuxuryButton>
         ) : null}
-        <LuxuryButton type="submit" loading={isPending}>
-          {step === 1 ? "Confirm and Continue" : "Complete Purchase"}
+        <LuxuryButton type="submit" loading={isSubmitting}>
+          {step === 1 ? "Confirm and Continue" : isSubmitting ? "Processing…" : "Complete Purchase"}
         </LuxuryButton>
       </div>
     </form>
@@ -134,24 +210,36 @@ function Field({
   required,
   className = "",
   defaultValue,
+  error,
 }: {
   label: string;
   name: string;
   required?: boolean;
   className?: string;
   defaultValue?: string;
+  error?: string;
 }) {
+  const fieldId = `checkout-${name}`;
+
   return (
-    <label className={`block ${className}`}>
+    <label className={`block ${className}`} htmlFor={fieldId}>
       <span className="mb-2 block text-xs tracking-[0.12em] uppercase text-[var(--color-ivory-muted)]">
         {label}
       </span>
       <input
+        id={fieldId}
         name={name}
         required={required}
         defaultValue={defaultValue}
+        aria-invalid={error ? true : undefined}
+        aria-describedby={error ? `${fieldId}-error` : undefined}
         className="min-h-11 w-full rounded-[var(--radius-item)] border border-[var(--color-border)] bg-[var(--color-void)] px-4 text-[var(--color-ivory)] focus-visible:outline-none focus-visible:shadow-[var(--shadow-focus)]"
       />
+      {error ? (
+        <p id={`${fieldId}-error`} role="alert" className="mt-1 text-xs text-[var(--color-ruby)]">
+          {error}
+        </p>
+      ) : null}
     </label>
   );
 }

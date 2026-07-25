@@ -7,25 +7,41 @@
     "build": "next build",
     "start": "next start --port 3000",
     "lint": "eslint .",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "test:e2e": "playwright test"
   },
   "dependencies": {
+    "@sentry/nextjs": "^10.65.0",
     "@tanstack/react-query": "^5.101.2",
     "@tanstack/react-query-devtools": "^5.101.2",
+    "@tap-payments/card-sdk": "^1.0.2",
     "next": "^15.2.0",
+    "next-intl": "^4.13.2",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
-    "sharp": "^0.33.2"
+    "sharp": "^0.33.2",
+    "zod": "^3.24.2"
   },
   "devDependencies": {
     "@dadan/config": "workspace:*",
+    "@playwright/test": "^1.61.1",
     "@tailwindcss/postcss": "^4.0.9",
+    "@testing-library/jest-dom": "^6.9.1",
+    "@testing-library/react": "^16.3.2",
+    "@testing-library/user-event": "^14.6.1",
     "@types/node": "^22.13.4",
     "@types/react": "^19.0.10",
     "@types/react-dom": "^19.0.4",
+    "@vitejs/plugin-react": "^6.0.3",
     "eslint": "^9.20.1",
     "eslint-config-next": "^15.2.0",
-    "typescript": "^5.7.3"
+    "jsdom": "^29.1.1",
+    "tailwindcss": "^4.0.9",
+    "typescript": "^5.7.3",
+    "vite-tsconfig-paths": "^6.1.1",
+    "vitest": "^4.1.10"
   },
   "lint-staged": {
     "*.{js,ts,jsx,tsx,cjs,mjs}": "eslint --fix"

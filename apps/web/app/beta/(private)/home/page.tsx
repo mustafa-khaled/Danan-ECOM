@@ -1,16 +1,20 @@
 import Image from "next/image";
 import Link from "next/link";
-import { GoldDivider, PieceCard, PrivateLayout } from "@/components/ui";
-import { EmptyState } from "../../../../components/empty-state";
-import { fetchCollections } from "@/features/collections";
+import { getTranslations, getLocale } from "next-intl/server";
+import { ClientShell, PieceCard, WelcomeModal } from "@/components/ui";
+import { EmptyState } from "@/shared/components/feedback/empty-state";
+import { fetchCollections, fetchCollection } from "@/features/collections";
 import { fetchSaved } from "@/features/saved";
 import { fetchWardrobe } from "@/features/wardrobe";
-import { privateNavItems } from "@/shared/lib/nav";
 import { getSessionCookieHeader, requireClientSession } from "@/features/auth/server/session";
+import { formatPrice } from "@/shared/utils/format";
+import type { Locale } from "@/i18n/routing";
 
 export default async function HomePage() {
   const profile = await requireClientSession();
   const cookie = await getSessionCookieHeader();
+  const t = await getTranslations("home");
+  const locale = (await getLocale()) as Locale;
 
   const [collections, wardrobe, saved] = await Promise.all([
     fetchCollections(cookie),
@@ -19,38 +23,97 @@ export default async function HomePage() {
   ]);
 
   const featured = collections[0];
+  let selectedPieces: Array<{
+    slug: string;
+    name: string;
+    images?: string[];
+    price?: string;
+  }> = [];
+
+  if (featured) {
+    try {
+      const featuredDetail = await fetchCollection(featured.slug, cookie);
+      selectedPieces = featuredDetail.designs.slice(0, 2).map((d) => ({
+        slug: d.slug,
+        name: d.name,
+        images: d.imageUrls,
+        price: d.basePrice,
+      }));
+    } catch {
+      selectedPieces = [];
+    }
+  }
 
   return (
-    <PrivateLayout clientName={profile.displayName} navItems={privateNavItems}>
-      <section className="space-y-4">
-        <p className="text-xs tracking-[0.2em] uppercase text-[var(--color-gold-light)]">
-          Welcome back
-        </p>
-        <h1 className="font-display text-4xl text-[var(--color-ivory)] sm:text-5xl">
-          {profile.displayName}
-        </h1>
-        <p className="max-w-2xl text-[var(--color-ivory-muted)]">
-          Your curated house of DADAN pieces, collections, and certificates.
-        </p>
+    <ClientShell displayName={profile.displayName}>
+      <WelcomeModal displayName={profile.displayName} />
+
+      <section className="relative -mx-4 mb-12 overflow-hidden sm:-mx-8">
+        <div className="relative aspect-[21/9] bg-[var(--color-surface)]">
+          {featured?.coverImageUrl ? (
+            <Image
+              src={featured.coverImageUrl}
+              alt={featured.name}
+              fill
+              priority
+              sizes="100vw"
+              className="object-cover"
+            />
+          ) : null}
+          <div className="absolute inset-0 flex items-center justify-center bg-black/30">
+            <h1 className="font-english text-4xl text-white sm:text-5xl">
+              {t("continueExploring")}
+            </h1>
+          </div>
+        </div>
       </section>
 
+      {selectedPieces.length > 0 ? (
+        <section className="mb-16">
+          <div className="mb-6 flex items-end justify-between">
+            <h2 className="font-english text-2xl text-[var(--color-text)]">
+              {t("selectedForYou")}
+            </h2>
+          </div>
+          <div className="grid gap-6 sm:grid-cols-2">
+            {selectedPieces.map((design) => (
+              <Link key={design.slug} href={`/beta/pieces/${design.slug}`}>
+                <PieceCard
+                  piece={{
+                    id: design.slug,
+                    name: design.name,
+                    serialNumber: design.slug,
+                    imageUrl: design.images?.[0],
+                    collectionName: featured?.name,
+                    price: design.price ? formatPrice(design.price, "SAR", locale) : undefined,
+                  }}
+                  showExplore
+                />
+              </Link>
+            ))}
+          </div>
+        </section>
+      ) : null}
+
       {featured ? (
-        <section className="mt-12">
+        <section className="mb-16">
           <div className="mb-6 flex items-end justify-between gap-4">
-            <h2 className="font-display text-2xl text-[var(--color-ivory)]">Featured Collection</h2>
+            <h2 className="font-english text-2xl text-[var(--color-text)]">
+              {t("featuredCollection")}
+            </h2>
             <Link
               href={`/beta/collections/${featured.slug}`}
-              className="text-xs tracking-[0.14em] uppercase text-[var(--color-gold-light)] hover:text-[var(--color-gold)]"
+              className="text-xs tracking-[0.14em] uppercase text-[var(--color-text-muted)] hover:text-[var(--color-accent)]"
             >
-              View Collection
+              {t("viewCollection")} <span className="rtl:rotate-180 inline-block">→</span>
             </Link>
           </div>
           <Link
             href={`/beta/collections/${featured.slug}`}
-            className="group block overflow-hidden rounded-[var(--radius-panel)] border border-[var(--color-border)] bg-[var(--color-surface)] shadow-[var(--shadow-luxury)] transition-colors hover:border-[var(--color-gold)]"
+            className="group block overflow-hidden border border-[var(--color-border)] bg-[var(--color-surface)] transition-colors hover:border-[var(--color-accent)]"
           >
             <div className="grid md:grid-cols-2">
-              <div className="relative aspect-[4/3] bg-[var(--color-void)] md:aspect-auto">
+              <div className="relative aspect-[4/3] bg-[var(--color-muted)] md:aspect-auto">
                 {featured.coverImageUrl ? (
                   <Image
                     src={featured.coverImageUrl}
@@ -59,21 +122,12 @@ export default async function HomePage() {
                     sizes="(max-width: 768px) 100vw, 50vw"
                     className="object-cover transition-transform duration-300 group-hover:scale-[1.02]"
                   />
-                ) : (
-                  <div className="flex h-full min-h-64 items-center justify-center font-display text-3xl text-[var(--color-ivory-muted)]">
-                    DADAN
-                  </div>
-                )}
+                ) : null}
               </div>
               <div className="flex flex-col justify-center p-8">
-                <p className="text-xs tracking-[0.16em] uppercase text-[var(--color-ivory-muted)]">
-                  {featured.pieceCount} pieces
-                </p>
-                <h3 className="mt-2 font-display text-3xl text-[var(--color-ivory)]">
-                  {featured.name}
-                </h3>
+                <h3 className="font-english text-3xl text-[var(--color-text)]">{featured.name}</h3>
                 {featured.description ? (
-                  <p className="mt-4 text-[var(--color-ivory-muted)]">{featured.description}</p>
+                  <p className="mt-4 text-[var(--color-text-muted)]">{featured.description}</p>
                 ) : null}
               </div>
             </div>
@@ -81,74 +135,21 @@ export default async function HomePage() {
         </section>
       ) : null}
 
-      <section className="mt-12">
+      <section className="mb-16">
         <div className="mb-6 flex items-end justify-between gap-4">
-          <h2 className="font-display text-2xl text-[var(--color-ivory)]">Collections</h2>
-          <Link
-            href="/beta/collections"
-            className="text-xs tracking-[0.14em] uppercase text-[var(--color-gold-light)] hover:text-[var(--color-gold)]"
-          >
-            View All
-          </Link>
-        </div>
-        {collections.length === 0 ? (
-          <EmptyState
-            title="No collections yet"
-            description="Your visibility groups do not include any collections at this time."
-            action={{ href: "/beta/collections", label: "Browse Collections" }}
-          />
-        ) : (
-          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-            {collections.slice(0, 4).map((collection) => (
-              <Link
-                key={collection.id}
-                href={`/beta/collections/${collection.slug}`}
-                className="group overflow-hidden rounded-[var(--radius-panel)] border border-[var(--color-border)] bg-[var(--color-surface)] transition-colors hover:border-[var(--color-gold)]"
-              >
-                <div className="relative aspect-[4/3] bg-[var(--color-void)]">
-                  {collection.coverImageUrl ? (
-                    <Image
-                      src={collection.coverImageUrl}
-                      alt={collection.name}
-                      fill
-                      sizes="(max-width: 768px) 100vw, (max-width: 1024px) 50vw, 25vw"
-                      className="object-cover transition-transform duration-300 group-hover:scale-[1.02]"
-                    />
-                  ) : (
-                    <div className="flex h-full items-center justify-center font-display text-lg text-[var(--color-ivory-muted)]">
-                      DADAN
-                    </div>
-                  )}
-                </div>
-                <div className="p-4">
-                  <h3 className="font-display text-lg text-[var(--color-ivory)]">{collection.name}</h3>
-                  <p className="mt-1 text-xs text-[var(--color-ivory-muted)]">
-                    {collection.pieceCount} pieces
-                  </p>
-                </div>
-              </Link>
-            ))}
-          </div>
-        )}
-      </section>
-
-      <GoldDivider className="my-12" />
-
-      <section>
-        <div className="mb-6 flex items-end justify-between gap-4">
-          <h2 className="font-display text-2xl text-[var(--color-ivory)]">Your Wardrobe</h2>
+          <h2 className="font-english text-2xl text-[var(--color-text)]">{t("yourCollection")}</h2>
           <Link
             href="/beta/wardrobe"
-            className="text-xs tracking-[0.14em] uppercase text-[var(--color-gold-light)] hover:text-[var(--color-gold)]"
+            className="text-xs tracking-[0.14em] uppercase text-[var(--color-text-muted)] hover:text-[var(--color-accent)]"
           >
-            View Wardrobe
+            {t("viewCollection")} <span className="rtl:rotate-180 inline-block">→</span>
           </Link>
         </div>
         {wardrobe.length === 0 ? (
           <EmptyState
-            title="Your wardrobe is empty"
-            description="Owned pieces and their certificates will appear here after purchase or transfer."
-            action={{ href: "/beta/collections", label: "Explore Collections" }}
+            title={t("wardrobeEmpty")}
+            description={t("wardrobeEmptyDescription")}
+            action={{ href: "/beta/collections", label: t("exploreCollections") }}
           />
         ) : (
           <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
@@ -162,6 +163,7 @@ export default async function HomePage() {
                     imageUrl: item.design.images[0],
                     collectionName: item.design.collection,
                   }}
+                  badge="certificateActive"
                 />
               </Link>
             ))}
@@ -169,45 +171,47 @@ export default async function HomePage() {
         )}
       </section>
 
-      <section className="mt-12">
-        <div className="mb-6 flex items-end justify-between gap-4">
-          <h2 className="font-display text-2xl text-[var(--color-ivory)]">Saved Pieces</h2>
-          <Link
-            href="/beta/saved"
-            className="text-xs tracking-[0.14em] uppercase text-[var(--color-gold-light)] hover:text-[var(--color-gold)]"
-          >
-            View Saved
-          </Link>
+      <section className="mb-16 grid gap-8 md:grid-cols-2">
+        <div>
+          <h2 className="font-english text-2xl text-[var(--color-text)]">{t("aboutDadan")}</h2>
+          <p className="mt-4 text-[var(--color-text-muted)]">{t("aboutDescription")}</p>
         </div>
-        {saved.length === 0 ? (
-          <EmptyState
-            title="Nothing saved yet"
-            description="Save pieces while browsing to revisit them later."
-            action={{ href: "/beta/collections", label: "Browse Collections" }}
+        <div className="relative aspect-[4/3] bg-[var(--color-surface)]">
+          <Image
+            src="/assets/coming-soon.png"
+            alt="DADAN"
+            fill
+            className="object-cover"
           />
-        ) : (
-          <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-            {saved.slice(0, 3).map((entry) => {
-              const href = entry.piece.design.slug
-                ? `/beta/pieces/${entry.piece.design.slug}`
-                : `/beta/wardrobe/${entry.piece.id}`;
-              return (
-                <Link key={entry.piece.id} href={href}>
-                  <PieceCard
-                    piece={{
-                      id: entry.piece.id,
-                      name: entry.piece.design.name,
-                      serialNumber: entry.piece.serialNumber,
-                      imageUrl: entry.piece.design.imageUrls?.[0],
-                      collectionName: entry.piece.design.collection?.name,
-                    }}
-                  />
-                </Link>
-              );
-            })}
-          </div>
-        )}
+        </div>
       </section>
-    </PrivateLayout>
+
+      {saved.length > 0 ? (
+        <section>
+          <h2 className="mb-6 font-english text-2xl text-[var(--color-text)]">
+            {t("selectedForYou")}
+          </h2>
+          <div className="grid gap-6 sm:grid-cols-2">
+            {saved.slice(0, 2).map((entry) => (
+              <Link
+                key={entry.piece.id}
+                href={`/beta/pieces/${entry.piece.design.slug ?? entry.piece.id}`}
+              >
+                <PieceCard
+                  piece={{
+                    id: entry.piece.id,
+                    name: entry.piece.design.name,
+                    serialNumber: entry.piece.serialNumber,
+                    imageUrl: entry.piece.design.imageUrls?.[0],
+                    collectionName: entry.piece.design.collection?.name,
+                  }}
+                  showExplore
+                />
+              </Link>
+            ))}
+          </div>
+        </section>
+      ) : null}
+    </ClientShell>
   );
 }

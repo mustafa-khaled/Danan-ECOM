@@ -1,17 +1,21 @@
 import Image from "next/image";
 import Link from "next/link";
-import { GoldDivider, PrivateLayout, SerialBadge } from "@/components/ui";
-import { CartItemActions } from "../../../../components/cart-item-actions";
-import { EmptyState } from "../../../../components/empty-state";
+import { getTranslations, getLocale } from "next-intl/server";
+import { ClientShell, SerialBadge } from "@/components/ui";
+import { CartItemActions } from "@/components/cart-item-actions";
+import { EmptyState } from "@/shared/components/feedback/empty-state";
 import { fetchCart } from "@/features/cart";
 import { formatPrice } from "@/shared/utils/format";
-import { privateNavItems } from "@/shared/lib/nav";
+import { calculateTotal, calculateVat } from "@/shared/lib/pricing";
 import { getSessionCookieHeader, requireClientSession } from "@/features/auth/server/session";
+import type { Locale } from "@/i18n/routing";
 
 export default async function CartPage() {
   const profile = await requireClientSession();
   const cookie = await getSessionCookieHeader();
   const items = await fetchCart(cookie);
+  const t = await getTranslations("cart");
+  const locale = (await getLocale()) as Locale;
 
   const validItems = items.filter((item) => item.piece);
   const subtotal = validItems.reduce(
@@ -19,24 +23,20 @@ export default async function CartPage() {
     0,
   );
   const currency = validItems[0]?.piece?.design.currency ?? "SAR";
-  const vat = subtotal * 0.15;
-  const total = subtotal + vat;
+  const vat = calculateVat(subtotal);
+  const total = calculateTotal(subtotal);
 
   return (
-    <PrivateLayout clientName={profile.displayName} navItems={privateNavItems}>
+    <ClientShell displayName={profile.displayName}>
       <header className="mb-10 space-y-3">
-        <p className="text-xs tracking-[0.2em] uppercase text-[var(--color-gold-light)]">Reserved</p>
-        <h1 className="font-display text-4xl text-[var(--color-ivory)]">Your Cart</h1>
-        <p className="text-[var(--color-ivory-muted)]">
-          Pieces are held for 30 minutes while you complete checkout.
-        </p>
+        <h1 className="font-english text-4xl text-[var(--color-text)]">{t("title")}</h1>
       </header>
 
       {validItems.length === 0 ? (
         <EmptyState
-          title="Your cart is empty"
-          description="Browse collections to discover available pieces."
-          action={{ href: "/beta/collections", label: "Explore Collections" }}
+          title={t("empty")}
+          description={t("emptyDescription")}
+          action={{ href: "/beta/collections", label: t("checkout") }}
         />
       ) : (
         <div className="grid gap-10 lg:grid-cols-[1fr_320px]">
@@ -46,9 +46,9 @@ export default async function CartPage() {
               return (
                 <li
                   key={item.id}
-                  className="flex flex-col gap-4 rounded-[var(--radius-panel)] border border-[var(--color-border)] bg-[var(--color-surface)] p-4 sm:flex-row sm:items-center"
+                  className="flex flex-col gap-4 border border-[var(--color-border)] bg-white p-4 sm:flex-row sm:items-center"
                 >
-                  <div className="relative h-24 w-20 shrink-0 overflow-hidden rounded-[var(--radius-item)] bg-[var(--color-void)]">
+                  <div className="relative h-24 w-20 shrink-0 overflow-hidden bg-[var(--color-surface)]">
                     {piece.design.imageUrls[0] ? (
                       <Image
                         src={piece.design.imageUrls[0]}
@@ -60,22 +60,19 @@ export default async function CartPage() {
                     ) : null}
                   </div>
                   <div className="min-w-0 flex-1">
-                    <p className="text-xs tracking-[0.12em] uppercase text-[var(--color-ivory-muted)]">
+                    <p className="text-xs tracking-[0.12em] uppercase text-[var(--color-text-muted)]">
                       {piece.design.collection.name}
                     </p>
-                    <h2 className="font-display text-xl text-[var(--color-ivory)]">
+                    <h2 className="font-english text-xl text-[var(--color-text)]">
                       {piece.design.name}
                     </h2>
                     <div className="mt-2">
                       <SerialBadge serial={piece.serialNumber} />
                     </div>
-                    <p className="mt-2 text-xs text-[var(--color-ivory-muted)]">
-                      Reserved until {new Date(item.expiresAt).toLocaleTimeString()}
-                    </p>
                   </div>
                   <div className="flex flex-col items-end gap-2">
-                    <p className="font-display text-lg text-[var(--color-gold-light)]">
-                      {formatPrice(piece.design.basePrice, piece.design.currency)}
+                    <p className="font-english text-lg text-[var(--color-text)]">
+                      {formatPrice(piece.design.basePrice, piece.design.currency, locale)}
                     </p>
                     <CartItemActions pieceId={piece.id} />
                   </div>
@@ -84,32 +81,31 @@ export default async function CartPage() {
             })}
           </ul>
 
-          <aside className="h-fit rounded-[var(--radius-panel)] border border-[var(--color-border)] bg-[var(--color-surface)] p-6">
-            <h2 className="font-display text-xl text-[var(--color-ivory)]">Order Summary</h2>
-            <GoldDivider className="my-4" />
-            <dl className="space-y-3 text-sm">
+          <aside className="h-fit border border-[var(--color-border)] bg-[var(--color-surface)] p-6">
+            <h2 className="font-english text-xl text-[var(--color-text)]">{t("total")}</h2>
+            <dl className="mt-4 space-y-3 text-sm">
               <div className="flex justify-between">
-                <dt className="text-[var(--color-ivory-muted)]">Subtotal</dt>
-                <dd>{formatPrice(subtotal, currency)}</dd>
+                <dt className="text-[var(--color-text-muted)]">{t("subtotal")}</dt>
+                <dd>{formatPrice(subtotal, currency, locale)}</dd>
               </div>
               <div className="flex justify-between">
-                <dt className="text-[var(--color-ivory-muted)]">VAT (15%)</dt>
-                <dd>{formatPrice(vat, currency)}</dd>
+                <dt className="text-[var(--color-text-muted)]">{t("vat")}</dt>
+                <dd>{formatPrice(vat, currency, locale)}</dd>
               </div>
-              <div className="flex justify-between font-display text-lg text-[var(--color-gold-light)]">
-                <dt>Total</dt>
-                <dd>{formatPrice(total, currency)}</dd>
+              <div className="flex justify-between font-english text-lg text-[var(--color-text)]">
+                <dt>{t("total")}</dt>
+                <dd>{formatPrice(total, currency, locale)}</dd>
               </div>
             </dl>
             <Link
               href="/beta/checkout"
-              className="mt-6 inline-flex min-h-11 w-full items-center justify-center rounded-[var(--radius-button)] border border-[var(--color-gold)] bg-transparent text-sm tracking-[0.1em] uppercase text-[var(--color-gold)] transition-colors hover:bg-[var(--color-gold)] hover:text-[var(--color-void)]"
+              className="mt-6 inline-flex min-h-11 w-full items-center justify-center bg-[var(--color-accent)] text-sm tracking-[0.1em] uppercase text-white transition-opacity hover:opacity-90"
             >
-              Proceed to Checkout
+              {t("checkout")}
             </Link>
           </aside>
         </div>
       )}
-    </PrivateLayout>
+    </ClientShell>
   );
 }

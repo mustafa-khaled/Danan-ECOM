@@ -1,12 +1,12 @@
 import Image from "next/image";
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { GoldDivider, PrivateLayout, SerialBadge, StatusPill } from "@/components/ui";
-import { CertificateViewer } from "../../../../../components/certificate-viewer";
-import { TransferInitiate } from "../../../../../components/transfer-initiate";
+import { getTranslations } from "next-intl/server";
+import { ClientShell, SerialBadge, StatusPill } from "@/components/ui";
+import { CertificateViewer } from "@/components/certificate-viewer";
+import { TransferInitiate } from "@/components/transfer-initiate";
 import { ApiError } from "@/shared/lib/send-request";
 import { fetchWardrobePiece } from "@/features/wardrobe";
-import { privateNavItems } from "@/shared/lib/nav";
 import { getSessionCookieHeader, requireClientSession } from "@/features/auth/server/session";
 
 interface WardrobePiecePageProps {
@@ -17,6 +17,7 @@ export default async function WardrobePiecePage({ params }: WardrobePiecePagePro
   const { pieceId } = await params;
   const profile = await requireClientSession();
   const cookie = await getSessionCookieHeader();
+  const t = await getTranslations("wardrobe");
 
   let piece: Record<string, unknown>;
   try {
@@ -37,21 +38,21 @@ export default async function WardrobePiecePage({ params }: WardrobePiecePagePro
   };
 
   return (
-    <PrivateLayout clientName={profile.displayName} navItems={privateNavItems}>
+    <ClientShell displayName={profile.displayName}>
       <nav aria-label="Breadcrumb" className="mb-6 text-xs tracking-[0.12em] uppercase">
-        <ol className="flex flex-wrap items-center gap-2 text-[var(--color-ivory-muted)]">
+        <ol className="flex flex-wrap items-center gap-2 text-[var(--color-text-muted)]">
           <li>
-            <Link href="/beta/wardrobe" className="hover:text-[var(--color-gold-light)]">
-              Wardrobe
+            <Link href="/beta/wardrobe" className="hover:text-[var(--color-accent)]">
+              {t("title")}
             </Link>
           </li>
           <li aria-hidden="true">/</li>
-          <li className="text-[var(--color-ivory)]">{design.name}</li>
+          <li className="text-[var(--color-text)]">{design.name}</li>
         </ol>
       </nav>
 
       <div className="grid gap-10 lg:grid-cols-2">
-        <div className="relative aspect-[4/5] overflow-hidden rounded-[var(--radius-panel)] border border-[var(--color-border)] bg-[var(--color-void)]">
+        <div className="relative aspect-[4/5] overflow-hidden border border-[var(--color-border)] bg-[var(--color-surface)]">
           {design.imageUrls[0] ? (
             <Image
               src={design.imageUrls[0]}
@@ -61,7 +62,7 @@ export default async function WardrobePiecePage({ params }: WardrobePiecePagePro
               className="object-cover"
             />
           ) : (
-            <div className="flex h-full items-center justify-center font-display text-4xl text-[var(--color-ivory-muted)]">
+            <div className="flex h-full items-center justify-center font-display text-4xl text-[var(--color-text-muted)]">
               DADAN
             </div>
           )}
@@ -69,46 +70,51 @@ export default async function WardrobePiecePage({ params }: WardrobePiecePagePro
 
         <section className="space-y-6">
           <div>
-            <p className="text-xs tracking-[0.16em] uppercase text-[var(--color-ivory-muted)]">
+            <p className="text-xs tracking-[0.16em] uppercase text-[var(--color-text-muted)]">
               {design.collection.name}
             </p>
-            <h1 className="mt-2 font-display text-4xl text-[var(--color-ivory)]">{design.name}</h1>
+            <h1 className="mt-2 font-english text-4xl text-[var(--color-text)]">{design.name}</h1>
             <div className="mt-4 flex flex-wrap items-center gap-3">
               <SerialBadge serial={String(piece.serialNumber)} />
               <StatusPill status={String(piece.status)} />
             </div>
           </div>
 
-          <CertificateViewer
-            pieceId={pieceId}
-            pieceName={design.name}
-            serialNumber={String(piece.serialNumber)}
-          />
-
-          {piece.status === "OWNED" && !piece.activeTransfer ? (
-            <TransferInitiate
+          <div className="flex flex-col gap-3 sm:flex-row">
+            {piece.status === "OWNED" && !piece.activeTransfer ? (
+              <TransferInitiate
+                pieceId={pieceId}
+                pieceName={design.name}
+                serialNumber={String(piece.serialNumber)}
+              />
+            ) : null}
+            <CertificateViewer
               pieceId={pieceId}
               pieceName={design.name}
               serialNumber={String(piece.serialNumber)}
             />
-          ) : null}
+            <Link
+              href="/beta/verify"
+              className="inline-flex min-h-11 items-center justify-center border border-[var(--color-accent)] px-6 text-sm tracking-[0.1em] uppercase text-[var(--color-accent)] transition-colors hover:bg-[var(--color-accent)] hover:text-white"
+            >
+              {t("verifyAuthenticity")}
+            </Link>
+          </div>
 
           {piece.activeTransfer ? (
-            <p className="text-sm text-[var(--color-ivory-muted)]">
-              A transfer is in progress for this piece.{" "}
+            <p className="text-sm text-[var(--color-text-muted)]">
+              A transfer is in progress.{" "}
               <Link
                 href={`/beta/transfers/${(piece.activeTransfer as { id: string }).id}`}
-                className="text-[var(--color-gold-light)] underline-offset-4 hover:underline"
+                className="text-[var(--color-accent)] underline-offset-4 hover:underline"
               >
                 View transfer
               </Link>
             </p>
           ) : null}
 
-          <GoldDivider />
-
           <div>
-            <h2 className="font-display text-xl text-[var(--color-ivory)]">Specifications</h2>
+            <h2 className="font-english text-xl text-[var(--color-text)]">{t("specs")}</h2>
             <dl className="mt-4 space-y-3 text-sm">
               <SpecRow label="Material" value={design.material} />
               <SpecRow label="Weight" value={`${design.weight} g`} />
@@ -118,32 +124,17 @@ export default async function WardrobePiecePage({ params }: WardrobePiecePagePro
               ))}
             </dl>
           </div>
-
-          {Array.isArray(piece.ownershipHistory) && piece.ownershipHistory.length > 0 ? (
-            <div>
-              <h2 className="font-display text-xl text-[var(--color-ivory)]">Ownership History</h2>
-              <ul className="mt-4 space-y-2 text-sm text-[var(--color-ivory-muted)]">
-                {(piece.ownershipHistory as Array<{ acquiredAt: string; acquisitionType: string }>).map(
-                  (record, index) => (
-                    <li key={index}>
-                      {new Date(record.acquiredAt).toLocaleDateString()} — {record.acquisitionType}
-                    </li>
-                  ),
-                )}
-              </ul>
-            </div>
-          ) : null}
         </section>
       </div>
-    </PrivateLayout>
+    </ClientShell>
   );
 }
 
 function SpecRow({ label, value }: { label: string; value: string }) {
   return (
     <div className="flex justify-between gap-4 border-b border-[var(--color-border)] pb-2">
-      <dt className="tracking-[0.08em] uppercase text-[var(--color-ivory-muted)]">{label}</dt>
-      <dd className="text-[var(--color-ivory)]">{value}</dd>
+      <dt className="tracking-[0.08em] uppercase text-[var(--color-text-muted)]">{label}</dt>
+      <dd className="text-[var(--color-text)]">{value}</dd>
     </div>
   );
 }

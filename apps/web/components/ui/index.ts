@@ -4,14 +4,11 @@ export type { CertificateData, CertificateModalProps } from "./CertificateModal"
 export { AdminLayout } from "./AdminLayout";
 export type { AdminLayoutProps } from "./AdminLayout";
 
-export { ClientBadge } from "./ClientBadge";
-export type { ClientBadgeProps } from "./ClientBadge";
+export { ClientShell } from "./ClientShell";
+export type { ClientShellProps } from "./ClientShell";
 
 export { GoldDivider } from "./GoldDivider";
 export type { GoldDividerProps } from "./GoldDivider";
-
-export { LoadingRune } from "./LoadingRune";
-export type { LoadingRuneProps } from "./LoadingRune";
 
 export { LuxuryButton } from "./LuxuryButton";
 export type {
@@ -26,11 +23,15 @@ export type { LuxuryModalProps } from "./LuxuryModal";
 export { PieceCard } from "./PieceCard";
 export type { PieceCardData, PieceCardProps } from "./PieceCard";
 
-export { PrivateLayout } from "./PrivateLayout";
-export type { PrivateLayoutProps, PrivateNavItem } from "./PrivateLayout";
-
 export { SerialBadge } from "./SerialBadge";
 export type { SerialBadgeProps } from "./SerialBadge";
+
+export { SiteHeader } from "./SiteHeader";
+export { SiteFooter } from "./SiteFooter";
+export { SplitHeroLayout } from "./SplitHeroLayout";
+export { WelcomeModal, AccessGateHeader } from "./WelcomeModal";
+export { AccountLayout } from "./AccountLayout";
+export { WardrobeLayout } from "./WardrobeLayout";
 
 export { StatusPill } from "./StatusPill";
 export type { StatusPillProps } from "./StatusPill";

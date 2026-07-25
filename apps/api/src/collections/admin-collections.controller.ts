@@ -2,9 +2,11 @@ import {
   Body,
   Controller,
   Delete,
+  Get,
   Param,
   Patch,
   Post,
+  Query,
   Req,
   UploadedFile,
   UseGuards,
@@ -30,8 +32,10 @@ import { getClientIp } from "../common/constants";
 
 class CreateCollectionDto {
   @IsString() name!: string;
+  @IsString() @MinLength(1) nameAr!: string;
   @IsString() slug!: string;
   @IsOptional() @IsString() description?: string;
+  @IsOptional() @IsString() descriptionAr?: string;
   @IsOptional() @IsString() coverImageUrl?: string;
   @IsOptional() @IsBoolean() isVisible?: boolean;
   @IsOptional() @IsNumber() sortOrder?: number;
@@ -40,12 +44,16 @@ class CreateCollectionDto {
 
 class CreateDesignDto {
   @IsString() name!: string;
+  @IsString() @MinLength(1) nameAr!: string;
   @IsString() slug!: string;
   @IsString() collectionId!: string;
   @IsString() @MinLength(1) story!: string;
+  @IsString() @MinLength(1) storyAr!: string;
   @IsString() material!: string;
+  @IsOptional() @IsString() materialAr?: string;
   @IsNumber() weight!: number;
   @IsString() dimensions!: string;
+  @IsOptional() @IsString() dimensionsAr?: string;
   @IsNumber() basePrice!: number;
   @IsOptional() @IsString() currency?: string;
   @IsOptional() @IsArray() @IsString({ each: true }) visibilityGroups?: string[];
@@ -53,8 +61,10 @@ class CreateDesignDto {
 
 export class UpdateCollectionDto {
   @IsOptional() @IsString() name?: string;
+  @IsOptional() @IsString() nameAr?: string;
   @IsOptional() @IsString() slug?: string;
   @IsOptional() @IsString() description?: string;
+  @IsOptional() @IsString() descriptionAr?: string;
   @IsOptional() @IsString() coverImageUrl?: string;
   @IsOptional() @IsBoolean() isVisible?: boolean;
   @IsOptional() @IsNumber() sortOrder?: number;
@@ -63,12 +73,16 @@ export class UpdateCollectionDto {
 
 export class UpdateDesignDto {
   @IsOptional() @IsString() name?: string;
+  @IsOptional() @IsString() nameAr?: string;
   @IsOptional() @IsString() slug?: string;
   @IsOptional() @IsString() collectionId?: string;
   @IsOptional() @IsString() @MinLength(1) story?: string;
+  @IsOptional() @IsString() storyAr?: string;
   @IsOptional() @IsString() material?: string;
+  @IsOptional() @IsString() materialAr?: string;
   @IsOptional() @IsNumber() weight?: number;
   @IsOptional() @IsString() dimensions?: string;
+  @IsOptional() @IsString() dimensionsAr?: string;
   @IsOptional() @IsNumber() basePrice?: number;
   @IsOptional() @IsString() currency?: string;
   @IsOptional() @IsBoolean() isActive?: boolean;
@@ -78,7 +92,9 @@ export class UpdateDesignDto {
 
 class SpecItemDto {
   @IsString() key!: string;
+  @IsOptional() @IsString() keyAr?: string;
   @IsString() value!: string;
+  @IsOptional() @IsString() valueAr?: string;
   @IsOptional() @IsNumber() sortOrder?: number;
 }
 
@@ -93,6 +109,40 @@ class BulkSpecsDto {
 @UseGuards(AdminGuard)
 export class AdminCollectionsController {
   constructor(private readonly collections: CollectionsService) {}
+
+  @Get("collections")
+  listCollections(
+    @Query("page") page?: string,
+    @Query("limit") limit?: string,
+  ) {
+    return this.collections.listCollectionsAdmin(
+      page ? parseInt(page, 10) : undefined,
+      limit ? parseInt(limit, 10) : undefined,
+    );
+  }
+
+  @Get("collections/:id")
+  getCollection(@Param("id") id: string) {
+    return this.collections.getCollectionAdmin(id);
+  }
+
+  @Get("designs")
+  listDesigns(
+    @Query("page") page?: string,
+    @Query("limit") limit?: string,
+    @Query("collectionId") collectionId?: string,
+  ) {
+    return this.collections.listDesignsAdmin(
+      page ? parseInt(page, 10) : undefined,
+      limit ? parseInt(limit, 10) : undefined,
+      collectionId,
+    );
+  }
+
+  @Get("designs/:id")
+  getDesign(@Param("id") id: string) {
+    return this.collections.getDesignAdmin(id);
+  }
 
   @Post("collections")
   createCollection(

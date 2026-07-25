@@ -13,7 +13,9 @@ import {
   TransferStatus,
   TransferType,
 } from "@dadan/db";
+import type { Locale } from "@dadan/types";
 import { canTransitionTransfer, maskDisplayName } from "@dadan/utils";
+import { localizeDesign, pickLocalized } from "../common/i18n/localize";
 import { AuthService } from "../auth/auth.service";
 import { AuditService } from "../audit/audit.service";
 import { CertificatesService } from "../certificates/certificates.service";
@@ -48,6 +50,7 @@ export class TransfersService {
       recipientHouseKey: string;
     },
     ipAddress?: string,
+    locale: Locale = "ar",
   ) {
     const rateLimitKey = `transfer:initiate:${clientId}`;
     const limited = await this.redis.isRateLimited(
@@ -56,20 +59,20 @@ export class TransfersService {
       RATE_LIMIT_WINDOW_SECONDS,
     );
     if (limited) {
-      throw new HttpException("Too many transfer attempts", HttpStatus.TOO_MANY_REQUESTS);
+      throw new HttpException("errors.TOO_MANY_REQUESTS", HttpStatus.TOO_MANY_REQUESTS);
     }
 
     const piece = await this.prisma.db.piece.findFirst({
       where: { id: data.pieceId, currentOwnerId: clientId },
       include: { design: true },
     });
-    if (!piece) throw new NotFoundException("Piece not found");
+    if (!piece) throw new NotFoundException("errors.PIECE_NOT_FOUND");
     if (piece.status === PieceStatus.TRANSFER_PENDING) {
-      throw new BadRequestException("Transfer already in progress");
+      throw new BadRequestException("errors.TRANSFER_IN_PROGRESS");
     }
     if (piece.status !== PieceStatus.OWNED) {
       // Blocks RETIRED (and any future non-owned states) from being transferred.
-      throw new BadRequestException("Piece cannot be transferred in its current state");
+      throw new BadRequestException("errors.PIECE_NOT_TRANSFERABLE");
     }
 
     const activeTransfer = await this.prisma.db.transferRequest.findFirst({
@@ -79,7 +82,7 @@ export class TransfersService {
       },
     });
     if (activeTransfer) {
-      throw new BadRequestException("An active transfer already exists");
+      throw new BadRequestException("errors.TRANSFER_IN_PROGRESS");
     }
 
     const recipient = await this.auth.findClientByHouseKey(
@@ -124,6 +127,7 @@ export class TransfersService {
     if (sender) {
       this.notifications.sendTransferInitiatedEmail(sender.email, {
         transferId: transfer.id,
+        locale: sender.locale,
       });
     }
 
@@ -133,7 +137,11 @@ export class TransfersService {
       piece: {
         id: transfer.piece.id,
         serialNumber: transfer.piece.serialNumber,
-        name: transfer.piece.design.name,
+        name: pickLocalized(
+          locale,
+          transfer.piece.design.name,
+          transfer.piece.design.nameAr,
+        ),
         image: await this.storage.resolvePublicUrl(transfer.piece.design.imageUrls[0]),
       },
       recipientDisplayName: maskDisplayName(transfer.toClient.displayName),
@@ -150,7 +158,7 @@ export class TransfersService {
         status: TransferStatus.SENDER_CONFIRMED,
         senderConfirmedAt: new Date(),
       },
-      include: { toClient: { select: { email: true } } },
+      include: { toClient: { select: { email: true, locale: true } } },
     });
 
     await this.audit.log({
@@ -164,6 +172,7 @@ export class TransfersService {
 
     this.notifications.sendTransferSenderConfirmedEmail(updated.toClient.email, {
       transferId,
+      locale: updated.toClient.locale,
     });
 
     return updated;
@@ -209,7 +218,7 @@ export class TransfersService {
   async cancel(transferId: string, clientId: string, ipAddress?: string) {
     const transfer = await this.getTransferForSender(transferId, clientId);
     if (!["INITIATED", "SENDER_CONFIRMED"].includes(transfer.status)) {
-      throw new BadRequestException("Transfer cannot be cancelled at this stage");
+      throw new BadRequestException("errors.TRANSFER_NOT_CANCELLABLE");
     }
 
     const updated = await this.prisma.db.$transaction(async (tx) => {
@@ -237,13 +246,16 @@ export class TransfersService {
       where: { id: clientId },
     });
     if (sender) {
-      this.notifications.sendTransferCancelledEmail(sender.email, { transferId });
+      this.notifications.sendTransferCancelledEmail(sender.email, {
+        transferId,
+        locale: sender.locale,
+      });
     }
 
     return updated;
   }
 
-  async listClientTransfers(clientId: string) {
+  async listClientTransfers(clientId: string, locale: Locale = "ar") {
     const transfers = await this.prisma.db.transferRequest.findMany({
       where: {
         OR: [{ fromClientId: clientId }, { toClientId: clientId }],
@@ -264,7 +276,7 @@ export class TransfersService {
       piece: {
         id: t.piece.id,
         serialNumber: t.piece.serialNumber,
-        name: t.piece.design.name,
+        name: pickLocalized(locale, t.piece.design.name, t.piece.design.nameAr),
       },
       otherPartyDisplayName: maskDisplayName(
         t.fromClientId === clientId
@@ -274,7 +286,11 @@ export class TransfersService {
     }));
   }
 
-  async getClientTransfer(transferId: string, clientId: string) {
+  async getClientTransfer(
+    transferId: string,
+    clientId: string,
+    locale: Locale = "ar",
+  ) {
     const transfer = await this.prisma.db.transferRequest.findFirst({
       where: {
         id: transferId,
@@ -286,14 +302,14 @@ export class TransfersService {
         toClient: { select: { displayName: true } },
       },
     });
-    if (!transfer) throw new NotFoundException("Transfer not found");
+    if (!transfer) throw new NotFoundException("errors.TRANSFER_NOT_FOUND");
 
     return {
       ...transfer,
       piece: {
         ...transfer.piece,
         design: {
-          ...transfer.piece.design,
+          ...localizeDesign(transfer.piece.design, locale),
           imageUrls: await this.storage.resolvePublicUrls(transfer.piece.design.imageUrls),
         },
       },
@@ -361,7 +377,7 @@ export class TransfersService {
         toClient: { select: safeClientSelect },
       },
     });
-    if (!transfer) throw new NotFoundException("Transfer not found");
+    if (!transfer) throw new NotFoundException("errors.TRANSFER_NOT_FOUND");
     return transfer;
   }
 
@@ -374,7 +390,7 @@ export class TransfersService {
     const transfer = await this.prisma.db.transferRequest.findUnique({
       where: { id },
     });
-    if (!transfer) throw new NotFoundException("Transfer not found");
+    if (!transfer) throw new NotFoundException("errors.TRANSFER_NOT_FOUND");
     if (transfer.status !== TransferStatus.DADAN_REVIEW) {
       throw new BadRequestException("Transfer is not awaiting review");
     }
@@ -434,10 +450,16 @@ export class TransfersService {
       this.prisma.db.client.findUnique({ where: { id: transfer.toClientId } }),
     ]);
     if (sender) {
-      this.notifications.sendTransferApprovedEmail(sender.email, { transferId: id });
+      this.notifications.sendTransferApprovedEmail(sender.email, {
+        transferId: id,
+        locale: sender.locale,
+      });
     }
     if (recipient) {
-      this.notifications.sendTransferApprovedEmail(recipient.email, { transferId: id });
+      this.notifications.sendTransferApprovedEmail(recipient.email, {
+        transferId: id,
+        locale: recipient.locale,
+      });
     }
 
     return this.getAdminTransfer(id);
@@ -452,7 +474,7 @@ export class TransfersService {
     const transfer = await this.prisma.db.transferRequest.findUnique({
       where: { id },
     });
-    if (!transfer) throw new NotFoundException("Transfer not found");
+    if (!transfer) throw new NotFoundException("errors.TRANSFER_NOT_FOUND");
     if (transfer.status !== TransferStatus.DADAN_REVIEW) {
       throw new BadRequestException("Transfer is not awaiting review");
     }
@@ -489,10 +511,18 @@ export class TransfersService {
       this.prisma.db.client.findUnique({ where: { id: transfer.toClientId } }),
     ]);
     if (sender) {
-      this.notifications.sendTransferRejectedEmail(sender.email, { transferId: id, reason });
+      this.notifications.sendTransferRejectedEmail(sender.email, {
+        transferId: id,
+        reason,
+        locale: sender.locale,
+      });
     }
     if (recipient) {
-      this.notifications.sendTransferRejectedEmail(recipient.email, { transferId: id, reason });
+      this.notifications.sendTransferRejectedEmail(recipient.email, {
+        transferId: id,
+        reason,
+        locale: recipient.locale,
+      });
     }
 
     return this.getAdminTransfer(id);
@@ -525,7 +555,7 @@ export class TransfersService {
     const transfer = await this.prisma.db.transferRequest.findFirst({
       where: { id: transferId, fromClientId: clientId },
     });
-    if (!transfer) throw new NotFoundException("Transfer not found");
+    if (!transfer) throw new NotFoundException("errors.TRANSFER_NOT_FOUND");
     return transfer;
   }
 
@@ -533,7 +563,7 @@ export class TransfersService {
     const transfer = await this.prisma.db.transferRequest.findFirst({
       where: { id: transferId, toClientId: clientId },
     });
-    if (!transfer) throw new NotFoundException("Transfer not found");
+    if (!transfer) throw new NotFoundException("errors.TRANSFER_NOT_FOUND");
     return transfer;
   }
 

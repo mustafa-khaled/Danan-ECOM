@@ -1,0 +1,43 @@
+{
+  "transferInitiated": {
+    "subject": "Transfer Initiated - DADAN Dijital",
+    "body": "A transfer has been initiated. Transfer ID: {transferId}",
+    "heading": "Transfer Initiated"
+  },
+  "transferAwaitingConfirmation": {
+    "subject": "Transfer Awaiting Your Confirmation - DADAN Dijital",
+    "body": "A transfer is awaiting your confirmation. Transfer ID: {transferId}",
+    "heading": "Transfer Awaiting Confirmation"
+  },
+  "transferConfirmed": {
+    "subject": "Transfer Confirmed - DADAN Dijital",
+    "body": "The recipient has confirmed the transfer. Transfer ID: {transferId}",
+    "heading": "Transfer Confirmed"
+  },
+  "transferDadanReview": {
+    "subject": "Transfer Awaiting DADAN Review - DADAN Dijital",
+    "body": "A transfer is awaiting DADAN review. Transfer ID: {transferId}",
+    "heading": "Transfer Awaiting Review"
+  },
+  "transferApproved": {
+    "subject": "Transfer Approved - DADAN Dijital",
+    "body": "Your transfer has been approved. Transfer ID: {transferId}",
+    "heading": "Transfer Approved"
+  },
+  "transferRejected": {
+    "subject": "Transfer Rejected - DADAN Dijital",
+    "body": "Your transfer has been rejected. Transfer ID: {transferId}",
+    "heading": "Transfer Rejected",
+    "reason": "Reason: {reason}"
+  },
+  "transferCancelled": {
+    "subject": "Transfer Cancelled - DADAN Dijital",
+    "body": "The transfer has been cancelled. Transfer ID: {transferId}",
+    "heading": "Transfer Cancelled"
+  },
+  "orderPlaced": {
+    "subject": "Order Confirmed - DADAN Dijital",
+    "body": "Your order has been placed successfully. Order ID: {orderId}",
+    "heading": "Order Confirmed"
+  }
+}

@@ -65,6 +65,91 @@ jobs:
         run: pnpm test
 
   # ---------------------------------------------------------------------------
+  # Playwright E2E — auth, protected routes, checkout smoke
+  # ---------------------------------------------------------------------------
+  e2e:
+    name: Playwright E2E
+    needs: code-quality
+    runs-on: ubuntu-latest
+
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: dadan
+          POSTGRES_PASSWORD: dadan
+          POSTGRES_DB: dadan
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+      redis:
+        image: redis:7-alpine
+        ports:
+          - 6379:6379
+
+    env:
+      CI: true
+      DATABASE_URL: postgresql://dadan:dadan@localhost:5432/dadan
+      REDIS_URL: redis://localhost:6379
+      JWT_SECRET: ci-test-jwt-secret-minimum-32-chars!!
+      CERT_SIGNING_SECRET: ci-cert-signing-secret
+      BASE_URL: http://localhost:3000
+      WEB_ORIGIN: http://localhost:3000
+      API_URL: http://localhost:4000
+      NEXT_PUBLIC_API_URL: /backend
+      NEXT_PUBLIC_PAYMENT_MODE: mock
+      NEXT_PUBLIC_VAT_RATE: 0.15
+      COOKIE_SECURE: "false"
+      STORAGE_PROVIDER: local
+      STORAGE_LOCAL_PATH: /tmp/dadan-uploads
+      E2E_HOUSE_KEY: dadan-vip-key-001
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Generate Prisma client
+        working-directory: packages/db
+        run: pnpm exec prisma generate
+
+      - name: Run database migrations
+        working-directory: packages/db
+        run: pnpm exec prisma migrate deploy
+
+      - name: Build storage package for seed assets
+        run: pnpm --filter @dadan/storage build
+
+      - name: Prepare upload directory
+        run: mkdir -p /tmp/dadan-uploads
+
+      - name: Seed database
+        working-directory: packages/db
+        run: pnpm exec tsx prisma/seed.ts
+
+      - name: Build api and web for e2e production servers
+        run: pnpm turbo build --filter=@dadan/api --filter=@dadan/web
+
+      - name: Install Playwright browsers
+        working-directory: apps/web
+        run: pnpm exec playwright install --with-deps chromium
+
+      - name: Run Playwright tests
+        run: pnpm --filter @dadan/web test:e2e
+
+  # ---------------------------------------------------------------------------
   # Build — pnpm build (depends on code-quality)
   # ---------------------------------------------------------------------------
   build:
@@ -150,7 +235,11 @@ jobs:
 
       - name: pnpm audit
         run: |
-          pnpm audit --audit-level=high; code=$?
+          # pnpm 9 uses npm's retired audit endpoint (HTTP 410). Use pnpm 11 for audits.
+          set +e
+          pnpm dlx --config.minimumReleaseAge=0 pnpm@11.0.0-rc.1 --config.manage-package-manager-versions=false audit --audit-level=high
+          code=$?
+          set -e
           if [ $code -eq 0 ]; then
             echo "No high or critical vulnerabilities found."
           else

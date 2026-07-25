@@ -65,6 +65,7 @@ describe("AuthService", () => {
         clientId: "client-1",
         displayName: "Test Client",
         visibilityGroups: ["vip"],
+        locale: "ar",
       });
       expect(jwtMock.signAsync).toHaveBeenCalled();
       expect(auditMock.log).toHaveBeenCalled();

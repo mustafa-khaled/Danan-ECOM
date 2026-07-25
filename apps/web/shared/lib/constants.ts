@@ -1,5 +1,7 @@
-export const API_URL = process.env.API_URL ?? "http://localhost:4000";
-export const NEXT_PUBLIC_API_URL = process.env.NEXT_PUBLIC_API_URL ?? "/backend";
+import { env } from "@/env";
+
+export const API_URL = env.API_URL;
+export const NEXT_PUBLIC_API_URL = env.NEXT_PUBLIC_API_URL;
 
 export function getApiBase(): string {
   if (typeof window === "undefined") {
@@ -8,5 +10,7 @@ export function getApiBase(): string {
   return NEXT_PUBLIC_API_URL;
 }
 
-export const PAYMENT_MODE = process.env.NEXT_PUBLIC_PAYMENT_MODE ?? "mock";
-export const VAT_RATE = Number(process.env.NEXT_PUBLIC_VAT_RATE ?? "0.15");
+export const PAYMENT_MODE = env.NEXT_PUBLIC_PAYMENT_MODE;
+export const TAP_PUBLIC_KEY = env.NEXT_PUBLIC_TAP_PUBLIC_KEY;
+export const TAP_MERCHANT_ID = env.NEXT_PUBLIC_TAP_MERCHANT_ID;
+export { VAT_RATE } from "./pricing";

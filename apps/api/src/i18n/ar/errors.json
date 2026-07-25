@@ -1,0 +1,22 @@
+{
+  "UNAUTHORIZED": "غير مصرح بالدخول",
+  "TOO_MANY_REQUESTS": "عدد كبير من المحاولات. يرجى المحاولة لاحقًا.",
+  "PIECE_NOT_FOUND": "القطعة غير موجودة",
+  "COLLECTION_NOT_FOUND": "التشكيلة غير موجودة",
+  "DESIGN_NOT_FOUND": "التصميم غير موجود",
+  "TRANSFER_NOT_FOUND": "طلب النقل غير موجود",
+  "ORDER_NOT_FOUND": "الطلب غير موجود",
+  "CERTIFICATE_NOT_FOUND": "الشهادة غير موجودة",
+  "CLIENT_NOT_FOUND": "العميل غير موجود",
+  "CART_EMPTY": "سلة التسوق فارغة",
+  "PIECE_NOT_AVAILABLE": "هذه القطعة لم تعد متاحة",
+  "PIECE_ALREADY_OWNED": "هذه القطعة مملوكة بالفعل",
+  "PIECE_RESERVED": "هذه القطعة محجوزة في سلة أخرى",
+  "PAYMENT_FAILED": "فشلت عملية الدفع. يرجى المحاولة مرة أخرى.",
+  "CHECKOUT_REFUNDED": "فشل إتمام الشراء؛ وتم استرداد المبلغ المدفوع",
+  "TRANSFER_IN_PROGRESS": "يوجد طلب نقل قائم لهذه القطعة",
+  "PIECE_NOT_TRANSFERABLE": "لا يمكن نقل هذه القطعة في حالتها الحالية",
+  "TRANSFER_NOT_CANCELLABLE": "لم يعد بالإمكان إلغاء طلب النقل",
+  "ORDER_NOT_CANCELLABLE": "يمكن إلغاء الطلبات قيد الانتظار فقط",
+  "INTERNAL_SERVER_ERROR": "خطأ داخلي في الخادم"
+}
