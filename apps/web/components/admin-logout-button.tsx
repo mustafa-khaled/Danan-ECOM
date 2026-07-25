@@ -5,10 +5,7 @@ import { useLogout } from "@/features/auth";
 
 export function AdminLogoutButton() {
   const router = useRouter();
-  const {
-    mutateAsync: logout,
-    isPending,
-  } = useLogout();
+  const { logout, isPending } = useLogout();
 
   async function handleLogout() {
     try {

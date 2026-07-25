@@ -15,19 +15,9 @@ export function DesignActions({ pieceId, initialSaved = false }: DesignActionsPr
   const router = useRouter();
   const t = useTranslations("piece");
   const common = useTranslations("common");
-  const {
-    mutateAsync: addToCart,
-    isPending: isAddingToCart,
-    error: addToCartError,
-  } = useAddToCart();
-  const {
-    mutateAsync: savePiece,
-    isPending: isSaving,
-  } = useSavePiece();
-  const {
-    mutateAsync: unsavePiece,
-    isPending: isUnsaving,
-  } = useUnsavePiece();
+  const { addToCart, isPending: isAddingToCart, error: addToCartError } = useAddToCart();
+  const { savePiece, isPending: isSaving } = useSavePiece();
+  const { unsavePiece, isPending: isUnsaving } = useUnsavePiece();
 
   async function handleAddToCart() {
     try {

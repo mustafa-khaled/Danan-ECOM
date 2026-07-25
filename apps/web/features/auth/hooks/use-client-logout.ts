@@ -3,10 +3,17 @@ import { clientLogout } from "../api/logout";
 
 export function useClientLogout() {
   const queryClient = useQueryClient();
-  return useMutation({
+  const {
+    mutateAsync: logout,
+    data,
+    isPending,
+    error,
+  } = useMutation({
     mutationFn: () => clientLogout(),
     onSuccess: () => {
       queryClient.clear();
     },
   });
+
+  return { logout, data, isPending, error };
 }

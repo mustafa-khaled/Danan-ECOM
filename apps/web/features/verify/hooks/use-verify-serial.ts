@@ -1,9 +1,16 @@
 import { useMutation } from "@tanstack/react-query";
-import { verifySerial } from "../api/verify-serial";
+import { verifySerial as verifySerialApi } from "../api/verify-serial";
 
 export function useVerifySerial() {
-  return useMutation({
+  const {
+    mutateAsync: verifySerial,
+    data,
+    isPending,
+    error,
+  } = useMutation({
     mutationFn: ({ serial, token }: { serial: string; token: string }) =>
-      verifySerial(serial, token),
+      verifySerialApi(serial, token),
   });
+
+  return { verifySerial, data, isPending, error };
 }

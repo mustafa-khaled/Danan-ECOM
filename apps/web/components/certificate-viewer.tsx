@@ -16,12 +16,7 @@ export function CertificateViewer({ pieceId, pieceName, serialNumber }: Certific
   const t = useTranslations("certificates");
   const wardrobeT = useTranslations("wardrobe");
   const [open, setOpen] = useState(false);
-  const {
-    mutateAsync: fetchCertificate,
-    data: rawCertificate,
-    isPending,
-    error,
-  } = usePieceCertificate();
+  const { fetchCertificate, data: rawCertificate, isPending, error } = usePieceCertificate();
 
   async function handleOpen() {
     try {

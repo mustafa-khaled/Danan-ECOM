@@ -12,21 +12,11 @@ interface TransferActionsProps {
 
 export function TransferActions({ transferId, status, role }: TransferActionsProps) {
   const t = useTranslations("transfers");
-  const {
-    mutateAsync: confirmSender,
-    isPending: isConfirmingSender,
-    error: confirmSenderError,
-  } = useConfirmTransferSender();
-  const {
-    mutateAsync: confirmRecipient,
-    isPending: isConfirmingRecipient,
-    error: confirmRecipientError,
-  } = useConfirmTransferRecipient();
-  const {
-    mutateAsync: cancel,
-    isPending: isCancelling,
-    error: cancelError,
-  } = useCancelTransfer();
+  const { confirmSender, isPending: isConfirmingSender, error: confirmSenderError } =
+    useConfirmTransferSender();
+  const { confirmRecipient, isPending: isConfirmingRecipient, error: confirmRecipientError } =
+    useConfirmTransferRecipient();
+  const { cancelTransfer, isPending: isCancelling, error: cancelError } = useCancelTransfer();
 
   const canConfirmSender = role === "sender" && status === "INITIATED";
   const canConfirmRecipient = role === "recipient" && status === "SENDER_CONFIRMED";
@@ -71,7 +61,7 @@ export function TransferActions({ transferId, status, role }: TransferActionsPro
           loading={isCancelling}
           onClick={async () => {
             try {
-              await cancel(transferId);
+              await cancelTransfer(transferId);
             } catch { /* error rendered via mutation state */ }
           }}
         >

@@ -9,11 +9,11 @@ vi.mock("next/navigation", () => ({
 }));
 
 vi.mock("@/features/auth", () => ({
-  useClientLogout: () => ({ mutateAsync: vi.fn(), isPending: false }),
+  useClientLogout: () => ({ logout: vi.fn(), isPending: false }),
 }));
 
 vi.mock("@/features/profile", () => ({
-  useUpdateProfile: () => ({ mutate: vi.fn(), isPending: false }),
+  useUpdateProfile: () => ({ updateProfile: vi.fn(), isPending: false }),
 }));
 
 import { SiteHeader } from "@/components/ui/SiteHeader";

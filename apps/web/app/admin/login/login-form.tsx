@@ -9,11 +9,7 @@ export function LoginForm() {
   const router = useRouter();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const {
-    mutateAsync: login,
-    isPending,
-    error,
-  } = useLogin();
+  const { login, isPending, error } = useLogin();
 
   async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();

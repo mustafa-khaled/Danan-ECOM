@@ -25,11 +25,7 @@ export function CheckoutForm({ total, currency }: CheckoutFormProps) {
   const [isTokenizing, setIsTokenizing] = useState(false);
   const shippingAddressRef = useRef<ShippingAddress | null>(null);
   const tapCardRef = useRef<TapCardElementHandle>(null);
-  const {
-    mutateAsync: checkout,
-    isPending,
-    error,
-  } = useCheckout();
+  const { checkout, isPending, error } = useCheckout();
 
   const isLivePayment = PAYMENT_MODE === "live";
 

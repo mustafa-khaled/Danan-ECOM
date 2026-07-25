@@ -10,12 +10,7 @@ export function VerifyForm() {
   const pieceT = useTranslations("piece");
   const [serial, setSerial] = useState("");
   const [token, setToken] = useState("");
-  const {
-    mutateAsync: verifySerial,
-    data: result,
-    isPending,
-    error,
-  } = useVerifySerial();
+  const { verifySerial, data: result, isPending, error } = useVerifySerial();
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();

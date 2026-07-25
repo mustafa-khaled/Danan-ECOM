@@ -7,10 +7,10 @@ import { useClientLogout } from "@/features/auth";
 export function ClientLogoutButton() {
   const t = useTranslations("auth");
   const router = useRouter();
-  const logout = useClientLogout();
+  const { logout, isPending } = useClientLogout();
 
   async function handleLogout() {
-    await logout.mutateAsync();
+    await logout();
     router.push("/beta");
     router.refresh();
   }
@@ -19,7 +19,7 @@ export function ClientLogoutButton() {
     <button
       type="button"
       onClick={handleLogout}
-      disabled={logout.isPending}
+      disabled={isPending}
       className="text-xs tracking-[0.1em] uppercase text-[var(--color-text-muted)] transition-colors hover:text-[var(--color-accent)] disabled:opacity-50"
     >
       {t("logout")}

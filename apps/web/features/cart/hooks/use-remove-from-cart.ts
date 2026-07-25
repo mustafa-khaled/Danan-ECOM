@@ -1,13 +1,17 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { cartKeys } from "@/shared/lib/query-keys";
-import { removeFromCart } from "../api/remove-from-cart";
+import { removeFromCart as removeFromCartApi } from "../api/remove-from-cart";
 import type { CartItem } from "../types";
 
 export function useRemoveFromCart() {
   const queryClient = useQueryClient();
-
-  return useMutation({
-    mutationFn: (pieceId: string) => removeFromCart(pieceId),
+  const {
+    mutateAsync: removeFromCart,
+    data,
+    isPending,
+    error,
+  } = useMutation({
+    mutationFn: (pieceId: string) => removeFromCartApi(pieceId),
     onMutate: async (pieceId) => {
       await queryClient.cancelQueries({ queryKey: cartKeys.all });
       const previous = queryClient.getQueryData<CartItem[]>(cartKeys.all);
@@ -25,4 +29,6 @@ export function useRemoveFromCart() {
       queryClient.invalidateQueries({ queryKey: cartKeys.all });
     },
   });
+
+  return { removeFromCart, data, isPending, error };
 }

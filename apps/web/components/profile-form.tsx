@@ -15,11 +15,11 @@ export function ProfileForm({ initial }: ProfileFormProps) {
   const t = useTranslations("profile");
   const tCommon = useTranslations("common");
   const [phone, setPhone] = useState(initial.phone);
-  const updateProfile = useUpdateProfile();
+  const { updateProfile, isPending } = useUpdateProfile();
 
   async function handleSubmit(event: FormEvent) {
     event.preventDefault();
-    await updateProfile.mutateAsync({ phone });
+    await updateProfile({ phone });
   }
 
   return (
@@ -51,10 +51,10 @@ export function ProfileForm({ initial }: ProfileFormProps) {
       <div className="sm:col-span-2">
         <button
           type="submit"
-          disabled={updateProfile.isPending}
+          disabled={isPending}
           className="inline-flex min-h-11 items-center bg-[var(--color-accent)] px-6 text-sm tracking-[0.1em] uppercase text-white transition-opacity hover:opacity-90 disabled:opacity-50"
         >
-          {updateProfile.isPending ? tCommon("loading") : tCommon("save")}
+          {isPending ? tCommon("loading") : tCommon("save")}
         </button>
       </div>
     </form>

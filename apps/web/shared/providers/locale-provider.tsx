@@ -20,14 +20,14 @@ export function LocaleSwitcher({ className, syncProfile = false }: LocaleSwitche
   const locale = useLocale() as Locale;
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
-  const updateProfile = useUpdateProfile();
+  const { updateProfile } = useUpdateProfile();
 
   function toggleLocale() {
     const nextLocale: Locale = locale === "ar" ? "en" : "ar";
     setLocaleCookie(nextLocale);
 
     if (syncProfile) {
-      updateProfile.mutate({ locale: nextLocale });
+      updateProfile({ locale: nextLocale });
     }
 
     startTransition(() => {

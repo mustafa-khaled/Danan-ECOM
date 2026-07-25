@@ -1,13 +1,20 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { savedKeys } from "@/shared/lib/query-keys";
-import { unsavePiece } from "../api/unsave-piece";
+import { unsavePiece as unsavePieceApi } from "../api/unsave-piece";
 
 export function useUnsavePiece() {
   const queryClient = useQueryClient();
-  return useMutation({
-    mutationFn: (pieceId: string) => unsavePiece(pieceId),
+  const {
+    mutateAsync: unsavePiece,
+    data,
+    isPending,
+    error,
+  } = useMutation({
+    mutationFn: (pieceId: string) => unsavePieceApi(pieceId),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: savedKeys.all });
     },
   });
+
+  return { unsavePiece, data, isPending, error };
 }

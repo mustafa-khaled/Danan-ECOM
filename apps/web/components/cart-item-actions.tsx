@@ -8,10 +8,7 @@ interface CartItemActionsProps {
 }
 
 export function CartItemActions({ pieceId }: CartItemActionsProps) {
-  const {
-    mutateAsync: removeFromCart,
-    isPending,
-  } = useRemoveFromCart();
+  const { removeFromCart, isPending } = useRemoveFromCart();
 
   async function handleRemove() {
     try {

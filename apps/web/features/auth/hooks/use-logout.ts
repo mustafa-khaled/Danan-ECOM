@@ -3,10 +3,17 @@ import { adminLogout } from "../api/logout";
 
 export function useLogout() {
   const queryClient = useQueryClient();
-  return useMutation({
+  const {
+    mutateAsync: logout,
+    data,
+    isPending,
+    error,
+  } = useMutation({
     mutationFn: (cookieHeader?: string) => adminLogout(cookieHeader),
     onSuccess: () => {
       queryClient.clear();
     },
   });
+
+  return { logout, data, isPending, error };
 }

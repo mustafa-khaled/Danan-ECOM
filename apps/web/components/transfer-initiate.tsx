@@ -18,11 +18,7 @@ export function TransferInitiate({ pieceId, pieceName, serialNumber }: TransferI
   const common = useTranslations("common");
   const wardrobeT = useTranslations("wardrobe");
   const [open, setOpen] = useState(false);
-  const {
-    mutateAsync: initiateTransfer,
-    isPending,
-    error,
-  } = useInitiateTransfer();
+  const { initiateTransfer, isPending, error } = useInitiateTransfer();
 
   const TRANSFER_TYPES = [
     { value: "GIFT", label: t("gift") },
