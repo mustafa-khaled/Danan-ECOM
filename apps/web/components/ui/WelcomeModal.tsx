@@ -43,7 +43,7 @@ export function WelcomeModal({ displayName }: WelcomeModalProps) {
         </button>
         <div className="relative hidden w-1/2 md:block">
           <Image
-            src="/assets/coming-soon.png"
+            src="/assets/dadan-model.png"
             alt="DADAN"
             fill
             className="object-cover"
@@ -53,7 +53,9 @@ export function WelcomeModal({ displayName }: WelcomeModalProps) {
           <h2 className="font-english text-3xl text-[var(--color-text)]">
             {t("title", { name: displayName })}
           </h2>
-          <p className="mt-4 text-[var(--color-text-muted)]">{t("description")}</p>
+          <p className="mt-4 text-[var(--color-text-muted)]">
+            {t("description")}
+          </p>
           <button
             type="button"
             onClick={dismiss}

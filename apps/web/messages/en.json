@@ -31,15 +31,17 @@
     "evening": "Evening"
   },
   "accessGate": {
-    "title": "A Story Told",
+    "title": "Tells A Story",
     "welcome": "Welcome to the House of DADAN",
-    "description": "Enter your House Key to access your private collection.",
+    "description": "A private space where stories, heritage, and craftsmanship come together.",
     "houseKey": "House Key",
-    "houseKeyPlaceholder": "Enter your House Key",
+    "houseKeyPlaceholder": "Enter Your Access Key",
     "assistance": "Need assistance?",
     "accessDenied": "Access denied",
     "rateLimited": "Please wait before trying again",
-    "entering": "Entering..."
+    "entering": "Entering...",
+    "featuredPieces": "Featured Pieces",
+    "aboutTheHouse": "About the House"
   },
   "welcome": {
     "title": "Welcome Back, {name}",

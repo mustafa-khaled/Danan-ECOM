@@ -3,8 +3,16 @@
 import { useLocale } from "next-intl";
 import { useRouter } from "next/navigation";
 import { useTransition, type ReactNode } from "react";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { LOCALE_COOKIE, type Locale } from "@/i18n/routing";
 import { useUpdateProfile } from "@/features/profile";
+import { cn } from "@/lib/utils";
 
 interface LocaleSwitcherProps {
   className?: string;
@@ -42,7 +50,7 @@ export function LocaleSwitcher({ className, syncProfile = false }: LocaleSwitche
       disabled={isPending}
       className={
         className ??
-        "inline-flex items-center gap-1 rounded border border-[var(--color-border)] bg-transparent px-3 py-1.5 text-[0.8125rem] font-medium tracking-wide text-[var(--color-text)] transition-colors hover:border-[#999] disabled:opacity-50"
+        "inline-flex items-center gap-1 rounded border border-border bg-transparent px-3 py-1.5 text-[0.8125rem] font-medium tracking-wide text-(--color-text) transition-colors hover:border-[#999] disabled:opacity-50"
       }
       aria-label={locale === "ar" ? "Switch to English" : "التبديل إلى العربية"}
     >
@@ -78,8 +86,8 @@ export function LocaleSelect({ className, syncProfile = false }: LocaleSelectPro
   const [isPending, startTransition] = useTransition();
   const { updateProfile } = useUpdateProfile();
 
-  function handleChange(event: React.ChangeEvent<HTMLSelectElement>) {
-    const nextLocale = event.target.value as Locale;
+  function handleValueChange(value: string) {
+    const nextLocale = value as Locale;
     if (nextLocale === locale) return;
 
     setLocaleCookie(nextLocale);
@@ -94,26 +102,22 @@ export function LocaleSelect({ className, syncProfile = false }: LocaleSelectPro
   }
 
   return (
-    <select
-      value={locale}
-      onChange={handleChange}
-      disabled={isPending}
-      aria-label="Select language"
-      className={
-        className ??
-        "cursor-pointer appearance-none border-none bg-transparent pe-4 text-[0.8125rem] font-medium tracking-wide text-[var(--color-text)] outline-none disabled:opacity-50"
-      }
-      style={{
-        backgroundImage:
-          "url(\"data:image/svg+xml,%3Csvg width='10' height='6' viewBox='0 0 10 6' fill='none' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M1 1L5 5L9 1' stroke='%23555' stroke-width='1.2' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E\")",
-        backgroundRepeat: "no-repeat",
-        backgroundPosition: "right center",
-        backgroundSize: "10px 6px",
-      }}
-    >
-      <option value="en">EN</option>
-      <option value="ar">AR</option>
-    </select>
+    <Select value={locale} onValueChange={handleValueChange} disabled={isPending}>
+      <SelectTrigger
+        size="sm"
+        aria-label="Select language"
+        className={cn(
+          "h-auto min-h-0 cursor-pointer border-none bg-transparent px-0 py-0 text-[0.8125rem] font-medium tracking-wide shadow-none focus-visible:shadow-none",
+          className,
+        )}
+      >
+        <SelectValue />
+      </SelectTrigger>
+      <SelectContent align="end">
+        <SelectItem value="en">EN</SelectItem>
+        <SelectItem value="ar">AR</SelectItem>
+      </SelectContent>
+    </Select>
   );
 }
 

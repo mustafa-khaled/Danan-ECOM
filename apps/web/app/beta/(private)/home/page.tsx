@@ -6,7 +6,10 @@ import { EmptyState } from "@/shared/components/feedback/empty-state";
 import { fetchCollections, fetchCollection } from "@/features/collections";
 import { fetchSaved } from "@/features/saved";
 import { fetchWardrobe } from "@/features/wardrobe";
-import { getSessionCookieHeader, requireClientSession } from "@/features/auth/server/session";
+import {
+  getSessionCookieHeader,
+  requireClientSession,
+} from "@/features/auth/server/session";
 import { formatPrice } from "@/shared/utils/format";
 import type { Locale } from "@/i18n/routing";
 
@@ -49,7 +52,7 @@ export default async function HomePage() {
       <WelcomeModal displayName={profile.displayName} />
 
       <section className="relative -mx-4 mb-12 overflow-hidden sm:-mx-8">
-        <div className="relative aspect-[21/9] bg-[var(--color-surface)]">
+        <div className="relative aspect-21/9 bg-(--color-surface)">
           {featured?.coverImageUrl ? (
             <Image
               src={featured.coverImageUrl}
@@ -71,7 +74,7 @@ export default async function HomePage() {
       {selectedPieces.length > 0 ? (
         <section className="mb-16">
           <div className="mb-6 flex items-end justify-between">
-            <h2 className="font-english text-2xl text-[var(--color-text)]">
+            <h2 className="font-english text-2xl text-(--color-text)">
               {t("selectedForYou")}
             </h2>
           </div>
@@ -85,7 +88,9 @@ export default async function HomePage() {
                     serialNumber: design.slug,
                     imageUrl: design.images?.[0],
                     collectionName: featured?.name,
-                    price: design.price ? formatPrice(design.price, "SAR", locale) : undefined,
+                    price: design.price
+                      ? formatPrice(design.price, "SAR", locale)
+                      : undefined,
                   }}
                   showExplore
                 />
@@ -98,22 +103,23 @@ export default async function HomePage() {
       {featured ? (
         <section className="mb-16">
           <div className="mb-6 flex items-end justify-between gap-4">
-            <h2 className="font-english text-2xl text-[var(--color-text)]">
+            <h2 className="font-english text-2xl text-(--color-text)">
               {t("featuredCollection")}
             </h2>
             <Link
               href={`/beta/collections/${featured.slug}`}
-              className="text-xs tracking-[0.14em] uppercase text-[var(--color-text-muted)] hover:text-[var(--color-accent)]"
+              className="text-xs tracking-[0.14em] uppercase text-(--color-text-muted) hover:text-(--color-accent)"
             >
-              {t("viewCollection")} <span className="rtl:rotate-180 inline-block">→</span>
+              {t("viewCollection")}{" "}
+              <span className="rtl:rotate-180 inline-block">→</span>
             </Link>
           </div>
           <Link
             href={`/beta/collections/${featured.slug}`}
-            className="group block overflow-hidden border border-[var(--color-border)] bg-[var(--color-surface)] transition-colors hover:border-[var(--color-accent)]"
+            className="group block overflow-hidden border border-border bg-(--color-surface) transition-colors hover:border-(--color-accent)"
           >
             <div className="grid md:grid-cols-2">
-              <div className="relative aspect-[4/3] bg-[var(--color-muted)] md:aspect-auto">
+              <div className="relative aspect-4/3 bg-muted md:aspect-auto">
                 {featured.coverImageUrl ? (
                   <Image
                     src={featured.coverImageUrl}
@@ -125,9 +131,13 @@ export default async function HomePage() {
                 ) : null}
               </div>
               <div className="flex flex-col justify-center p-8">
-                <h3 className="font-english text-3xl text-[var(--color-text)]">{featured.name}</h3>
+                <h3 className="font-english text-3xl text-(--color-text)">
+                  {featured.name}
+                </h3>
                 {featured.description ? (
-                  <p className="mt-4 text-[var(--color-text-muted)]">{featured.description}</p>
+                  <p className="mt-4 text-(--color-text-muted)">
+                    {featured.description}
+                  </p>
                 ) : null}
               </div>
             </div>
@@ -137,19 +147,25 @@ export default async function HomePage() {
 
       <section className="mb-16">
         <div className="mb-6 flex items-end justify-between gap-4">
-          <h2 className="font-english text-2xl text-[var(--color-text)]">{t("yourCollection")}</h2>
+          <h2 className="font-english text-2xl text-(--color-text)">
+            {t("yourCollection")}
+          </h2>
           <Link
             href="/beta/wardrobe"
-            className="text-xs tracking-[0.14em] uppercase text-[var(--color-text-muted)] hover:text-[var(--color-accent)]"
+            className="text-xs tracking-[0.14em] uppercase text-(--color-text-muted) hover:text-(--color-accent)"
           >
-            {t("viewCollection")} <span className="rtl:rotate-180 inline-block">→</span>
+            {t("viewCollection")}{" "}
+            <span className="rtl:rotate-180 inline-block">→</span>
           </Link>
         </div>
         {wardrobe.length === 0 ? (
           <EmptyState
             title={t("wardrobeEmpty")}
             description={t("wardrobeEmptyDescription")}
-            action={{ href: "/beta/collections", label: t("exploreCollections") }}
+            action={{
+              href: "/beta/collections",
+              label: t("exploreCollections"),
+            }}
           />
         ) : (
           <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
@@ -173,12 +189,16 @@ export default async function HomePage() {
 
       <section className="mb-16 grid gap-8 md:grid-cols-2">
         <div>
-          <h2 className="font-english text-2xl text-[var(--color-text)]">{t("aboutDadan")}</h2>
-          <p className="mt-4 text-[var(--color-text-muted)]">{t("aboutDescription")}</p>
+          <h2 className="font-english text-2xl text-(--color-text)">
+            {t("aboutDadan")}
+          </h2>
+          <p className="mt-4 text-(--color-text-muted)">
+            {t("aboutDescription")}
+          </p>
         </div>
-        <div className="relative aspect-[4/3] bg-[var(--color-surface)]">
+        <div className="relative aspect-4/3 bg-(--color-surface)">
           <Image
-            src="/assets/coming-soon.png"
+            src="/assets/dadan-model.png"
             alt="DADAN"
             fill
             className="object-cover"
@@ -188,7 +208,7 @@ export default async function HomePage() {
 
       {saved.length > 0 ? (
         <section>
-          <h2 className="mb-6 font-english text-2xl text-[var(--color-text)]">
+          <h2 className="mb-6 font-english text-2xl text-(--color-text)">
             {t("selectedForYou")}
           </h2>
           <div className="grid gap-6 sm:grid-cols-2">

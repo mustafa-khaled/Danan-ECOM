@@ -10,7 +10,7 @@ export default function ComingSoonPage() {
         {/* Background Image with Ken Burns Zoom */}
         <div className="absolute inset-0 z-0 overflow-hidden">
           <Image
-            src="/assets/coming-soon.png"
+            src="/assets/dadan-model.png"
             alt="DADAN background"
             fill
             priority
@@ -23,7 +23,7 @@ export default function ComingSoonPage() {
 
         {/* Header (Logo) */}
         <header className="relative z-20 flex justify-center pt-20 animate-slide-up">
-          <div className="relative w-[220px] h-[36px]">
+          <div className="relative w-55 h-9">
             <Image
               src="/assets/dadan-logo.png"
               alt="DADAN"
@@ -36,7 +36,7 @@ export default function ComingSoonPage() {
         </header>
 
         {/* Bottom Content / Footer */}
-        <footer className="absolute z-20 px-[41px] w-full flex justify-between items-center bottom-[27%] text-center select-none">
+        <footer className="absolute z-20 px-10.25 w-full flex justify-between items-center bottom-[27%] text-center select-none">
           <div className="animate-slide-up [animation-delay:500ms]">
             <p className="font-english font-semibold text-[30px] leading-[100%] tracking-tighter text-ivory">
               Soon
@@ -58,7 +58,7 @@ export default function ComingSoonPage() {
         {/* Background Image with Ken Burns Zoom */}
         <div className="absolute inset-0 z-0 overflow-hidden">
           <Image
-            src="/assets/coming-soon.png"
+            src="/assets/dadan-model.png"
             alt="DADAN background"
             fill
             priority
@@ -71,7 +71,7 @@ export default function ComingSoonPage() {
 
         {/* Header (Logo) */}
         <header className="relative z-20 flex justify-center pt-16 animate-slide-up">
-          <div className="relative w-[185px] h-[30px]">
+          <div className="relative w-46.25 h-7.5">
             <Image
               src="/assets/dadan-logo.png"
               alt="DADAN"
@@ -84,7 +84,7 @@ export default function ComingSoonPage() {
         </header>
 
         {/* Bottom Content / Footer */}
-        <footer className="absolute z-20 px-[51px] w-full flex justify-between items-center bottom-[18%] text-center select-none">
+        <footer className="absolute z-20 px-12.75 w-full flex justify-between items-center bottom-[18%] text-center select-none">
           <div className="animate-slide-up [animation-delay:500ms]">
             <p className="font-english font-semibold text-[30px] leading-[100%] tracking-tighter text-ivory">
               Soon

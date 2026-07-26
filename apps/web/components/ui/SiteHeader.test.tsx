@@ -38,8 +38,8 @@ describe("SiteHeader", () => {
       </NextIntlClientProvider>,
     );
 
-    const selects = screen.getAllByLabelText("Select language");
-    expect(selects.length).toBeGreaterThan(0);
-    expect(selects[0]).toHaveValue("en");
+    const languageSelects = screen.getAllByRole("combobox", { name: "Select language" });
+    expect(languageSelects.length).toBeGreaterThan(0);
+    expect(languageSelects[0]).toHaveTextContent("EN");
   });
 });

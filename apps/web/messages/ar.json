@@ -31,15 +31,17 @@
     "evening": "مساء الخير"
   },
   "accessGate": {
-    "title": "قصة تُروى",
+    "title": "تحكي قصة",
     "welcome": "مرحباً بك في بيت دادان",
-    "description": "أدخل مفتاح البيت للوصول إلى مجموعتك الخاصة.",
+    "description": "مساحة خاصة حيث تلتقي القصص والتراث والحرفية.",
     "houseKey": "مفتاح البيت",
-    "houseKeyPlaceholder": "أدخل مفتاح البيت",
+    "houseKeyPlaceholder": "أدخل مفتاح الدخول",
     "assistance": "تحتاج مساعدة؟",
     "accessDenied": "تم رفض الدخول",
     "rateLimited": "يرجى الانتظار قبل المحاولة مرة أخرى",
-    "entering": "جاري الدخول..."
+    "entering": "جاري الدخول...",
+    "featuredPieces": "القطع المميزة",
+    "aboutTheHouse": "عن البيت"
   },
   "welcome": {
     "title": "مرحباً بعودتك، {name}",

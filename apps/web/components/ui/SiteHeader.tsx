@@ -43,7 +43,7 @@ export function SiteHeader({ displayName }: SiteHeaderProps) {
           {/* Notification bell */}
           <button
             type="button"
-            className="flex size-8 items-center justify-center text-[var(--color-text)] transition-colors hover:text-[var(--color-accent)]"
+            className="flex size-8 items-center justify-center text-(--color-text) transition-colors hover:text-[var(--color-accent)]"
             aria-label={tNav("notifications")}
           >
             <svg

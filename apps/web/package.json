@@ -13,15 +13,19 @@
     "test:e2e": "playwright test"
   },
   "dependencies": {
+    "@radix-ui/react-select": "^2.3.7",
     "@sentry/nextjs": "^10.65.0",
     "@tanstack/react-query": "^5.101.2",
     "@tanstack/react-query-devtools": "^5.101.2",
     "@tap-payments/card-sdk": "^1.0.2",
+    "clsx": "^2.1.1",
+    "lucide-react": "^1.27.0",
     "next": "^15.5.21",
     "next-intl": "^4.13.2",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
     "sharp": "^0.35.3",
+    "tailwind-merge": "^3.6.0",
     "zod": "^3.24.2"
   },
   "devDependencies": {
