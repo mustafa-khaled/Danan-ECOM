@@ -1,13 +1,21 @@
 # =============================================================================
 # DADAN Dijital — CI Pipeline
 #
-# Runs on every push/PR to main. Four parallel jobs:
-#   code-quality — lint + typecheck + test
-#   build        — pnpm build (after code-quality)
-#   docker-build — Docker image build verification (after code-quality)
+# Runs on every push/PR to main.
+#
+# Start immediately, in parallel:
+#   code-quality — lint + typecheck + unit tests
 #   security     — dependency audit + filesystem vulnerability scan
 #
+# After code-quality succeeds (in parallel):
+#   build        — pnpm build
+#   docker-build — Docker image build verification + image vulnerability scan
+#   e2e          — Playwright end-to-end tests
+#
 # NOT included: automatic deployment. Deploy via deploy.sh from the server.
+#
+# Actions are pinned to full commit SHAs (immutable); the trailing comment
+# records the human-readable tag. Dependabot opens PRs to move these forward.
 # =============================================================================
 name: CI
 
@@ -22,9 +30,10 @@ concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
 
-env:
-  DATABASE_URL: postgresql://dadan:dadan@localhost:5432/dadan
-  DOCKER_BUILDKIT: 1
+# Least privilege: this workflow only reads the repository. Nothing here
+# publishes packages, writes to PRs, or deploys.
+permissions:
+  contents: read
 
 jobs:
   # ---------------------------------------------------------------------------
@@ -33,26 +42,31 @@ jobs:
   code-quality:
     name: Lint & Typecheck & Test
     runs-on: ubuntu-latest
+    timeout-minutes: 20
 
+    # No DATABASE_URL here on purpose: unit tests are fully mocked, and
+    # @dadan/db's postinstall `prisma generate` does not need a datasource URL.
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
 
-      - uses: pnpm/action-setup@v4
+      - uses: pnpm/action-setup@fc06bc1257f339d1d5d8b3a19a8cae5388b55320 # v4.4.0
 
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
         with:
-          node-version: 20
+          node-version: 22
           cache: pnpm
 
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
       - name: Turbo cache
-        uses: actions/cache@v4
+        uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830 # v4.3.0
         with:
           path: .turbo
-          key: turbo-${{ runner.os }}-${{ github.sha }}
+          key: turbo-${{ runner.os }}-${{ github.job }}-${{ hashFiles('pnpm-lock.yaml', 'turbo.json') }}-${{ github.sha }}
           restore-keys: |
+            turbo-${{ runner.os }}-${{ github.job }}-${{ hashFiles('pnpm-lock.yaml', 'turbo.json') }}-
+            turbo-${{ runner.os }}-${{ github.job }}-
             turbo-${{ runner.os }}-
 
       - name: Lint
@@ -66,11 +80,16 @@ jobs:
 
   # ---------------------------------------------------------------------------
   # Playwright E2E — auth, protected routes, checkout smoke
+  #
+  # Servers are started by playwright.config.ts (webServer →
+  # scripts/start-e2e-dev.sh), which boots the built API and web standalone
+  # output and waits for /health/ready and /beta before tests run.
   # ---------------------------------------------------------------------------
   e2e:
     name: Playwright E2E
     needs: code-quality
     runs-on: ubuntu-latest
+    timeout-minutes: 30
 
     services:
       postgres:
@@ -82,7 +101,7 @@ jobs:
         ports:
           - 5432:5432
         options: >-
-          --health-cmd pg_isready
+          --health-cmd "pg_isready -U dadan -d dadan"
           --health-interval 10s
           --health-timeout 5s
           --health-retries 5
@@ -90,9 +109,14 @@ jobs:
         image: redis:7-alpine
         ports:
           - 6379:6379
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
 
     env:
-      CI: true
+      CI: "true"
       DATABASE_URL: postgresql://dadan:dadan@localhost:5432/dadan
       REDIS_URL: redis://localhost:6379
       JWT_SECRET: ci-test-jwt-secret-minimum-32-chars!!
@@ -102,20 +126,20 @@ jobs:
       API_URL: http://localhost:4000
       NEXT_PUBLIC_API_URL: /backend
       NEXT_PUBLIC_PAYMENT_MODE: mock
-      NEXT_PUBLIC_VAT_RATE: 0.15
+      NEXT_PUBLIC_VAT_RATE: "0.15"
       COOKIE_SECURE: "false"
       STORAGE_PROVIDER: local
       STORAGE_LOCAL_PATH: /tmp/dadan-uploads
       E2E_HOUSE_KEY: dadan-vip-key-001
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
 
-      - uses: pnpm/action-setup@v4
+      - uses: pnpm/action-setup@fc06bc1257f339d1d5d8b3a19a8cae5388b55320 # v4.4.0
 
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
         with:
-          node-version: 20
+          node-version: 22
           cache: pnpm
 
       - name: Install dependencies
@@ -152,6 +176,17 @@ jobs:
       - name: Run Playwright tests
         run: pnpm --filter @dadan/web test:e2e
 
+      - name: Upload Playwright artifacts
+        if: ${{ !cancelled() }}
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: playwright-report
+          path: |
+            apps/web/playwright-report/
+            apps/web/test-results/
+          if-no-files-found: ignore
+          retention-days: 7
+
   # ---------------------------------------------------------------------------
   # Build — pnpm build (depends on code-quality)
   # ---------------------------------------------------------------------------
@@ -159,102 +194,134 @@ jobs:
     name: Build
     needs: code-quality
     runs-on: ubuntu-latest
+    timeout-minutes: 20
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
 
-      - uses: pnpm/action-setup@v4
+      - uses: pnpm/action-setup@fc06bc1257f339d1d5d8b3a19a8cae5388b55320 # v4.4.0
 
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
         with:
-          node-version: 20
+          node-version: 22
           cache: pnpm
 
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
       - name: Turbo cache
-        uses: actions/cache@v4
+        uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830 # v4.3.0
         with:
           path: .turbo
-          key: turbo-${{ runner.os }}-${{ github.sha }}
+          key: turbo-${{ runner.os }}-${{ github.job }}-${{ hashFiles('pnpm-lock.yaml', 'turbo.json') }}-${{ github.sha }}
           restore-keys: |
+            turbo-${{ runner.os }}-${{ github.job }}-${{ hashFiles('pnpm-lock.yaml', 'turbo.json') }}-
+            turbo-${{ runner.os }}-${{ github.job }}-
             turbo-${{ runner.os }}-
 
       - name: Build
         run: pnpm build
 
   # ---------------------------------------------------------------------------
-  # Docker build verification — ensures Dockerfiles compile correctly
+  # Docker build verification — ensures Dockerfiles compile correctly, then
+  # scans the resulting images. Each image gets its own GHA cache scope;
+  # a shared scope makes the second build overwrite the first one's cache.
   # ---------------------------------------------------------------------------
   docker-build:
     name: Docker build
     needs: code-quality
     runs-on: ubuntu-latest
+    timeout-minutes: 30
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
 
       - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v3
+        uses: docker/setup-buildx-action@8d2750c68a42422c14e847fe6c8ac0403b4cbd6f # v3.12.0
 
       - name: Build API image
-        uses: docker/build-push-action@v6
+        uses: docker/build-push-action@10e90e3645eae34f1e60eeb005ba3a3d33f178e8 # v6.19.2
         with:
           context: .
           file: apps/api/Dockerfile
+          tags: dadan-api:ci
+          load: true
           push: false
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
+          cache-from: type=gha,scope=dadan-api
+          cache-to: type=gha,scope=dadan-api,mode=max
+
+      - name: Scan API image
+        uses: aquasecurity/trivy-action@ed142fd0673e97e23eac54620cfb913e5ce36c25 # v0.36.0
+        with:
+          image-ref: dadan-api:ci
+          format: table
+          exit-code: "1"
+          ignore-unfixed: true
+          trivyignores: .trivyignore.yaml
+          severity: HIGH,CRITICAL
+          scanners: vuln,secret
 
       - name: Build Web image
-        uses: docker/build-push-action@v6
+        uses: docker/build-push-action@10e90e3645eae34f1e60eeb005ba3a3d33f178e8 # v6.19.2
         with:
           context: .
           file: apps/web/Dockerfile
+          tags: dadan-web:ci
+          load: true
           push: false
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
+          cache-from: type=gha,scope=dadan-web
+          cache-to: type=gha,scope=dadan-web,mode=max
+
+      - name: Scan Web image
+        uses: aquasecurity/trivy-action@ed142fd0673e97e23eac54620cfb913e5ce36c25 # v0.36.0
+        with:
+          image-ref: dadan-web:ci
+          format: table
+          exit-code: "1"
+          ignore-unfixed: true
+          trivyignores: .trivyignore.yaml
+          severity: HIGH,CRITICAL
+          scanners: vuln,secret
 
   # ---------------------------------------------------------------------------
   # Security scanning — dependency audit + filesystem scan
+  #
+  # Both steps are blocking: a high/critical finding fails the job. Accepting
+  # an advisory means adding it to pnpm.auditConfig.ignoreGhsas in package.json
+  # (dependencies) or .trivyignore (Trivy), plus an entry in
+  # docs/SECURITY_EXCEPTIONS.md recording owner, reason, and review date.
   # ---------------------------------------------------------------------------
   security:
     name: Security scan
     runs-on: ubuntu-latest
+    timeout-minutes: 20
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
 
-      - uses: pnpm/action-setup@v4
+      - uses: pnpm/action-setup@fc06bc1257f339d1d5d8b3a19a8cae5388b55320 # v4.4.0
 
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
         with:
-          node-version: 20
+          node-version: 22
           cache: pnpm
 
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
+      # Runs on the repo's pinned pnpm. The previous `pnpm dlx pnpm@11` form
+      # never took effect: pnpm 11 self-switches to the packageManager version,
+      # so the audit always ran under pnpm 9 anyway — and pnpm 9's audit works.
       - name: pnpm audit
-        run: |
-          # pnpm 9 uses npm's retired audit endpoint (HTTP 410). Use pnpm 11 for audits.
-          set +e
-          pnpm dlx --config.minimumReleaseAge=0 pnpm@11.0.0-rc.1 --config.manage-package-manager-versions=false audit --audit-level=high
-          code=$?
-          set -e
-          if [ $code -eq 0 ]; then
-            echo "No high or critical vulnerabilities found."
-          else
-            echo "High or critical vulnerabilities found. Review the audit output above."
-          fi
+        run: pnpm audit --audit-level=high
 
       - name: Trivy filesystem scan
-        uses: aquasecurity/trivy-action@v0.36.0
+        uses: aquasecurity/trivy-action@ed142fd0673e97e23eac54620cfb913e5ce36c25 # v0.36.0
         with:
           scan-type: fs
           scan-ref: .
           format: table
-          exit-code: 0
+          exit-code: "1"
+          trivyignores: .trivyignore.yaml
           severity: HIGH,CRITICAL
           scanners: vuln,secret,misconfig

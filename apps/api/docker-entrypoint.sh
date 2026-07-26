@@ -3,7 +3,7 @@ set -e
 
 echo "Running database migrations..."
 cd /app/packages/db
-npx prisma migrate deploy
+./node_modules/.bin/prisma migrate deploy
 
 echo "Starting API server..."
 cd /app/apps/api

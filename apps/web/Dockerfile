@@ -21,7 +21,7 @@
 # ---------------------------------------------------------------------------
 #   corepack pins pnpm to the exact version used in development.
 # ---------------------------------------------------------------------------
-FROM node:20-alpine AS base
+FROM node:22-alpine AS base
 RUN corepack enable && corepack prepare pnpm@9.15.4 --activate
 WORKDIR /app
 
@@ -88,9 +88,17 @@ RUN --mount=type=cache,target=/root/.local/share/pnpm/store \
 #   them even if compromised — the runtime filesystem is read-only at
 #   the container level (read_only: true in compose).
 #
+#   npm and corepack are deleted: the standalone server runs on plain `node`,
+#   so the only thing npm contributes at runtime is its own bundled dependency
+#   tree — which is what image scanners flag. Removing it takes those findings
+#   off the surface.
+#
 #   HEALTHCHECK uses busybox wget (bundled with Alpine) — no extra packages.
 # ---------------------------------------------------------------------------
-FROM node:20-alpine AS runner
+FROM node:22-alpine AS runner
+RUN rm -rf /usr/local/lib/node_modules/npm \
+           /usr/local/lib/node_modules/corepack \
+           /usr/local/bin/npm /usr/local/bin/npx /usr/local/bin/corepack
 WORKDIR /app
 ENV NODE_ENV=production
 ENV NEXT_TELEMETRY_DISABLED=1

@@ -21,7 +21,7 @@
 #   - openssl:      required by Prisma for TLS database connections
 #   - corepack:     pins pnpm to the exact version used in development
 # ---------------------------------------------------------------------------
-FROM node:20-alpine AS base
+FROM node:22-alpine AS base
 RUN apk add --no-cache libc6-compat openssl
 RUN corepack enable && corepack prepare pnpm@9.15.4 --activate
 WORKDIR /app
@@ -80,10 +80,18 @@ RUN --mount=type=cache,target=/root/.local/share/pnpm/store \
 #   Only openssl is retained (Prisma TLS requirement). Dev dependencies,
 #   build tools, and source files are discarded.
 #
+#   npm and corepack are deleted: the entrypoint calls the Prisma binary
+#   directly and the server runs on plain `node`, so the only thing npm
+#   contributes at runtime is its own bundled dependency tree — which is what
+#   image scanners flag. Removing it takes those findings off the surface.
+#
 #   HEALTHCHECK uses busybox wget (bundled with Alpine) — no extra packages.
 # ---------------------------------------------------------------------------
-FROM node:20-alpine AS runner
-RUN apk add --no-cache openssl
+FROM node:22-alpine AS runner
+RUN apk add --no-cache openssl && \
+    rm -rf /usr/local/lib/node_modules/npm \
+           /usr/local/lib/node_modules/corepack \
+           /usr/local/bin/npm /usr/local/bin/npx /usr/local/bin/corepack
 WORKDIR /app
 ENV NODE_ENV=production
 
