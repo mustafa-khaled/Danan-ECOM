@@ -280,6 +280,7 @@ services:
       - /tmp
       - /var/run
       - /var/cache/nginx
+      - /var/lib/letsencrypt
     stop_grace_period: 10s
     mem_limit: 128m
     mem_reservation: 32m
@@ -296,10 +297,9 @@ services:
       api:
         condition: service_healthy
     healthcheck:
-      test:
-        ["CMD", "wget", "-q", "--spider", "http://localhost/api/health/live"]
+      test: ["CMD", "wget", "-q", "--spider", "http://localhost/healthz"]
       interval: 30s
-      timeout: 10s
+      timeout: 5s
       retries: 3
       start_period: 10s
     logging:
