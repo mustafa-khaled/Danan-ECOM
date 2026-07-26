@@ -317,10 +317,16 @@ fi
 # ---------------------------------------------------------------------------
 header "Pulling latest code"
 
+CURRENT_BRANCH=$(git -C "$SCRIPT_DIR" rev-parse --abbrev-ref HEAD 2>/dev/null || echo "HEAD")
+if [ "$CURRENT_BRANCH" = "HEAD" ]; then
+  info "Detached HEAD detected — checking out main"
+  run git -C "$SCRIPT_DIR" checkout main
+fi
+
 if $DRY_RUN; then
-  warn "[dry-run] would run: git pull"
+  warn "[dry-run] would run: git pull origin main"
 else
-  run git -C "$SCRIPT_DIR" pull
+  run git -C "$SCRIPT_DIR" pull origin main
 fi
 
 NEW_COMMIT=$(git -C "$SCRIPT_DIR" rev-parse HEAD)
