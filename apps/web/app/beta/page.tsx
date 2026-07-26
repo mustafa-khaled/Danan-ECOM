@@ -7,7 +7,7 @@ import { useTranslations } from "next-intl";
 import { ApiError } from "@/shared/lib/send-request";
 import { validateRedirectPath } from "@/shared/lib/validate-redirect-path";
 import { useValidateKey } from "@/features/auth";
-import { LocaleSelect } from "@/shared/providers/locale-provider";
+import { LocaleSwitcher } from "@/shared/providers/locale-provider";
 
 export default function AccessGatePage() {
   const router = useRouter();
@@ -77,7 +77,7 @@ export default function AccessGatePage() {
               style={{ filter: "brightness(0) invert(1)" }}
             />
           </div>
-          <LocaleSelect className="access-gate-locale-btn" />
+          <LocaleSwitcher className="access-gate-locale-btn" />
         </div>
 
         {/* Main content — vertically centered */}
@@ -114,6 +114,12 @@ export default function AccessGatePage() {
               placeholder={t("houseKeyPlaceholder")}
               className="w-full py-3.5 px-5 bg-white border-none rounded-md font-manrope text-[0.9375rem] text-admin-text outline-none transition-shadow duration-200 ease-in-out placeholder:text-[#999999] placeholder:italic focus:shadow-[0_0_0_3px_rgba(255,255,255,0.25)]"
             />
+            <button
+              type="submit"
+              className="w-full py-3.5 rounded-md font-manrope text-sm font-semibold tracking-[0.02em] bg-white/15 text-white border border-white/20 transition-colors duration-200 hover:bg-white/25 cursor-pointer access-gate-animate-in-delayed-2"
+            >
+              {t("houseKey")}
+            </button>
 
             {error ? (
               <p role="alert" className="text-[0.8125rem] text-red-300 mt-1">
