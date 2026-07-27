@@ -33,7 +33,7 @@ test.describe("Language Toggle", () => {
   test("toggles locale via switcher", async ({ page }) => {
     await page.goto("/beta");
     const initialLang = await page.locator("html").getAttribute("lang");
-    await page.getByRole("button", { name: /switch|التبديل/i }).click();
+    await page.getByRole("combobox", { name: /switch|التبديل/i }).click();
     await expect(page.locator("html")).not.toHaveAttribute("lang", initialLang ?? "", {
       timeout: 10_000,
     });
