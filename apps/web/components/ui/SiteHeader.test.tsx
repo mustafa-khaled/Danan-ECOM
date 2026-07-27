@@ -38,7 +38,7 @@ describe("SiteHeader", () => {
       </NextIntlClientProvider>,
     );
 
-    const languageSelects = screen.getAllByRole("combobox", { name: "Select language" });
+    const languageSelects = screen.getAllByRole("combobox", { name: "Switch language" });
     expect(languageSelects.length).toBeGreaterThan(0);
     expect(languageSelects[0]).toHaveTextContent("EN");
   });
