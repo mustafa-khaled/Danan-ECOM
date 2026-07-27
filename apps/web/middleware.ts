@@ -1,8 +1,8 @@
-import createIntlMiddleware from "next-intl/middleware";
+// import createIntlMiddleware from "next-intl/middleware";
 import { NextResponse, type NextRequest } from "next/server";
-import { routing } from "./i18n/routing";
+// import { routing } from "./i18n/routing";
 
-const intlMiddleware = createIntlMiddleware(routing);
+// const intlMiddleware = createIntlMiddleware(routing);
 
 const PUBLIC_PATHS = ["/", "/beta"];
 

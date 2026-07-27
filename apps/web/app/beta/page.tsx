@@ -24,7 +24,7 @@ export default function AccessGatePage() {
   const [houseKey, setHouseKey] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [attempts, setAttempts] = useState(0);
-  const { validateKey } = useValidateKey();
+  const { validateKey, isPending } = useValidateKey();
 
   /* ── Background image rotation state ── */
   const [activeIndex, setActiveIndex] = useState(0);
@@ -148,6 +148,13 @@ export default function AccessGatePage() {
                 {error}
               </p>
             ) : null}
+            <button
+              type="submit"
+              disabled={isPending}
+              className="mt-2 w-full py-3.5 px-5 bg-white text-admin-text font-manrope text-[0.9375rem] font-semibold rounded-md cursor-pointer transition-all duration-200 ease-in-out hover:bg-white/90 disabled:opacity-50 disabled:cursor-not-allowed max-sm:py-3 max-sm:px-4 max-sm:text-sm"
+            >
+              {isPending ? t("entering") : t("houseKey")}
+            </button>
           </form>
 
           {/* Bottom navigation cards */}

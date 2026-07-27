@@ -56,7 +56,7 @@ export function LocaleSelect({
     >
       <SelectTrigger
         size="sm"
-        aria-label="Select language"
+        aria-label="Switch language"
         className={cn(
           "h-auto min-h-0 cursor-pointer border-none bg-transparent px-0 py-0 text-[0.8125rem] font-medium tracking-wide shadow-none focus-visible:shadow-none",
           className,

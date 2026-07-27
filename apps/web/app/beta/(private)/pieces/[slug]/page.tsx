@@ -1,8 +1,7 @@
 import Image from "next/image";
-import Link from "next/link";
 import { notFound } from "next/navigation";
 import { getTranslations, getLocale } from "next-intl/server";
-import { ClientShell, SerialBadge, StatusPill } from "@/components/ui";
+import { ClientShell, StatusPill } from "@/components/ui";
 import { DesignActions } from "@/components/design-actions";
 import { ApiError } from "@/shared/lib/send-request";
 import { fetchDesign } from "@/features/pieces";

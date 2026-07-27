@@ -14,7 +14,6 @@ export default async function CertificatesPage() {
     fetchTransfers(cookie),
   ]);
   const t = await getTranslations("certificates");
-  const tw = await getTranslations("wardrobe");
 
   const pendingTransfers = transfers.filter((tr) => tr.status === "PENDING").length;
 

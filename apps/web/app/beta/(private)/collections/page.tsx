@@ -1,6 +1,6 @@
 import Image from "next/image";
 import Link from "next/link";
-import { getTranslations, getLocale } from "next-intl/server";
+import { getTranslations } from "next-intl/server";
 import { ClientShell } from "@/components/ui";
 import { EmptyState } from "@/shared/components/feedback/empty-state";
 import { fetchCollections } from "@/features/collections";

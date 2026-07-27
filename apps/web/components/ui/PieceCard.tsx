@@ -1,5 +1,4 @@
 import Image from "next/image";
-import Link from "next/link";
 import { SerialBadge } from "./SerialBadge";
 
 export interface PieceCardData {

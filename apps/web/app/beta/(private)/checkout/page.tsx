@@ -1,10 +1,12 @@
-import Link from "next/link";
 import { getTranslations } from "next-intl/server";
 import { ClientShell } from "@/components/ui";
 import { CheckoutForm } from "@/components/checkout-form";
 import { EmptyState } from "@/shared/components/feedback/empty-state";
 import { fetchCart } from "@/features/cart";
-import { getSessionCookieHeader, requireClientSession } from "@/features/auth/server/session";
+import {
+  getSessionCookieHeader,
+  requireClientSession,
+} from "@/features/auth/server/session";
 
 export default async function CheckoutPage() {
   const profile = await requireClientSession();
@@ -22,7 +24,9 @@ export default async function CheckoutPage() {
   return (
     <ClientShell displayName={profile.displayName}>
       <header className="mb-10 space-y-3">
-        <h1 className="font-english text-4xl text-[var(--color-text)]">{t("title")}</h1>
+        <h1 className="font-english text-4xl text-[var(--color-text)]">
+          {t("title")}
+        </h1>
       </header>
 
       {validItems.length === 0 ? (
