@@ -34,6 +34,8 @@ test.describe("Language Toggle", () => {
     await page.goto("/beta");
     const initialLang = await page.locator("html").getAttribute("lang");
     await page.getByRole("combobox", { name: /switch|التبديل/i }).click();
+    const targetLocale = initialLang === "en" ? "AR" : "EN";
+    await page.getByRole("option", { name: targetLocale }).click();
     await expect(page.locator("html")).not.toHaveAttribute("lang", initialLang ?? "", {
       timeout: 10_000,
     });
