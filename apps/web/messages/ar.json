@@ -49,6 +49,8 @@
     "cta": "استكشف تجربتك"
   },
   "footer": {
+    "brandName": "دادان",
+    "brandTagline": "تروي قصة",
     "explore": "استكشف",
     "theHouse": "البيت",
     "assistance": "المساعدة",
@@ -56,13 +58,13 @@
     "collections": "المجموعات",
     "myCollection": "مجموعتي",
     "about": "عن دادان",
-    "philosophy": "الفلسفة",
+    "philosophy": "فلسفتنا",
     "ownership": "الملكية",
-    "contact": "تواصل معنا",
+    "contact": "تواصل مع دادان",
     "houseAssistance": "مساعدة البيت",
-    "privacy": "الخصوصية",
-    "copyright": "© 2026 دادان. جميع الحقوق محفوظة.",
-    "tagline": "إرث. حرفية. ملكية."
+    "privacy": "سياسة الخصوصية",
+    "copyright": "© 2026 دادان",
+    "tagline": "كل قطعة تحمل قصة.\nكل قصة تستحق أن تُحفظ."
   },
   "home": {
     "continueExploring": "تابع الاستكشاف",

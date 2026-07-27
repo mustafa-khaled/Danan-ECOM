@@ -2,12 +2,20 @@
 
 import Image from "next/image";
 import { useRouter, useSearchParams } from "next/navigation";
-import { FormEvent, useState } from "react";
+import { FormEvent, useCallback, useEffect, useState } from "react";
 import { useTranslations } from "next-intl";
 import { ApiError } from "@/shared/lib/send-request";
 import { validateRedirectPath } from "@/shared/lib/validate-redirect-path";
 import { useValidateKey } from "@/features/auth";
-import { LocaleSwitcher } from "@/shared/providers/locale-provider";
+import { LocaleSelect } from "@/shared/providers/locale-provider";
+import Link from "next/link";
+
+const BACKGROUND_IMAGES = [
+  "/assets/dadan-model.png",
+  "/assets/W10.png",
+] as const;
+
+const ROTATION_INTERVAL_MS = 6000;
 
 export default function AccessGatePage() {
   const router = useRouter();
@@ -18,40 +26,61 @@ export default function AccessGatePage() {
   const [attempts, setAttempts] = useState(0);
   const { validateKey } = useValidateKey();
 
-  async function handleSubmit(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault();
-    setError(null);
+  /* ── Background image rotation state ── */
+  const [activeIndex, setActiveIndex] = useState(0);
 
-    try {
-      await validateKey(houseKey);
-      const next = validateRedirectPath(searchParams.get("next"));
-      router.push(next);
-      router.refresh();
-    } catch (err) {
-      const nextAttempts = attempts + 1;
-      setAttempts(nextAttempts);
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setActiveIndex((prev) => (prev + 1) % BACKGROUND_IMAGES.length);
+    }, ROTATION_INTERVAL_MS);
 
-      if (err instanceof ApiError && err.status === 429) {
-        setError(t("rateLimited"));
-      } else if (nextAttempts >= 3) {
-        setError(t("rateLimited"));
-      } else {
-        setError(t("accessDenied"));
+    return () => clearInterval(timer);
+  }, []);
+
+  const handleSubmit = useCallback(
+    async (event: FormEvent<HTMLFormElement>) => {
+      event.preventDefault();
+      setError(null);
+
+      try {
+        await validateKey(houseKey);
+        const next = validateRedirectPath(searchParams.get("next"));
+        router.push(next);
+        router.refresh();
+      } catch (err) {
+        const nextAttempts = attempts + 1;
+        setAttempts(nextAttempts);
+
+        if (err instanceof ApiError && err.status === 429) {
+          setError(t("rateLimited"));
+        } else if (nextAttempts >= 3) {
+          setError(t("rateLimited"));
+        } else {
+          setError(t("accessDenied"));
+        }
       }
-    }
-  }
+    },
+    [validateKey, houseKey, searchParams, router, attempts, t],
+  );
 
   return (
-    <div className="relative min-h-dvh w-full overflow-hidden flex flex-row max-md:flex-col">
-      {/* Full-screen background image */}
-      <Image
-        src="/assets/dadan-model.png"
-        alt="DADAN campaign"
-        fill
-        priority
-        quality={90}
-        className="object-cover object-top z-0"
-      />
+    <div className="relative min-h-dvh w-full overflow-hidden">
+      {/* ── Background images with crossfade ── */}
+      {BACKGROUND_IMAGES.map((src, index) => (
+        <Image
+          key={src}
+          src={src}
+          alt="DADAN campaign"
+          fill
+          priority={index === 0}
+          quality={90}
+          className="object-cover object-top z-0"
+          style={{
+            opacity: activeIndex === index ? 1 : 0,
+            transition: "opacity 1s ease-in-out",
+          }}
+        />
+      ))}
 
       {/* Full-screen gradient overlay */}
       <div
@@ -62,9 +91,9 @@ export default function AccessGatePage() {
         }}
       />
 
-      {/* Right half — content */}
-      <div className="relative z-2 w-1/2 min-h-dvh ms-auto flex flex-col py-8 px-14 max-md:w-full max-md:min-h-auto max-md:py-6 max-md:px-5">
-        {/* Header: logo + switcher at top of right half */}
+      {/* Content panel — right-aligned on desktop, full overlay on mobile/tablet */}
+      <div className="relative z-2 min-h-dvh ms-auto flex flex-col py-20.25 px-14 w-1/2 max-lg:w-3/5 max-md:w-full max-md:py-6 max-md:px-5 max-sm:px-4">
+        {/* Header: logo + locale switcher */}
         <div className="flex items-center justify-between w-full access-gate-fade-in">
           <div className="flex items-center gap-3">
             <Image
@@ -73,23 +102,23 @@ export default function AccessGatePage() {
               width={160}
               height={28}
               priority
-              className="block invert brightness-0"
+              className="block invert brightness-0 max-sm:w-30 max-sm:h-auto"
               style={{ filter: "brightness(0) invert(1)" }}
             />
           </div>
-          <LocaleSwitcher className="access-gate-locale-btn" />
+          <LocaleSelect className="access-gate-locale-btn" />
         </div>
 
         {/* Main content — vertically centered */}
-        <main className="flex flex-col justify-center flex-1 max-w-135 py-8 max-md:max-w-full">
-          <h1 className="font-english text-5xl font-normal italic text-white leading-[1.15] mb-8 access-gate-animate-in max-md:text-4xl">
+        <main className="flex flex-col justify-end flex-1 max-w-3xl py-8 max-md:max-w-full max-sm:py-4">
+          <h1 className="font-english text-[72px] font-bold text-white leading-[1.1] tracking-[-0.02em] mb-8 access-gate-animate-in max-lg:text-[56px] max-md:text-[44px] max-md:mb-6 max-sm:text-[32px] max-sm:mb-4">
             {t("title")}
           </h1>
 
-          <h2 className="font-manrope text-lg font-normal text-white/75 mb-2 tracking-[0.01em] access-gate-animate-in-delayed max-md:text-base">
+          <h2 className="font-manrope text-[32px] font-semibold text-white/75 mb-4 leading-[1.2] tracking-[0%] access-gate-animate-in-delayed max-lg:text-[26px] max-md:text-[22px] max-sm:text-lg max-sm:mb-3">
             {t("welcome")}
           </h2>
-          <p className="font-manrope text-lg font-normal text-white/90 leading-relaxed mb-10 max-w-110 access-gate-animate-in-delayed max-md:text-base">
+          <p className="font-manrope text-[32px] font-normal text-white/90 leading-[1.2] tracking-[0%] mb-12 access-gate-animate-in-delayed max-lg:text-[26px] max-md:text-[22px] max-md:mb-8 max-sm:text-base max-sm:leading-relaxed max-sm:mb-6">
             {t("description")}
           </p>
 
@@ -112,15 +141,8 @@ export default function AccessGatePage() {
               value={houseKey}
               onChange={(event) => setHouseKey(event.target.value)}
               placeholder={t("houseKeyPlaceholder")}
-              className="w-full py-3.5 px-5 bg-white border-none rounded-md font-manrope text-[0.9375rem] text-admin-text outline-none transition-shadow duration-200 ease-in-out placeholder:text-[#999999] placeholder:italic focus:shadow-[0_0_0_3px_rgba(255,255,255,0.25)]"
+              className="w-full py-3.5 px-5 bg-white border-none rounded-md font-manrope text-[0.9375rem] text-admin-text outline-none transition-shadow duration-200 ease-in-out placeholder:text-[#999999] placeholder:italic focus:shadow-[0_0_0_3px_rgba(255,255,255,0.25)] max-sm:py-3 max-sm:px-4 max-sm:text-sm"
             />
-            <button
-              type="submit"
-              className="w-full py-3.5 rounded-md font-manrope text-sm font-semibold tracking-[0.02em] bg-white/15 text-white border border-white/20 transition-colors duration-200 hover:bg-white/25 cursor-pointer access-gate-animate-in-delayed-2"
-            >
-              {t("houseKey")}
-            </button>
-
             {error ? (
               <p role="alert" className="text-[0.8125rem] text-red-300 mt-1">
                 {error}
@@ -129,20 +151,20 @@ export default function AccessGatePage() {
           </form>
 
           {/* Bottom navigation cards */}
-          <div className="flex gap-4 mt-6 access-gate-animate-in-delayed-3 max-md:flex-col">
-            <a
+          <div className="flex gap-4 mt-6 access-gate-animate-in-delayed-3 max-md:gap-3 max-sm:flex-col max-sm:gap-3">
+            <Link
               href="#"
-              className="flex items-center gap-3 flex-1 py-2.5 px-4 bg-white/15 backdrop-blur-md border border-white/20 rounded-lg text-white no-underline transition-all duration-250 ease-in-out cursor-pointer hover:bg-white/22 hover:border-white/35 hover:-translate-y-px group"
+              className="flex items-center gap-3 justify-between flex-1 min-w-0 h-19 pt-3 pb-3 ps-3 pe-4 bg-[#BF7266] rounded-xl text-white no-underline transition-all duration-250 ease-in-out cursor-pointer hover:bg-[#b3685c] hover:-translate-y-px group max-sm:h-16"
             >
-              <div className="w-10 h-10 rounded-md overflow-hidden shrink-0 relative">
+              <div className="w-13 h-13 rounded-xl overflow-hidden shrink-0 relative max-sm:w-10 max-sm:h-10">
                 <Image
-                  src="/assets/dadan-model.png"
+                  src="/assets/featuredPieces.png"
                   alt={t("featuredPieces")}
                   fill
                   className="object-cover"
                 />
               </div>
-              <span className="flex-1 font-manrope text-[0.9375rem] font-medium tracking-[0.01em]">
+              <span className="flex-1 font-manrope text-sm font-semibold leading-[100%] tracking-[-0.02em] max-sm:text-xs">
                 {t("featuredPieces")}
               </span>
               <svg
@@ -160,21 +182,21 @@ export default function AccessGatePage() {
                   strokeLinejoin="round"
                 />
               </svg>
-            </a>
-            <a
+            </Link>
+            <Link
               href="#"
-              className="flex items-center gap-3 flex-1 py-2.5 px-4 bg-white/15 backdrop-blur-md border border-white/20 rounded-lg text-white no-underline transition-all duration-250 ease-in-out cursor-pointer hover:bg-white/22 hover:border-white/35 hover:-translate-y-px group"
+              className="flex items-center gap-3 justify-between flex-1 min-w-0 h-19 pt-3 pb-3 ps-3 pe-4 bg-[#BF7266] rounded-xl text-white no-underline transition-all duration-250 ease-in-out cursor-pointer hover:bg-[#b3685c] hover:-translate-y-px group max-sm:h-16"
             >
-              <div className="w-10 h-10 rounded-md overflow-hidden shrink-0 relative">
+              <div className="w-13 h-13 rounded-xl overflow-hidden shrink-0 relative max-sm:w-10 max-sm:h-10">
                 <Image
-                  src="/assets/dadan-model.png"
+                  src="/assets/aboutTheHouse.png"
                   alt={t("aboutTheHouse")}
                   fill
                   className="object-cover"
                   style={{ objectPosition: "70% center" }}
                 />
               </div>
-              <span className="flex-1 font-manrope text-[0.9375rem] font-medium tracking-[0.01em]">
+              <span className="flex-1 font-manrope text-sm font-semibold leading-[100%] tracking-[-0.02em] max-sm:text-xs">
                 {t("aboutTheHouse")}
               </span>
               <svg
@@ -192,7 +214,7 @@ export default function AccessGatePage() {
                   strokeLinejoin="round"
                 />
               </svg>
-            </a>
+            </Link>
           </div>
         </main>
       </div>

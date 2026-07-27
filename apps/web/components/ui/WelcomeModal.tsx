@@ -1,10 +1,9 @@
 "use client";
 
 import Image from "next/image";
-import Link from "next/link";
 import { useTranslations } from "next-intl";
 import { useEffect, useState } from "react";
-import { LocaleSwitcher } from "@/shared/providers/locale-provider";
+import { LocaleSelect } from "@/shared/providers/locale-provider";
 
 const WELCOME_SEEN_KEY = "dadan_welcome_seen";
 
@@ -36,7 +35,7 @@ export function WelcomeModal({ displayName }: WelcomeModalProps) {
         <button
           type="button"
           onClick={dismiss}
-          className="absolute inset-e-4 top-4 z-10 flex size-8 items-center justify-center rounded-full bg-white/90 text-[var(--color-text)] transition-colors hover:bg-white"
+          className="absolute inset-e-4 top-4 z-10 flex size-8 items-center justify-center rounded-full bg-white/90 text-(--color-text) transition-colors hover:bg-white"
           aria-label="Close"
         >
           ×
@@ -50,16 +49,16 @@ export function WelcomeModal({ displayName }: WelcomeModalProps) {
           />
         </div>
         <div className="flex flex-1 flex-col justify-center px-8 py-12">
-          <h2 className="font-english text-3xl text-[var(--color-text)]">
+          <h2 className="font-english text-3xl text-(--color-text)">
             {t("title", { name: displayName })}
           </h2>
-          <p className="mt-4 text-[var(--color-text-muted)]">
+          <p className="mt-4 text-(--color-text-muted)">
             {t("description")}
           </p>
           <button
             type="button"
             onClick={dismiss}
-            className="mt-8 inline-flex min-h-11 w-fit items-center gap-2 bg-[var(--color-accent)] px-6 text-sm tracking-[0.1em] uppercase text-white transition-opacity hover:opacity-90"
+            className="mt-8 inline-flex min-h-11 w-fit items-center gap-2 bg-(--color-accent) px-6 text-sm tracking-widest uppercase text-white transition-opacity hover:opacity-90"
           >
             {t("cta")}
             <span className="rtl:rotate-180">→</span>
@@ -83,7 +82,7 @@ export function AccessGateHeader() {
           className="block invert"
         />
       </div>
-      <LocaleSwitcher />
+      <LocaleSelect />
     </header>
   );
 }

@@ -49,6 +49,8 @@
     "cta": "Explore Your Experience"
   },
   "footer": {
+    "brandName": "DADAN",
+    "brandTagline": "Tells a story",
     "explore": "Explore",
     "theHouse": "The House",
     "assistance": "Assistance",
@@ -56,13 +58,13 @@
     "collections": "Collections",
     "myCollection": "My Collection",
     "about": "About DADAN",
-    "philosophy": "Philosophy",
+    "philosophy": "Our Philosophy",
     "ownership": "Ownership",
-    "contact": "Contact",
+    "contact": "Contact DADAN",
     "houseAssistance": "House Assistance",
-    "privacy": "Privacy",
-    "copyright": "© 2026 DADAN. All rights reserved.",
-    "tagline": "Heritage. Craftsmanship. Ownership."
+    "privacy": "Privacy Policy",
+    "copyright": "© 2026 DADAN",
+    "tagline": "Every piece carries a story.\nEvery story deserves to be preserved."
   },
   "home": {
     "continueExploring": "Continue Exploring",
