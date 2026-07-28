@@ -37,8 +37,8 @@
   "devDependencies": {
     "eslint-plugin-import": "^2.32.0",
     "husky": "^9.1.7",
-    "lint-staged": "^17.0.8",
-    "turbo": "^2.4.4"
+    "lint-staged": "^17.2.0",
+    "turbo": "^2.10.7"
   },
   "lint-staged": {
     "*.{js,ts,jsx,tsx,cjs,mjs}": "bash -c 'ESLINT_USE_FLAT_CONFIG=false eslint --fix \"$@\"' _",

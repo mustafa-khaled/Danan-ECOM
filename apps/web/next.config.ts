@@ -21,6 +21,26 @@ try {
   );
 }
 
+const webOrigin = env.WEB_ORIGIN;
+if (webOrigin) {
+  try {
+    const url = new URL(webOrigin);
+    remotePatterns.push({
+      protocol: url.protocol.replace(":", "") as "http" | "https",
+      hostname: url.hostname,
+      ...(url.port ? { port: url.port } : {}),
+    });
+  } catch {
+    // ignore invalid WEB_ORIGIN
+  }
+} else {
+  // Default dev fallback — the backend defaults WEB_ORIGIN to localhost:3000
+  remotePatterns.push(
+    { protocol: "http", hostname: "localhost", port: "3000" },
+    { protocol: "https", hostname: "localhost", port: "3000" },
+  );
+}
+
 // Sentry DSNs are themselves valid URLs (https://<key>@<ingest-host>/<project>),
 // so we can derive the ingest origin for connect-src without extra config.
 function sentryConnectSrc(): string {
@@ -78,9 +98,10 @@ const nextConfig: NextConfig = {
   },
   async rewrites() {
     return [
+      { source: "/backend/:path*", destination: `${apiUrl}/:path*` },
       {
-        source: "/backend/:path*",
-        destination: `${apiUrl}/:path*`,
+        source: "/api/uploads/:path*",
+        destination: `${apiUrl}/uploads/:path*`,
       },
     ];
   },

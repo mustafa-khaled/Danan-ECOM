@@ -1,11 +1,11 @@
 import {
   Controller,
   Get,
-  Param,
+  Req,
   Res,
 } from "@nestjs/common";
 import { SkipThrottle } from "@nestjs/throttler";
-import type { Response } from "express";
+import type { Request, Response } from "express";
 import { storage } from "@dadan/storage";
 import { Public } from "../common/decorators/public.decorator";
 
@@ -29,13 +29,23 @@ function mimeFromKey(key: string): string {
 @Controller("uploads")
 export class UploadsController {
   @Get("*key")
-  async serveFile(@Param("key") key: string, @Res() res: Response): Promise<void> {
-    const stream = await storage.createReadStream(key);
-    const contentType = mimeFromKey(key);
+  async serveFile(@Req() req: Request, @Res() res: Response): Promise<void> {
+    const storageKey = req.path.replace(/^\/uploads\//, "");
 
-    res.setHeader("Content-Type", contentType);
-    res.setHeader("Cache-Control", "public, max-age=31536000, immutable");
+    try {
+      const stream = await storage.createReadStream(storageKey);
+      const contentType = mimeFromKey(storageKey);
 
-    stream.pipe(res);
+      res.setHeader("Content-Type", contentType);
+      res.setHeader("Cache-Control", "public, max-age=31536000, immutable");
+
+      stream.on("error", () => {
+        if (!res.headersSent) res.sendStatus(404);
+      });
+
+      stream.pipe(res);
+    } catch {
+      if (!res.headersSent) res.sendStatus(404);
+    }
   }
 }

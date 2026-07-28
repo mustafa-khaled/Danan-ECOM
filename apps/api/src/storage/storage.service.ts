@@ -1,4 +1,5 @@
 import { Injectable } from "@nestjs/common";
+import { ConfigService } from "@nestjs/config";
 import { storage } from "@dadan/storage";
 import type { SignedUrlOptions, UploadOptions } from "@dadan/storage";
 
@@ -6,6 +7,8 @@ const DEFAULT_ASSET_EXPIRY = 3600;
 
 @Injectable()
 export class StorageService {
+  constructor(private readonly config: ConfigService) {}
+
   upload(key: string, body: Buffer, options: UploadOptions): Promise<string> {
     return storage.upload(key, body, options);
   }
@@ -34,7 +37,14 @@ export class StorageService {
     if (key.startsWith("http://") || key.startsWith("https://")) {
       return key;
     }
-    return this.getSignedUrl(key, { expiresInSeconds });
+    const signedUrl = await this.getSignedUrl(key, { expiresInSeconds });
+    if (signedUrl.startsWith("http://") || signedUrl.startsWith("https://")) {
+      return signedUrl;
+    }
+    const webOrigin =
+      this.config.get<string>("WEB_ORIGIN") ?? "http://localhost:3000";
+    const separator = signedUrl.startsWith("/") ? "" : "/";
+    return `${webOrigin}${separator}${signedUrl}`;
   }
 
   async resolvePublicUrls(

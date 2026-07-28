@@ -2,6 +2,7 @@ import { z } from "zod";
 
 const serverSchema = z.object({
   API_URL: z.string().url().default("http://localhost:4000"),
+  WEB_ORIGIN: z.string().url().optional(),
 });
 
 const clientSchema = z.object({
@@ -33,6 +34,7 @@ function parseEnv<T extends z.ZodTypeAny>(
 
 const serverEnv = parseEnv(serverSchema, {
   API_URL: process.env.API_URL,
+  WEB_ORIGIN: process.env.WEB_ORIGIN,
 });
 
 const clientEnv = parseEnv(clientSchema, {
