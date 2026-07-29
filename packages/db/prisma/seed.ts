@@ -8,7 +8,10 @@ const prisma = new PrismaClient();
 
 // Refuse to run against production unless explicitly allowed: the seed
 // contains well-known credentials and demo data.
-if (process.env.NODE_ENV === "production" && process.env.SEED_ALLOW_PRODUCTION !== "true") {
+if (
+  process.env.NODE_ENV === "production" &&
+  process.env.SEED_ALLOW_PRODUCTION !== "true"
+) {
   console.error(
     "Refusing to seed: NODE_ENV=production. Set SEED_ALLOW_PRODUCTION=true to override.",
   );
@@ -64,7 +67,7 @@ async function main() {
 
   const superAdmin = await prisma.adminUser.upsert({
     where: { email: "admin@dadan.sa" },
-    update: {},
+    update: { passwordHash: adminPassword },
     create: {
       email: "admin@dadan.sa",
       passwordHash: adminPassword,
@@ -102,7 +105,12 @@ async function main() {
       displayName: "أميرة الراشد",
       email: "amira@example.com",
       locale: "ar",
-      visibilityGroups: ["vip", "collection-noir", "collection-oasis", "riyadh"],
+      visibilityGroups: [
+        "vip",
+        "collection-noir",
+        "collection-oasis",
+        "riyadh",
+      ],
     },
     {
       houseKeyPlain: process.env.SEED_HOUSE_KEY_2 ?? "dadan-key-002",
@@ -218,8 +226,20 @@ async function main() {
       visibilityGroups: ["vip", "collection-noir"],
       collectionId: collectionNoir.id,
       specifications: [
-        { key: "Stone", keyAr: "الحجر", value: "Black Diamond", valueAr: "ماس أسود", sortOrder: 1 },
-        { key: "Carat", keyAr: "القيراط", value: "1.2 ct", valueAr: "١٫٢ قيراط", sortOrder: 2 },
+        {
+          key: "Stone",
+          keyAr: "الحجر",
+          value: "Black Diamond",
+          valueAr: "ماس أسود",
+          sortOrder: 1,
+        },
+        {
+          key: "Carat",
+          keyAr: "القيراط",
+          value: "1.2 ct",
+          valueAr: "١٫٢ قيراط",
+          sortOrder: 2,
+        },
       ],
     },
     {
@@ -238,8 +258,20 @@ async function main() {
       visibilityGroups: ["vip", "collection-noir"],
       collectionId: collectionNoir.id,
       specifications: [
-        { key: "Stone", keyAr: "الحجر", value: "Onyx", valueAr: "عقيق يماني", sortOrder: 1 },
-        { key: "Clasp", keyAr: "المشبك", value: "18K Gold", valueAr: "ذهب ١٨ قيراط", sortOrder: 2 },
+        {
+          key: "Stone",
+          keyAr: "الحجر",
+          value: "Onyx",
+          valueAr: "عقيق يماني",
+          sortOrder: 1,
+        },
+        {
+          key: "Clasp",
+          keyAr: "المشبك",
+          value: "18K Gold",
+          valueAr: "ذهب ١٨ قيراط",
+          sortOrder: 2,
+        },
       ],
     },
     {
@@ -258,7 +290,13 @@ async function main() {
       visibilityGroups: ["vip", "collection-noir"],
       collectionId: collectionNoir.id,
       specifications: [
-        { key: "Stone", keyAr: "الحجر", value: "Black Diamond", valueAr: "ماس أسود", sortOrder: 1 },
+        {
+          key: "Stone",
+          keyAr: "الحجر",
+          value: "Black Diamond",
+          valueAr: "ماس أسود",
+          sortOrder: 1,
+        },
       ],
     },
     {
@@ -277,7 +315,13 @@ async function main() {
       visibilityGroups: ["vip", "collection-gold", "standard"],
       collectionId: collectionGold.id,
       specifications: [
-        { key: "Engraving", keyAr: "النقش", value: "Hand-engraved calligraphy", valueAr: "خط عربي محفور يدويًا", sortOrder: 1 },
+        {
+          key: "Engraving",
+          keyAr: "النقش",
+          value: "Hand-engraved calligraphy",
+          valueAr: "خط عربي محفور يدويًا",
+          sortOrder: 1,
+        },
       ],
     },
     {
@@ -296,8 +340,20 @@ async function main() {
       visibilityGroups: ["collection-gold", "standard"],
       collectionId: collectionGold.id,
       specifications: [
-        { key: "Stone", keyAr: "الحجر", value: "Emerald", valueAr: "زمرد", sortOrder: 1 },
-        { key: "Cut", keyAr: "القطع", value: "Pear", valueAr: "كمثرى", sortOrder: 2 },
+        {
+          key: "Stone",
+          keyAr: "الحجر",
+          value: "Emerald",
+          valueAr: "زمرد",
+          sortOrder: 1,
+        },
+        {
+          key: "Cut",
+          keyAr: "القطع",
+          value: "Pear",
+          valueAr: "كمثرى",
+          sortOrder: 2,
+        },
       ],
     },
     {
@@ -316,14 +372,21 @@ async function main() {
       visibilityGroups: ["collection-gold", "standard", "vip"],
       collectionId: collectionGold.id,
       specifications: [
-        { key: "Motif", keyAr: "الرمز", value: "Crescent moon", valueAr: "هلال", sortOrder: 1 },
+        {
+          key: "Motif",
+          keyAr: "الرمز",
+          value: "Crescent moon",
+          valueAr: "هلال",
+          sortOrder: 1,
+        },
       ],
     },
     {
       slug: "oasis-ring-01",
       name: "Oasis Duet Ring",
       nameAr: "خاتم الواحة الثنائي",
-      story: "Intertwined rose and white gold bands around a bezel-set diamond.",
+      story:
+        "Intertwined rose and white gold bands around a bezel-set diamond.",
       storyAr: "حلقتان متشابكتان من الذهب الوردي والأبيض حول ماسة مرصعة.",
       material: "18K Rose & White Gold, Diamond",
       materialAr: "ذهب وردي وأبيض ١٨ قيراط، ماس",
@@ -335,7 +398,13 @@ async function main() {
       visibilityGroups: ["vip", "collection-oasis"],
       collectionId: collectionOasis.id,
       specifications: [
-        { key: "Setting", keyAr: "الترصيع", value: "Bezel", valueAr: "إطار كامل", sortOrder: 1 },
+        {
+          key: "Setting",
+          keyAr: "الترصيع",
+          value: "Bezel",
+          valueAr: "إطار كامل",
+          sortOrder: 1,
+        },
       ],
     },
     {
@@ -354,7 +423,13 @@ async function main() {
       visibilityGroups: ["vip", "collection-oasis"],
       collectionId: collectionOasis.id,
       specifications: [
-        { key: "Stones", keyAr: "الأحجار", value: "Diamond & Sapphire", valueAr: "ماس وياقوت أزرق", sortOrder: 1 },
+        {
+          key: "Stones",
+          keyAr: "الأحجار",
+          value: "Diamond & Sapphire",
+          valueAr: "ماس وياقوت أزرق",
+          sortOrder: 1,
+        },
       ],
     },
     {
@@ -373,7 +448,13 @@ async function main() {
       visibilityGroups: ["vip", "collection-oasis"],
       collectionId: collectionOasis.id,
       specifications: [
-        { key: "Pearls", keyAr: "اللؤلؤ", value: "South Sea", valueAr: "بحار الجنوب", sortOrder: 1 },
+        {
+          key: "Pearls",
+          keyAr: "اللؤلؤ",
+          value: "South Sea",
+          valueAr: "بحار الجنوب",
+          sortOrder: 1,
+        },
       ],
     },
   ];
@@ -484,7 +565,11 @@ async function main() {
     if (existing) continue;
 
     const certificateId = randomUUID();
-    const token = createVerificationToken(serial, certificateId, CERT_SIGNING_SECRET);
+    const token = createVerificationToken(
+      serial,
+      certificateId,
+      CERT_SIGNING_SECRET,
+    );
     await prisma.certificate.create({
       data: {
         id: certificateId,
@@ -515,7 +600,10 @@ async function main() {
       where: { serialNumber: { in: serials } },
       include: { design: true },
     });
-    const subtotal = orderDesigns.reduce((sum, p) => sum + Number(p.design.basePrice), 0);
+    const subtotal = orderDesigns.reduce(
+      (sum, p) => sum + Number(p.design.basePrice),
+      0,
+    );
     const taxRate = 0.15;
     const taxAmount = Math.round(subtotal * taxRate * 100) / 100;
     const total = Math.round((subtotal + taxAmount) * 100) / 100;
@@ -571,7 +659,9 @@ async function main() {
   ];
   for (const [client, serial] of savedSeeds) {
     await prisma.savedPiece.upsert({
-      where: { clientId_pieceId: { clientId: client.id, pieceId: pieces[serial]!.id } },
+      where: {
+        clientId_pieceId: { clientId: client.id, pieceId: pieces[serial]!.id },
+      },
       update: {},
       create: { clientId: client.id, pieceId: pieces[serial]!.id },
     });
@@ -579,7 +669,10 @@ async function main() {
 
   // --- Transfers across the workflow ---
   const reviewTransfer = await prisma.transferRequest.findFirst({
-    where: { pieceId: pieces["DADAN-2026-NR-000001"]!.id, status: "DADAN_REVIEW" },
+    where: {
+      pieceId: pieces["DADAN-2026-NR-000001"]!.id,
+      status: "DADAN_REVIEW",
+    },
   });
   if (!reviewTransfer) {
     await prisma.transferRequest.create({
@@ -625,7 +718,9 @@ async function main() {
   for (const c of clientSeeds) {
     console.log(`  ${c.displayName}: ${c.houseKeyPlain}`);
   }
-  console.log(`Admin logins: admin@dadan.sa / staff@dadan.sa / viewer@dadan.sa (password: ${ADMIN_PASSWORD})`);
+  console.log(
+    `Admin logins: admin@dadan.sa / staff@dadan.sa / viewer@dadan.sa (password: ${ADMIN_PASSWORD})`,
+  );
   console.log(`Super admin id: ${superAdmin.id}, staff id: ${staffAdmin.id}`);
 }
 
