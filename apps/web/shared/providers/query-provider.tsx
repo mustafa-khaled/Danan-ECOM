@@ -6,6 +6,7 @@ import {
 } from "@tanstack/react-query";
 import { ReactQueryDevtools } from "@tanstack/react-query-devtools";
 import { useState, type ReactNode } from "react";
+import { ApiError } from "@/shared/lib/send-request";
 
 function makeQueryClient(): QueryClient {
   return new QueryClient({
@@ -13,7 +14,12 @@ function makeQueryClient(): QueryClient {
       queries: {
         staleTime: 30_000,
         gcTime: 5 * 60_000,
-        retry: 2,
+        retry: (failureCount, error) => {
+          if (error instanceof ApiError && error.status === 401) {
+            return false;
+          }
+          return failureCount < 2;
+        },
         retryDelay: (attemptIndex) =>
           Math.min(1000 * 2 ** attemptIndex, 10_000),
         refetchOnWindowFocus: false,

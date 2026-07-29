@@ -1,15 +1,20 @@
 import {
   BadRequestException,
+  ConflictException,
   HttpException,
   HttpStatus,
   Injectable,
+  Logger,
   NotFoundException,
   UnauthorizedException,
 } from "@nestjs/common";
+import { InjectQueue } from "@nestjs/bullmq";
+import { Queue } from "bullmq";
 import {
   AcquisitionType,
   ActorType,
   PieceStatus,
+  Prisma,
   TransferStatus,
   TransferType,
 } from "@dadan/db";
@@ -18,7 +23,8 @@ import { canTransitionTransfer, maskDisplayName } from "@dadan/utils";
 import { localizeDesign, pickLocalized } from "../common/i18n/localize";
 import { AuthService } from "../auth/auth.service";
 import { AuditService } from "../audit/audit.service";
-import { CertificatesService } from "../certificates/certificates.service";
+import { CERTIFICATE_QUEUE } from "../certificates/jobs/certificate-job.processor";
+import type { GenerateCertificateJobData } from "../certificates/jobs/certificate-job.processor";
 import { NotificationsService } from "../notifications/notifications.service";
 import { PrismaService } from "../prisma/prisma.service";
 import { RedisService } from "../redis/redis.service";
@@ -32,11 +38,13 @@ import {
 
 @Injectable()
 export class TransfersService {
+  private readonly logger = new Logger(TransfersService.name);
+
   constructor(
     private readonly prisma: PrismaService,
     private readonly auth: AuthService,
     private readonly audit: AuditService,
-    private readonly certificates: CertificatesService,
+    @InjectQueue(CERTIFICATE_QUEUE) private readonly certificateQueue: Queue<GenerateCertificateJobData>,
     private readonly notifications: NotificationsService,
     private readonly redis: RedisService,
     private readonly storage: StorageService,
@@ -62,28 +70,12 @@ export class TransfersService {
       throw new HttpException("errors.TOO_MANY_REQUESTS", HttpStatus.TOO_MANY_REQUESTS);
     }
 
+    // Pre-check piece ownership (non-locking, for early rejection)
     const piece = await this.prisma.db.piece.findFirst({
       where: { id: data.pieceId, currentOwnerId: clientId },
       include: { design: true },
     });
     if (!piece) throw new NotFoundException("errors.PIECE_NOT_FOUND");
-    if (piece.status === PieceStatus.TRANSFER_PENDING) {
-      throw new BadRequestException("errors.TRANSFER_IN_PROGRESS");
-    }
-    if (piece.status !== PieceStatus.OWNED) {
-      // Blocks RETIRED (and any future non-owned states) from being transferred.
-      throw new BadRequestException("errors.PIECE_NOT_TRANSFERABLE");
-    }
-
-    const activeTransfer = await this.prisma.db.transferRequest.findFirst({
-      where: {
-        pieceId: data.pieceId,
-        status: { notIn: ["APPROVED", "REJECTED", "CANCELLED"] },
-      },
-    });
-    if (activeTransfer) {
-      throw new BadRequestException("errors.TRANSFER_IN_PROGRESS");
-    }
 
     const recipient = await this.auth.findClientByHouseKey(
       data.recipientHouseKey,
@@ -93,26 +85,68 @@ export class TransfersService {
       throw new UnauthorizedException(AUTH_FAILURE_MESSAGE);
     }
 
-    const transfer = await this.prisma.db.$transaction(async (tx) => {
-      await tx.piece.update({
-        where: { id: data.pieceId },
-        data: { status: PieceStatus.TRANSFER_PENDING },
-      });
+    const transfer = await this.prisma.db.$transaction(
+      async (tx) => {
+        // CR-03: Lock the piece row to prevent concurrent transfer initiation
+        const [lockedPiece] = await tx.$queryRaw<
+          Array<{ id: string; status: string; currentOwnerId: string | null }>
+        >`
+          SELECT id, status, "currentOwnerId"
+          FROM "Piece"
+          WHERE id = ${data.pieceId}::uuid
+          FOR UPDATE
+        `;
 
-      return tx.transferRequest.create({
-        data: {
-          pieceId: data.pieceId,
-          fromClientId: clientId,
-          toClientId: recipient.id,
-          transferType: data.transferType,
-          status: TransferStatus.INITIATED,
-        },
-        include: {
-          piece: { include: { design: true } },
-          toClient: { select: { displayName: true, email: true } },
-        },
-      });
-    });
+        if (!lockedPiece) {
+          throw new NotFoundException("errors.PIECE_NOT_FOUND");
+        }
+
+        if (lockedPiece.currentOwnerId !== clientId) {
+          throw new BadRequestException("errors.NOT_PIECE_OWNER");
+        }
+
+        if (lockedPiece.status === PieceStatus.TRANSFER_PENDING) {
+          throw new ConflictException("errors.TRANSFER_IN_PROGRESS");
+        }
+
+        if (lockedPiece.status !== PieceStatus.OWNED) {
+          throw new BadRequestException("errors.PIECE_NOT_TRANSFERABLE");
+        }
+
+        // Double-check no active transfer exists (partial unique index is backup)
+        const activeTransfer = await tx.transferRequest.findFirst({
+          where: {
+            pieceId: data.pieceId,
+            status: { notIn: ["APPROVED", "REJECTED", "CANCELLED"] },
+          },
+        });
+        if (activeTransfer) {
+          throw new ConflictException("errors.TRANSFER_IN_PROGRESS");
+        }
+
+        await tx.piece.update({
+          where: { id: data.pieceId },
+          data: { status: PieceStatus.TRANSFER_PENDING },
+        });
+
+        return tx.transferRequest.create({
+          data: {
+            pieceId: data.pieceId,
+            fromClientId: clientId,
+            toClientId: recipient.id,
+            transferType: data.transferType,
+            status: TransferStatus.INITIATED,
+          },
+          include: {
+            piece: { include: { design: true } },
+            toClient: { select: { displayName: true, email: true } },
+          },
+        });
+      },
+      {
+        isolationLevel: Prisma.TransactionIsolationLevel.Serializable,
+      },
+    );
 
     await this.audit.log({
       actorType: ActorType.CLIENT,
@@ -149,17 +183,31 @@ export class TransfersService {
   }
 
   async confirmSender(transferId: string, clientId: string, ipAddress?: string) {
-    const transfer = await this.getTransferForSender(transferId, clientId);
-    this.assertTransition(transfer.status, TransferStatus.SENDER_CONFIRMED);
+    const updated = await this.prisma.db.$transaction(
+      async (tx) => {
+        await tx.$queryRaw`
+          SELECT id FROM "TransferRequest"
+          WHERE id = ${transferId}::uuid
+          FOR UPDATE
+        `;
 
-    const updated = await this.prisma.db.transferRequest.update({
-      where: { id: transferId },
-      data: {
-        status: TransferStatus.SENDER_CONFIRMED,
-        senderConfirmedAt: new Date(),
+        const transfer = await tx.transferRequest.findFirst({
+          where: { id: transferId, fromClientId: clientId },
+        });
+        if (!transfer) throw new NotFoundException("errors.TRANSFER_NOT_FOUND");
+        this.assertTransition(transfer.status, TransferStatus.SENDER_CONFIRMED);
+
+        return tx.transferRequest.update({
+          where: { id: transferId },
+          data: {
+            status: TransferStatus.SENDER_CONFIRMED,
+            senderConfirmedAt: new Date(),
+          },
+          include: { toClient: { select: { email: true, locale: true } } },
+        });
       },
-      include: { toClient: { select: { email: true, locale: true } } },
-    });
+      { isolationLevel: Prisma.TransactionIsolationLevel.Serializable },
+    );
 
     await this.audit.log({
       actorType: ActorType.CLIENT,
@@ -179,19 +227,31 @@ export class TransfersService {
   }
 
   async confirmRecipient(transferId: string, clientId: string, ipAddress?: string) {
-    const transfer = await this.getTransferForRecipient(transferId, clientId);
-    // Two-step transition performed atomically: the recipient confirmation
-    // immediately moves the transfer into DADAN review, so validate both hops.
-    this.assertTransition(transfer.status, TransferStatus.RECIPIENT_CONFIRMED);
-    this.assertTransition(TransferStatus.RECIPIENT_CONFIRMED, TransferStatus.DADAN_REVIEW);
+    const updated = await this.prisma.db.$transaction(
+      async (tx) => {
+        await tx.$queryRaw`
+          SELECT id FROM "TransferRequest"
+          WHERE id = ${transferId}::uuid
+          FOR UPDATE
+        `;
 
-    const updated = await this.prisma.db.transferRequest.update({
-      where: { id: transferId },
-      data: {
-        status: TransferStatus.DADAN_REVIEW,
-        recipientConfirmedAt: new Date(),
+        const transfer = await tx.transferRequest.findFirst({
+          where: { id: transferId, toClientId: clientId },
+        });
+        if (!transfer) throw new NotFoundException("errors.TRANSFER_NOT_FOUND");
+        this.assertTransition(transfer.status, TransferStatus.RECIPIENT_CONFIRMED);
+        this.assertTransition(TransferStatus.RECIPIENT_CONFIRMED, TransferStatus.DADAN_REVIEW);
+
+        return tx.transferRequest.update({
+          where: { id: transferId },
+          data: {
+            status: TransferStatus.DADAN_REVIEW,
+            recipientConfirmedAt: new Date(),
+          },
+        });
       },
-    });
+      { isolationLevel: Prisma.TransactionIsolationLevel.Serializable },
+    );
 
     await this.audit.log({
       actorType: ActorType.CLIENT,
@@ -221,17 +281,48 @@ export class TransfersService {
       throw new BadRequestException("errors.TRANSFER_NOT_CANCELLABLE");
     }
 
-    const updated = await this.prisma.db.$transaction(async (tx) => {
-      await tx.piece.update({
-        where: { id: transfer.pieceId },
-        data: { status: PieceStatus.OWNED },
-      });
+    const updated = await this.prisma.db.$transaction(
+      async (tx) => {
+        // Lock transfer and piece for atomic cancellation
+        const [lockedTransfer] = await tx.$queryRaw<
+          Array<{ id: string; status: string; pieceId: string }>
+        >`
+          SELECT id, status, "pieceId"
+          FROM "TransferRequest"
+          WHERE id = ${transferId}::uuid
+          FOR UPDATE
+        `;
 
-      return tx.transferRequest.update({
-        where: { id: transferId },
-        data: { status: TransferStatus.CANCELLED },
-      });
-    });
+        if (
+          !lockedTransfer ||
+          !["INITIATED", "SENDER_CONFIRMED"].includes(lockedTransfer.status)
+        ) {
+          throw new ConflictException("errors.TRANSFER_NOT_CANCELLABLE");
+        }
+
+        await tx.$queryRaw`
+          SELECT id FROM "Piece"
+          WHERE id = ${transfer.pieceId}::uuid
+          FOR UPDATE
+        `;
+
+        await tx.piece.update({
+          where: { id: transfer.pieceId },
+          data: { status: PieceStatus.OWNED },
+        });
+
+        return tx.transferRequest.update({
+          where: { id: transferId },
+          data: {
+            status: TransferStatus.CANCELLED,
+            completedAt: new Date(),
+          },
+        });
+      },
+      {
+        isolationLevel: Prisma.TransactionIsolationLevel.Serializable,
+      },
+    );
 
     await this.audit.log({
       actorType: ActorType.CLIENT,
@@ -395,45 +486,115 @@ export class TransfersService {
       throw new BadRequestException("Transfer is not awaiting review");
     }
 
-    await this.prisma.db.$transaction(async (tx) => {
-      await tx.transferRequest.update({
-        where: { id },
-        data: {
-          status: TransferStatus.APPROVED,
-          dadanReviewedAt: new Date(),
-          dadanReviewedBy: adminId,
-          dadanNotes: notes,
-          completedAt: new Date(),
-        },
-      });
+    await this.prisma.db.$transaction(
+      async (tx) => {
+        // CR-04: Lock both transfer and piece rows for atomic approval
+        const [lockedTransfer] = await tx.$queryRaw<
+          Array<{
+            id: string;
+            status: string;
+            pieceId: string;
+            fromClientId: string;
+            toClientId: string;
+            transferType: string;
+          }>
+        >`
+          SELECT id, status, "pieceId", "fromClientId", "toClientId", "transferType"
+          FROM "TransferRequest"
+          WHERE id = ${id}::uuid
+          FOR UPDATE
+        `;
 
-      await tx.piece.update({
-        where: { id: transfer.pieceId },
-        data: {
-          currentOwnerId: transfer.toClientId,
-          status: PieceStatus.OWNED,
-        },
-      });
+        if (!lockedTransfer) {
+          throw new NotFoundException("errors.TRANSFER_NOT_FOUND");
+        }
 
-      await tx.ownershipRecord.updateMany({
-        where: {
-          pieceId: transfer.pieceId,
-          clientId: transfer.fromClientId,
-          transferredAt: null,
-        },
-        data: { transferredAt: new Date() },
-      });
+        if (lockedTransfer.status !== TransferStatus.DADAN_REVIEW) {
+          throw new ConflictException("Transfer is no longer awaiting review");
+        }
 
-      await tx.ownershipRecord.create({
-        data: {
-          pieceId: transfer.pieceId,
-          clientId: transfer.toClientId,
-          acquisitionType: this.transferTypeToAcquisition(transfer.transferType),
-        },
-      });
+        // Lock the piece and verify the sender is still the current owner
+        const [lockedPiece] = await tx.$queryRaw<
+          Array<{ id: string; currentOwnerId: string | null; status: string }>
+        >`
+          SELECT id, "currentOwnerId", status
+          FROM "Piece"
+          WHERE id = ${transfer.pieceId}::uuid
+          FOR UPDATE
+        `;
+
+        if (!lockedPiece) {
+          throw new NotFoundException("errors.PIECE_NOT_FOUND");
+        }
+
+        // CR-04: Verify sender is still the current owner before approval
+        if (lockedPiece.currentOwnerId !== transfer.fromClientId) {
+          throw new ConflictException(
+            "Ownership has changed since transfer was initiated",
+          );
+        }
+
+        await tx.transferRequest.update({
+          where: { id },
+          data: {
+            status: TransferStatus.APPROVED,
+            dadanReviewedAt: new Date(),
+            dadanReviewedBy: adminId,
+            dadanNotes: notes,
+            completedAt: new Date(),
+          },
+        });
+
+        await tx.piece.update({
+          where: { id: transfer.pieceId },
+          data: {
+            currentOwnerId: transfer.toClientId,
+            status: PieceStatus.OWNED,
+          },
+        });
+
+        await tx.ownershipRecord.updateMany({
+          where: {
+            pieceId: transfer.pieceId,
+            clientId: transfer.fromClientId,
+            transferredAt: null,
+          },
+          data: { transferredAt: new Date() },
+        });
+
+        await tx.ownershipRecord.create({
+          data: {
+            pieceId: transfer.pieceId,
+            clientId: transfer.toClientId,
+            acquisitionType: this.transferTypeToAcquisition(transfer.transferType),
+          },
+        });
+      },
+      {
+        isolationLevel: Prisma.TransactionIsolationLevel.Serializable,
+      },
+    );
+
+    this.certificateQueue.add(
+      "regenerate-certificate",
+      {
+        pieceId: transfer.pieceId,
+        clientId: transfer.toClientId,
+        transferId: id,
+        regenerate: true,
+        adminId,
+      },
+      {
+        attempts: 5,
+        backoff: { type: "exponential", delay: 2000 },
+        removeOnComplete: true,
+        removeOnFail: 50,
+      },
+    ).catch((err) => {
+      this.logger.error(
+        `Failed to enqueue cert regeneration for piece ${transfer.pieceId}: ${err instanceof Error ? err.message : String(err)}`,
+      );
     });
-
-    this.regenerateCertificateWithRetry(transfer.pieceId, transfer.toClientId, adminId, id);
 
     await this.audit.log({
       actorType: ActorType.ADMIN,
@@ -479,22 +640,48 @@ export class TransfersService {
       throw new BadRequestException("Transfer is not awaiting review");
     }
 
-    await this.prisma.db.$transaction(async (tx) => {
-      await tx.transferRequest.update({
-        where: { id },
-        data: {
-          status: TransferStatus.REJECTED,
-          dadanReviewedAt: new Date(),
-          dadanReviewedBy: adminId,
-          dadanNotes: reason,
-        },
-      });
+    await this.prisma.db.$transaction(
+      async (tx) => {
+        // Lock transfer and piece for atomic rejection
+        const [lockedTransfer] = await tx.$queryRaw<
+          Array<{ id: string; status: string; pieceId: string }>
+        >`
+          SELECT id, status, "pieceId"
+          FROM "TransferRequest"
+          WHERE id = ${id}::uuid
+          FOR UPDATE
+        `;
 
-      await tx.piece.update({
-        where: { id: transfer.pieceId },
-        data: { status: PieceStatus.OWNED },
-      });
-    });
+        if (!lockedTransfer || lockedTransfer.status !== TransferStatus.DADAN_REVIEW) {
+          throw new ConflictException("Transfer is no longer awaiting review");
+        }
+
+        await tx.$queryRaw`
+          SELECT id FROM "Piece"
+          WHERE id = ${transfer.pieceId}::uuid
+          FOR UPDATE
+        `;
+
+        await tx.transferRequest.update({
+          where: { id },
+          data: {
+            status: TransferStatus.REJECTED,
+            dadanReviewedAt: new Date(),
+            dadanReviewedBy: adminId,
+            dadanNotes: reason,
+            completedAt: new Date(),
+          },
+        });
+
+        await tx.piece.update({
+          where: { id: transfer.pieceId },
+          data: { status: PieceStatus.OWNED },
+        });
+      },
+      {
+        isolationLevel: Prisma.TransactionIsolationLevel.Serializable,
+      },
+    );
 
     await this.audit.log({
       actorType: ActorType.ADMIN,
@@ -575,45 +762,6 @@ export class TransfersService {
         return AcquisitionType.GIFT;
       case TransferType.INHERITANCE:
         return AcquisitionType.INHERITANCE;
-    }
-  }
-
-  private async regenerateCertificateWithRetry(
-    pieceId: string,
-    newOwnerId: string,
-    adminId: string,
-    transferId: string,
-    attempt = 1,
-  ): Promise<void> {
-    const maxAttempts = 3;
-    try {
-      await this.certificates.regenerateCertificate(pieceId, newOwnerId, adminId);
-      await this.audit.log({
-        actorType: ActorType.SYSTEM,
-        actorId: "system",
-        action: "CERTIFICATE_REGENERATED",
-        targetType: "Piece",
-        targetId: pieceId,
-        metadata: { transferId, newOwnerId },
-      });
-    } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : String(error);
-      
-      if (attempt < maxAttempts) {
-        const delay = Math.pow(2, attempt) * 1000;
-        setTimeout(() => {
-          this.regenerateCertificateWithRetry(pieceId, newOwnerId, adminId, transferId, attempt + 1);
-        }, delay);
-      } else {
-        await this.audit.log({
-          actorType: ActorType.SYSTEM,
-          actorId: "system",
-          action: "CERTIFICATE_REGENERATION_FAILED",
-          targetType: "Piece",
-          targetId: pieceId,
-          metadata: { transferId, newOwnerId, error: errorMessage, attempts: maxAttempts },
-        });
-      }
     }
   }
 }

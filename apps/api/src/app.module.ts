@@ -1,6 +1,7 @@
 import { Module } from "@nestjs/common";
 import { ConfigModule, ConfigService } from "@nestjs/config";
 import { APP_FILTER, APP_GUARD } from "@nestjs/core";
+import { BullModule } from "@nestjs/bullmq";
 import { validateEnv } from "./config/env.validation";
 import { ScheduleModule } from "@nestjs/schedule";
 import { ThrottlerGuard, ThrottlerModule } from "@nestjs/throttler";
@@ -27,6 +28,7 @@ import { OrdersModule } from "./orders/orders.module";
 import { CertificatesModule } from "./certificates/certificates.module";
 import { VerifyModule } from "./verify/verify.module";
 import { TransfersModule } from "./transfers/transfers.module";
+import { HomeModule } from "./home/home.module";
 
 @Module({
   imports: [
@@ -36,6 +38,12 @@ import { TransfersModule } from "./transfers/transfers.module";
       envFilePath: ["../../.env", ".env"],
     }),
     ScheduleModule.forRoot(),
+    BullModule.forRootAsync({
+      inject: [ConfigService],
+      useFactory: (config: ConfigService) => ({
+        connection: { url: config.getOrThrow<string>("REDIS_URL") },
+      }),
+    }),
     // Global IP rate limit (Redis-backed so limits hold across instances).
     // Stricter per-endpoint limits (login, verify, transfers) remain in place.
     ThrottlerModule.forRootAsync({
@@ -71,6 +79,7 @@ import { TransfersModule } from "./transfers/transfers.module";
     CertificatesModule,
     VerifyModule,
     TransfersModule,
+    HomeModule,
   ],
   providers: [
     {

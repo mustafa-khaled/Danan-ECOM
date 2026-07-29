@@ -39,7 +39,7 @@ export class ClientGuard implements CanActivate {
         visibilityGroups: string[];
         aud?: string;
         jti?: string;
-      }>(token);
+      }>(token, { algorithms: ["HS256"] });
 
       if (payload.aud !== JWT_AUDIENCE_CLIENT) {
         throw new UnauthorizedException(AUTH_FAILURE_MESSAGE);

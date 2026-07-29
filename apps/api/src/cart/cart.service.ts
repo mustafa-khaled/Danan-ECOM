@@ -7,6 +7,7 @@ import {
 } from "@nestjs/common";
 import { ConfigService } from "@nestjs/config";
 import { Cron, CronExpression } from "@nestjs/schedule";
+import { createHash } from "node:crypto";
 import { ActorType, PieceStatus } from "@dadan/db";
 import type { Locale, ShippingAddress } from "@dadan/types";
 import { localizeDesign, pickLocalized } from "../common/i18n/localize";
@@ -34,11 +35,11 @@ export class CartService {
   ) {}
 
   async getCart(clientId: string, locale: Locale = "ar") {
-    const items = await this.prisma.db.cartItem.findMany({
+    const dbItems = await this.prisma.db.cartItem.findMany({
       where: { clientId, expiresAt: { gt: new Date() } },
     });
 
-    const pieceIds = items.map((i) => i.pieceId);
+    const pieceIds = dbItems.map((i) => i.pieceId);
     const pieces = pieceIds.length
       ? await this.prisma.db.piece.findMany({
           where: { id: { in: pieceIds } },
@@ -47,8 +48,8 @@ export class CartService {
       : [];
     const pieceMap = new Map(pieces.map((p) => [p.id, p]));
 
-    return Promise.all(
-      items.map(async (item) => {
+    const items = await Promise.all(
+      dbItems.map(async (item) => {
         const piece = pieceMap.get(item.pieceId);
         if (!piece) {
           return {
@@ -79,6 +80,33 @@ export class CartService {
         };
       }),
     );
+
+    const validPieces = pieces.filter((p) => pieceMap.has(p.id));
+    const vatRate = this.config.get<number>("VAT_RATE") ?? 0.15;
+    let subtotal = 0;
+    let vatAmount = 0;
+    for (const piece of validPieces) {
+      const price = Number(piece.design.basePrice);
+      const itemTax = Math.round(price * vatRate * 100) / 100;
+      subtotal += price;
+      vatAmount += itemTax;
+    }
+    subtotal = Math.round(subtotal * 100) / 100;
+    vatAmount = Math.round(vatAmount * 100) / 100;
+    const total = Math.round((subtotal + vatAmount) * 100) / 100;
+    const currency = validPieces[0]?.design.currency ?? "SAR";
+
+    return {
+      items,
+      summary: {
+        subtotal: Math.round(subtotal * 100) / 100,
+        vatRate,
+        vatAmount,
+        total,
+        currency,
+        itemCount: validPieces.length,
+      },
+    };
   }
 
   async addToCart(
@@ -171,22 +199,31 @@ export class CartService {
       }
     }
 
-    const subtotal = pieces.reduce(
-      (sum, piece) => sum + Number(piece.design.basePrice),
-      0,
-    );
-    // Charge the VAT-inclusive total so the amount billed matches what the
-    // checkout UI displays.
     const vatRate = this.config.get<number>("VAT_RATE") ?? 0.15;
-    const vatAmount = Math.round(subtotal * vatRate * 100) / 100;
+
+    // Compute per-item tax to match order creation (avoids rounding mismatch)
+    let subtotal = 0;
+    let vatAmount = 0;
+    for (const piece of pieces) {
+      const price = Number(piece.design.basePrice);
+      const itemTax = Math.round(price * vatRate * 100) / 100;
+      subtotal += price;
+      vatAmount += itemTax;
+    }
+    subtotal = Math.round(subtotal * 100) / 100;
+    vatAmount = Math.round(vatAmount * 100) / 100;
     const totalAmount = Math.round((subtotal + vatAmount) * 100) / 100;
     const currency = pieces[0]!.design.currency;
+
+    const sortedPieceIds = cartItems.map((i) => i.pieceId).sort().join("|");
+    const idempotencyKey = `checkout_${clientId}_${createHash("sha256").update(sortedPieceIds).digest("hex").slice(0, 32)}`;
 
     const payment = await this.payments.charge({
       token: data.paymentToken,
       amount: totalAmount,
       currency,
       paymentMethod: data.paymentMethod,
+      idempotencyKey,
       customer: { name: client.displayName, email: client.email },
       metadata: { clientId, pieceIds: cartItems.map((i) => i.pieceId).join(",") },
     });
@@ -202,12 +239,16 @@ export class CartService {
       order = await this.orders.createPaidOrder({
         clientId,
         pieceIds: cartItems.map((i) => i.pieceId),
+        subtotalAmount: subtotal,
+        taxAmount: vatAmount,
+        taxRate: vatRate,
         totalAmount,
         currency,
         paymentProvider: this.payments.providerName,
         paymentMethod: data.paymentMethod,
         paymentReference: payment.providerReference!,
         shippingAddress: data.shippingAddress,
+        idempotencyKey,
       });
     } catch (error) {
       // The charge succeeded but the order could not be created (e.g. a piece
@@ -262,12 +303,33 @@ export class CartService {
         this.logger.error(
           `Refund failed for charge ${providerReference} (client ${clientId}): ${refund.failureMessage}`,
         );
+        await this.persistFailedRefund(clientId, providerReference, amount, currency, causeMessage);
       }
     } catch (refundError) {
-      // Never mask the original checkout failure; log for manual reconciliation.
+      const errorMessage = refundError instanceof Error ? refundError.message : String(refundError);
       this.logger.error(
         `Refund attempt threw for charge ${providerReference} (client ${clientId})`,
         refundError instanceof Error ? refundError.stack : String(refundError),
+      );
+      await this.persistFailedRefund(clientId, providerReference, amount, currency, errorMessage);
+    }
+  }
+
+  private async persistFailedRefund(
+    clientId: string,
+    providerReference: string,
+    amount: number,
+    currency: string,
+    reason: string,
+  ) {
+    try {
+      await this.prisma.db.failedRefund.create({
+        data: { clientId, providerReference, amount, currency, reason },
+      });
+    } catch (persistError) {
+      this.logger.error(
+        `Failed to persist refund record for ${providerReference}`,
+        persistError instanceof Error ? persistError.stack : String(persistError),
       );
     }
   }

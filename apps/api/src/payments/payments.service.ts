@@ -20,6 +20,7 @@ export interface ChargeParams {
   amount: number;
   currency: string;
   paymentMethod: PaymentMethod;
+  idempotencyKey?: string;
   customer: { name: string; email: string };
   metadata: Record<string, string>;
 }
@@ -105,12 +106,17 @@ export class PaymentsService {
   private async chargeTap(params: ChargeParams): Promise<PaymentResult> {
     const [firstName, ...rest] = params.customer.name.trim().split(/\s+/);
     try {
+      const headers: Record<string, string> = {
+        Authorization: `Bearer ${this.secretKey}`,
+        "Content-Type": "application/json",
+      };
+      if (params.idempotencyKey) {
+        headers["Idempotency-Key"] = params.idempotencyKey;
+      }
+
       const response = await fetch(`${TAP_API_BASE}/charges`, {
         method: "POST",
-        headers: {
-          Authorization: `Bearer ${this.secretKey}`,
-          "Content-Type": "application/json",
-        },
+        headers,
         body: JSON.stringify({
           amount: params.amount,
           currency: params.currency.toUpperCase(),

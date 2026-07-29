@@ -162,5 +162,4 @@ sessions persist until cookie expiry.
 ## 5. Explicitly out of scope
 
 - Real payment provider integration (Moyasar/Tap/Stripe).
-- Refresh-token rotation (deny-list + shorter expiry covers the practical risk at this scale).
 - CSP for the Next app.

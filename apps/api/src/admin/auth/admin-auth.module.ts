@@ -4,15 +4,18 @@ import { ConfigModule, ConfigService } from "@nestjs/config";
 import { AdminAuthService } from "./admin-auth.service";
 import { AdminAuthController } from "./admin-auth.controller";
 import { AdminGuard } from "./guards/admin.guard";
+import { RefreshTokenModule } from "../../auth/refresh-token.module";
+import { getAccessTokenSeconds } from "../../common/constants";
 
 @Module({
   imports: [
+    RefreshTokenModule,
     JwtModule.registerAsync({
       imports: [ConfigModule],
       inject: [ConfigService],
       useFactory: (config: ConfigService) => ({
         secret: config.getOrThrow<string>("JWT_SECRET"),
-        signOptions: { expiresIn: 24 * 60 * 60 },
+        signOptions: { expiresIn: getAccessTokenSeconds() },
       }),
     }),
   ],

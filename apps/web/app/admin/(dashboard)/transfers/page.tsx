@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { StatusPill } from "@/components/ui";
 import { AdminPagination } from "@/components/admin-pagination";
 import { fetchAdminTransfers } from "@/features/admin";
@@ -42,6 +43,7 @@ export default async function TransfersPage({
               <th className="px-4 py-3 font-normal">Type</th>
               <th className="px-4 py-3 font-normal">Initiated</th>
               <th className="px-4 py-3 font-normal">Status</th>
+              <th className="px-4 py-3 font-normal">Actions</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-[var(--color-border)]">
@@ -58,10 +60,15 @@ export default async function TransfersPage({
                   }
                 >
                   <td className="px-4 py-4">
-                    <p className="font-display tracking-[0.04em]">{transfer.piece.serialNumber}</p>
-                    <p className="text-xs text-[var(--color-ivory-muted)]">
-                      {transfer.piece.design.name}
-                    </p>
+                    <Link
+                      href={`/admin/transfers/${transfer.id}`}
+                      className="hover:text-[var(--color-accent)]"
+                    >
+                      <p className="font-display tracking-[0.04em]">{transfer.piece.serialNumber}</p>
+                      <p className="text-xs text-[var(--color-ivory-muted)]">
+                        {transfer.piece.design.name}
+                      </p>
+                    </Link>
                   </td>
                   <td className="px-4 py-4">
                     <p>{transfer.fromClient.displayName}</p>
@@ -88,6 +95,14 @@ export default async function TransfersPage({
                           : ""
                       }
                     />
+                  </td>
+                  <td className="px-4 py-4">
+                    <Link
+                      href={`/admin/transfers/${transfer.id}`}
+                      className="text-xs uppercase tracking-[0.1em] text-[var(--color-accent)] hover:underline"
+                    >
+                      View
+                    </Link>
                   </td>
                 </tr>
               );

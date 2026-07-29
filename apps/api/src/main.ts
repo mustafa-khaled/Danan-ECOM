@@ -34,6 +34,8 @@ async function bootstrap() {
       process.env.BASE_URL,
     ].filter((origin): origin is string => Boolean(origin)),
     credentials: true,
+    methods: ["GET", "POST", "PUT", "PATCH", "DELETE"],
+    allowedHeaders: ["Content-Type", "Authorization", "Accept-Language", "X-Request-ID"],
   });
   app.useGlobalPipes(
     new ValidationPipe({

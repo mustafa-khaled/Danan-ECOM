@@ -13,6 +13,16 @@ export const ADMIN_NAV_ITEMS: AdminNavItem[] = [
     roles: ["SUPER_ADMIN", "STAFF", "VIEWER"],
   },
   {
+    href: "/admin/collections",
+    label: "Collections",
+    roles: ["SUPER_ADMIN", "STAFF"],
+  },
+  {
+    href: "/admin/designs",
+    label: "Designs",
+    roles: ["SUPER_ADMIN", "STAFF"],
+  },
+  {
     href: "/admin/clients",
     label: "Clients",
     roles: ["SUPER_ADMIN", "STAFF", "VIEWER"],

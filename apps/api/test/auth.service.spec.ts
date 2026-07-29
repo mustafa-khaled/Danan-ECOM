@@ -7,6 +7,7 @@ import { AuthService } from "../src/auth/auth.service";
 import { AuditService } from "../src/audit/audit.service";
 import { PrismaService } from "../src/prisma/prisma.service";
 import { RedisService } from "../src/redis/redis.service";
+import { RefreshTokenService } from "../src/auth/refresh-token.service";
 import { AUTH_FAILURE_MESSAGE } from "../src/common/constants";
 
 jest.mock("bcrypt");
@@ -23,10 +24,23 @@ describe("AuthService", () => {
       },
     },
   };
-  const jwtMock = { signAsync: jest.fn().mockResolvedValue("jwt-token") };
+  const jwtMock = {
+    signAsync: jest.fn().mockResolvedValue("jwt-token"),
+    decode: jest.fn(),
+  };
   const redisMock = { isRateLimited: jest.fn().mockResolvedValue(false) };
   const auditMock = { log: jest.fn().mockResolvedValue(undefined) };
   const configMock = { get: jest.fn().mockReturnValue("12") };
+  const refreshTokensMock = {
+    issueRefreshToken: jest.fn().mockResolvedValue({
+      token: "refresh-token",
+      familyId: "family-1",
+    }),
+    resolveRefreshToken: jest.fn(),
+    rotateRefreshToken: jest.fn(),
+    revokeRefreshToken: jest.fn(),
+    revokeAllForSubject: jest.fn(),
+  };
 
   beforeEach(async () => {
     jest.clearAllMocks();
@@ -40,6 +54,7 @@ describe("AuthService", () => {
         { provide: RedisService, useValue: redisMock },
         { provide: AuditService, useValue: auditMock },
         { provide: ConfigService, useValue: configMock },
+        { provide: RefreshTokenService, useValue: refreshTokensMock },
       ],
     }).compile();
 
@@ -47,20 +62,22 @@ describe("AuthService", () => {
   });
 
   describe("validateKey", () => {
-    it("returns a token for a valid house key", async () => {
+    it("returns tokens for a valid house key", async () => {
       const client = {
         id: "client-1",
         displayName: "Test Client",
         visibilityGroups: ["vip"],
         houseKey: "hashed-key",
         isActive: true,
+        locale: "ar",
       };
       prismaMock.db.client.findMany.mockResolvedValue([client]);
       (bcrypt.compare as jest.Mock).mockResolvedValue(true);
 
       const result = await service.validateKey("valid-key", "127.0.0.1");
 
-      expect(result.token).toBe("jwt-token");
+      expect(result.accessToken).toBe("jwt-token");
+      expect(result.refreshToken).toBe("refresh-token");
       expect(result.client).toEqual({
         clientId: "client-1",
         displayName: "Test Client",
@@ -68,6 +85,7 @@ describe("AuthService", () => {
         locale: "ar",
       });
       expect(jwtMock.signAsync).toHaveBeenCalled();
+      expect(refreshTokensMock.issueRefreshToken).toHaveBeenCalled();
       expect(auditMock.log).toHaveBeenCalled();
     });
 
@@ -106,6 +124,47 @@ describe("AuthService", () => {
       await expect(service.validateKey("any-key", "127.0.0.1")).rejects.toThrow(
         UnauthorizedException,
       );
+    });
+  });
+
+  describe("refreshSession", () => {
+    it("returns new tokens for a valid refresh token", async () => {
+      refreshTokensMock.resolveRefreshToken.mockResolvedValue({
+        sub: "client-1",
+        familyId: "family-1",
+      });
+      refreshTokensMock.rotateRefreshToken.mockResolvedValue({
+        token: "new-refresh-token",
+        subjectId: "client-1",
+        familyId: "family-1",
+      });
+      prismaMock.db.client.findFirst.mockResolvedValue({
+        id: "client-1",
+        displayName: "Test Client",
+        visibilityGroups: ["vip"],
+        locale: "en",
+        isActive: true,
+      });
+
+      const result = await service.refreshSession("old-refresh-token");
+
+      expect(result.accessToken).toBe("jwt-token");
+      expect(result.refreshToken).toBe("new-refresh-token");
+      expect(result.client.clientId).toBe("client-1");
+      expect(refreshTokensMock.rotateRefreshToken).toHaveBeenCalled();
+    });
+
+    it("does not rotate when the client is inactive", async () => {
+      refreshTokensMock.resolveRefreshToken.mockResolvedValue({
+        sub: "client-1",
+        familyId: "family-1",
+      });
+      prismaMock.db.client.findFirst.mockResolvedValue(null);
+
+      await expect(service.refreshSession("old-refresh-token")).rejects.toThrow(
+        UnauthorizedException,
+      );
+      expect(refreshTokensMock.rotateRefreshToken).not.toHaveBeenCalled();
     });
   });
 });

@@ -1,31 +1,57 @@
 "use client";
 
-import { FormEvent, useState } from "react";
+import { FormEvent, useEffect, useRef, useState } from "react";
 import { useTranslations } from "next-intl";
 import { GoldDivider, LuxuryButton, SerialBadge, StatusPill } from "@/components/ui";
 import { useVerifySerial } from "@/features/verify";
 
-export function VerifyForm() {
+interface VerifyFormProps {
+  initialSerial?: string;
+  initialToken?: string;
+  autoVerify?: boolean;
+  fullWidth?: boolean;
+  showAuthenticityMessage?: boolean;
+}
+
+export function VerifyForm({
+  initialSerial,
+  initialToken,
+  autoVerify = false,
+  fullWidth = false,
+  showAuthenticityMessage = false,
+}: VerifyFormProps) {
   const t = useTranslations("verify");
   const pieceT = useTranslations("piece");
-  const [serial, setSerial] = useState("");
-  const [token, setToken] = useState("");
+
+  const [serial, setSerial] = useState(initialSerial ?? "");
+  const [token, setToken] = useState(initialToken ?? "");
+  const autoVerifiedRef = useRef(false);
+
   const { verifySerial, data: result, isPending, error } = useVerifySerial();
+
+  useEffect(() => {
+    if (autoVerify && initialSerial && initialToken && !autoVerifiedRef.current) {
+      autoVerifiedRef.current = true;
+      void verifySerial({ serial: initialSerial, token: initialToken });
+    }
+  }, [autoVerify, initialSerial, initialToken, verifySerial]);
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     try {
       await verifySerial({ serial: serial.trim(), token: token.trim() });
     } catch {
-      /* error is rendered via the mutation's `error` state */
+      // error is rendered via the mutation's `error` state
     }
   }
+
+  const containerClass = fullWidth ? "" : "max-w-xl";
 
   return (
     <div className="space-y-8">
       <form
         onSubmit={handleSubmit}
-        className="max-w-xl space-y-4 rounded-[var(--radius-panel)] border border-[var(--color-border)] bg-[var(--color-surface)] p-6"
+        className={`${containerClass} space-y-4 rounded-[var(--radius-panel)] border border-[var(--color-border)] bg-[var(--color-surface)] p-6`}
       >
         <p className="text-sm text-[var(--color-ivory-muted)]">{t("instructions")}</p>
         <label className="block">
@@ -55,13 +81,13 @@ export function VerifyForm() {
             {error instanceof Error ? error.message : t("verificationFailed")}
           </p>
         ) : null}
-        <LuxuryButton type="submit" loading={isPending}>
+        <LuxuryButton type="submit" loading={isPending} className={fullWidth ? "w-full" : ""}>
           {t("verify")}
         </LuxuryButton>
       </form>
 
       {result ? (
-        <section className="max-w-xl rounded-[var(--radius-panel)] border border-[var(--color-emerald)]/40 bg-[var(--color-surface)] p-6">
+        <section className={`${containerClass} rounded-[var(--radius-panel)] border border-[var(--color-emerald)]/40 bg-[var(--color-surface)] p-6`}>
           <div className="flex items-center gap-3">
             <StatusPill status="APPROVED" />
             <p className="font-display text-xl text-[var(--color-ivory)]">
@@ -76,6 +102,14 @@ export function VerifyForm() {
             <Row label={pieceT("weight")} value={String(result.weight ?? "—")} />
             <Row label={t("dimensions")} value={String(result.dimensions ?? "—")} />
           </dl>
+
+          {showAuthenticityMessage && (
+            <div className="mt-6 rounded-[var(--radius-sm)] bg-[var(--color-emerald)]/10 p-4">
+              <p className="text-center text-sm text-[var(--color-emerald)]">
+                ✓ This piece has been verified as an authentic DADAN piece.
+              </p>
+            </div>
+          )}
         </section>
       ) : null}
     </div>

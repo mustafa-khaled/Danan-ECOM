@@ -11,6 +11,15 @@ export const envSchema = z
     JWT_SECRET: z.string().min(32),
     HOUSE_KEY_SALT: z.coerce.number().int().min(4).max(20).default(12),
     CLIENT_SESSION_DAYS: z.coerce.number().int().min(1).max(90).default(7),
+    ACCESS_TOKEN_MINUTES: z.coerce.number().int().min(1).max(60).default(15),
+    AUTH_RATE_LIMIT_MAX: z.coerce.number().int().min(1).max(1000).default(5),
+    AUTH_RATE_LIMIT_WINDOW_SECONDS: z.coerce
+      .number()
+      .int()
+      .min(60)
+      .max(86_400)
+      .default(15 * 60),
+    ADMIN_REFRESH_HOURS: z.coerce.number().int().min(1).max(720).default(24),
     CERT_SIGNING_SECRET: z.string().min(16),
     COOKIE_SECURE: z.enum(["true", "false"]).optional(),
     STORAGE_PROVIDER: z.enum(["local", "s3", "r2", "hetzner"]).default("local"),

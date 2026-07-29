@@ -2,7 +2,7 @@ import { createReadStream, existsSync, mkdirSync, constants } from "node:fs";
 import { access, mkdir, readFile, unlink, writeFile } from "node:fs/promises";
 import { join, normalize, resolve, sep } from "node:path";
 import type { Readable } from "node:stream";
-import { validateUpload } from "../validation";
+import { validateUpload, validateMagicBytes } from "../validation";
 import type { StorageProvider } from "../interfaces/storage-provider.interface";
 import type { UploadOptions, SignedUrlOptions } from "../types";
 
@@ -47,6 +47,7 @@ export class LocalStorageProvider implements StorageProvider {
 
   async upload(key: string, body: Buffer, options: UploadOptions): Promise<string> {
     validateUpload(options.contentType, body.length, options.maxBytes);
+    await validateMagicBytes(body, options.contentType);
     const fullPath = this.resolvePath(key);
     await this.ensureParentDirectory(fullPath);
     await writeFile(fullPath, body);

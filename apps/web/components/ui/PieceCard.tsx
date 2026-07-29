@@ -1,11 +1,12 @@
-import Image from "next/image";
 import { SerialBadge } from "./SerialBadge";
+import { OptimizedImage } from "./OptimizedImage";
 
 export interface PieceCardData {
   id: string;
   name: string;
   serialNumber: string;
   imageUrl?: string | null;
+  imageLqip?: string | null;
   collectionName?: string;
   price?: string;
 }
@@ -16,6 +17,7 @@ export interface PieceCardProps {
   onSelect?: (pieceId: string) => void;
   showExplore?: boolean;
   badge?: "certificateActive";
+  priority?: boolean;
 }
 
 export function PieceCard({
@@ -24,17 +26,21 @@ export function PieceCard({
   onSelect,
   showExplore = false,
   badge,
+  priority = false,
 }: PieceCardProps) {
   const content = (
     <>
       <div className="relative aspect-[4/5] overflow-hidden bg-[var(--color-surface)]">
         {piece.imageUrl ? (
-          <Image
+          <OptimizedImage
             src={piece.imageUrl}
             alt={piece.name}
             fill
             sizes="(max-width: 768px) 50vw, 33vw"
             className="object-cover transition-transform duration-300 group-hover:scale-[1.02]"
+            blurDataURL={piece.imageLqip}
+            priority={priority}
+            quality={80}
           />
         ) : (
           <div className="flex h-full items-center justify-center text-[var(--color-text-muted)]">

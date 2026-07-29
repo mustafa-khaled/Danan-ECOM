@@ -6,25 +6,17 @@ import { CartItemActions } from "@/components/cart-item-actions";
 import { EmptyState } from "@/shared/components/feedback/empty-state";
 import { fetchCart } from "@/features/cart";
 import { formatPrice } from "@/shared/utils/format";
-import { calculateTotal, calculateVat } from "@/shared/lib/pricing";
 import { getSessionCookieHeader, requireClientSession } from "@/features/auth/server/session";
 import type { Locale } from "@/i18n/routing";
 
 export default async function CartPage() {
   const profile = await requireClientSession();
   const cookie = await getSessionCookieHeader();
-  const items = await fetchCart(cookie);
+  const { items, summary } = await fetchCart(cookie);
   const t = await getTranslations("cart");
   const locale = (await getLocale()) as Locale;
 
   const validItems = items.filter((item) => item.piece);
-  const subtotal = validItems.reduce(
-    (sum, item) => sum + parseFloat(item.piece!.design.basePrice),
-    0,
-  );
-  const currency = validItems[0]?.piece?.design.currency ?? "SAR";
-  const vat = calculateVat(subtotal);
-  const total = calculateTotal(subtotal);
 
   return (
     <ClientShell displayName={profile.displayName}>
@@ -86,15 +78,15 @@ export default async function CartPage() {
             <dl className="mt-4 space-y-3 text-sm">
               <div className="flex justify-between">
                 <dt className="text-[var(--color-text-muted)]">{t("subtotal")}</dt>
-                <dd>{formatPrice(subtotal, currency, locale)}</dd>
+                <dd>{formatPrice(summary.subtotal, summary.currency, locale)}</dd>
               </div>
               <div className="flex justify-between">
                 <dt className="text-[var(--color-text-muted)]">{t("vat")}</dt>
-                <dd>{formatPrice(vat, currency, locale)}</dd>
+                <dd>{formatPrice(summary.vatAmount, summary.currency, locale)}</dd>
               </div>
               <div className="flex justify-between font-english text-lg text-[var(--color-text)]">
                 <dt>{t("total")}</dt>
-                <dd>{formatPrice(total, currency, locale)}</dd>
+                <dd>{formatPrice(summary.total, summary.currency, locale)}</dd>
               </div>
             </dl>
             <Link

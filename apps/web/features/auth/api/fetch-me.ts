@@ -1,8 +1,8 @@
 import { sendRequest } from "@/shared/lib/send-request";
-import type { ClientSession } from "../types";
+import type { ClientProfile } from "../types";
 
-export function fetchMe(cookieHeader?: string): Promise<ClientSession> {
-  return sendRequest<ClientSession>({
+export function fetchMe(cookieHeader?: string): Promise<ClientProfile> {
+  return sendRequest<ClientProfile>({
     method: "GET",
     url: "/auth/me",
     cookieHeader,

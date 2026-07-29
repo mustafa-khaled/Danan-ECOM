@@ -7,10 +7,10 @@ import { FormEvent, Suspense, useRef, useState } from "react";
 import { GoldDivider, LuxuryButton } from "@/components/ui";
 import { formatPrice } from "@/shared/utils/format";
 import { PAYMENT_MODE } from "@/shared/lib/constants";
-import { VAT_RATE } from "@/shared/lib/pricing";
 import { useCheckout, type TapCardElementHandle } from "@/features/checkout";
 import type { ShippingAddress } from "@/features/checkout/types";
 import { parseShippingAddressFromFormData } from "@/features/checkout/schemas/shipping-address";
+import type { CartSummary } from "@/features/cart";
 
 const TapCardElement = dynamic(
   () =>
@@ -21,11 +21,10 @@ const TapCardElement = dynamic(
 );
 
 interface CheckoutFormProps {
-  total: number;
-  currency: string;
+  summary: CartSummary;
 }
 
-export function CheckoutForm({ total, currency }: CheckoutFormProps) {
+export function CheckoutForm({ summary }: CheckoutFormProps) {
   const router = useRouter();
   const locale = useLocale() as "ar" | "en";
   const [step, setStep] = useState<1 | 2>(1);
@@ -37,9 +36,6 @@ export function CheckoutForm({ total, currency }: CheckoutFormProps) {
   const { checkout, isPending, error } = useCheckout();
 
   const isLivePayment = PAYMENT_MODE === "live";
-
-  const vat = total * VAT_RATE;
-  const grandTotal = total + vat;
 
   async function completeCheckout(shippingAddress: ShippingAddress, paymentToken: string) {
     try {
@@ -112,15 +108,15 @@ export function CheckoutForm({ total, currency }: CheckoutFormProps) {
           <dl className="space-y-3 text-sm">
             <div className="flex justify-between">
               <dt className="text-[var(--color-ivory-muted)]">Subtotal</dt>
-              <dd>{formatPrice(total, currency)}</dd>
+              <dd>{formatPrice(summary.subtotal, summary.currency)}</dd>
             </div>
             <div className="flex justify-between">
-              <dt className="text-[var(--color-ivory-muted)]">VAT ({Math.round(VAT_RATE * 100)}%)</dt>
-              <dd>{formatPrice(vat, currency)}</dd>
+              <dt className="text-[var(--color-ivory-muted)]">VAT ({Math.round(summary.vatRate * 100)}%)</dt>
+              <dd>{formatPrice(summary.vatAmount, summary.currency)}</dd>
             </div>
             <div className="flex justify-between font-display text-lg text-[var(--color-gold-light)]">
               <dt>Total</dt>
-              <dd>{formatPrice(grandTotal, currency)}</dd>
+              <dd>{formatPrice(summary.total, summary.currency)}</dd>
             </div>
           </dl>
         </section>
@@ -164,8 +160,8 @@ export function CheckoutForm({ total, currency }: CheckoutFormProps) {
                 <Suspense fallback={<div className="text-sm text-[var(--color-ivory-muted)]">Loading payment form...</div>}>
                   <TapCardElement
                     ref={tapCardRef}
-                    amount={grandTotal}
-                    currency={currency}
+                    amount={summary.total}
+                    currency={summary.currency}
                     locale={locale}
                     onSuccess={handleTokenSuccess}
                     onError={handleTokenError}

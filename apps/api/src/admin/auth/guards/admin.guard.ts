@@ -48,7 +48,7 @@ export class AdminGuard implements CanActivate {
         displayName: string;
         aud?: string;
         jti?: string;
-      }>(token);
+      }>(token, { algorithms: ["HS256"] });
 
       if (payload.aud !== JWT_AUDIENCE_ADMIN) {
         throw new UnauthorizedException(AUTH_FAILURE_MESSAGE);

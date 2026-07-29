@@ -13,6 +13,8 @@
     "test:e2e": "playwright test"
   },
   "dependencies": {
+    "@dadan/types": "workspace:^",
+    "@hookform/resolvers": "^5.5.7",
     "@radix-ui/react-select": "^2.3.7",
     "@sentry/nextjs": "^10.65.0",
     "@tanstack/react-query": "^5.101.2",
@@ -24,6 +26,7 @@
     "next-intl": "^4.13.2",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
+    "react-hook-form": "^7.83.0",
     "sharp": "^0.35.3",
     "tailwind-merge": "^3.6.0",
     "zod": "^3.24.2"
@@ -41,6 +44,7 @@
     "@vitejs/plugin-react": "^6.0.3",
     "eslint": "^9.20.1",
     "eslint-config-next": "^15.2.0",
+    "ioredis": "^5.4.2",
     "jsdom": "^29.1.1",
     "tailwindcss": "^4.0.9",
     "typescript": "^5.7.3",

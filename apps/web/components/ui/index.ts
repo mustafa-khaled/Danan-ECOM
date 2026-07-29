@@ -35,3 +35,6 @@ export { WardrobeLayout } from "./WardrobeLayout";
 
 export { StatusPill } from "./StatusPill";
 export type { StatusPillProps } from "./StatusPill";
+
+export { OptimizedImage } from "./OptimizedImage";
+export type { OptimizedImageProps } from "./OptimizedImage";

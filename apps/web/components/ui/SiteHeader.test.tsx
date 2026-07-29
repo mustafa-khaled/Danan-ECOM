@@ -8,6 +8,23 @@ vi.mock("next/navigation", () => ({
   useRouter: () => ({ refresh: vi.fn() }),
 }));
 
+vi.mock("next/image", () => ({
+  default: ({
+    alt,
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    priority,
+    ...props
+  }: {
+    alt: string;
+    src: string;
+    priority?: boolean;
+    [key: string]: unknown;
+  }) => (
+    // eslint-disable-next-line @next/next/no-img-element
+    <img alt={alt} {...props} />
+  ),
+}));
+
 vi.mock("@/features/auth", () => ({
   useClientLogout: () => ({ logout: vi.fn(), isPending: false }),
 }));

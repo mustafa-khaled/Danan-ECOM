@@ -11,15 +11,10 @@ import {
 export default async function CheckoutPage() {
   const profile = await requireClientSession();
   const cookie = await getSessionCookieHeader();
-  const items = await fetchCart(cookie);
+  const { items, summary } = await fetchCart(cookie);
   const t = await getTranslations("checkout");
 
   const validItems = items.filter((item) => item.piece);
-  const total = validItems.reduce(
-    (sum, item) => sum + parseFloat(item.piece!.design.basePrice),
-    0,
-  );
-  const currency = validItems[0]?.piece?.design.currency ?? "SAR";
 
   return (
     <ClientShell displayName={profile.displayName}>
@@ -37,7 +32,7 @@ export default async function CheckoutPage() {
         />
       ) : (
         <div className="max-w-2xl">
-          <CheckoutForm total={total} currency={currency} />
+          <CheckoutForm summary={summary} />
         </div>
       )}
     </ClientShell>

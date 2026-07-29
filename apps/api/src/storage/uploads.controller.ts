@@ -32,6 +32,17 @@ export class UploadsController {
   async serveFile(@Req() req: Request, @Res() res: Response): Promise<void> {
     const storageKey = req.path.replace(/^\/uploads\//, "");
 
+    if (
+      !storageKey ||
+      storageKey.includes("..") ||
+      storageKey.startsWith("/") ||
+      storageKey.startsWith("\\") ||
+      /[%]2[eE]/i.test(storageKey)
+    ) {
+      res.sendStatus(400);
+      return;
+    }
+
     try {
       const stream = await storage.createReadStream(storageKey);
       const contentType = mimeFromKey(storageKey);

@@ -1,5 +1,12 @@
 import { getApiBase } from "./constants";
 import { invokeUnauthorizedHandler } from "./unauthorized-handler";
+import {
+  getRefreshAudienceFromPath,
+  isAuthLoginPath,
+  isRefreshPath,
+  refreshAdminSession,
+  refreshClientSession,
+} from "./refresh-session";
 
 export class ApiError extends Error {
   status: number;
@@ -22,6 +29,7 @@ interface SendRequestConfig<TBody = unknown> {
   timeout?: number;
   signal?: AbortSignal;
   cookieHeader?: string;
+  _retriedAfterRefresh?: boolean;
 }
 
 function buildUrl(
@@ -45,7 +53,16 @@ function buildUrl(
 export async function sendRequest<TResponse, TBody = unknown>(
   config: SendRequestConfig<TBody>,
 ): Promise<TResponse> {
-  const { method, url, body, params, headers, timeout, signal: externalSignal, cookieHeader } = config;
+  const {
+    method,
+    url,
+    body,
+    params,
+    headers,
+    timeout,
+    signal: externalSignal,
+    cookieHeader,
+  } = config;
 
   const apiBase = getApiBase();
   const fullUrl = buildUrl(apiBase, url, params);
@@ -86,19 +103,25 @@ export async function sendRequest<TResponse, TBody = unknown>(
       cache: "no-store",
     });
 
-    return await parseResponse<TResponse>(response);
+    return await parseResponse<TResponse>(response, config);
   } finally {
     if (timeoutId) clearTimeout(timeoutId);
   }
 }
 
-async function parseResponse<T>(response: Response): Promise<T> {
+async function parseResponse<T>(
+  response: Response,
+  config: SendRequestConfig,
+): Promise<T> {
   let body: unknown;
 
   try {
     body = await response.json();
   } catch {
     if (!response.ok) {
+      if (response.status === 401) {
+        return handleUnauthorized(config) as Promise<T>;
+      }
       throw new ApiError(`HTTP ${response.status}`, response.status);
     }
     return undefined as T;
@@ -106,7 +129,7 @@ async function parseResponse<T>(response: Response): Promise<T> {
 
   if (!response.ok) {
     if (response.status === 401) {
-      invokeUnauthorizedHandler();
+      return handleUnauthorized(config) as Promise<T>;
     }
     const errorBody = body as { message?: string; code?: string } | undefined;
     throw new ApiError(
@@ -117,6 +140,38 @@ async function parseResponse<T>(response: Response): Promise<T> {
   }
 
   return body as T;
+}
+
+const SAFE_RETRY_METHODS = new Set<SendRequestConfig["method"]>(["GET"]);
+
+async function handleUnauthorized<T>(config: SendRequestConfig): Promise<T> {
+  const { url, cookieHeader, _retriedAfterRefresh, method } = config;
+
+  if (_retriedAfterRefresh || isRefreshPath(url) || isAuthLoginPath(url)) {
+    invokeUnauthorizedHandler();
+    throw new ApiError("Unauthorized", 401);
+  }
+
+  const audience = getRefreshAudienceFromPath(url);
+  const result =
+    audience === "admin"
+      ? await refreshAdminSession(cookieHeader)
+      : await refreshClientSession(cookieHeader);
+
+  if (!result.ok) {
+    invokeUnauthorizedHandler();
+    throw new ApiError("Unauthorized", 401);
+  }
+
+  if (!SAFE_RETRY_METHODS.has(method)) {
+    throw new ApiError("Session expired; please retry your action", 401);
+  }
+
+  return sendRequest<T>({
+    ...config,
+    cookieHeader: result.cookieHeader ?? cookieHeader,
+    _retriedAfterRefresh: true,
+  });
 }
 
 function combineAbortSignals(...signals: AbortSignal[]): AbortSignal {

@@ -9,4 +9,4 @@ export { useLogin } from "./hooks/use-login";
 export { useLogout } from "./hooks/use-logout";
 export { useClientLogout } from "./hooks/use-client-logout";
 
-export type { ClientSession, AdminSession, ValidateKeyResponse } from "./types";
+export type { ClientSession, ClientProfile, AdminSession, ValidateKeyResponse } from "./types";

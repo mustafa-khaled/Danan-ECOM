@@ -202,8 +202,13 @@ export class AdminCollectionsController {
 
   @Post("designs/:id/images")
   @UseInterceptors(
-    // Reject oversized uploads during streaming, before buffering in memory.
-    FileInterceptor("file", { limits: { fileSize: 20 * 1024 * 1024, files: 1 } }),
+    FileInterceptor("file", {
+      limits: { fileSize: 20 * 1024 * 1024, files: 1 },
+      fileFilter: (_req, file, cb) => {
+        const allowed = ["image/jpeg", "image/png", "image/webp", "image/avif"];
+        cb(null, allowed.includes(file.mimetype));
+      },
+    }),
   )
   uploadImage(
     @CurrentAdmin() admin: AdminSession,

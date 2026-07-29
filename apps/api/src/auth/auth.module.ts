@@ -4,21 +4,23 @@ import { ConfigModule, ConfigService } from "@nestjs/config";
 import { AuthService } from "./auth.service";
 import { AuthController } from "./auth.controller";
 import { ClientGuard } from "./guards/client.guard";
-import { SESSION_DURATION_SECONDS } from "../common/constants";
+import { RefreshTokenModule } from "./refresh-token.module";
+import { getAccessTokenSeconds } from "../common/constants";
 
 @Module({
   imports: [
+    RefreshTokenModule,
     JwtModule.registerAsync({
       imports: [ConfigModule],
       inject: [ConfigService],
       useFactory: (config: ConfigService) => ({
         secret: config.getOrThrow<string>("JWT_SECRET"),
-        signOptions: { expiresIn: SESSION_DURATION_SECONDS },
+        signOptions: { expiresIn: getAccessTokenSeconds() },
       }),
     }),
   ],
   controllers: [AuthController],
   providers: [AuthService, ClientGuard],
-  exports: [AuthService, ClientGuard, JwtModule],
+  exports: [AuthService, ClientGuard, JwtModule, RefreshTokenModule],
 })
 export class AuthModule {}

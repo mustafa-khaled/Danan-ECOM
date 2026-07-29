@@ -48,6 +48,24 @@ enum OrderStatus {
   CANCELLED
 }
 
+enum PaymentStatus {
+  PENDING
+  AUTHORIZED
+  PAID
+  FAILED
+  PARTIALLY_REFUNDED
+  REFUNDED
+  DISPUTED
+}
+
+enum FulfillmentStatus {
+  UNFULFILLED
+  PROCESSING
+  SHIPPED
+  DELIVERED
+  RETURNED
+}
+
 enum VerificationResult {
   FOUND
   NOT_FOUND
@@ -80,14 +98,15 @@ model Client {
   createdAt        DateTime @default(now())
   updatedAt        DateTime @updatedAt
 
-  ownedPieces      Piece[]            @relation("PieceOwner")
-  savedPieces      SavedPiece[]
-  sentTransfers    TransferRequest[]  @relation("TransferSender")
+  ownedPieces       Piece[]           @relation("PieceOwner")
+  savedPieces       SavedPiece[]
+  sentTransfers     TransferRequest[] @relation("TransferSender")
   receivedTransfers TransferRequest[] @relation("TransferRecipient")
-  verificationLogs VerificationLog[]
-  orders           Order[]
-  ownershipRecords OwnershipRecord[]
-  certificates     Certificate[]
+  verificationLogs  VerificationLog[]
+  orders            Order[]
+  ownershipRecords  OwnershipRecord[]
+  certificates      Certificate[]
+  cartItems         CartItem[]
 
   @@index([houseKeyPrefix, isActive])
 }
@@ -102,6 +121,8 @@ model Collection {
   /// Arabic description; falls back to `description` when null.
   descriptionAr    String?
   coverImageUrl    String?
+  /// Low-quality image placeholder data URL (base64) for blur-up loading.
+  coverImageLqip   String?
   isVisible        Boolean  @default(true)
   sortOrder        Int      @default(0)
   visibilityGroups String[]
@@ -129,6 +150,8 @@ model Design {
   /// Arabic dimensions; falls back to `dimensions` when null.
   dimensionsAr     String?
   imageUrls        String[]
+  /// Low-quality image placeholder data URLs (base64) for blur-up loading.
+  imageLqips       String[]
   basePrice        Decimal  @db.Decimal(12, 2)
   currency         String   @default("SAR")
   isActive         Boolean  @default(true)
@@ -156,6 +179,8 @@ model DesignSpecification {
   sortOrder Int     @default(0)
 
   design Design @relation(fields: [designId], references: [id], onDelete: Cascade)
+
+  @@unique([designId, key])
 }
 
 model Piece {
@@ -168,14 +193,15 @@ model Piece {
   createdAt      DateTime    @default(now())
   updatedAt      DateTime    @updatedAt
 
-  design             Design              @relation(fields: [designId], references: [id])
-  currentOwner       Client?             @relation("PieceOwner", fields: [currentOwnerId], references: [id])
-  ownershipRecords   OwnershipRecord[]
-  certificates       Certificate[]
-  transferRequests   TransferRequest[]
-  verificationLogs   VerificationLog[]
-  orderItems         OrderItem[]
-  savedByClients     SavedPiece[]
+  design           Design            @relation(fields: [designId], references: [id])
+  currentOwner     Client?           @relation("PieceOwner", fields: [currentOwnerId], references: [id])
+  ownershipRecords OwnershipRecord[]
+  certificates     Certificate[]
+  transferRequests TransferRequest[]
+  verificationLogs VerificationLog[]
+  orderItems       OrderItem[]
+  savedByClients   SavedPiece[]
+  cartItem         CartItem?
 
   @@index([currentOwnerId])
   @@index([designId, status])
@@ -195,6 +221,8 @@ model OwnershipRecord {
   piece       Piece        @relation(fields: [pieceId], references: [id])
   client      Client       @relation(fields: [clientId], references: [id])
   certificate Certificate? @relation(fields: [certificateId], references: [id])
+
+  @@index([pieceId, transferredAt])
 }
 
 model Certificate {
@@ -210,44 +238,73 @@ model Certificate {
   createdAt         DateTime @default(now())
   updatedAt         DateTime @updatedAt
 
-  piece             Piece             @relation(fields: [pieceId], references: [id])
-  owner             Client            @relation(fields: [ownerId], references: [id])
-  ownershipRecords  OwnershipRecord[]
+  piece            Piece             @relation(fields: [pieceId], references: [id])
+  owner            Client            @relation(fields: [ownerId], references: [id])
+  ownershipRecords OwnershipRecord[]
 
   @@index([pieceId, isActive])
 }
 
 model Order {
-  id                String      @id @default(uuid())
+  id                String            @id @default(uuid())
   clientId          String
-  status            OrderStatus @default(PENDING)
-  totalAmount       Decimal     @db.Decimal(12, 2)
-  currency          String      @default("SAR")
+  status            OrderStatus       @default(PENDING)
+  paymentStatus     PaymentStatus     @default(PENDING)
+  fulfillmentStatus FulfillmentStatus @default(UNFULFILLED)
+  /// Subtotal before tax and shipping
+  subtotalAmount    Decimal           @db.Decimal(12, 2)
+  /// Tax amount (VAT)
+  taxAmount         Decimal           @db.Decimal(12, 2)
+  /// Tax rate at time of purchase (e.g., 0.15 for 15% VAT)
+  taxRate           Decimal           @db.Decimal(5, 4)
+  /// Shipping cost
+  shippingAmount    Decimal           @default(0) @db.Decimal(12, 2)
+  /// Discount amount applied
+  discountAmount    Decimal           @default(0) @db.Decimal(12, 2)
+  /// Final total (subtotal + tax + shipping - discount)
+  totalAmount       Decimal           @db.Decimal(12, 2)
+  currency          String            @default("SAR")
   paymentProvider   String
   paymentMethod     String?
   paymentReference  String?
+  /// Idempotency key for payment operations
+  idempotencyKey    String?           @unique
   shippingAddress   Json
-  placedAt          DateTime    @default(now())
-  createdAt         DateTime    @default(now())
-  updatedAt         DateTime    @updatedAt
+  placedAt          DateTime          @default(now())
+  createdAt         DateTime          @default(now())
+  updatedAt         DateTime          @updatedAt
 
   client Client      @relation(fields: [clientId], references: [id])
   items  OrderItem[]
 
   @@index([clientId, status])
   @@index([paymentReference])
+  @@index([paymentStatus])
+  @@index([fulfillmentStatus])
 }
 
 model OrderItem {
-  id               String  @id @default(uuid())
-  orderId          String
-  pieceId          String
-  designId         String
-  priceAtPurchase  Decimal @db.Decimal(12, 2)
+  id              String  @id @default(uuid())
+  orderId         String
+  pieceId         String
+  designId        String
+  /// Unit price at time of purchase (base price from design)
+  priceAtPurchase Decimal @db.Decimal(12, 2)
+  /// Tax rate applied to this item
+  taxRate         Decimal @default(0.15) @db.Decimal(5, 4)
+  /// Tax amount for this item
+  taxAmount       Decimal @default(0) @db.Decimal(12, 2)
+  /// Any discount applied to this item
+  discountAmount  Decimal @default(0) @db.Decimal(12, 2)
+  /// Line total (priceAtPurchase + taxAmount - discountAmount)
+  lineTotal       Decimal @db.Decimal(12, 2)
+  currency        String  @default("SAR")
 
   order  Order  @relation(fields: [orderId], references: [id], onDelete: Cascade)
   piece  Piece  @relation(fields: [pieceId], references: [id])
   design Design @relation(fields: [designId], references: [id])
+
+  @@index([pieceId])
 }
 
 model SavedPiece {
@@ -277,10 +334,10 @@ model TransferRequest {
   initiatedAt          DateTime       @default(now())
   completedAt          DateTime?
 
-  piece       Piece      @relation(fields: [pieceId], references: [id])
-  fromClient  Client     @relation("TransferSender", fields: [fromClientId], references: [id])
-  toClient    Client     @relation("TransferRecipient", fields: [toClientId], references: [id])
-  reviewedBy  AdminUser? @relation(fields: [dadanReviewedBy], references: [id])
+  piece      Piece      @relation(fields: [pieceId], references: [id])
+  fromClient Client     @relation("TransferSender", fields: [fromClientId], references: [id])
+  toClient   Client     @relation("TransferRecipient", fields: [toClientId], references: [id])
+  reviewedBy AdminUser? @relation(fields: [dadanReviewedBy], references: [id])
 
   @@index([pieceId, status])
   @@index([fromClientId])
@@ -299,6 +356,8 @@ model VerificationLog {
 
   piece  Piece?  @relation(fields: [pieceId], references: [id])
   client Client? @relation(fields: [clientId], references: [id])
+
+  @@index([serialNumber])
 }
 
 model AdminUser {
@@ -322,7 +381,12 @@ model AuditLog {
   targetType String?
   targetId   String?
   metadata   Json?
+  ipAddress  String?
   createdAt  DateTime  @default(now())
+
+  @@index([actorId])
+  @@index([action])
+  @@index([createdAt(sort: Desc)])
 }
 
 model CartItem {
@@ -332,6 +396,25 @@ model CartItem {
   addedAt   DateTime @default(now())
   expiresAt DateTime
 
+  client Client @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  piece  Piece  @relation(fields: [pieceId], references: [id], onDelete: Cascade)
+
   @@index([clientId])
   @@index([expiresAt])
+}
+
+model FailedRefund {
+  id                String    @id @default(uuid())
+  clientId          String
+  providerReference String
+  amount            Decimal   @db.Decimal(12, 2)
+  currency          String    @default("SAR")
+  reason            String
+  attempts          Int       @default(0)
+  lastError         String?
+  resolvedAt        DateTime?
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
+
+  @@index([resolvedAt])
 }

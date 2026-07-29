@@ -131,6 +131,7 @@ jobs:
       STORAGE_PROVIDER: local
       STORAGE_LOCAL_PATH: /tmp/dadan-uploads
       E2E_HOUSE_KEY: dadan-vip-key-001
+      AUTH_RATE_LIMIT_MAX: "100"
 
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0

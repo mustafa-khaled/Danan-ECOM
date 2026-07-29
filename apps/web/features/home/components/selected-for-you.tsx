@@ -3,38 +3,15 @@ import { PieceCard } from "@/components/ui";
 import { formatPrice } from "@/shared/utils/format";
 import type { Locale } from "@/i18n/routing";
 import { getTranslations, getLocale } from "next-intl/server";
-import { fetchCollections, fetchCollection } from "@/features/collections";
 import { getSessionCookieHeader } from "@/features/auth/server/session";
+import { fetchSelectedForYou } from "../api/fetch-selected-for-you";
 
 export default async function SelectedForYou() {
   const locale = (await getLocale()) as Locale;
   const cookie = await getSessionCookieHeader();
-
   const t = await getTranslations("home");
 
-  const collections = await fetchCollections(cookie);
-
-  const featured = collections[0];
-  let selectedPieces: Array<{
-    slug: string;
-    name: string;
-    images?: string[];
-    price?: string;
-  }> = [];
-
-  if (featured) {
-    try {
-      const featuredDetail = await fetchCollection(featured.slug, cookie);
-      selectedPieces = featuredDetail.designs.slice(0, 3).map((d) => ({
-        slug: d.slug,
-        name: d.name,
-        images: d.imageUrls,
-        price: d.basePrice,
-      }));
-    } catch {
-      selectedPieces = [];
-    }
-  }
+  const selectedPieces = await fetchSelectedForYou(cookie);
 
   return (
     <>
@@ -46,20 +23,22 @@ export default async function SelectedForYou() {
             </h2>
           </div>
           <div className="grid gap-6 sm:grid-cols-2">
-            {selectedPieces.map((design) => (
-              <Link key={design.slug} href={`/beta/pieces/${design.slug}`}>
+            {selectedPieces.map((piece, index) => (
+              <Link key={piece.designSlug} href={`/beta/pieces/${piece.designSlug}`}>
                 <PieceCard
                   piece={{
-                    id: design.slug,
-                    name: design.name,
-                    serialNumber: design.slug,
-                    imageUrl: design.images?.[0],
-                    collectionName: featured?.name,
-                    price: design.price
-                      ? formatPrice(design.price, "SAR", locale)
+                    id: piece.designSlug,
+                    name: piece.name,
+                    serialNumber: piece.designSlug,
+                    imageUrl: piece.imageUrl ?? undefined,
+                    imageLqip: piece.imageLqip ?? undefined,
+                    collectionName: piece.collectionName,
+                    price: piece.basePrice
+                      ? formatPrice(piece.basePrice, piece.currency, locale)
                       : undefined,
                   }}
                   showExplore
+                  priority={index < 2}
                 />
               </Link>
             ))}

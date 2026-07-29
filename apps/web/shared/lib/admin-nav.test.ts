@@ -3,8 +3,8 @@ import { getAdminNavItems } from "./admin-nav";
 
 describe("getAdminNavItems", () => {
   it("shows all sections for SUPER_ADMIN and STAFF", () => {
-    expect(getAdminNavItems("SUPER_ADMIN")).toHaveLength(5);
-    expect(getAdminNavItems("STAFF")).toHaveLength(5);
+    expect(getAdminNavItems("SUPER_ADMIN")).toHaveLength(7);
+    expect(getAdminNavItems("STAFF")).toHaveLength(7);
   });
 
   it("hides transfers from VIEWER", () => {

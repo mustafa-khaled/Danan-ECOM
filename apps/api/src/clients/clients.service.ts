@@ -181,6 +181,10 @@ export class ClientsService {
       data: updateData,
     });
 
+    if (data.isActive === false) {
+      await this.auth.revokeAllClientSessions(id);
+    }
+
     await this.audit.log({
       actorType: ActorType.ADMIN,
       actorId: adminId,
@@ -240,6 +244,8 @@ export class ClientsService {
         houseKeyPrefix: plainKey.slice(0, 4),
       },
     });
+
+    await this.auth.revokeAllClientSessions(id);
 
     await this.audit.log({
       actorType: ActorType.ADMIN,

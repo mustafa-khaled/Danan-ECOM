@@ -1,3 +1,6 @@
+// Ambient types for consumers using legacy moduleResolution (e.g. @dadan/api).
+// eslint-disable-next-line @typescript-eslint/triple-slash-reference -- .d.ts shim has no import form
+/// <reference path="./file-type.d.ts" />
 import {
   ALLOWED_IMAGE_MIMES,
   ALLOWED_PDF_MIME,
@@ -17,4 +20,28 @@ export function validateUpload(contentType: string, size: number, maxBytes?: num
   if (size > limit) {
     throw new Error("File exceeds maximum allowed size");
   }
+}
+
+export async function validateMagicBytes(
+  buffer: Buffer,
+  declaredContentType: string,
+): Promise<void> {
+  const { fileTypeFromBuffer } = await import("file-type");
+  const detected = await fileTypeFromBuffer(buffer);
+
+  if (declaredContentType === ALLOWED_PDF_MIME) {
+    if (!detected || detected.mime !== "application/pdf") {
+      throw new Error("File content does not match declared PDF type");
+    }
+    return;
+  }
+
+  if (ALLOWED_IMAGE_MIMES.has(declaredContentType)) {
+    if (!detected || !ALLOWED_IMAGE_MIMES.has(detected.mime)) {
+      throw new Error("File content does not match declared image type");
+    }
+    return;
+  }
+
+  throw new Error("Unsupported file type");
 }

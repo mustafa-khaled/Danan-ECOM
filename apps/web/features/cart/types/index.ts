@@ -15,3 +15,17 @@ export interface CartItem {
     };
   };
 }
+
+export interface CartSummary {
+  subtotal: number;
+  vatRate: number;
+  vatAmount: number;
+  total: number;
+  currency: string;
+  itemCount: number;
+}
+
+export interface CartResponse {
+  items: CartItem[];
+  summary: CartSummary;
+}

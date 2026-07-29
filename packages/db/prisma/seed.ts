@@ -516,12 +516,19 @@ async function main() {
       include: { design: true },
     });
     const subtotal = orderDesigns.reduce((sum, p) => sum + Number(p.design.basePrice), 0);
-    const total = Math.round(subtotal * 1.15 * 100) / 100;
+    const taxRate = 0.15;
+    const taxAmount = Math.round(subtotal * taxRate * 100) / 100;
+    const total = Math.round((subtotal + taxAmount) * 100) / 100;
 
     await prisma.order.create({
       data: {
         clientId: client.id,
         status: status as never,
+        paymentStatus: status === "CANCELLED" ? "REFUNDED" : "PAID",
+        fulfillmentStatus: status === "FULFILLED" ? "DELIVERED" : "UNFULFILLED",
+        subtotalAmount: subtotal,
+        taxAmount,
+        taxRate,
         totalAmount: total,
         currency: "SAR",
         paymentProvider: "mock",
@@ -537,11 +544,19 @@ async function main() {
           phone: "+966500000000",
         },
         items: {
-          create: orderDesigns.map((p) => ({
-            pieceId: p.id,
-            designId: p.designId,
-            priceAtPurchase: p.design.basePrice,
-          })),
+          create: orderDesigns.map((p) => {
+            const price = Number(p.design.basePrice);
+            const itemTax = Math.round(price * taxRate * 100) / 100;
+            return {
+              pieceId: p.id,
+              designId: p.designId,
+              priceAtPurchase: p.design.basePrice,
+              taxRate,
+              taxAmount: itemTax,
+              lineTotal: Math.round((price + itemTax) * 100) / 100,
+              currency: "SAR",
+            };
+          }),
         },
       },
     });

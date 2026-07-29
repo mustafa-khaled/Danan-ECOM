@@ -7,6 +7,16 @@ export interface ClientSession {
   locale: Locale;
 }
 
+export interface ClientProfile {
+  id: string;
+  displayName: string;
+  email: string;
+  phone: string | null;
+  locale: Locale;
+  visibilityGroups: string[];
+  createdAt: string;
+}
+
 export interface AdminSession {
   adminId: string;
   email: string;

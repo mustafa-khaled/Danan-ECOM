@@ -47,6 +47,7 @@ COPY packages/config/package.json packages/config/
 COPY packages/db/package.json packages/db/
 COPY packages/storage/package.json packages/storage/
 COPY packages/utils/package.json packages/utils/
+COPY packages/types/package.json packages/types/
 COPY packages/db/prisma packages/db/prisma
 RUN --mount=type=cache,target=/root/.local/share/pnpm/store \
     pnpm install --frozen-lockfile
@@ -63,6 +64,7 @@ RUN --mount=type=cache,target=/root/.local/share/pnpm/store \
 # ---------------------------------------------------------------------------
 FROM deps AS builder
 COPY packages/config packages/config
+COPY packages/types packages/types
 COPY apps/web apps/web
 ENV NEXT_TELEMETRY_DISABLED=1
 ARG API_URL=http://api:4000

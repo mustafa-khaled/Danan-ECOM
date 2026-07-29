@@ -41,10 +41,7 @@ export class StorageService {
     if (signedUrl.startsWith("http://") || signedUrl.startsWith("https://")) {
       return signedUrl;
     }
-    const webOrigin =
-      this.config.get<string>("WEB_ORIGIN") ?? "http://localhost:3000";
-    const separator = signedUrl.startsWith("/") ? "" : "/";
-    return `${webOrigin}${separator}${signedUrl}`;
+    return signedUrl.startsWith("/") ? signedUrl : `/${signedUrl}`;
   }
 
   async resolvePublicUrls(
@@ -55,5 +52,26 @@ export class StorageService {
       keys.map((key) => this.resolvePublicUrl(key, expiresInSeconds)),
     );
     return urls.filter((url): url is string => url !== null);
+  }
+
+  async resolvePublicUrlsBatch(
+    keys: (string | null | undefined)[],
+    expiresInSeconds = DEFAULT_ASSET_EXPIRY,
+  ): Promise<Map<string, string>> {
+    const uniqueKeys = [...new Set(keys.filter((k): k is string => !!k))];
+    const results = new Map<string, string>();
+
+    const resolved = await Promise.all(
+      uniqueKeys.map(async (key) => ({
+        key,
+        url: await this.resolvePublicUrl(key, expiresInSeconds),
+      })),
+    );
+
+    for (const { key, url } of resolved) {
+      if (url) results.set(key, url);
+    }
+
+    return results;
   }
 }

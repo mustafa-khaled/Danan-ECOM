@@ -16,7 +16,9 @@
     "typecheck": "tsc --noEmit",
     "lint": "ESLINT_USE_FLAT_CONFIG=false eslint \"src/**/*.ts\""
   },
-  "dependencies": {},
+  "dependencies": {
+    "file-type": "^22.0.1"
+  },
   "devDependencies": {
     "@dadan/config": "workspace:*",
     "@types/node": "^22.13.4",

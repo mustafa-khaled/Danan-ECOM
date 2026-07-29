@@ -1,13 +1,26 @@
 import {
   BadRequestException,
+  ConflictException,
   Injectable,
+  Logger,
   NotFoundException,
 } from "@nestjs/common";
-import { AcquisitionType, ActorType, OrderStatus, PieceStatus } from "@dadan/db";
+import { InjectQueue } from "@nestjs/bullmq";
+import { Queue } from "bullmq";
+import {
+  AcquisitionType,
+  ActorType,
+  FulfillmentStatus,
+  OrderStatus,
+  PaymentStatus,
+  PieceStatus,
+  Prisma,
+} from "@dadan/db";
 import type { Locale, ShippingAddress } from "@dadan/types";
 import { localizeDesign } from "../common/i18n/localize";
 import { AuditService } from "../audit/audit.service";
-import { CertificatesService } from "../certificates/certificates.service";
+import { CERTIFICATE_QUEUE } from "../certificates/jobs/certificate-job.processor";
+import type { GenerateCertificateJobData } from "../certificates/jobs/certificate-job.processor";
 import { NotificationsService } from "../notifications/notifications.service";
 import { PrismaService } from "../prisma/prisma.service";
 import { StorageService } from "../storage/storage.service";
@@ -15,9 +28,11 @@ import { paginationParams } from "../common/constants";
 
 @Injectable()
 export class OrdersService {
+  private readonly logger = new Logger(OrdersService.name);
+
   constructor(
     private readonly prisma: PrismaService,
-    private readonly certificates: CertificatesService,
+    @InjectQueue(CERTIFICATE_QUEUE) private readonly certificateQueue: Queue<GenerateCertificateJobData>,
     private readonly audit: AuditService,
     private readonly notifications: NotificationsService,
     private readonly storage: StorageService,
@@ -26,72 +41,131 @@ export class OrdersService {
   async createPaidOrder(params: {
     clientId: string;
     pieceIds: string[];
+    subtotalAmount: number;
+    taxAmount: number;
+    taxRate: number;
     totalAmount: number;
     currency: string;
     paymentProvider: string;
     paymentMethod?: string;
     paymentReference: string;
     shippingAddress: ShippingAddress;
+    idempotencyKey?: string;
   }) {
-    const order = await this.prisma.db.$transaction(async (tx) => {
-      const pieces = await tx.piece.findMany({
-        where: { id: { in: params.pieceIds } },
-        include: { design: true },
-      });
-
-      if (pieces.length !== params.pieceIds.length) {
-        throw new BadRequestException("One or more pieces not found");
-      }
-
-      for (const piece of pieces) {
-        if (piece.status !== PieceStatus.AVAILABLE) {
-          throw new BadRequestException(`Piece ${piece.serialNumber} is not available`);
-        }
-      }
-
-      const created = await tx.order.create({
-        data: {
-          clientId: params.clientId,
-          status: OrderStatus.PAID,
-          totalAmount: params.totalAmount,
-          currency: params.currency,
-          paymentProvider: params.paymentProvider,
-          paymentMethod: params.paymentMethod,
-          paymentReference: params.paymentReference,
-          shippingAddress: params.shippingAddress as object,
-          items: {
-            create: pieces.map((p) => ({
-              pieceId: p.id,
-              designId: p.designId,
-              priceAtPurchase: p.design.basePrice,
-            })),
-          },
-        },
+    // Check idempotency: if this payment was already processed, return existing order
+    if (params.idempotencyKey) {
+      const existingOrder = await this.prisma.db.order.findUnique({
+        where: { idempotencyKey: params.idempotencyKey },
         include: { items: true },
       });
-
-      for (const piece of pieces) {
-        await tx.piece.update({
-          where: { id: piece.id },
-          data: {
-            status: PieceStatus.OWNED,
-            currentOwnerId: params.clientId,
-          },
-        });
-
-        await tx.ownershipRecord.create({
-          data: {
-            pieceId: piece.id,
-            clientId: params.clientId,
-            acquisitionType: AcquisitionType.PURCHASE,
-          },
-        });
+      if (existingOrder) {
+        return existingOrder;
       }
+    }
 
-      await tx.cartItem.deleteMany({ where: { clientId: params.clientId } });
+    const order = await this.prisma.db.$transaction(
+      async (tx) => {
+        // CR-02: Lock piece rows with FOR UPDATE to prevent double-sale
+        // This ensures no concurrent transaction can modify these pieces
+        const lockedPieces = await tx.$queryRaw<
+          Array<{
+            id: string;
+            serialNumber: string;
+            status: string;
+            designId: string;
+          }>
+        >`
+          SELECT id, "serialNumber", status, "designId"
+          FROM "Piece"
+          WHERE id = ANY(${params.pieceIds}::uuid[])
+          FOR UPDATE
+        `;
 
-      return created;
-    });
+        if (lockedPieces.length !== params.pieceIds.length) {
+          throw new BadRequestException("One or more pieces not found");
+        }
+
+        for (const piece of lockedPieces) {
+          if (piece.status !== PieceStatus.AVAILABLE) {
+            throw new ConflictException(
+              `Piece ${piece.serialNumber} is no longer available`,
+            );
+          }
+        }
+
+        // Get design info for the locked pieces
+        const designs = await tx.design.findMany({
+          where: { id: { in: lockedPieces.map((p) => p.designId) } },
+        });
+        const designMap = new Map(designs.map((d) => [d.id, d]));
+
+        const created = await tx.order.create({
+          data: {
+            clientId: params.clientId,
+            status: OrderStatus.PAID,
+            paymentStatus: PaymentStatus.PAID,
+            fulfillmentStatus: FulfillmentStatus.UNFULFILLED,
+            subtotalAmount: params.subtotalAmount,
+            taxAmount: params.taxAmount,
+            taxRate: params.taxRate,
+            totalAmount: params.totalAmount,
+            currency: params.currency,
+            paymentProvider: params.paymentProvider,
+            paymentMethod: params.paymentMethod,
+            paymentReference: params.paymentReference,
+            idempotencyKey: params.idempotencyKey,
+            shippingAddress: params.shippingAddress as object,
+            items: {
+              create: lockedPieces.map((p) => {
+                const design = designMap.get(p.designId)!;
+                const priceAtPurchase = Number(design.basePrice);
+                const itemTaxAmount =
+                  Math.round(priceAtPurchase * params.taxRate * 100) / 100;
+                const lineTotal =
+                  Math.round((priceAtPurchase + itemTaxAmount) * 100) / 100;
+                return {
+                  pieceId: p.id,
+                  designId: p.designId,
+                  priceAtPurchase: design.basePrice,
+                  taxRate: params.taxRate,
+                  taxAmount: itemTaxAmount,
+                  lineTotal,
+                  currency: params.currency,
+                };
+              }),
+            },
+          },
+          include: { items: true },
+        });
+
+        // Update pieces and create ownership records
+        for (const piece of lockedPieces) {
+          await tx.piece.update({
+            where: { id: piece.id },
+            data: {
+              status: PieceStatus.OWNED,
+              currentOwnerId: params.clientId,
+            },
+          });
+
+          await tx.ownershipRecord.create({
+            data: {
+              pieceId: piece.id,
+              clientId: params.clientId,
+              acquisitionType: AcquisitionType.PURCHASE,
+            },
+          });
+        }
+
+        await tx.cartItem.deleteMany({ where: { clientId: params.clientId } });
+
+        return created;
+      },
+      {
+        // Use serializable isolation for maximum safety
+        isolationLevel: Prisma.TransactionIsolationLevel.Serializable,
+      },
+    );
 
     await this.audit.log({
       actorType: ActorType.CLIENT,
@@ -127,42 +201,25 @@ export class OrdersService {
     return order;
   }
 
-  private async generateCertificateWithRetry(
+  private generateCertificateWithRetry(
     pieceId: string,
     clientId: string,
     orderId: string,
-    attempt = 1,
-  ): Promise<void> {
-    const maxAttempts = 3;
-    try {
-      await this.certificates.generateCertificate(pieceId, clientId);
-      await this.audit.log({
-        actorType: ActorType.SYSTEM,
-        actorId: "system",
-        action: "CERTIFICATE_GENERATED",
-        targetType: "Piece",
-        targetId: pieceId,
-        metadata: { orderId, clientId },
-      });
-    } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : String(error);
-      
-      if (attempt < maxAttempts) {
-        const delay = Math.pow(2, attempt) * 1000;
-        setTimeout(() => {
-          this.generateCertificateWithRetry(pieceId, clientId, orderId, attempt + 1);
-        }, delay);
-      } else {
-        await this.audit.log({
-          actorType: ActorType.SYSTEM,
-          actorId: "system",
-          action: "CERTIFICATE_GENERATION_FAILED",
-          targetType: "Piece",
-          targetId: pieceId,
-          metadata: { orderId, clientId, error: errorMessage, attempts: maxAttempts },
-        });
-      }
-    }
+  ): void {
+    this.certificateQueue.add(
+      "generate-certificate",
+      { pieceId, clientId, orderId },
+      {
+        attempts: 5,
+        backoff: { type: "exponential", delay: 2000 },
+        removeOnComplete: true,
+        removeOnFail: 50,
+      },
+    ).catch((err) => {
+      this.logger.error(
+        `Failed to enqueue certificate job for piece ${pieceId}: ${err instanceof Error ? err.message : String(err)}`,
+      );
+    });
   }
 
   async getClientOrders(
@@ -302,12 +359,30 @@ export class OrdersService {
     return order;
   }
 
+  private static readonly ORDER_TRANSITIONS: Record<OrderStatus, OrderStatus[]> = {
+    [OrderStatus.PENDING]: [OrderStatus.PAID, OrderStatus.CANCELLED],
+    [OrderStatus.PAID]: [OrderStatus.PROCESSING, OrderStatus.CANCELLED],
+    [OrderStatus.PROCESSING]: [OrderStatus.FULFILLED, OrderStatus.CANCELLED],
+    [OrderStatus.FULFILLED]: [],
+    [OrderStatus.CANCELLED]: [],
+  };
+
   async updateOrderStatus(
     adminId: string,
     id: string,
     status: OrderStatus,
     ipAddress?: string,
   ) {
+    const existing = await this.prisma.db.order.findUnique({ where: { id } });
+    if (!existing) throw new NotFoundException("errors.ORDER_NOT_FOUND");
+
+    const allowedTransitions = OrdersService.ORDER_TRANSITIONS[existing.status];
+    if (!allowedTransitions.includes(status)) {
+      throw new BadRequestException(
+        `Invalid order status transition from ${existing.status} to ${status}`,
+      );
+    }
+
     const order = await this.prisma.db.order.update({
       where: { id },
       data: { status },
@@ -319,7 +394,7 @@ export class OrdersService {
       action: "ORDER_STATUS_UPDATED",
       targetType: "Order",
       targetId: id,
-      metadata: { status },
+      metadata: { from: existing.status, to: status },
       ipAddress,
     });
 

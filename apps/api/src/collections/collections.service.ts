@@ -1,7 +1,9 @@
 import {
   Injectable,
+  Logger,
   NotFoundException,
 } from "@nestjs/common";
+import { Cron, CronExpression } from "@nestjs/schedule";
 import { ActorType } from "@dadan/db";
 import type { Locale } from "@dadan/types";
 import { randomUUID } from "node:crypto";
@@ -9,12 +11,15 @@ import { designImageKey, extFromMime } from "@dadan/storage";
 import { AuditService } from "../audit/audit.service";
 import { PrismaService } from "../prisma/prisma.service";
 import { StorageService } from "../storage/storage.service";
+import { ImageProcessingService } from "../storage/image-processing.service";
 import { VisibilityService } from "../visibility/visibility.service";
 import { paginationParams } from "../common/constants";
 import {
   localizeSpecifications,
   pickLocalized,
 } from "../common/i18n/localize";
+
+const DESIGN_FILE_RETENTION_DAYS = 30;
 
 @Injectable()
 export class CollectionsService {
@@ -23,6 +28,7 @@ export class CollectionsService {
     private readonly visibility: VisibilityService,
     private readonly audit: AuditService,
     private readonly storage: StorageService,
+    private readonly imageProcessing: ImageProcessingService,
   ) {}
 
   async getVisibleCollections(clientGroups: string[], locale: Locale = "ar") {
@@ -32,7 +38,7 @@ export class CollectionsService {
       include: {
         designs: {
           where: { isActive: true },
-          include: { pieces: true },
+          include: { _count: { select: { pieces: true } } },
         },
       },
     });
@@ -45,11 +51,7 @@ export class CollectionsService {
             this.visibility.canAccess(clientGroups, d.visibilityGroups),
           );
           const pieceCount = visibleDesigns.reduce(
-            (sum, d) =>
-              sum +
-              d.pieces.filter((_p) =>
-                this.visibility.canAccess(clientGroups, d.visibilityGroups),
-              ).length,
+            (sum, d) => sum + d._count.pieces,
             0,
           );
           return {
@@ -58,6 +60,7 @@ export class CollectionsService {
             slug: c.slug,
             description: pickLocalized(locale, c.description, c.descriptionAr),
             coverImageUrl: await this.storage.resolvePublicUrl(c.coverImageUrl),
+            coverImageLqip: c.coverImageLqip ?? null,
             sortOrder: c.sortOrder,
             pieceCount,
           };
@@ -107,6 +110,7 @@ export class CollectionsService {
         collection.descriptionAr,
       ),
       coverImageUrl: await this.storage.resolvePublicUrl(collection.coverImageUrl),
+      coverImageLqip: collection.coverImageLqip ?? null,
       designs: await Promise.all(
         paginated.map(async (d) => ({
           id: d.id,
@@ -116,6 +120,7 @@ export class CollectionsService {
           basePrice: d.basePrice,
           currency: d.currency,
           imageUrls: await this.storage.resolvePublicUrls(d.imageUrls),
+          imageLqips: d.imageLqips ?? [],
         })),
       ),
       total: visibleDesigns.length,
@@ -157,6 +162,7 @@ export class CollectionsService {
       weight: design.weight,
       dimensions: pickLocalized(locale, design.dimensions, design.dimensionsAr),
       imageUrls: await this.storage.resolvePublicUrls(design.imageUrls),
+      imageLqips: design.imageLqips ?? [],
       basePrice: design.basePrice,
       currency: design.currency,
       collection: {
@@ -469,11 +475,15 @@ export class CollectionsService {
     const fileId = randomUUID();
     const ext = extFromMime(contentType);
     const key = designImageKey(designId, fileId, ext);
-    await this.storage.upload(key, buffer, { contentType });
+
+    const variants = await this.imageProcessing.processAndUpload(buffer, key, contentType);
 
     const updated = await this.prisma.db.design.update({
       where: { id: designId },
-      data: { imageUrls: { push: key } },
+      data: {
+        imageUrls: { push: variants.webp },
+        imageLqips: { push: variants.lqipDataUrl },
+      },
     });
 
     await this.audit.log({
@@ -482,7 +492,7 @@ export class CollectionsService {
       action: "DESIGN_IMAGE_UPLOADED",
       targetType: "Design",
       targetId: designId,
-      metadata: { key },
+      metadata: { key: variants.webp, lqip: variants.lqip },
       ipAddress,
     });
 
@@ -544,5 +554,121 @@ export class CollectionsService {
       where: { designId },
       orderBy: { sortOrder: "asc" },
     });
+  }
+
+  async deleteDesignFiles(designId: string): Promise<{ deleted: number; errors: number }> {
+    const design = await this.prisma.db.design.findUnique({
+      where: { id: designId },
+      select: { imageUrls: true },
+    });
+
+    if (!design?.imageUrls?.length) {
+      return { deleted: 0, errors: 0 };
+    }
+
+    let deleted = 0;
+    let errors = 0;
+
+    for (const key of design.imageUrls) {
+      try {
+        const exists = await this.storage.exists(key);
+        if (exists) {
+          await this.storage.delete(key);
+          deleted++;
+        }
+      } catch {
+        errors++;
+      }
+    }
+
+    return { deleted, errors };
+  }
+
+  async deleteCollectionCoverFile(collectionId: string): Promise<boolean> {
+    const collection = await this.prisma.db.collection.findUnique({
+      where: { id: collectionId },
+      select: { coverImageUrl: true },
+    });
+
+    if (!collection?.coverImageUrl) {
+      return false;
+    }
+
+    try {
+      const exists = await this.storage.exists(collection.coverImageUrl);
+      if (exists) {
+        await this.storage.delete(collection.coverImageUrl);
+        return true;
+      }
+    } catch {
+      return false;
+    }
+
+    return false;
+  }
+}
+
+@Injectable()
+export class DesignCleanupService {
+  private readonly logger = new Logger(DesignCleanupService.name);
+
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly collections: CollectionsService,
+    private readonly audit: AuditService,
+  ) {}
+
+  @Cron(CronExpression.EVERY_DAY_AT_3AM)
+  async cleanupOrphanedDesignFiles() {
+    const retentionDate = new Date();
+    retentionDate.setDate(retentionDate.getDate() - DESIGN_FILE_RETENTION_DAYS);
+
+    const softDeletedDesigns = await this.prisma.db.design.findMany({
+      where: {
+        isActive: false,
+        updatedAt: { lte: retentionDate },
+        imageUrls: { isEmpty: false },
+      },
+      select: { id: true, imageUrls: true },
+    });
+
+    if (softDeletedDesigns.length === 0) {
+      return;
+    }
+
+    this.logger.log(
+      `Starting cleanup of ${softDeletedDesigns.length} soft-deleted designs older than ${DESIGN_FILE_RETENTION_DAYS} days`,
+    );
+
+    let totalDeleted = 0;
+    let totalErrors = 0;
+
+    for (const design of softDeletedDesigns) {
+      const { deleted, errors } = await this.collections.deleteDesignFiles(design.id);
+      totalDeleted += deleted;
+      totalErrors += errors;
+
+      if (deleted > 0) {
+        await this.prisma.db.design.update({
+          where: { id: design.id },
+          data: { imageUrls: [], imageLqips: [] },
+        });
+      }
+    }
+
+    await this.audit.log({
+      actorType: ActorType.SYSTEM,
+      actorId: "system",
+      action: "DESIGN_FILES_CLEANUP",
+      metadata: {
+        designsProcessed: softDeletedDesigns.length,
+        filesDeleted: totalDeleted,
+        errors: totalErrors,
+      },
+    });
+
+    this.logger.log(
+      `Cleanup complete: ${totalDeleted} files deleted, ${totalErrors} errors`,
+    );
   }
 }
