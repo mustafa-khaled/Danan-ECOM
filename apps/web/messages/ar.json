@@ -162,7 +162,8 @@
     "gender": "الجنس",
     "age": "العمر",
     "collectionSummary": "ملخص المجموعة",
-    "ownedPieces": "{count} قطعة مملوكة"
+    "ownedPieces": "{count} قطعة مملوكة",
+    "updateError": "تعذّر تحديث الملف الشخصي"
   },
   "cart": {
     "title": "السلة",
@@ -171,7 +172,9 @@
     "subtotal": "المجموع الفرعي",
     "vat": "ضريبة القيمة المضافة",
     "total": "الإجمالي",
-    "checkout": "متابعة الدفع"
+    "checkout": "متابعة الدفع",
+    "remove": "إزالة",
+    "removeError": "تعذّر إزالة العنصر"
   },
   "checkout": {
     "title": "الدفع",

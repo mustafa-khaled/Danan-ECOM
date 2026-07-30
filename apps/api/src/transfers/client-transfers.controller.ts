@@ -7,8 +7,6 @@ import {
   Req,
   UseGuards,
 } from "@nestjs/common";
-import { IsEnum, IsString, MinLength } from "class-validator";
-import { TransferType } from "@dadan/db";
 import type { Request } from "express";
 import { TransfersService } from "./transfers.service";
 import { ClientGuard } from "../auth/guards/client.guard";
@@ -16,18 +14,7 @@ import { CurrentClient } from "../auth/decorators/current-client.decorator";
 import { CurrentLocale } from "../common/i18n/locale";
 import type { ClientSession, Locale } from "@dadan/types";
 import { getClientIp } from "../common/constants";
-
-class InitiateTransferDto {
-  @IsString()
-  pieceId!: string;
-
-  @IsEnum(TransferType)
-  transferType!: TransferType;
-
-  @IsString()
-  @MinLength(1)
-  recipientHouseKey!: string;
-}
+import { InitiateTransferDto } from "./dto/initiate-transfer.dto";
 
 @Controller("client/transfers")
 @UseGuards(ClientGuard)

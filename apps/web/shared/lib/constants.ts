@@ -1,13 +1,10 @@
 import { env } from "@/env";
 
-export const API_URL = env.API_URL;
-export const NEXT_PUBLIC_API_URL = env.NEXT_PUBLIC_API_URL;
-
 export function getApiBase(): string {
   if (typeof window === "undefined") {
-    return API_URL;
+    return process.env.API_URL ?? "http://localhost:4000";
   }
-  return NEXT_PUBLIC_API_URL;
+  return env.NEXT_PUBLIC_API_URL;
 }
 
 export const PAYMENT_MODE = env.NEXT_PUBLIC_PAYMENT_MODE;

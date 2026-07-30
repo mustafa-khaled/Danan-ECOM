@@ -15,11 +15,15 @@ export function ProfileForm({ initial }: ProfileFormProps) {
   const t = useTranslations("profile");
   const tCommon = useTranslations("common");
   const [phone, setPhone] = useState(initial.phone);
-  const { updateProfile, isPending } = useUpdateProfile();
+  const { updateProfile, isPending, error } = useUpdateProfile();
 
   async function handleSubmit(event: FormEvent) {
     event.preventDefault();
-    await updateProfile({ phone });
+    try {
+      await updateProfile({ phone });
+    } catch {
+      /* error is rendered via the mutation's `error` state */
+    }
   }
 
   return (
@@ -48,6 +52,11 @@ export function ProfileForm({ initial }: ProfileFormProps) {
           className="w-full border border-[var(--color-border)] bg-white px-4 py-3 text-sm text-[var(--color-text)] outline-none focus:border-[var(--color-accent)]"
         />
       </div>
+      {error ? (
+        <p role="alert" className="text-sm text-[var(--color-ruby)] sm:col-span-2">
+          {error instanceof Error ? error.message : t("updateError")}
+        </p>
+      ) : null}
       <div className="sm:col-span-2">
         <button
           type="submit"

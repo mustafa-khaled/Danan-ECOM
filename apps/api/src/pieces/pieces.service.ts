@@ -20,6 +20,13 @@ import {
 
 @Injectable()
 export class PiecesService {
+  private static readonly PIECE_TRANSITIONS: Record<PieceStatus, PieceStatus[]> = {
+    [PieceStatus.AVAILABLE]: [PieceStatus.RETIRED],
+    [PieceStatus.OWNED]: [],
+    [PieceStatus.TRANSFER_PENDING]: [],
+    [PieceStatus.RETIRED]: [PieceStatus.AVAILABLE],
+  };
+
   constructor(
     private readonly prisma: PrismaService,
     private readonly serialNumbers: SerialNumberService,
@@ -323,6 +330,15 @@ export class PiecesService {
 
     if (data.status === PieceStatus.OWNED && !piece.currentOwnerId) {
       throw new BadRequestException("Cannot set OWNED without an owner");
+    }
+
+    if (data.status) {
+      const allowed = PiecesService.PIECE_TRANSITIONS[piece.status];
+      if (!allowed.includes(data.status)) {
+        throw new BadRequestException(
+          `Invalid piece status transition from ${piece.status} to ${data.status}`,
+        );
+      }
     }
 
     const updated = await this.prisma.db.piece.update({

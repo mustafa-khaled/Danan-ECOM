@@ -15,6 +15,6 @@ export class ClientHomeController {
     @CurrentClient() client: ClientSession,
     @CurrentLocale() locale: Locale,
   ) {
-    return this.home.getSelectedForYou(client.visibilityGroups, locale);
+    return this.home.getSelectedForYou(client.clientId, client.visibilityGroups, locale);
   }
 }

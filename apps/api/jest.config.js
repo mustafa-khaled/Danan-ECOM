@@ -12,5 +12,6 @@ module.exports = {
     "^@dadan/db$": "<rootDir>/../../packages/db/src/index.ts",
     "^@dadan/types$": "<rootDir>/../../packages/types/src/index.ts",
     "^@dadan/utils$": "<rootDir>/../../packages/utils/src/index.ts",
+    "^@dadan/storage$": "<rootDir>/test/__mocks__/@dadan/storage.ts",
   },
 };

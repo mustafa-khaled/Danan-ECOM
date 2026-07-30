@@ -74,6 +74,7 @@ export default function AccessGatePage() {
           fill
           priority={index === 0}
           quality={90}
+          sizes="100vw"
           className="object-cover object-top z-0"
           style={{
             opacity: activeIndex === index ? 1 : 0,
@@ -168,6 +169,7 @@ export default function AccessGatePage() {
                   src="/assets/featuredPieces.png"
                   alt={t("featuredPieces")}
                   fill
+                  sizes="52px"
                   className="object-cover"
                 />
               </div>
@@ -199,6 +201,7 @@ export default function AccessGatePage() {
                   src="/assets/aboutTheHouse.png"
                   alt={t("aboutTheHouse")}
                   fill
+                  sizes="52px"
                   className="object-cover"
                   style={{ objectPosition: "70% center" }}
                 />

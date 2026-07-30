@@ -9,10 +9,20 @@ export {
   contactSender,
   contactRecipient,
 } from "./api/fetch-admin-transfers";
+export {
+  fetchAdminCertificates,
+  regenerateCertificate,
+} from "./api/fetch-admin-certificates";
+export { fetchAdminVerificationLogs } from "./api/fetch-admin-verification-logs";
 export type {
   AdminClientListItem,
   AdminPieceListItem,
   AdminOrderListItem,
   AdminTransferListItem,
   AdminTransferDetail,
+  AdminCertificateListItem,
+  AdminVerificationLogItem,
+  AdminClientDetail,
+  AdminPieceDetail,
+  AdminOrderDetail,
 } from "./types";

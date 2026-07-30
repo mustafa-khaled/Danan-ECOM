@@ -9,36 +9,15 @@ import {
   Req,
   UseGuards,
 } from "@nestjs/common";
-import { AcquisitionType, PieceStatus } from "@dadan/db";
-import {
-  IsEnum,
-  IsOptional,
-  IsString,
-  IsUUID,
-} from "class-validator";
 import type { Request } from "express";
 import { PiecesService } from "./pieces.service";
 import { AdminGuard } from "../admin/auth/guards/admin.guard";
 import { CurrentAdmin } from "../admin/auth/decorators/current-admin.decorator";
 import type { AdminSession } from "@dadan/types";
 import { getClientIp } from "../common/constants";
-
-class RegisterPieceDto {
-  @IsUUID() designId!: string;
-  @IsOptional() @IsString() notes?: string;
-  @IsOptional() @IsUUID() initialClientId?: string;
-}
-
-class UpdatePieceDto {
-  @IsOptional() @IsEnum(PieceStatus) status?: PieceStatus;
-  @IsOptional() @IsString() notes?: string;
-}
-
-class AssignPieceDto {
-  @IsUUID() clientId!: string;
-  @IsOptional() @IsEnum(AcquisitionType) acquisitionType?: AcquisitionType;
-  @IsOptional() @IsString() notes?: string;
-}
+import { RegisterPieceDto } from "./dto/register-piece.dto";
+import { UpdatePieceDto } from "./dto/update-piece.dto";
+import { AssignPieceDto } from "./dto/assign-piece.dto";
 
 @Controller("admin/pieces")
 @UseGuards(AdminGuard)

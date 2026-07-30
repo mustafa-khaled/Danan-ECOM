@@ -40,6 +40,7 @@ export interface TapCharge {
 type PaymentProvider = "mock" | "tap";
 
 const TAP_API_BASE = "https://api.tap.company/v2";
+const TAP_TIMEOUT_MS = 30_000;
 
 /** Charge states Tap treats as terminal failures. */
 const TAP_FAILURE_STATUSES = new Set([
@@ -80,6 +81,15 @@ export class PaymentsService {
       this.secretKey = providerKey;
       this.logger.log("Payment provider: Tap Payments");
     } else {
+      if (
+        config.get<string>("NODE_ENV") === "production" &&
+        config.get<string>("ALLOW_MOCK_PAYMENTS") !== "true"
+      ) {
+        throw new Error(
+          "Mock payment provider is not allowed in production. " +
+            "Set PAYMENT_PROVIDER_KEY to a valid Tap key or set ALLOW_MOCK_PAYMENTS=true.",
+        );
+      }
       this.provider = "mock";
       this.secretKey = undefined;
       this.logger.warn("Payment provider: Mock (no real payments will be processed)");
@@ -105,73 +115,97 @@ export class PaymentsService {
 
   private async chargeTap(params: ChargeParams): Promise<PaymentResult> {
     const [firstName, ...rest] = params.customer.name.trim().split(/\s+/);
-    try {
-      const headers: Record<string, string> = {
-        Authorization: `Bearer ${this.secretKey}`,
-        "Content-Type": "application/json",
-      };
-      if (params.idempotencyKey) {
-        headers["Idempotency-Key"] = params.idempotencyKey;
-      }
+    const headers: Record<string, string> = {
+      Authorization: `Bearer ${this.secretKey}`,
+      "Content-Type": "application/json",
+    };
+    if (params.idempotencyKey) {
+      headers["Idempotency-Key"] = params.idempotencyKey;
+    }
 
-      const response = await fetch(`${TAP_API_BASE}/charges`, {
-        method: "POST",
-        headers,
-        body: JSON.stringify({
-          amount: params.amount,
-          currency: params.currency.toUpperCase(),
-          // Token charges are confirmed synchronously; the redirect/3DS flow
-          // requires frontend integration with Tap's SDK.
-          threeDSecure: false,
-          save_card: false,
-          description: "DADAN Dijital purchase",
-          statement_descriptor: "DADAN",
-          metadata: { ...params.metadata, paymentMethod: params.paymentMethod },
-          customer: {
-            first_name: firstName ?? "DADAN",
-            last_name: rest.join(" ") || undefined,
-            email: params.customer.email,
-          },
-          source: { id: params.token },
-          ...(this.webhookUrl ? { post: { url: this.webhookUrl } } : {}),
-        }),
-      });
+    const body = JSON.stringify({
+      amount: params.amount,
+      currency: params.currency.toUpperCase(),
+      threeDSecure: false,
+      save_card: false,
+      description: "DADAN Dijital purchase",
+      statement_descriptor: "DADAN",
+      metadata: { ...params.metadata, paymentMethod: params.paymentMethod },
+      customer: {
+        first_name: firstName ?? "DADAN",
+        last_name: rest.join(" ") || undefined,
+        email: params.customer.email,
+      },
+      source: { id: params.token },
+      ...(this.webhookUrl ? { post: { url: this.webhookUrl } } : {}),
+    });
 
-      const charge = (await response.json()) as TapCharge & {
-        errors?: { code?: string; description?: string }[];
-      };
+    const maxAttempts = 2;
+    for (let attempt = 1; attempt <= maxAttempts; attempt++) {
+      const controller = new AbortController();
+      const timer = setTimeout(() => controller.abort(), TAP_TIMEOUT_MS);
+      try {
+        const response = await fetch(`${TAP_API_BASE}/charges`, {
+          method: "POST",
+          headers,
+          body,
+          signal: controller.signal,
+        });
+        clearTimeout(timer);
 
-      if (!response.ok) {
-        const error = charge.errors?.[0];
-        this.logger.error(
-          `Tap charge failed (HTTP ${response.status}): ${error?.description ?? "unknown"}`,
-        );
+        if (response.status >= 500 && attempt < maxAttempts) {
+          this.logger.warn(`Tap charge attempt ${attempt} returned ${response.status}, retrying...`);
+          await new Promise((r) => setTimeout(r, 1000 * attempt));
+          continue;
+        }
+
+        const charge = (await response.json()) as TapCharge & {
+          errors?: { code?: string; description?: string }[];
+        };
+
+        if (!response.ok) {
+          const error = charge.errors?.[0];
+          this.logger.error(
+            `Tap charge failed (HTTP ${response.status}): ${error?.description ?? "unknown"}`,
+          );
+          return {
+            success: false,
+            failureCode: error?.code ?? `HTTP_${response.status}`,
+            failureMessage: error?.description,
+          };
+        }
+
+        if (charge.status === "CAPTURED") {
+          return { success: true, providerReference: charge.id };
+        }
+
+        this.logger.warn(`Tap charge ${charge.id} not captured: ${charge.status}`);
         return {
           success: false,
-          failureCode: error?.code ?? `HTTP_${response.status}`,
-          failureMessage: error?.description,
+          providerReference: charge.id,
+          failureCode: charge.status,
+          failureMessage: charge.response?.message,
+        };
+      } catch (error) {
+        clearTimeout(timer);
+        const isTransient =
+          error instanceof Error &&
+          (error.name === "AbortError" || error.message.includes("fetch"));
+        if (isTransient && attempt < maxAttempts) {
+          this.logger.warn(`Tap charge attempt ${attempt} failed (${error instanceof Error ? error.message : String(error)}), retrying...`);
+          await new Promise((r) => setTimeout(r, 1000 * attempt));
+          continue;
+        }
+        const message = error instanceof Error ? error.message : String(error);
+        this.logger.error(`Tap charge request failed: ${message}`);
+        return {
+          success: false,
+          failureCode: "TAP_REQUEST_FAILED",
         };
       }
-
-      if (charge.status === "CAPTURED") {
-        return { success: true, providerReference: charge.id };
-      }
-
-      this.logger.warn(`Tap charge ${charge.id} not captured: ${charge.status}`);
-      return {
-        success: false,
-        providerReference: charge.id,
-        failureCode: charge.status,
-        failureMessage: charge.response?.message,
-      };
-    } catch (error) {
-      const message = error instanceof Error ? error.message : String(error);
-      this.logger.error(`Tap charge request failed: ${message}`);
-      return {
-        success: false,
-        failureCode: "TAP_REQUEST_FAILED",
-      };
     }
+
+    return { success: false, failureCode: "TAP_REQUEST_FAILED" };
   }
 
   private chargeMock(params: ChargeParams): PaymentResult {
@@ -198,6 +232,8 @@ export class PaymentsService {
     currency: string,
   ): Promise<PaymentResult> {
     if (this.provider === "tap") {
+      const controller = new AbortController();
+      const timer = setTimeout(() => controller.abort(), TAP_TIMEOUT_MS);
       try {
         const response = await fetch(`${TAP_API_BASE}/refunds`, {
           method: "POST",
@@ -211,7 +247,9 @@ export class PaymentsService {
             currency: currency.toUpperCase(),
             reason: "requested_by_customer",
           }),
+          signal: controller.signal,
         });
+        clearTimeout(timer);
 
         const refund = (await response.json()) as {
           id?: string;
@@ -237,6 +275,7 @@ export class PaymentsService {
           failureCode: refund.status,
         };
       } catch (error) {
+        clearTimeout(timer);
         const message = error instanceof Error ? error.message : String(error);
         this.logger.error(`Tap refund request failed: ${message}`);
         return { success: false, failureCode: "TAP_REQUEST_FAILED" };

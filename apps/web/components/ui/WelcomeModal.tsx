@@ -45,6 +45,7 @@ export function WelcomeModal({ displayName }: WelcomeModalProps) {
             src="/assets/dadan-model.png"
             alt="DADAN"
             fill
+            sizes="(max-width: 768px) 0px, 448px"
             className="object-cover"
           />
         </div>

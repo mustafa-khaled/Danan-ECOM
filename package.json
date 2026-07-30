@@ -32,6 +32,9 @@
     "db:generate": "turbo db:generate",
     "db:migrate": "turbo db:migrate",
     "db:seed": "pnpm --filter @dadan/db db:seed",
+    "db:seed:reset": "pnpm --filter @dadan/db db:seed:reset",
+    "seed:catalog": "pnpm --filter @dadan/db db:seed",
+    "seed:catalog:reset": "pnpm --filter @dadan/db db:seed:reset",
     "prepare": "husky"
   },
   "devDependencies": {

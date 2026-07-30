@@ -33,6 +33,11 @@ export const ADMIN_NAV_ITEMS: AdminNavItem[] = [
     roles: ["SUPER_ADMIN", "STAFF", "VIEWER"],
   },
   {
+    href: "/admin/certificates",
+    label: "Certificates",
+    roles: ["SUPER_ADMIN", "STAFF", "VIEWER"],
+  },
+  {
     href: "/admin/orders",
     label: "Orders",
     roles: ["SUPER_ADMIN", "STAFF", "VIEWER"],
@@ -40,6 +45,11 @@ export const ADMIN_NAV_ITEMS: AdminNavItem[] = [
   {
     href: "/admin/transfers",
     label: "Transfers",
+    roles: ["SUPER_ADMIN", "STAFF"],
+  },
+  {
+    href: "/admin/verification-logs",
+    label: "Verification Logs",
     roles: ["SUPER_ADMIN", "STAFF"],
   },
 ];

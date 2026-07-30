@@ -216,7 +216,7 @@ export class CartService {
     const currency = pieces[0]!.design.currency;
 
     const sortedPieceIds = cartItems.map((i) => i.pieceId).sort().join("|");
-    const idempotencyKey = `checkout_${clientId}_${createHash("sha256").update(sortedPieceIds).digest("hex").slice(0, 32)}`;
+    const idempotencyKey = `checkout_${clientId}_${Date.now()}_${createHash("sha256").update(sortedPieceIds).digest("hex").slice(0, 16)}`;
 
     const payment = await this.payments.charge({
       token: data.paymentToken,

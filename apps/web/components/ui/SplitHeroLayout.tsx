@@ -17,6 +17,7 @@ export function SplitHeroLayout({ imageSrc, imageAlt, children }: SplitHeroLayou
           fill
           priority
           quality={85}
+          sizes="55vw"
           className="object-cover object-top"
         />
       </div>

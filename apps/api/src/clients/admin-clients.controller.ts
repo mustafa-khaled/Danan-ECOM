@@ -9,14 +9,6 @@ import {
   Req,
   UseGuards,
 } from "@nestjs/common";
-import {
-  IsArray,
-  IsBoolean,
-  IsEmail,
-  IsOptional,
-  IsString,
-  MinLength,
-} from "class-validator";
 import { AdminRole } from "@dadan/db";
 import { ClientsService } from "./clients.service";
 import { AdminGuard } from "../admin/auth/guards/admin.guard";
@@ -25,67 +17,9 @@ import { CurrentAdmin } from "../admin/auth/decorators/current-admin.decorator";
 import type { AdminSession } from "@dadan/types";
 import type { Request } from "express";
 import { getClientIp } from "../common/constants";
-
-class CreateClientDto {
-  @IsString()
-  @MinLength(1)
-  displayName!: string;
-
-  @IsEmail()
-  email!: string;
-
-  @IsOptional()
-  @IsString()
-  phone?: string;
-
-  @IsOptional()
-  @IsString()
-  locale?: string;
-
-  @IsOptional()
-  @IsArray()
-  @IsString({ each: true })
-  visibilityGroups?: string[];
-}
-
-class UpdateClientDto {
-  @IsOptional()
-  @IsString()
-  displayName?: string;
-
-  @IsOptional()
-  @IsEmail()
-  email?: string;
-
-  @IsOptional()
-  @IsString()
-  phone?: string;
-
-  @IsOptional()
-  @IsString()
-  locale?: string;
-
-  @IsOptional()
-  @IsBoolean()
-  isActive?: boolean;
-
-  @IsOptional()
-  @IsArray()
-  @IsString({ each: true })
-  visibilityGroups?: string[];
-}
-
-class VisibilityGroupsDto {
-  @IsOptional()
-  @IsArray()
-  @IsString({ each: true })
-  add?: string[];
-
-  @IsOptional()
-  @IsArray()
-  @IsString({ each: true })
-  remove?: string[];
-}
+import { CreateClientDto } from "./dto/create-client.dto";
+import { UpdateClientDto } from "./dto/update-client.dto";
+import { VisibilityGroupsDto } from "./dto/visibility-groups.dto";
 
 @Controller("admin/clients")
 @UseGuards(AdminGuard)

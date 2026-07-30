@@ -3,6 +3,8 @@ import {
   IsEnum,
   IsOptional,
   IsString,
+  MaxLength,
+  MinLength,
   ValidateNested,
 } from "class-validator";
 import { Type } from "class-transformer";
@@ -32,6 +34,8 @@ class CheckoutDto {
   paymentMethod!: "CARD" | "MADA" | "APPLE_PAY";
 
   @IsString()
+  @MinLength(1)
+  @MaxLength(512)
   paymentToken!: string;
 }
 

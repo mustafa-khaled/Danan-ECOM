@@ -22,8 +22,8 @@ export default async function SelectedForYou() {
               {t("selectedForYou")}
             </h2>
           </div>
-          <div className="grid gap-6 sm:grid-cols-2">
-            {selectedPieces.map((piece, index) => (
+          <div className="grid gap-6 sm:grid-cols-3">
+            {selectedPieces.map((piece) => (
               <Link
                 key={piece.designSlug}
                 href={`/beta/pieces/${piece.designSlug}`}
@@ -41,7 +41,7 @@ export default async function SelectedForYou() {
                       : undefined,
                   }}
                   showExplore
-                  priority={index < 2}
+                  priority
                 />
               </Link>
             ))}

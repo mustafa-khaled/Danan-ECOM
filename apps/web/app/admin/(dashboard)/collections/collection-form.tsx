@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { useForm, type Resolver } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { LuxuryButton } from "@/components/ui";
+import { useConfirm } from "@/components/confirm-dialog";
 import type { AdminCollectionDetail } from "@/features/admin/types";
 import {
   createCollection,
@@ -28,6 +29,7 @@ const errorClassName = "mt-1 text-xs text-red-500";
 
 export function CollectionForm({ collection, mode }: CollectionFormProps) {
   const router = useRouter();
+  const confirm = useConfirm();
   const [isDeleting, setIsDeleting] = useState(false);
   const [apiError, setApiError] = useState<string | null>(null);
 
@@ -81,9 +83,15 @@ export function CollectionForm({ collection, mode }: CollectionFormProps) {
   };
 
   const handleDelete = async () => {
-    if (!collection || !confirm("Are you sure you want to delete this collection? This cannot be undone.")) {
-      return;
-    }
+    if (!collection) return;
+
+    const confirmed = await confirm({
+      title: "Delete Collection",
+      message: "Are you sure you want to delete this collection? This cannot be undone.",
+      confirmLabel: "Delete",
+      variant: "danger",
+    });
+    if (!confirmed) return;
 
     setIsDeleting(true);
     setApiError(null);
@@ -109,8 +117,9 @@ export function CollectionForm({ collection, mode }: CollectionFormProps) {
       <div className="grid gap-6 lg:grid-cols-2">
         <div className="space-y-4">
           <div>
-            <label className={labelClassName}>Name (English)</label>
+            <label htmlFor="col-name" className={labelClassName}>Name (English)</label>
             <input
+              id="col-name"
               type="text"
               {...register("name")}
               className={inputClassName}
@@ -119,8 +128,9 @@ export function CollectionForm({ collection, mode }: CollectionFormProps) {
           </div>
 
           <div>
-            <label className={labelClassName}>Name (Arabic)</label>
+            <label htmlFor="col-nameAr" className={labelClassName}>Name (Arabic)</label>
             <input
+              id="col-nameAr"
               type="text"
               {...register("nameAr")}
               dir="rtl"
@@ -130,8 +140,9 @@ export function CollectionForm({ collection, mode }: CollectionFormProps) {
           </div>
 
           <div>
-            <label className={labelClassName}>Slug</label>
+            <label htmlFor="col-slug" className={labelClassName}>Slug</label>
             <input
+              id="col-slug"
               type="text"
               {...register("slug")}
               className={inputClassName}
@@ -145,8 +156,9 @@ export function CollectionForm({ collection, mode }: CollectionFormProps) {
 
         <div className="space-y-4">
           <div>
-            <label className={labelClassName}>Description (English)</label>
+            <label htmlFor="col-description" className={labelClassName}>Description (English)</label>
             <textarea
+              id="col-description"
               {...register("description")}
               rows={3}
               className={inputClassName}
@@ -154,8 +166,9 @@ export function CollectionForm({ collection, mode }: CollectionFormProps) {
           </div>
 
           <div>
-            <label className={labelClassName}>Description (Arabic)</label>
+            <label htmlFor="col-descriptionAr" className={labelClassName}>Description (Arabic)</label>
             <textarea
+              id="col-descriptionAr"
               {...register("descriptionAr")}
               rows={3}
               dir="rtl"
@@ -167,8 +180,9 @@ export function CollectionForm({ collection, mode }: CollectionFormProps) {
 
       <div className="grid gap-6 lg:grid-cols-3">
         <div>
-          <label className={labelClassName}>Sort Order</label>
+          <label htmlFor="col-sortOrder" className={labelClassName}>Sort Order</label>
           <input
+            id="col-sortOrder"
             type="number"
             {...register("sortOrder")}
             className={inputClassName}
@@ -176,8 +190,9 @@ export function CollectionForm({ collection, mode }: CollectionFormProps) {
         </div>
 
         <div>
-          <label className={labelClassName}>Visibility Groups</label>
+          <label htmlFor="col-visibilityGroups" className={labelClassName}>Visibility Groups</label>
           <input
+            id="col-visibilityGroups"
             type="text"
             {...register("visibilityGroups")}
             placeholder="vip, premium (comma separated)"

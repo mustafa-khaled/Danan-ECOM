@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { useForm, type Resolver } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { LuxuryButton } from "@/components/ui";
+import { useConfirm } from "@/components/confirm-dialog";
 import type { AdminDesignListItem, AdminCollectionListItem } from "@/features/admin/types";
 import {
   createDesign,
@@ -30,6 +31,7 @@ const errorClassName = "mt-1 text-xs text-red-500";
 
 export function DesignForm({ design, collections, mode }: DesignFormProps) {
   const router = useRouter();
+  const confirm = useConfirm();
   const [isDeleting, setIsDeleting] = useState(false);
   const [apiError, setApiError] = useState<string | null>(null);
 
@@ -114,9 +116,15 @@ export function DesignForm({ design, collections, mode }: DesignFormProps) {
   };
 
   const handleDelete = async () => {
-    if (!design || !confirm("Are you sure you want to delete this design? This cannot be undone.")) {
-      return;
-    }
+    if (!design) return;
+
+    const confirmed = await confirm({
+      title: "Delete Design",
+      message: "Are you sure you want to delete this design? This cannot be undone.",
+      confirmLabel: "Delete",
+      variant: "danger",
+    });
+    if (!confirmed) return;
 
     setIsDeleting(true);
     setApiError(null);
@@ -142,8 +150,9 @@ export function DesignForm({ design, collections, mode }: DesignFormProps) {
       <div className="grid gap-6 lg:grid-cols-2">
         <div className="space-y-4">
           <div>
-            <label className={labelClassName}>Name (English)</label>
+            <label htmlFor="design-name" className={labelClassName}>Name (English)</label>
             <input
+              id="design-name"
               type="text"
               {...register("name")}
               className={inputClassName}
@@ -152,8 +161,9 @@ export function DesignForm({ design, collections, mode }: DesignFormProps) {
           </div>
 
           <div>
-            <label className={labelClassName}>Name (Arabic)</label>
+            <label htmlFor="design-nameAr" className={labelClassName}>Name (Arabic)</label>
             <input
+              id="design-nameAr"
               type="text"
               {...register("nameAr")}
               dir="rtl"
@@ -163,8 +173,9 @@ export function DesignForm({ design, collections, mode }: DesignFormProps) {
           </div>
 
           <div>
-            <label className={labelClassName}>Slug</label>
+            <label htmlFor="design-slug" className={labelClassName}>Slug</label>
             <input
+              id="design-slug"
               type="text"
               {...register("slug")}
               className={inputClassName}
@@ -173,8 +184,8 @@ export function DesignForm({ design, collections, mode }: DesignFormProps) {
           </div>
 
           <div>
-            <label className={labelClassName}>Collection</label>
-            <select {...register("collectionId")} className={inputClassName}>
+            <label htmlFor="design-collectionId" className={labelClassName}>Collection</label>
+            <select id="design-collectionId" {...register("collectionId")} className={inputClassName}>
               <option value="">Select a collection</option>
               {collections.map((c) => (
                 <option key={c.id} value={c.id}>
@@ -188,8 +199,9 @@ export function DesignForm({ design, collections, mode }: DesignFormProps) {
 
         <div className="space-y-4">
           <div>
-            <label className={labelClassName}>Material (English)</label>
+            <label htmlFor="design-material" className={labelClassName}>Material (English)</label>
             <input
+              id="design-material"
               type="text"
               {...register("material")}
               className={inputClassName}
@@ -198,8 +210,9 @@ export function DesignForm({ design, collections, mode }: DesignFormProps) {
           </div>
 
           <div>
-            <label className={labelClassName}>Material (Arabic)</label>
+            <label htmlFor="design-materialAr" className={labelClassName}>Material (Arabic)</label>
             <input
+              id="design-materialAr"
               type="text"
               {...register("materialAr")}
               dir="rtl"
@@ -209,8 +222,9 @@ export function DesignForm({ design, collections, mode }: DesignFormProps) {
 
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <label className={labelClassName}>Weight (grams)</label>
+              <label htmlFor="design-weight" className={labelClassName}>Weight (grams)</label>
               <input
+                id="design-weight"
                 type="number"
                 step="0.001"
                 {...register("weight")}
@@ -219,8 +233,9 @@ export function DesignForm({ design, collections, mode }: DesignFormProps) {
               {errors.weight && <p className={errorClassName}>{errors.weight.message}</p>}
             </div>
             <div>
-              <label className={labelClassName}>Dimensions</label>
+              <label htmlFor="design-dimensions" className={labelClassName}>Dimensions</label>
               <input
+                id="design-dimensions"
                 type="text"
                 {...register("dimensions")}
                 placeholder="e.g., 2.5 x 1.5 cm"
@@ -232,8 +247,9 @@ export function DesignForm({ design, collections, mode }: DesignFormProps) {
 
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <label className={labelClassName}>Base Price</label>
+              <label htmlFor="design-basePrice" className={labelClassName}>Base Price</label>
               <input
+                id="design-basePrice"
                 type="number"
                 step="0.01"
                 {...register("basePrice")}
@@ -242,8 +258,8 @@ export function DesignForm({ design, collections, mode }: DesignFormProps) {
               {errors.basePrice && <p className={errorClassName}>{errors.basePrice.message}</p>}
             </div>
             <div>
-              <label className={labelClassName}>Currency</label>
-              <select {...register("currency")} className={inputClassName}>
+              <label htmlFor="design-currency" className={labelClassName}>Currency</label>
+              <select id="design-currency" {...register("currency")} className={inputClassName}>
                 <option value="SAR">SAR</option>
                 <option value="USD">USD</option>
                 <option value="EUR">EUR</option>
@@ -256,8 +272,9 @@ export function DesignForm({ design, collections, mode }: DesignFormProps) {
       {mode === "create" && (
         <div className="grid gap-6 lg:grid-cols-2">
           <div>
-            <label className={labelClassName}>Story (English)</label>
+            <label htmlFor="design-story" className={labelClassName}>Story (English)</label>
             <textarea
+              id="design-story"
               {...register("story" as keyof CreateDesignFormValues)}
               rows={4}
               className={inputClassName}
@@ -267,8 +284,9 @@ export function DesignForm({ design, collections, mode }: DesignFormProps) {
             )}
           </div>
           <div>
-            <label className={labelClassName}>Story (Arabic)</label>
+            <label htmlFor="design-storyAr" className={labelClassName}>Story (Arabic)</label>
             <textarea
+              id="design-storyAr"
               {...register("storyAr" as keyof CreateDesignFormValues)}
               rows={4}
               dir="rtl"
@@ -283,8 +301,9 @@ export function DesignForm({ design, collections, mode }: DesignFormProps) {
 
       <div className="grid gap-6 lg:grid-cols-2">
         <div>
-          <label className={labelClassName}>Visibility Groups</label>
+          <label htmlFor="design-visibilityGroups" className={labelClassName}>Visibility Groups</label>
           <input
+            id="design-visibilityGroups"
             type="text"
             {...register("visibilityGroups")}
             placeholder="vip, premium (comma separated)"

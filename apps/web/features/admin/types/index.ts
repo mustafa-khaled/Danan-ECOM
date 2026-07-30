@@ -84,3 +84,67 @@ export interface AdminDesignListItem {
   visibilityGroups: string[];
   pieceCount?: number;
 }
+
+export interface AdminCertificateListItem {
+  id: string;
+  certificateNumber: string;
+  isActive: boolean;
+  issuedAt: string;
+  pdfUrl: string | null;
+  piece: { serialNumber: string; design: { name: string } };
+  owner: { displayName: string } | null;
+}
+
+export interface AdminVerificationLogItem {
+  id: string;
+  serialNumber: string;
+  result: string;
+  ipAddress: string | null;
+  verifiedAt: string;
+  pieceId: string | null;
+  clientId: string | null;
+}
+
+export interface AdminClientDetail {
+  id: string;
+  displayName: string;
+  displayNameAr: string | null;
+  email: string;
+  houseKeyPrefix: string;
+  isActive: boolean;
+  visibilityGroups: string[];
+  pieceCount: number;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface AdminPieceDetail {
+  id: string;
+  serialNumber: string;
+  designId: string;
+  designName: string;
+  collection: string;
+  collectionId: string;
+  currentOwner: string | null;
+  currentOwnerId: string | null;
+  status: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface AdminOrderDetail {
+  id: string;
+  status: string;
+  totalAmount: string | number;
+  currency: string;
+  placedAt: string;
+  completedAt?: string | null;
+  client: { id: string; displayName: string; email: string };
+  items: Array<{
+    id: string;
+    piece: { id: string; serialNumber: string; design: { name: string } };
+    priceAtPurchase: string | number;
+  }>;
+  shippingAddress?: string | null;
+  notes?: string | null;
+}

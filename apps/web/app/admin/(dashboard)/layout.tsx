@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { AdminLayout } from "@/components/ui";
 import { AdminLogoutButton } from "@/components/admin-logout-button";
+import { ConfirmProvider } from "@/components/confirm-dialog";
 import { requireAdminSession } from "@/features/auth/server/admin-session";
 import { getAdminNavItems } from "@/shared/lib/admin-nav";
 
@@ -43,7 +44,9 @@ export default async function DashboardLayout({
           <AdminLogoutButton />
         </div>
       </div>
-      {children}
+      <ConfirmProvider>
+        {children}
+      </ConfirmProvider>
     </AdminLayout>
   );
 }

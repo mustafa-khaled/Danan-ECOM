@@ -1,17 +1,12 @@
 import { Body, Controller, Get, Post, Query, Req } from "@nestjs/common";
 import { JwtService } from "@nestjs/jwt";
-import { IsString, MaxLength, MinLength } from "class-validator";
 import type { Request } from "express";
 import { VerifyService } from "./verify.service";
 import { CurrentLocale } from "../common/i18n/locale";
 import { Public } from "../common/decorators/public.decorator";
 import type { Locale } from "@dadan/types";
 import { CLIENT_COOKIE, getClientIp } from "../common/constants";
-
-class VerifyDto {
-  @IsString() @MinLength(1) @MaxLength(64) serial!: string;
-  @IsString() @MinLength(1) @MaxLength(128) token!: string;
-}
+import { VerifyDto } from "./dto/verify.dto";
 
 @Public()
 @Controller("verify")
@@ -53,7 +48,6 @@ export class VerifyController {
     );
   }
 
-  /** Optionally attribute the verification to a logged-in client (signature-checked). */
   private async resolveClientId(req: Request): Promise<string | undefined> {
     const cookies = req.cookies as Record<string, string> | undefined;
     const session = cookies?.[CLIENT_COOKIE];

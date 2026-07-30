@@ -1,9 +1,13 @@
+"use client";
+
+import { useRouter } from "next/navigation";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { savedKeys } from "@/shared/lib/query-keys";
 import { savePiece as savePieceApi } from "../api/save-piece";
 
 export function useSavePiece() {
   const queryClient = useQueryClient();
+  const router = useRouter();
   const {
     mutateAsync: savePiece,
     data,
@@ -13,6 +17,7 @@ export function useSavePiece() {
     mutationFn: (pieceId: string) => savePieceApi(pieceId),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: savedKeys.all });
+      router.refresh();
     },
   });
 

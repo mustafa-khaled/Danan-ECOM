@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { StatusPill } from "@/components/ui";
 import { AdminPagination } from "@/components/admin-pagination";
+import { AdminFilter } from "@/components/admin-filter";
 import { fetchAdminTransfers } from "@/features/admin";
 import { getAdminCookieHeader } from "@/features/auth/server/admin-session";
 import { ADMIN_PAGE_SIZE, parseAdminPage } from "@/shared/lib/parse-admin-page";
@@ -12,15 +13,15 @@ function formatStatus(status: string) {
 export default async function TransfersPage({
   searchParams,
 }: {
-  searchParams: Promise<{ page?: string }>;
+  searchParams: Promise<{ page?: string; status?: string }>;
 }) {
-  const { page: pageParam } = await searchParams;
+  const { page: pageParam, status: statusFilter } = await searchParams;
   const page = parseAdminPage(pageParam);
   const cookieHeader = await getAdminCookieHeader();
   const { items, total } = await fetchAdminTransfers(
     page,
     ADMIN_PAGE_SIZE,
-    undefined,
+    statusFilter || undefined,
     cookieHeader,
   );
 
@@ -32,6 +33,19 @@ export default async function TransfersPage({
           {total} transfer {total === 1 ? "request" : "requests"} · DADAN review items highlighted
         </p>
       </div>
+
+      <AdminFilter
+        paramName="status"
+        label="Status"
+        options={[
+          { value: "PENDING_SENDER", label: "Pending Sender" },
+          { value: "PENDING_RECIPIENT", label: "Pending Recipient" },
+          { value: "DADAN_REVIEW", label: "DADAN Review" },
+          { value: "APPROVED", label: "Approved" },
+          { value: "REJECTED", label: "Rejected" },
+          { value: "CANCELLED", label: "Cancelled" },
+        ]}
+      />
 
       <div className="overflow-x-auto rounded-[var(--radius-panel)] border border-[var(--color-border)] bg-[var(--color-surface)]">
         <table className="min-w-full text-left text-sm">

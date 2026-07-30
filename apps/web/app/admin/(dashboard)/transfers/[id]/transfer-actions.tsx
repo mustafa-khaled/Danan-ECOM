@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { LuxuryButton } from "@/components/ui";
+import { useConfirm } from "@/components/confirm-dialog";
 import {
   approveTransfer,
   rejectTransfer,
@@ -16,6 +17,7 @@ interface TransferActionsProps {
 
 export function TransferActions({ transferId }: TransferActionsProps) {
   const router = useRouter();
+  const confirm = useConfirm();
   const [isApproving, setIsApproving] = useState(false);
   const [isRejecting, setIsRejecting] = useState(false);
   const [isContactingSender, setIsContactingSender] = useState(false);
@@ -24,9 +26,13 @@ export function TransferActions({ transferId }: TransferActionsProps) {
   const [success, setSuccess] = useState<string | null>(null);
 
   const handleApprove = async () => {
-    if (!confirm("Are you sure you want to APPROVE this transfer? This will transfer ownership of the piece.")) {
-      return;
-    }
+    const confirmed = await confirm({
+      title: "Approve Transfer",
+      message: "Are you sure you want to APPROVE this transfer? This will transfer ownership of the piece.",
+      confirmLabel: "Approve",
+      variant: "warning",
+    });
+    if (!confirmed) return;
 
     setIsApproving(true);
     setError(null);
@@ -44,9 +50,13 @@ export function TransferActions({ transferId }: TransferActionsProps) {
   };
 
   const handleReject = async () => {
-    if (!confirm("Are you sure you want to REJECT this transfer? The piece will remain with the original owner.")) {
-      return;
-    }
+    const confirmed = await confirm({
+      title: "Reject Transfer",
+      message: "Are you sure you want to REJECT this transfer? The piece will remain with the original owner.",
+      confirmLabel: "Reject",
+      variant: "danger",
+    });
+    if (!confirmed) return;
 
     setIsRejecting(true);
     setError(null);
@@ -96,13 +106,13 @@ export function TransferActions({ transferId }: TransferActionsProps) {
   return (
     <div className="space-y-6">
       {error && (
-        <div className="rounded-[var(--radius-panel)] border border-red-500/40 bg-red-500/10 p-4">
+        <div role="alert" aria-live="assertive" className="rounded-[var(--radius-panel)] border border-red-500/40 bg-red-500/10 p-4">
           <p className="text-red-500">{error}</p>
         </div>
       )}
 
       {success && (
-        <div className="rounded-[var(--radius-panel)] border border-green-500/40 bg-green-500/10 p-4">
+        <div role="status" aria-live="polite" className="rounded-[var(--radius-panel)] border border-green-500/40 bg-green-500/10 p-4">
           <p className="text-green-500">{success}</p>
         </div>
       )}

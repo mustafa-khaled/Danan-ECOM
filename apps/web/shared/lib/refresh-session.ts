@@ -6,6 +6,7 @@ import {
   CLIENT_COOKIE,
   CLIENT_REFRESH_COOKIE,
   CLIENT_REFRESH_PATH,
+  parseCookieHeader,
 } from "./auth-cookies";
 
 type RefreshAudience = "client" | "admin";
@@ -30,17 +31,6 @@ function getCookieNames(audience: RefreshAudience): {
   return audience === "admin"
     ? { access: ADMIN_COOKIE, refresh: ADMIN_REFRESH_COOKIE }
     : { access: CLIENT_COOKIE, refresh: CLIENT_REFRESH_COOKIE };
-}
-
-function parseCookieHeader(cookieHeader: string): Map<string, string> {
-  const map = new Map<string, string>();
-  for (const part of cookieHeader.split(";")) {
-    const trimmed = part.trim();
-    const eq = trimmed.indexOf("=");
-    if (eq === -1) continue;
-    map.set(trimmed.slice(0, eq), trimmed.slice(eq + 1));
-  }
-  return map;
 }
 
 function buildCookieHeaderFromMap(
@@ -87,34 +77,7 @@ async function withCrossTabLock<T>(
     return navigator.locks.request(`dadan-refresh-${audience}`, fn);
   }
 
-  return waitForPeerRefresh(audience).then((peerCompleted) => {
-    if (peerCompleted) {
-      return { ok: true } as T;
-    }
-    return fn();
-  });
-}
-
-function waitForPeerRefresh(audience: RefreshAudience): Promise<boolean> {
-  if (typeof BroadcastChannel === "undefined") {
-    return Promise.resolve(false);
-  }
-
-  return new Promise((resolve) => {
-    const channel = new BroadcastChannel(REFRESH_BROADCAST_CHANNEL);
-    const timeout = setTimeout(() => {
-      channel.close();
-      resolve(false);
-    }, 5000);
-
-    channel.onmessage = (event: MessageEvent<{ audience: RefreshAudience }>) => {
-      if (event.data?.audience === audience) {
-        clearTimeout(timeout);
-        channel.close();
-        resolve(true);
-      }
-    };
-  });
+  return fn();
 }
 
 function notifyPeerRefreshComplete(audience: RefreshAudience): void {

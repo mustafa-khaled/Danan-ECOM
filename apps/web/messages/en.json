@@ -162,7 +162,8 @@
     "gender": "Gender",
     "age": "Age",
     "collectionSummary": "Collection Summary",
-    "ownedPieces": "{count} Owned Pieces"
+    "ownedPieces": "{count} Owned Pieces",
+    "updateError": "Could not update profile"
   },
   "cart": {
     "title": "Cart",
@@ -171,7 +172,9 @@
     "subtotal": "Subtotal",
     "vat": "VAT",
     "total": "Total",
-    "checkout": "Proceed to Checkout"
+    "checkout": "Proceed to Checkout",
+    "remove": "Remove",
+    "removeError": "Could not remove item"
   },
   "checkout": {
     "title": "Checkout",

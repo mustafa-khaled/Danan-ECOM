@@ -1,5 +1,7 @@
+import Link from "next/link";
 import { StatusPill } from "@/components/ui";
 import { AdminPagination } from "@/components/admin-pagination";
+import { AdminFilter } from "@/components/admin-filter";
 import { fetchAdminOrders } from "@/features/admin";
 import { getAdminCookieHeader } from "@/features/auth/server/admin-session";
 import { ADMIN_PAGE_SIZE, parseAdminPage } from "@/shared/lib/parse-admin-page";
@@ -16,12 +18,12 @@ function formatAmount(amount: string | number, currency: string) {
 export default async function OrdersPage({
   searchParams,
 }: {
-  searchParams: Promise<{ page?: string }>;
+  searchParams: Promise<{ page?: string; status?: string }>;
 }) {
-  const { page: pageParam } = await searchParams;
+  const { page: pageParam, status: statusFilter } = await searchParams;
   const page = parseAdminPage(pageParam);
   const cookieHeader = await getAdminCookieHeader();
-  const { items, total } = await fetchAdminOrders(page, ADMIN_PAGE_SIZE, cookieHeader);
+  const { items, total } = await fetchAdminOrders(page, ADMIN_PAGE_SIZE, cookieHeader, statusFilter || undefined);
 
   return (
     <div className="space-y-6">
@@ -32,8 +34,21 @@ export default async function OrdersPage({
         </p>
       </div>
 
+      <AdminFilter
+        paramName="status"
+        label="Status"
+        options={[
+          { value: "PENDING", label: "Pending" },
+          { value: "PAID", label: "Paid" },
+          { value: "PROCESSING", label: "Processing" },
+          { value: "COMPLETED", label: "Completed" },
+          { value: "CANCELLED", label: "Cancelled" },
+        ]}
+      />
+
       <div className="overflow-x-auto rounded-[var(--radius-panel)] border border-[var(--color-border)] bg-[var(--color-surface)]">
         <table className="min-w-full text-left text-sm">
+          <caption className="sr-only">Client orders</caption>
           <thead className="border-b border-[var(--color-border)] text-xs tracking-[0.12em] uppercase text-[var(--color-ivory-muted)]">
             <tr>
               <th className="px-4 py-3 font-normal">Client</th>
@@ -41,6 +56,7 @@ export default async function OrdersPage({
               <th className="px-4 py-3 font-normal">Total</th>
               <th className="px-4 py-3 font-normal">Placed</th>
               <th className="px-4 py-3 font-normal">Status</th>
+              <th className="px-4 py-3 font-normal">Actions</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-[var(--color-border)]">
@@ -62,8 +78,23 @@ export default async function OrdersPage({
                 <td className="px-4 py-4">
                   <StatusPill status={order.status.replace(/_/g, " ")} />
                 </td>
+                <td className="px-4 py-4">
+                  <Link
+                    href={`/admin/orders/${order.id}`}
+                    className="text-xs uppercase tracking-[0.1em] text-[var(--color-accent)] hover:underline"
+                  >
+                    View
+                  </Link>
+                </td>
               </tr>
             ))}
+            {items.length === 0 && (
+              <tr>
+                <td colSpan={6} className="px-4 py-8 text-center text-[var(--color-ivory-muted)]">
+                  No orders found.
+                </td>
+              </tr>
+            )}
           </tbody>
         </table>
       </div>

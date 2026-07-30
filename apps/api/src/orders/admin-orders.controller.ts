@@ -8,7 +8,6 @@ import {
   Req,
   UseGuards,
 } from "@nestjs/common";
-import { IsEnum } from "class-validator";
 import { OrderStatus } from "@dadan/db";
 import type { Request } from "express";
 import { OrdersService } from "./orders.service";
@@ -16,11 +15,7 @@ import { AdminGuard } from "../admin/auth/guards/admin.guard";
 import { CurrentAdmin } from "../admin/auth/decorators/current-admin.decorator";
 import type { AdminSession } from "@dadan/types";
 import { getClientIp } from "../common/constants";
-
-class UpdateOrderStatusDto {
-  @IsEnum(OrderStatus)
-  status!: OrderStatus;
-}
+import { UpdateOrderStatusDto } from "./dto/update-order-status.dto";
 
 @Controller("admin/orders")
 @UseGuards(AdminGuard)

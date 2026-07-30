@@ -8,7 +8,6 @@ import {
   Req,
   UseGuards,
 } from "@nestjs/common";
-import { IsOptional, IsString } from "class-validator";
 import { AdminRole, TransferStatus } from "@dadan/db";
 import type { Request } from "express";
 import { TransfersService } from "./transfers.service";
@@ -17,14 +16,7 @@ import { Roles } from "../admin/auth/decorators/roles.decorator";
 import { CurrentAdmin } from "../admin/auth/decorators/current-admin.decorator";
 import type { AdminSession } from "@dadan/types";
 import { getClientIp } from "../common/constants";
-
-class ApproveTransferDto {
-  @IsOptional() @IsString() notes?: string;
-}
-
-class RejectTransferDto {
-  @IsString() reason!: string;
-}
+import { ApproveTransferDto, RejectTransferDto } from "./dto/transfer-action.dto";
 
 @Controller("admin/transfers")
 @UseGuards(AdminGuard)

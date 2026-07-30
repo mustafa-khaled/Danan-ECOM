@@ -7,17 +7,12 @@ import {
   Post,
   UseGuards,
 } from "@nestjs/common";
-import { IsString } from "class-validator";
 import { CartService } from "./cart.service";
 import { ClientGuard } from "../auth/guards/client.guard";
 import { CurrentClient } from "../auth/decorators/current-client.decorator";
 import { CurrentLocale } from "../common/i18n/locale";
 import type { ClientSession, Locale } from "@dadan/types";
-
-class AddToCartDto {
-  @IsString()
-  pieceId!: string;
-}
+import { AddToCartDto } from "./dto/add-to-cart.dto";
 
 @Controller("client/cart")
 @UseGuards(ClientGuard)

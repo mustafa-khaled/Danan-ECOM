@@ -9,6 +9,7 @@ import {
 } from "@nestjs/common";
 import type { Request, Response } from "express";
 import { I18nService } from "nestjs-i18n";
+import { Prisma } from "@dadan/db";
 import { resolveLocale } from "../i18n/locale";
 
 interface ErrorResponse {
@@ -34,6 +35,28 @@ export class GlobalExceptionFilter implements ExceptionFilter {
     const ctx = host.switchToHttp();
     const response = ctx.getResponse<Response>();
     const request = ctx.getRequest<Request>();
+
+    if (exception instanceof Prisma.PrismaClientKnownRequestError) {
+      const prismaMapping = this.mapPrismaError(exception);
+      if (prismaMapping) {
+        const errorResponse: ErrorResponse = {
+          statusCode: prismaMapping.status,
+          message: prismaMapping.message,
+          error: prismaMapping.error,
+          timestamp: new Date().toISOString(),
+          path: request.url,
+        };
+
+        const requestId = request.headers["x-request-id"];
+        if (typeof requestId === "string") {
+          errorResponse.requestId = requestId;
+        }
+
+        this.logError(request, prismaMapping.status, exception, requestId as string | undefined);
+        response.status(prismaMapping.status).json(errorResponse);
+        return;
+      }
+    }
 
     const isHttpException = exception instanceof HttpException;
     const status = isHttpException
@@ -95,6 +118,23 @@ export class GlobalExceptionFilter implements ExceptionFilter {
       }
     }
     return exception.message;
+  }
+
+  private mapPrismaError(exception: Prisma.PrismaClientKnownRequestError): {
+    status: number;
+    message: string;
+    error: string;
+  } | null {
+    switch (exception.code) {
+      case "P2002":
+        return { status: HttpStatus.CONFLICT, message: "Resource already exists", error: "Conflict" };
+      case "P2025":
+        return { status: HttpStatus.NOT_FOUND, message: "Resource not found", error: "Not Found" };
+      case "P2003":
+        return { status: HttpStatus.BAD_REQUEST, message: "Related resource not found", error: "Bad Request" };
+      default:
+        return null;
+    }
   }
 
   private logError(

@@ -35,6 +35,7 @@ export const envSchema = z
     PAYMENT_PROVIDER_KEY: z.string().optional(),
     PAYMENT_PROVIDER_SECRET: z.string().optional(),
     PAYMENT_WEBHOOK_URL: z.string().url().optional().or(z.literal("")),
+    ALLOW_MOCK_PAYMENTS: z.enum(["true", "false"]).optional(),
     VAT_RATE: z.coerce.number().min(0).max(1).default(0.15),
     ADMIN_EMAIL: z.string().email().optional().or(z.literal("")),
     SMTP_HOST: z.string().optional(),

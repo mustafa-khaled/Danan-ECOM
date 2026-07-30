@@ -1,17 +1,14 @@
-// import createIntlMiddleware from "next-intl/middleware";
 import { NextResponse, type NextRequest } from "next/server";
-// import { routing } from "./i18n/routing";
 import {
   ADMIN_COOKIE,
   ADMIN_REFRESH_COOKIE,
   CLIENT_COOKIE,
   CLIENT_REFRESH_COOKIE,
+  parseCookieHeader,
 } from "./shared/lib/auth-cookies";
 import {
   isAccessTokenExpired,
 } from "./shared/lib/refresh-session";
-
-// const intlMiddleware = createIntlMiddleware(routing);
 
 const PUBLIC_PATHS = ["/", "/beta"];
 
@@ -38,17 +35,6 @@ function forwardSetCookies(source: Response, target: NextResponse): void {
   for (const cookie of setCookies) {
     target.headers.append("Set-Cookie", cookie);
   }
-}
-
-function parseCookieHeader(cookieHeader: string): Map<string, string> {
-  const map = new Map<string, string>();
-  for (const part of cookieHeader.split(";")) {
-    const trimmed = part.trim();
-    const eq = trimmed.indexOf("=");
-    if (eq === -1) continue;
-    map.set(trimmed.slice(0, eq), trimmed.slice(eq + 1));
-  }
-  return map;
 }
 
 function mergeSetCookiesIntoRequestCookie(
@@ -149,7 +135,15 @@ async function handleAuth(request: NextRequest): Promise<NextResponse | null> {
       return NextResponse.redirect(new URL("/admin/login", request.url));
     }
 
+    const accessToken = request.cookies.get(ADMIN_COOKIE)?.value;
+    if (accessToken && !isAccessTokenExpired(accessToken)) {
+      return null;
+    }
+
     const refreshed = await tryRefreshSession(request, "admin");
+    if (!refreshed) {
+      return NextResponse.redirect(new URL("/admin/login", request.url));
+    }
     return refreshed;
   }
 
@@ -165,7 +159,18 @@ async function handleAuth(request: NextRequest): Promise<NextResponse | null> {
       return NextResponse.redirect(loginUrl);
     }
 
+    const accessToken = request.cookies.get(CLIENT_COOKIE)?.value;
+    if (accessToken && !isAccessTokenExpired(accessToken)) {
+      return null;
+    }
+
     const refreshed = await tryRefreshSession(request, "client");
+    if (!refreshed) {
+      const loginUrl = request.nextUrl.clone();
+      loginUrl.pathname = "/beta";
+      loginUrl.searchParams.set("next", pathname);
+      return NextResponse.redirect(loginUrl);
+    }
     return refreshed;
   }
 

@@ -13,97 +13,17 @@ import {
   UseInterceptors,
 } from "@nestjs/common";
 import { FileInterceptor } from "@nestjs/platform-express";
-import {
-  IsArray,
-  IsBoolean,
-  IsNumber,
-  IsOptional,
-  IsString,
-  MinLength,
-  ValidateNested,
-} from "class-validator";
-import { Type } from "class-transformer";
 import type { Request } from "express";
 import { CollectionsService } from "./collections.service";
 import { AdminGuard } from "../admin/auth/guards/admin.guard";
 import { CurrentAdmin } from "../admin/auth/decorators/current-admin.decorator";
 import type { AdminSession } from "@dadan/types";
 import { getClientIp } from "../common/constants";
-
-class CreateCollectionDto {
-  @IsString() name!: string;
-  @IsString() @MinLength(1) nameAr!: string;
-  @IsString() slug!: string;
-  @IsOptional() @IsString() description?: string;
-  @IsOptional() @IsString() descriptionAr?: string;
-  @IsOptional() @IsString() coverImageUrl?: string;
-  @IsOptional() @IsBoolean() isVisible?: boolean;
-  @IsOptional() @IsNumber() sortOrder?: number;
-  @IsOptional() @IsArray() @IsString({ each: true }) visibilityGroups?: string[];
-}
-
-class CreateDesignDto {
-  @IsString() name!: string;
-  @IsString() @MinLength(1) nameAr!: string;
-  @IsString() slug!: string;
-  @IsString() collectionId!: string;
-  @IsString() @MinLength(1) story!: string;
-  @IsString() @MinLength(1) storyAr!: string;
-  @IsString() material!: string;
-  @IsOptional() @IsString() materialAr?: string;
-  @IsNumber() weight!: number;
-  @IsString() dimensions!: string;
-  @IsOptional() @IsString() dimensionsAr?: string;
-  @IsNumber() basePrice!: number;
-  @IsOptional() @IsString() currency?: string;
-  @IsOptional() @IsArray() @IsString({ each: true }) visibilityGroups?: string[];
-}
-
-export class UpdateCollectionDto {
-  @IsOptional() @IsString() name?: string;
-  @IsOptional() @IsString() nameAr?: string;
-  @IsOptional() @IsString() slug?: string;
-  @IsOptional() @IsString() description?: string;
-  @IsOptional() @IsString() descriptionAr?: string;
-  @IsOptional() @IsString() coverImageUrl?: string;
-  @IsOptional() @IsBoolean() isVisible?: boolean;
-  @IsOptional() @IsNumber() sortOrder?: number;
-  @IsOptional() @IsArray() @IsString({ each: true }) visibilityGroups?: string[];
-}
-
-export class UpdateDesignDto {
-  @IsOptional() @IsString() name?: string;
-  @IsOptional() @IsString() nameAr?: string;
-  @IsOptional() @IsString() slug?: string;
-  @IsOptional() @IsString() collectionId?: string;
-  @IsOptional() @IsString() @MinLength(1) story?: string;
-  @IsOptional() @IsString() storyAr?: string;
-  @IsOptional() @IsString() material?: string;
-  @IsOptional() @IsString() materialAr?: string;
-  @IsOptional() @IsNumber() weight?: number;
-  @IsOptional() @IsString() dimensions?: string;
-  @IsOptional() @IsString() dimensionsAr?: string;
-  @IsOptional() @IsNumber() basePrice?: number;
-  @IsOptional() @IsString() currency?: string;
-  @IsOptional() @IsBoolean() isActive?: boolean;
-  @IsOptional() @IsArray() @IsString({ each: true }) imageUrls?: string[];
-  @IsOptional() @IsArray() @IsString({ each: true }) visibilityGroups?: string[];
-}
-
-class SpecItemDto {
-  @IsString() key!: string;
-  @IsOptional() @IsString() keyAr?: string;
-  @IsString() value!: string;
-  @IsOptional() @IsString() valueAr?: string;
-  @IsOptional() @IsNumber() sortOrder?: number;
-}
-
-class BulkSpecsDto {
-  @IsArray()
-  @ValidateNested({ each: true })
-  @Type(() => SpecItemDto)
-  specifications!: SpecItemDto[];
-}
+import { CreateCollectionDto } from "./dto/create-collection.dto";
+import { CreateDesignDto } from "./dto/create-design.dto";
+import { UpdateCollectionDto } from "./dto/update-collection.dto";
+import { UpdateDesignDto } from "./dto/update-design.dto";
+import { BulkSpecsDto } from "./dto/spec-item.dto";
 
 @Controller("admin")
 @UseGuards(AdminGuard)

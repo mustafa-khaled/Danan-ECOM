@@ -15,6 +15,7 @@ export default function ComingSoonPage() {
             fill
             priority
             quality={75}
+            sizes="100vw"
             className="object-cover object-center"
           />
           {/* Gentle dark gradient overlay for optimal readability */}
@@ -30,6 +31,7 @@ export default function ComingSoonPage() {
               fill
               priority
               quality={75}
+              sizes="220px"
               className="object-contain"
             />
           </div>
@@ -63,6 +65,7 @@ export default function ComingSoonPage() {
             fill
             priority
             quality={75}
+            sizes="100vw"
             className="object-cover object-[22%]"
           />
           {/* Gentle dark gradient overlay for optimal readability */}
@@ -78,6 +81,7 @@ export default function ComingSoonPage() {
               fill
               priority
               quality={75}
+              sizes="185px"
               className="object-contain"
             />
           </div>

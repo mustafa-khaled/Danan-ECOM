@@ -1,6 +1,7 @@
 "use client";
 
 import { useRouter } from "next/navigation";
+import { useState } from "react";
 import { useTranslations } from "next-intl";
 import { LuxuryButton } from "@/components/ui";
 import { useAddToCart } from "@/features/cart";
@@ -18,6 +19,7 @@ export function DesignActions({ pieceId, initialSaved = false }: DesignActionsPr
   const { addToCart, isPending: isAddingToCart, error: addToCartError } = useAddToCart();
   const { savePiece, isPending: isSaving } = useSavePiece();
   const { unsavePiece, isPending: isUnsaving } = useUnsavePiece();
+  const [isSaved, setIsSaved] = useState(initialSaved);
 
   async function handleAddToCart() {
     try {
@@ -30,10 +32,12 @@ export function DesignActions({ pieceId, initialSaved = false }: DesignActionsPr
 
   async function handleToggleSave() {
     try {
-      if (initialSaved) {
+      if (isSaved) {
         await unsavePiece(pieceId);
+        setIsSaved(false);
       } else {
         await savePiece(pieceId);
+        setIsSaved(true);
       }
     } catch {
       /* error is rendered via the mutation's `error` state */
@@ -48,7 +52,7 @@ export function DesignActions({ pieceId, initialSaved = false }: DesignActionsPr
         {t("addToCart")}
       </LuxuryButton>
       <LuxuryButton variant="ghost" loading={isSaving || isUnsaving} onClick={handleToggleSave}>
-        {initialSaved ? t("unsave") : common("save")}
+        {isSaved ? t("unsave") : common("save")}
       </LuxuryButton>
       {error ? (
         <p role="alert" className="w-full text-sm text-[var(--color-ruby)]">
