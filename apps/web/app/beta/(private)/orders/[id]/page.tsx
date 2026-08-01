@@ -2,11 +2,11 @@ import Image from "next/image";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { getLocale } from "next-intl/server";
-import { ClientShell, SerialBadge, StatusPill } from "@/components/ui";
+import { SerialBadge, StatusPill } from "@/components/ui";
 import { ApiError } from "@/shared/lib/send-request";
 import { fetchOrder } from "@/features/orders";
 import { formatPrice } from "@/shared/utils/format";
-import { getSessionCookieHeader, requireClientSession } from "@/features/auth/server/session";
+import { getSessionCookieHeader } from "@/features/auth/server/session";
 import type { Locale } from "@/i18n/routing";
 
 interface OrderDetailPageProps {
@@ -15,7 +15,6 @@ interface OrderDetailPageProps {
 
 export default async function OrderDetailPage({ params }: OrderDetailPageProps) {
   const { id } = await params;
-  const profile = await requireClientSession();
   const cookie = await getSessionCookieHeader();
   const locale = (await getLocale()) as Locale;
 
@@ -30,7 +29,7 @@ export default async function OrderDetailPage({ params }: OrderDetailPageProps) 
   const address = order.shippingAddress;
 
   return (
-    <ClientShell displayName={profile.displayName}>
+    <>
       <nav aria-label="Breadcrumb" className="mb-6 text-xs tracking-[0.12em] uppercase">
         <ol className="flex flex-wrap items-center gap-2 text-[var(--color-text-muted)]">
           <li>
@@ -124,6 +123,6 @@ export default async function OrderDetailPage({ params }: OrderDetailPageProps) 
           </div>
         </section>
       </div>
-    </ClientShell>
+    </>
   );
 }

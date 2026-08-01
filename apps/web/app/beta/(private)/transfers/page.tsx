@@ -1,14 +1,13 @@
 import Link from "next/link";
 import { getTranslations } from "next-intl/server";
-import { ClientShell, SerialBadge, StatusPill, WardrobeLayout } from "@/components/ui";
+import { SerialBadge, StatusPill, WardrobeLayout } from "@/components/ui";
 import { EmptyState } from "@/shared/components/feedback/empty-state";
 import { fetchTransfers } from "@/features/transfers";
 import { fetchWardrobe } from "@/features/wardrobe";
 import { formatTransferStatus } from "@/shared/utils/format";
-import { getSessionCookieHeader, requireClientSession } from "@/features/auth/server/session";
+import { getSessionCookieHeader } from "@/features/auth/server/session";
 
 export default async function TransfersPage() {
-  const profile = await requireClientSession();
   const cookie = await getSessionCookieHeader();
   const [transfers, wardrobe] = await Promise.all([
     fetchTransfers(cookie),
@@ -20,13 +19,11 @@ export default async function TransfersPage() {
   const pendingTransfers = transfers.filter((tr) => tr.status === "PENDING").length;
 
   return (
-    <ClientShell displayName={profile.displayName}>
-      <WardrobeLayout
-        displayName={profile.displayName}
-        ownedCount={wardrobe.length}
-        certificatesCount={wardrobe.length}
-        pendingTransfers={pendingTransfers}
-      >
+    <WardrobeLayout
+      ownedCount={wardrobe.length}
+      certificatesCount={wardrobe.length}
+      pendingTransfers={pendingTransfers}
+    >
         {transfers.length === 0 ? (
           <EmptyState
             title={t("empty")}
@@ -64,6 +61,5 @@ export default async function TransfersPage() {
           </ul>
         )}
       </WardrobeLayout>
-    </ClientShell>
   );
 }

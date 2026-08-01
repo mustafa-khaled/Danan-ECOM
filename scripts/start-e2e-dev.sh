@@ -17,10 +17,9 @@ if [ -z "${STORAGE_LOCAL_PATH:-}" ] || [ "$STORAGE_LOCAL_PATH" = "/app/uploads" 
 fi
 mkdir -p "$STORAGE_LOCAL_PATH"
 
-# Playwright E2E runs many validate-key attempts from one IP; raise the limit unless set.
-if [ -z "${AUTH_RATE_LIMIT_MAX:-}" ]; then
-  export AUTH_RATE_LIMIT_MAX="100"
-fi
+# Playwright E2E runs many validate-key attempts from one IP; always raise the
+# limit (do not inherit the restrictive local/production .env value).
+export AUTH_RATE_LIMIT_MAX="100"
 
 missing=0
 for var in DATABASE_URL REDIS_URL JWT_SECRET CERT_SIGNING_SECRET BASE_URL; do
@@ -35,15 +34,23 @@ fi
 
 if [ "${CI:-}" = "true" ]; then
   STANDALONE="$ROOT_DIR/apps/web/.next/standalone"
-  mkdir -p "$STANDALONE/apps/web/.next"
-  cp -r "$ROOT_DIR/apps/web/.next/static" "$STANDALONE/apps/web/.next/static"
-  cp -r "$ROOT_DIR/apps/web/public" "$STANDALONE/apps/web/public"
+  # The standalone output nests the app under the detected tracing root
+  # (e.g. <standalone>/<repo-path>/apps/web/server.js), so locate server.js
+  # instead of assuming a flat apps/web layout.
+  WEB_APP_DIR="$(find "$STANDALONE" -type d -path "*/apps/web" | head -n 1)"
+  if [ -z "$WEB_APP_DIR" ] || [ ! -f "$WEB_APP_DIR/server.js" ]; then
+    echo "Standalone build missing apps/web/server.js under $STANDALONE (run pnpm --filter @dadan/web build first)" >&2
+    exit 1
+  fi
+  mkdir -p "$WEB_APP_DIR/.next"
+  cp -r "$ROOT_DIR/apps/web/.next/static" "$WEB_APP_DIR/.next/static"
+  cp -r "$ROOT_DIR/apps/web/public" "$WEB_APP_DIR/public"
 
   node apps/api/dist/main.js &
   API_PID=$!
   (
     cd "$STANDALONE"
-    PORT=3000 HOSTNAME=0.0.0.0 node apps/web/server.js
+    PORT=3000 HOSTNAME=0.0.0.0 node "${WEB_APP_DIR#"$STANDALONE"/}/server.js"
   ) &
   WEB_PID=$!
 else

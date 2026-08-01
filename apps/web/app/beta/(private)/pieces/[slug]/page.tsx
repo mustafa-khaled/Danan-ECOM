@@ -1,13 +1,13 @@
 import Image from "next/image";
 import { notFound } from "next/navigation";
 import { getTranslations, getLocale } from "next-intl/server";
-import { ClientShell, StatusPill } from "@/components/ui";
+import { StatusPill } from "@/components/ui";
 import { DesignActions } from "@/components/design-actions";
 import { ApiError } from "@/shared/lib/send-request";
 import { fetchDesign } from "@/features/pieces";
 import { fetchSaved } from "@/features/saved";
 import { formatPrice } from "@/shared/utils/format";
-import { getSessionCookieHeader, requireClientSession } from "@/features/auth/server/session";
+import { getSessionCookieHeader } from "@/features/auth/server/session";
 import type { Locale } from "@/i18n/routing";
 
 interface DesignDetailPageProps {
@@ -16,7 +16,6 @@ interface DesignDetailPageProps {
 
 export default async function DesignDetailPage({ params }: DesignDetailPageProps) {
   const { slug } = await params;
-  const profile = await requireClientSession();
   const cookie = await getSessionCookieHeader();
   const t = await getTranslations("piece");
   const locale = (await getLocale()) as Locale;
@@ -34,7 +33,7 @@ export default async function DesignDetailPage({ params }: DesignDetailPageProps
   const firstAvailable = design.availablePieces[0];
 
   return (
-    <ClientShell displayName={profile.displayName}>
+    <>
       <div className="grid gap-10 lg:grid-cols-2">
         <section>
           <div className="relative aspect-[4/5] overflow-hidden border border-[var(--color-border)] bg-[var(--color-surface)]">
@@ -106,7 +105,7 @@ export default async function DesignDetailPage({ params }: DesignDetailPageProps
           <p className="mt-4 max-w-2xl text-[var(--color-text-muted)]">{design.story}</p>
         </section>
       ) : null}
-    </ClientShell>
+    </>
   );
 }
 

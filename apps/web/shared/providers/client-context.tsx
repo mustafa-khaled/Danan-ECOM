@@ -17,7 +17,9 @@ export function ClientProvider({
   value: ClientContextValue;
   children: ReactNode;
 }) {
-  return <ClientContext.Provider value={value}>{children}</ClientContext.Provider>;
+  return (
+    <ClientContext.Provider value={value}>{children}</ClientContext.Provider>
+  );
 }
 
 export function useClientContext(): ClientContextValue {

@@ -1,18 +1,17 @@
 import Link from "next/link";
 import { getTranslations } from "next-intl/server";
-import { AccountLayout, ClientShell, PieceCard } from "@/components/ui";
+import { AccountLayout, PieceCard } from "@/components/ui";
 import { EmptyState } from "@/shared/components/feedback/empty-state";
 import { fetchSaved } from "@/features/saved";
-import { getSessionCookieHeader, requireClientSession } from "@/features/auth/server/session";
+import { getSessionCookieHeader } from "@/features/auth/server/session";
 
 export default async function SavedPage() {
-  const profile = await requireClientSession();
   const cookie = await getSessionCookieHeader();
   const saved = await fetchSaved(cookie);
   const t = await getTranslations("saved");
 
   return (
-    <ClientShell displayName={profile.displayName}>
+    <>
       <AccountLayout title={t("title")}>
         <p className="mb-6 text-sm text-[var(--color-text-muted)]">
           {t("count", { count: saved.length })}
@@ -48,6 +47,6 @@ export default async function SavedPage() {
           </div>
         )}
       </AccountLayout>
-    </ClientShell>
+    </>
   );
 }

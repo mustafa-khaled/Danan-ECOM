@@ -2,12 +2,12 @@ import Image from "next/image";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { getTranslations, getLocale } from "next-intl/server";
-import { ClientShell, PieceCard } from "@/components/ui";
+import { PieceCard } from "@/components/ui";
 import { EmptyState } from "@/shared/components/feedback/empty-state";
 import { ApiError } from "@/shared/lib/send-request";
 import { fetchCollection } from "@/features/collections";
 import { formatPrice } from "@/shared/utils/format";
-import { getSessionCookieHeader, requireClientSession } from "@/features/auth/server/session";
+import { getSessionCookieHeader } from "@/features/auth/server/session";
 import type { Locale } from "@/i18n/routing";
 
 interface CollectionDetailPageProps {
@@ -16,7 +16,6 @@ interface CollectionDetailPageProps {
 
 export default async function CollectionDetailPage({ params }: CollectionDetailPageProps) {
   const { slug } = await params;
-  const profile = await requireClientSession();
   const cookie = await getSessionCookieHeader();
   const t = await getTranslations("collections");
   const locale = (await getLocale()) as Locale;
@@ -30,7 +29,7 @@ export default async function CollectionDetailPage({ params }: CollectionDetailP
   }
 
   return (
-    <ClientShell displayName={profile.displayName}>
+    <>
       <header className="mb-10 overflow-hidden border border-[var(--color-border)]">
         <div className="relative aspect-[21/9] bg-[var(--color-surface)]">
           {collection.coverImageUrl ? (
@@ -97,6 +96,6 @@ export default async function CollectionDetailPage({ params }: CollectionDetailP
           ))}
         </div>
       )}
-    </ClientShell>
+    </>
   );
 }

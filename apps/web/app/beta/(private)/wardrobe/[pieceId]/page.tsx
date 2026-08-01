@@ -2,12 +2,12 @@ import Image from "next/image";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { getTranslations } from "next-intl/server";
-import { ClientShell, SerialBadge, StatusPill } from "@/components/ui";
+import { SerialBadge, StatusPill } from "@/components/ui";
 import { CertificateViewer } from "@/components/certificate-viewer";
 import { TransferInitiate } from "@/components/transfer-initiate";
 import { ApiError } from "@/shared/lib/send-request";
 import { fetchWardrobePiece } from "@/features/wardrobe";
-import { getSessionCookieHeader, requireClientSession } from "@/features/auth/server/session";
+import { getSessionCookieHeader } from "@/features/auth/server/session";
 
 interface WardrobePiecePageProps {
   params: Promise<{ pieceId: string }>;
@@ -15,7 +15,6 @@ interface WardrobePiecePageProps {
 
 export default async function WardrobePiecePage({ params }: WardrobePiecePageProps) {
   const { pieceId } = await params;
-  const profile = await requireClientSession();
   const cookie = await getSessionCookieHeader();
   const t = await getTranslations("wardrobe");
 
@@ -38,7 +37,7 @@ export default async function WardrobePiecePage({ params }: WardrobePiecePagePro
   };
 
   return (
-    <ClientShell displayName={profile.displayName}>
+    <>
       <nav aria-label="Breadcrumb" className="mb-6 text-xs tracking-[0.12em] uppercase">
         <ol className="flex flex-wrap items-center gap-2 text-[var(--color-text-muted)]">
           <li>
@@ -126,7 +125,7 @@ export default async function WardrobePiecePage({ params }: WardrobePiecePagePro
           </div>
         </section>
       </div>
-    </ClientShell>
+    </>
   );
 }
 

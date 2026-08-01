@@ -1,21 +1,20 @@
 import Link from "next/link";
 import { getTranslations, getLocale } from "next-intl/server";
-import { ClientShell, StatusPill } from "@/components/ui";
+import { StatusPill } from "@/components/ui";
 import { EmptyState } from "@/shared/components/feedback/empty-state";
 import { fetchOrders } from "@/features/orders";
 import { formatPrice } from "@/shared/utils/format";
-import { getSessionCookieHeader, requireClientSession } from "@/features/auth/server/session";
+import { getSessionCookieHeader } from "@/features/auth/server/session";
 import type { Locale } from "@/i18n/routing";
 
 export default async function OrdersPage() {
-  const profile = await requireClientSession();
   const cookie = await getSessionCookieHeader();
   const { items: orders } = await fetchOrders(cookie);
   const t = await getTranslations("orders");
   const locale = (await getLocale()) as Locale;
 
   return (
-    <ClientShell displayName={profile.displayName}>
+    <>
       <header className="mb-10 space-y-3">
         <h1 className="font-english text-4xl text-[var(--color-text)]">{t("title")}</h1>
       </header>
@@ -62,6 +61,6 @@ export default async function OrdersPage() {
           ))}
         </ul>
       )}
-    </ClientShell>
+    </>
   );
 }

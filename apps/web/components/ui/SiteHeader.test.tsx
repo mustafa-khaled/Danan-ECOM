@@ -34,14 +34,27 @@ vi.mock("@/features/profile", () => ({
 }));
 
 import { SiteHeader } from "@/components/ui/SiteHeader";
+import { ClientProvider } from "@/shared/providers/client-context";
+
+const contextValue = {
+  clientId: "client-1",
+  displayName: "Ahmed",
+  visibilityGroups: ["DEFAULT"],
+};
+
+function renderHeader() {
+  return render(
+    <NextIntlClientProvider locale="en" messages={en}>
+      <ClientProvider value={contextValue}>
+        <SiteHeader />
+      </ClientProvider>
+    </NextIntlClientProvider>,
+  );
+}
 
 describe("SiteHeader", () => {
   it("renders nav items and greeting", () => {
-    render(
-      <NextIntlClientProvider locale="en" messages={en}>
-        <SiteHeader displayName="Ahmed" />
-      </NextIntlClientProvider>,
-    );
+    renderHeader();
 
     expect(screen.getByText(/Ahmed/)).toBeInTheDocument();
     expect(screen.getByText("Collections")).toBeInTheDocument();
@@ -49,11 +62,7 @@ describe("SiteHeader", () => {
   });
 
   it("renders language select with options", () => {
-    render(
-      <NextIntlClientProvider locale="en" messages={en}>
-        <SiteHeader displayName="Ahmed" />
-      </NextIntlClientProvider>,
-    );
+    renderHeader();
 
     const languageSelects = screen.getAllByRole("combobox", { name: "Switch language" });
     expect(languageSelects.length).toBeGreaterThan(0);

@@ -104,7 +104,7 @@ describe("DADAN API (e2e)", () => {
 
     it("returns a localized design detail with specifications", async () => {
       const res = await request(http)
-        .get("/client/designs/noir-necklace-01")
+        .get("/client/designs/noir-cascade-necklace")
         .set("Cookie", cookie)
         .expect(200);
       expect(res.body.name).toBe("عقد نوار المتدرج");
@@ -163,7 +163,7 @@ describe("DADAN API (e2e)", () => {
         .expect(200);
       expect(designs.body.total).toBeGreaterThanOrEqual(9);
       const noirNecklace = designs.body.items.find(
-        (d: { slug: string }) => d.slug === "noir-necklace-01",
+        (d: { slug: string }) => d.slug === "noir-cascade-necklace",
       );
       expect(noirNecklace.nameAr).toBe("عقد نوار المتدرج");
       designId = noirNecklace.id;

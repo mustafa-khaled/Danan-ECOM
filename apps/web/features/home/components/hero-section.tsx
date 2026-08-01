@@ -1,9 +1,12 @@
+"use client";
+
 import Image from "next/image";
+import { ChevronsDown } from "lucide-react";
 
 export default function HeroSection() {
   return (
-    <section className="relative -mx-4 -mt-8 overflow-hidden sm:-mx-8">
-      <div className="relative aspect-21/9 bg-(--color-surface)">
+    <section className="relative overflow-hidden">
+      <div className="relative h-[calc(100dvh-6rem)] bg-(--color-surface)">
         <Image
           src="/assets/dadan-model.png"
           alt="DADAN"
@@ -12,18 +15,28 @@ export default function HeroSection() {
           sizes="100vw"
           className="object-cover"
         />
-        <div
-          className="absolute inset-0"
-          style={{
-            background:
-              "linear-gradient(0.17deg, #AF6149 -39.65%, rgba(65, 149, 155, 0) 84.35%)",
-          }}
-        />
-        <div className="absolute inset-x-0 bottom-30 w-225.25 mx-auto flex justify-center px-4 text-center">
-          <h2 className="font-english text-2xl font-semibold text-white sm:text-3xl">
+        <div className="hero-overlay-gradient absolute inset-0" />
+        <div className="absolute inset-x-0 bottom-20 mx-auto flex flex-col items-center px-4 text-center sm:bottom-30">
+          <h2 className="font-english text-2xl font-semibold text-white sm:text-3xl max-w-225">
             Discover stories, collections, and pieces curated <br /> exclusively
             for you within the House of <br /> DADAN.
           </h2>
+          <button
+            onClick={() => {
+              const nextSection = document.querySelector(
+                "section:nth-of-type(2)",
+              );
+              nextSection?.scrollIntoView({ behavior: "smooth" });
+            }}
+            className="hero-cta-gradient mt-6 inline-flex items-center gap-2 px-6 py-2.5 font-manrope text-sm font-medium tracking-wide text-[#2C2C2C] transition-all duration-300 hover:scale-105 hover:shadow-lg cursor-pointer sm:mt-8"
+          >
+            Explore All Pieces
+            <ChevronsDown
+              size={16}
+              strokeWidth={2.5}
+              className="text-[#41959B]"
+            />
+          </button>
         </div>
       </div>
     </section>

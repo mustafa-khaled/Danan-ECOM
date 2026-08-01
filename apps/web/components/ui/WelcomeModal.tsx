@@ -4,14 +4,12 @@ import Image from "next/image";
 import { useTranslations } from "next-intl";
 import { useEffect, useState } from "react";
 import { LocaleSelect } from "@/shared/providers/locale-provider";
+import { useClientContext } from "@/shared/providers/client-context";
 
 const WELCOME_SEEN_KEY = "dadan_welcome_seen";
 
-interface WelcomeModalProps {
-  displayName: string;
-}
-
-export function WelcomeModal({ displayName }: WelcomeModalProps) {
+export function WelcomeModal() {
+  const { displayName } = useClientContext();
   const t = useTranslations("welcome");
   const [open, setOpen] = useState(false);
 

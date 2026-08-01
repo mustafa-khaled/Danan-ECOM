@@ -4,6 +4,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useTranslations } from "next-intl";
 import type { ReactNode } from "react";
+import { useClientContext } from "@/shared/providers/client-context";
 
 export interface WardrobeTab {
   href: string;
@@ -19,7 +20,6 @@ const wardrobeTabs: WardrobeTab[] = [
 
 interface WardrobeLayoutProps {
   children: ReactNode;
-  displayName: string;
   ownedCount: number;
   certificatesCount: number;
   pendingTransfers: number;
@@ -27,11 +27,11 @@ interface WardrobeLayoutProps {
 
 export function WardrobeLayout({
   children,
-  displayName,
   ownedCount,
   certificatesCount,
   pendingTransfers,
 }: WardrobeLayoutProps) {
+  const { displayName } = useClientContext();
   const t = useTranslations("wardrobe");
   const pathname = usePathname();
 

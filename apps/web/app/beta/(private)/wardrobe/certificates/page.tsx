@@ -1,13 +1,12 @@
 import Link from "next/link";
 import { getTranslations } from "next-intl/server";
-import { ClientShell, WardrobeLayout } from "@/components/ui";
+import { WardrobeLayout } from "@/components/ui";
 import { EmptyState } from "@/shared/components/feedback/empty-state";
 import { fetchWardrobe } from "@/features/wardrobe";
 import { fetchTransfers } from "@/features/transfers";
-import { getSessionCookieHeader, requireClientSession } from "@/features/auth/server/session";
+import { getSessionCookieHeader } from "@/features/auth/server/session";
 
 export default async function CertificatesPage() {
-  const profile = await requireClientSession();
   const cookie = await getSessionCookieHeader();
   const [wardrobe, transfers] = await Promise.all([
     fetchWardrobe(cookie),
@@ -18,9 +17,8 @@ export default async function CertificatesPage() {
   const pendingTransfers = transfers.filter((tr) => tr.status === "PENDING").length;
 
   return (
-    <ClientShell displayName={profile.displayName}>
+    <>
       <WardrobeLayout
-        displayName={profile.displayName}
         ownedCount={wardrobe.length}
         certificatesCount={wardrobe.length}
         pendingTransfers={pendingTransfers}
@@ -54,6 +52,6 @@ export default async function CertificatesPage() {
           </div>
         )}
       </WardrobeLayout>
-    </ClientShell>
+    </>
   );
 }

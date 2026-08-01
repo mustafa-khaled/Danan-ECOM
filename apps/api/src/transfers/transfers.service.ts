@@ -93,7 +93,7 @@ export class TransfersService {
         >`
           SELECT id, status, "currentOwnerId"
           FROM "Piece"
-          WHERE id = ${data.pieceId}::uuid
+          WHERE id = ${data.pieceId}::text
           FOR UPDATE
         `;
 
@@ -187,7 +187,7 @@ export class TransfersService {
       async (tx) => {
         await tx.$queryRaw`
           SELECT id FROM "TransferRequest"
-          WHERE id = ${transferId}::uuid
+          WHERE id = ${transferId}::text
           FOR UPDATE
         `;
 
@@ -231,7 +231,7 @@ export class TransfersService {
       async (tx) => {
         await tx.$queryRaw`
           SELECT id FROM "TransferRequest"
-          WHERE id = ${transferId}::uuid
+          WHERE id = ${transferId}::text
           FOR UPDATE
         `;
 
@@ -289,7 +289,7 @@ export class TransfersService {
         >`
           SELECT id, status, "pieceId"
           FROM "TransferRequest"
-          WHERE id = ${transferId}::uuid
+          WHERE id = ${transferId}::text
           FOR UPDATE
         `;
 
@@ -302,7 +302,7 @@ export class TransfersService {
 
         await tx.$queryRaw`
           SELECT id FROM "Piece"
-          WHERE id = ${transfer.pieceId}::uuid
+          WHERE id = ${transfer.pieceId}::text
           FOR UPDATE
         `;
 
@@ -501,7 +501,7 @@ export class TransfersService {
         >`
           SELECT id, status, "pieceId", "fromClientId", "toClientId", "transferType"
           FROM "TransferRequest"
-          WHERE id = ${id}::uuid
+          WHERE id = ${id}::text
           FOR UPDATE
         `;
 
@@ -519,7 +519,7 @@ export class TransfersService {
         >`
           SELECT id, "currentOwnerId", status
           FROM "Piece"
-          WHERE id = ${transfer.pieceId}::uuid
+          WHERE id = ${transfer.pieceId}::text
           FOR UPDATE
         `;
 
@@ -648,7 +648,7 @@ export class TransfersService {
         >`
           SELECT id, status, "pieceId"
           FROM "TransferRequest"
-          WHERE id = ${id}::uuid
+          WHERE id = ${id}::text
           FOR UPDATE
         `;
 
@@ -658,7 +658,7 @@ export class TransfersService {
 
         await tx.$queryRaw`
           SELECT id FROM "Piece"
-          WHERE id = ${transfer.pieceId}::uuid
+          WHERE id = ${transfer.pieceId}::text
           FOR UPDATE
         `;
 

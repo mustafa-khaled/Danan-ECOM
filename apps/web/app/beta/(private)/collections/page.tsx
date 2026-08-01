@@ -1,19 +1,17 @@
 import Image from "next/image";
 import Link from "next/link";
 import { getTranslations } from "next-intl/server";
-import { ClientShell } from "@/components/ui";
 import { EmptyState } from "@/shared/components/feedback/empty-state";
 import { fetchCollections } from "@/features/collections";
-import { getSessionCookieHeader, requireClientSession } from "@/features/auth/server/session";
+import { getSessionCookieHeader } from "@/features/auth/server/session";
 
 export default async function CollectionsPage() {
-  const profile = await requireClientSession();
   const cookie = await getSessionCookieHeader();
   const collections = await fetchCollections(cookie);
   const t = await getTranslations("collections");
 
   return (
-    <ClientShell displayName={profile.displayName}>
+    <>
       <header className="mb-10 space-y-3">
         <h1 className="font-english text-4xl text-[var(--color-text)]">{t("title")}</h1>
       </header>
@@ -63,6 +61,6 @@ export default async function CollectionsPage() {
           ))}
         </div>
       )}
-    </ClientShell>
+    </>
   );
 }

@@ -1,7 +1,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { ClientShell, SerialBadge, StatusPill } from "@/components/ui";
+import { SerialBadge, StatusPill } from "@/components/ui";
 import { TransferActions } from "@/components/transfer-actions";
 import { ApiError } from "@/shared/lib/send-request";
 import { fetchTransfer } from "@/features/transfers";
@@ -33,7 +33,7 @@ export default async function TransferDetailPage({ params }: TransferDetailPageP
         : "none";
 
   return (
-    <ClientShell displayName={profile.displayName}>
+    <>
       <nav aria-label="Breadcrumb" className="mb-6 text-xs tracking-[0.12em] uppercase">
         <ol className="flex flex-wrap items-center gap-2 text-[var(--color-text-muted)]">
           <li>
@@ -104,6 +104,6 @@ export default async function TransferDetailPage({ params }: TransferDetailPageP
           <TransferActions transferId={transfer.id} status={transfer.status} role={role} />
         </section>
       </div>
-    </ClientShell>
+    </>
   );
 }

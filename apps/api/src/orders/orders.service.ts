@@ -77,7 +77,7 @@ export class OrdersService {
         >`
           SELECT id, "serialNumber", status, "designId"
           FROM "Piece"
-          WHERE id = ANY(${params.pieceIds}::uuid[])
+          WHERE id = ANY(${params.pieceIds}::text[])
           FOR UPDATE
         `;
 

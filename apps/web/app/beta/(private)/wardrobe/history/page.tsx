@@ -1,10 +1,10 @@
 import Link from "next/link";
 import { getTranslations } from "next-intl/server";
-import { ClientShell, WardrobeLayout } from "@/components/ui";
+import { WardrobeLayout } from "@/components/ui";
 import { EmptyState } from "@/shared/components/feedback/empty-state";
 import { fetchWardrobe, fetchWardrobePiece } from "@/features/wardrobe";
 import { fetchTransfers } from "@/features/transfers";
-import { getSessionCookieHeader, requireClientSession } from "@/features/auth/server/session";
+import { getSessionCookieHeader } from "@/features/auth/server/session";
 
 interface HistoryEvent {
   id: string;
@@ -15,7 +15,6 @@ interface HistoryEvent {
 }
 
 export default async function HistoryPage() {
-  const profile = await requireClientSession();
   const cookie = await getSessionCookieHeader();
   const [wardrobe, transfers] = await Promise.all([
     fetchWardrobe(cookie),
@@ -60,9 +59,8 @@ export default async function HistoryPage() {
   events.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
 
   return (
-    <ClientShell displayName={profile.displayName}>
+    <>
       <WardrobeLayout
-        displayName={profile.displayName}
         ownedCount={wardrobe.length}
         certificatesCount={wardrobe.length}
         pendingTransfers={pendingTransfers}
@@ -98,6 +96,6 @@ export default async function HistoryPage() {
           </ul>
         )}
       </WardrobeLayout>
-    </ClientShell>
+    </>
   );
 }

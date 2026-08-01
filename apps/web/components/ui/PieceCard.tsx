@@ -1,5 +1,6 @@
 import { SerialBadge } from "./SerialBadge";
 import { OptimizedImage } from "./OptimizedImage";
+import { cn } from "@/lib/utils";
 
 export interface PieceCardData {
   id: string;
@@ -14,6 +15,7 @@ export interface PieceCardData {
 export interface PieceCardProps {
   piece: PieceCardData;
   className?: string;
+  imageClassName?: string;
   onSelect?: (pieceId: string) => void;
   showExplore?: boolean;
   badge?: "certificateActive";
@@ -23,6 +25,7 @@ export interface PieceCardProps {
 export function PieceCard({
   piece,
   className = "",
+  imageClassName,
   onSelect,
   showExplore = false,
   badge,
@@ -30,45 +33,45 @@ export function PieceCard({
 }: PieceCardProps) {
   const content = (
     <>
-      <div className="relative aspect-[4/5] overflow-hidden bg-[var(--color-surface)]">
+      <div className={cn("relative aspect-4/5 overflow-hidden bg-(--color-surface)", imageClassName)}>
         {piece.imageUrl ? (
           <OptimizedImage
             src={piece.imageUrl}
             alt={piece.name}
             fill
             sizes="(max-width: 768px) 50vw, 33vw"
-            className="object-cover transition-transform duration-300 group-hover:scale-[1.02]"
+            className="object-cover object-center transition-transform duration-300 group-hover:scale-[1.02]"
             blurDataURL={piece.imageLqip}
             priority={priority}
             quality={80}
           />
         ) : (
-          <div className="flex h-full items-center justify-center text-[var(--color-text-muted)]">
+          <div className="flex h-full items-center justify-center text-(--color-text-muted)">
             <span className="font-display text-lg">DADAN</span>
           </div>
         )}
         {badge === "certificateActive" ? (
-          <span className="absolute start-3 top-3 bg-[var(--color-accent)] px-2 py-1 text-[0.625rem] tracking-[0.1em] uppercase text-white">
+          <span className="absolute inset-s-3 top-3 bg-(--color-accent) px-2 py-1 text-[0.625rem] tracking-widest uppercase text-white">
             Certificate Active
           </span>
         ) : null}
       </div>
       <div className="flex flex-col gap-2 p-4">
         {piece.collectionName ? (
-          <p className="text-xs tracking-[0.14em] uppercase text-[var(--color-text-muted)]">
+          <p className="text-xs tracking-[0.14em] uppercase text-(--color-text-muted)">
             {piece.collectionName}
           </p>
         ) : null}
-        <h3 className="font-english text-xl leading-tight text-[var(--color-text)]">
+        <h3 className="font-english text-xl leading-tight text-(--color-text)">
           {piece.name}
         </h3>
         {piece.price ? (
-          <p className="font-display text-sm tracking-[0.08em] text-[var(--color-text)]">
+          <p className="font-display text-sm tracking-[0.08em] text-(--color-text)">
             {piece.price}
           </p>
         ) : null}
         {showExplore ? (
-          <p className="text-xs tracking-[0.12em] uppercase text-[var(--color-text-muted)] group-hover:text-[var(--color-accent)]">
+          <p className="text-xs tracking-[0.12em] uppercase text-(--color-text-muted) group-hover:text-(--color-accent)">
             Explore Piece <span className="rtl:rotate-180 inline-block">→</span>
           </p>
         ) : (

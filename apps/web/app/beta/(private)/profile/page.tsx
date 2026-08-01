@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { getTranslations } from "next-intl/server";
-import { AccountLayout, ClientShell } from "@/components/ui";
+import { AccountLayout } from "@/components/ui";
 import { ProfileForm } from "@/components/profile-form";
 import { fetchProfile } from "@/features/profile";
 import { fetchWardrobe } from "@/features/wardrobe";
@@ -19,7 +19,7 @@ export default async function ProfilePage() {
   ]);
 
   return (
-    <ClientShell displayName={session.displayName}>
+    <>
       <AccountLayout title={t("title")}>
         <section className="mb-12 border-b border-[var(--color-border)] pb-12">
           <h2 className="font-english text-2xl text-[var(--color-text)]">
@@ -74,6 +74,6 @@ export default async function ProfilePage() {
           </p>
         </section>
       </AccountLayout>
-    </ClientShell>
+    </>
   );
 }

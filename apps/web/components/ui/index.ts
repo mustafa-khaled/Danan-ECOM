@@ -4,9 +4,6 @@ export type { CertificateData, CertificateModalProps } from "./CertificateModal"
 export { AdminLayout } from "./AdminLayout";
 export type { AdminLayoutProps } from "./AdminLayout";
 
-export { ClientShell } from "./ClientShell";
-export type { ClientShellProps } from "./ClientShell";
-
 export { GoldDivider } from "./GoldDivider";
 export type { GoldDividerProps } from "./GoldDivider";
 
