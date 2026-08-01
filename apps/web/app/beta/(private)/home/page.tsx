@@ -12,9 +12,7 @@ export default async function HomePage() {
       <WelcomeModal />
       <HeroSection />
       <SelectedForYou />
-
       <ExploreCollections />
-
       <YourCollection />
     </>
   );

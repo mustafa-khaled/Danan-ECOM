@@ -1,5 +1,8 @@
 export { CertificateModal } from "./CertificateModal";
-export type { CertificateData, CertificateModalProps } from "./CertificateModal";
+export type {
+  CertificateData,
+  CertificateModalProps,
+} from "./CertificateModal";
 
 export { AdminLayout } from "./AdminLayout";
 export type { AdminLayoutProps } from "./AdminLayout";
@@ -35,3 +38,5 @@ export type { StatusPillProps } from "./StatusPill";
 
 export { OptimizedImage } from "./OptimizedImage";
 export type { OptimizedImageProps } from "./OptimizedImage";
+
+export { default as SectionHead } from "./section-head";

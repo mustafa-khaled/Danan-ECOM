@@ -4,6 +4,7 @@ import { getTranslations } from "next-intl/server";
 import Container from "@/components/ui/container";
 import { fetchWardrobe, type WardrobePiece } from "@/features/wardrobe";
 import { getSessionCookieHeader } from "@/features/auth/server/session";
+import { SectionHead } from "@/components/ui";
 
 interface DisplayPiece {
   id: string;
@@ -56,24 +57,12 @@ export default async function YourCollection() {
   return (
     <Container>
       <section className="py-12 sm:py-16">
-        {/* ── Section Header ── */}
-        <div className="mb-8 flex flex-col justify-between gap-4 sm:flex-row sm:items-end">
-          <div>
-            <h2 className="font-english text-3xl font-bold tracking-tight text-(--color-text) sm:text-4xl">
-              {t("yourCollection")}
-            </h2>
-            <p className="mt-2 text-sm text-(--color-text-muted) sm:text-base">
-              {t("yourCollectionSubtitle")}
-            </p>
-          </div>
-          <Link
-            href="/beta/wardrobe"
-            className="inline-flex items-center justify-center gap-2 self-start bg-[#B56B5D] px-5 py-2.5 text-xs font-medium tracking-wide text-white transition-colors hover:bg-[#a05c50] sm:self-auto"
-          >
-            <span>{t("exploreAll")}</span>
-            <span className="rtl:rotate-180 inline-block">→</span>
-          </Link>
-        </div>
+        <SectionHead
+          title={t("yourCollection")}
+          href="/beta/wardrobe"
+          link={t("exploreAll")}
+          subtitle={t("yourCollectionSubtitle")}
+        />
 
         {/* ── Pieces Grid ── */}
         <div className="grid grid-cols-1 gap-6 md:grid-cols-3 lg:gap-8">

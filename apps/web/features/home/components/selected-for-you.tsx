@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { PieceCard } from "@/components/ui";
+import { PieceCard, SectionHead } from "@/components/ui";
 import { formatPrice } from "@/shared/utils/format";
 import type { Locale } from "@/i18n/routing";
 import { getTranslations, getLocale } from "next-intl/server";
@@ -19,24 +19,12 @@ export default async function SelectedForYou() {
   return (
     <Container>
       <section className="py-16">
-        {/* ── Header row: title + explore button ── */}
-        <div className="mb-2 flex items-start justify-between">
-          <h2 className="font-english text-4xl font-bold text-(--color-text)">
-            {t("selectedForYou")}
-          </h2>
-          <Link
-            href="/beta/pieces"
-            className="inline-flex items-center gap-2 bg-[#BF7266] px-5 py-2.5 text-xs font-medium tracking-[0.14em] uppercase text-white transition-colors hover:bg-[#1e3538]"
-          >
-            {t("exploreAllPieces")}
-            <span className="rtl:rotate-180 inline-block">→</span>
-          </Link>
-        </div>
-
-        {/* ── Subtitle ── */}
-        <p className="mb-8 text-[24px] text-(--color-text-muted)">
-          {t("selectedForYouSubtitle")}
-        </p>
+        <SectionHead
+          title={t("selectedForYou")}
+          href="/beta/pieces"
+          link={t("exploreAllPieces")}
+          subtitle={t("selectedForYouSubtitle")}
+        />
 
         {/* ── Grid: 2 cols, 3rd item spans full width ── */}
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
