@@ -18,7 +18,7 @@ export default async function PrivateLayout({
           visibilityGroups: profile.visibilityGroups,
         }}
       >
-        <div className="flex min-h-dvh w-full flex-col overflow-x-hidden bg-white text-(--color-text)">
+        <div className="flex min-h-dvh w-full flex-col overflow-x-clip bg-white text-(--color-text)">
           <SiteHeader />
           <main>{children}</main>
           <SiteFooter />

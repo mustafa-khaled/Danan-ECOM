@@ -12,7 +12,7 @@ import Link from "next/link";
 
 const BACKGROUND_IMAGES = [
   "/assets/dadan-model.png",
-  "/assets/W10.png",
+  "/assets/coming-soon2.png",
 ] as const;
 
 const ROTATION_INTERVAL_MS = 6000;

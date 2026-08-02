@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from "vitest";
-import { render, screen } from "@testing-library/react";
+import { fireEvent, render, screen } from "@testing-library/react";
 import { NextIntlClientProvider } from "next-intl";
 import en from "@/messages/en.json";
 
@@ -56,9 +56,9 @@ describe("SiteHeader", () => {
   it("renders nav items and greeting", () => {
     renderHeader();
 
-    expect(screen.getByText(/Ahmed/)).toBeInTheDocument();
-    expect(screen.getByText("Collections")).toBeInTheDocument();
-    expect(screen.getByText("Wardrobe")).toBeInTheDocument();
+    expect(screen.getAllByText(/Ahmed/).length).toBeGreaterThan(0);
+    expect(screen.getAllByText("Collections").length).toBeGreaterThan(0);
+    expect(screen.getAllByText("Wardrobe").length).toBeGreaterThan(0);
   });
 
   it("renders language select with options", () => {
@@ -68,4 +68,26 @@ describe("SiteHeader", () => {
     expect(languageSelects.length).toBeGreaterThan(0);
     expect(languageSelects[0]).toHaveTextContent("EN");
   });
+
+  it("opens mobile side menu on burger button click with links and utility icons", () => {
+    renderHeader();
+
+    const burgerBtn = screen.getByRole("button", { name: "Toggle navigation menu" });
+    expect(burgerBtn).toBeInTheDocument();
+
+    // Click to open side menu
+    fireEvent.click(burgerBtn);
+
+    // Mobile nav section exists
+    const mobileNav = screen.getByRole("navigation", { name: "Mobile Navigation" });
+    expect(mobileNav).toBeInTheDocument();
+
+    // Side menu close button exists
+    expect(screen.getByRole("button", { name: "Close menu" })).toBeInTheDocument();
+
+    // Language selector in mobile drawer
+    const languageSelects = screen.getAllByRole("combobox", { name: "Switch language" });
+    expect(languageSelects.length).toBe(2);
+  });
 });
+

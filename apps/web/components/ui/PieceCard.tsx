@@ -5,10 +5,11 @@ import { cn } from "@/lib/utils";
 export interface PieceCardData {
   id: string;
   name: string;
-  serialNumber: string;
+  serialNumber?: string;
   imageUrl?: string | null;
   imageLqip?: string | null;
   collectionName?: string;
+  subtitle?: string;
   price?: string;
 }
 
@@ -65,6 +66,11 @@ export function PieceCard({
         <h3 className="font-english text-xl leading-tight text-(--color-text)">
           {piece.name}
         </h3>
+        {piece.subtitle ? (
+          <p className="text-xs tracking-[0.14em] uppercase text-(--color-text-muted)">
+            {piece.subtitle}
+          </p>
+        ) : null}
         {piece.price ? (
           <p className="font-display text-sm tracking-[0.08em] text-(--color-text)">
             {piece.price}
@@ -74,9 +80,9 @@ export function PieceCard({
           <p className="text-xs tracking-[0.12em] uppercase text-(--color-text-muted) group-hover:text-(--color-accent)">
             Explore Piece <span className="rtl:rotate-180 inline-block">→</span>
           </p>
-        ) : (
+        ) : piece.serialNumber ? (
           <SerialBadge serial={piece.serialNumber} />
-        )}
+        ) : null}
       </div>
     </>
   );

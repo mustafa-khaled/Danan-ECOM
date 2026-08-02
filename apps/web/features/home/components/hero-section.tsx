@@ -13,7 +13,7 @@ export default function HeroSection() {
           fill
           priority
           sizes="100vw"
-          className="object-cover"
+          className="object-cover sm:object-top object-[30%]"
         />
         <div className="hero-overlay-gradient absolute inset-0" />
         <div className="absolute inset-x-0 bottom-20 mx-auto flex flex-col items-center px-4 text-center sm:bottom-30">
