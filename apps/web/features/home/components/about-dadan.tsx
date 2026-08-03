@@ -21,7 +21,7 @@ export default function AboutDadan() {
 
         {/* Mobile CTA — full width, shown only on mobile */}
         <div className="mt-4 md:hidden">
-          <ArrowLink href="/beta/about" variant="primary" size="md" fullWidth>
+          <ArrowLink href="/beta/our-story" variant="primary" size="md" fullWidth>
             {t("exploreTheHouse")}
           </ArrowLink>
         </div>
@@ -30,7 +30,7 @@ export default function AboutDadan() {
         <div className="mt-6 md:mt-8 grid grid-cols-1 md:grid-cols-2 gap-6 md:gap-12">
           {/* Left — CTA at bottom, only visible on desktop */}
           <div className="hidden md:flex flex-col justify-end">
-            <ArrowLink href="/beta/about" variant="primary" size="sm">
+            <ArrowLink href="/beta/our-story" variant="primary" size="sm">
               {t("exploreTheHouse")}
             </ArrowLink>
           </div>

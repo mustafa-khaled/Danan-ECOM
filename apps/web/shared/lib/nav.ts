@@ -4,7 +4,7 @@ export interface NavItem {
 }
 
 export const primaryNavItems: NavItem[] = [
-  { href: "/beta/home", labelKey: "stories" },
+  { href: "/beta/our-story", labelKey: "stories" },
   { href: "/beta/collections", labelKey: "collections" },
   { href: "/beta/wardrobe", labelKey: "wardrobe" },
   { href: "/beta/verify", labelKey: "verify" },
