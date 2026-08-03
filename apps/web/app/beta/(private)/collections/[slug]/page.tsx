@@ -30,8 +30,8 @@ export default async function CollectionDetailPage({ params }: CollectionDetailP
 
   return (
     <>
-      <header className="mb-10 overflow-hidden border border-[var(--color-border)]">
-        <div className="relative aspect-[21/9] bg-[var(--color-surface)]">
+      <header className="mb-10 overflow-hidden border border-border">
+        <div className="relative aspect-21/9 bg-(--color-surface)">
           {collection.coverImageUrl ? (
             <Image
               src={collection.coverImageUrl}
@@ -41,15 +41,15 @@ export default async function CollectionDetailPage({ params }: CollectionDetailP
               className="object-cover"
             />
           ) : (
-            <div className="flex h-full min-h-48 items-center justify-center font-display text-4xl text-[var(--color-text-muted)]">
+            <div className="flex h-full min-h-48 items-center justify-center font-display text-4xl text-(--color-text-muted)">
               DADAN
             </div>
           )}
         </div>
         <div className="p-8 text-center">
-          <h1 className="font-english text-4xl text-[var(--color-text)]">{collection.name}</h1>
+          <h1 className="font-english text-4xl text-(--color-text)">{collection.name}</h1>
           {collection.description ? (
-            <p className="mx-auto mt-4 max-w-2xl text-[var(--color-text-muted)]">
+            <p className="mx-auto mt-4 max-w-2xl text-(--color-text-muted)">
               {collection.description}
             </p>
           ) : null}
@@ -59,17 +59,17 @@ export default async function CollectionDetailPage({ params }: CollectionDetailP
       {collection.description ? (
         <div className="mb-12 grid gap-8 md:grid-cols-2">
           <div>
-            <h2 className="font-english text-xl text-[var(--color-text)]">{t("theStory")}</h2>
-            <p className="mt-4 text-[var(--color-text-muted)]">{collection.description}</p>
+            <h2 className="font-english text-xl text-(--color-text)">{t("theStory")}</h2>
+            <p className="mt-4 text-(--color-text-muted)">{collection.description}</p>
           </div>
           <div>
-            <h2 className="font-english text-xl text-[var(--color-text)]">{t("designInspiration")}</h2>
-            <p className="mt-4 text-[var(--color-text-muted)]">{collection.description}</p>
+            <h2 className="font-english text-xl text-(--color-text)">{t("designInspiration")}</h2>
+            <p className="mt-4 text-(--color-text-muted)">{collection.description}</p>
           </div>
         </div>
       ) : null}
 
-      <h2 className="mb-6 font-english text-2xl text-[var(--color-text)]">{t("pieces")}</h2>
+      <h2 className="mb-6 font-english text-2xl text-(--color-text)">{t("pieces")}</h2>
 
       {collection.designs.length === 0 ? (
         <EmptyState

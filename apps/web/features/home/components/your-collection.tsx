@@ -1,4 +1,4 @@
-import Image from "next/image";
+import { PieceCard } from "@/components/ui/PieceCard";
 import Link from "next/link";
 import { getTranslations } from "next-intl/server";
 import Container from "@/components/ui/container";
@@ -65,39 +65,20 @@ export default async function YourCollection() {
         />
 
         {/* ── Pieces Grid ── */}
-        <div className="grid grid-cols-1 gap-6 md:grid-cols-3 lg:gap-8">
+        <div className="grid grid-cols-2 gap-6 md:grid-cols-3 lg:gap-8">
           {items.map((piece) => (
-            <Link key={piece.id} href={piece.href} className="group block">
-              {/* Image container */}
-              <div className="relative aspect-square w-full overflow-hidden bg-[#F5F3EF]">
-                {piece.imageUrl ? (
-                  <Image
-                    src={piece.imageUrl}
-                    alt={piece.name}
-                    fill
-                    sizes="(max-width: 768px) 100vw, 33vw"
-                    className="object-cover transition-transform duration-500 group-hover:scale-105"
-                  />
-                ) : null}
-              </div>
-
-              {/* Card Meta Content */}
-              <div className="pt-4 pb-2 flex flex-col gap-1">
-                <h3 className="text-xs sm:text-sm font-semibold tracking-wider text-[#222222] uppercase">
-                  {piece.name}
-                </h3>
-                {piece.ownedSince ? (
-                  <p className="text-[10px] sm:text-xs text-[#737373] font-medium tracking-wider uppercase">
-                    {t("ownedSince")}: {piece.ownedSince}
-                  </p>
-                ) : null}
-                <div className="mt-1 flex items-center gap-1.5 text-xs font-semibold text-[#2D6A5D] transition-colors group-hover:text-[#205347]">
-                  <span>{t("explorePiece")}</span>
-                  <span className="inline-block transition-transform group-hover:translate-x-1 rtl:group-hover:-translate-x-1 rtl:rotate-180">
-                    →
-                  </span>
-                </div>
-              </div>
+            <Link key={piece.id} href={piece.href} className="block">
+              <PieceCard
+                piece={{
+                  id: piece.id,
+                  name: piece.name,
+                  subtitle: piece.ownedSince
+                    ? `${t("ownedSince")}: ${piece.ownedSince}`
+                    : undefined,
+                  imageUrl: piece.imageUrl,
+                }}
+                showExplore
+              />
             </Link>
           ))}
         </div>

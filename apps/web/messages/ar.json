@@ -79,6 +79,9 @@
     "ownedSince": "مملوك منذ",
     "explorePiece": "استكشف القطعة",
     "aboutDadan": "عن دادان",
+    "aboutSubtitle": "أكثر من مجوهرات. تروي قصة",
+    "aboutFullDescription": "دادان هو بيت مجوهرات خاص حيث تتحول القصص والتراث والروابط الإنسانية إلى قطع يمكن ارتداؤها. كل مجموعة تبدأ بقصة، كل قطعة تنتمي إلى تلك القصة، وكل مالك يصبح جزءاً من استمرارها",
+    "exploreTheHouse": "استكشف البيت",
     "aboutDescription": "تحتفي دادان بالإرث السعودي من خلال حرفية المجوهرات المعاصرة.",
     "welcomeBack": "مرحباً بعودتك",
     "wardrobeEmpty": "خزانتك فارغة",
@@ -170,6 +173,19 @@
     "collectionSummary": "ملخص المجموعة",
     "ownedPieces": "{count} قطعة مملوكة",
     "updateError": "تعذّر تحديث الملف الشخصي"
+  },
+  "myCollection": {
+    "myCollection": "مجموعتي",
+    "wishList": "قائمة الأمنيات",
+    "collectionSummary": "ملخص مجموعتي",
+    "wishListSummary": "ملخص قائمة الأمنيات",
+    "ownedPieces": "{count} قطعة مملوكة",
+    "savedPieces": "{count} قطعة محفوظة",
+    "noOwnedPieces": "لا توجد قطع مملوكة",
+    "noSavedPieces": "لا توجد قطع محفوظة",
+    "noOwnedDescription": "لم تقم بتسجيل أي قطع في مجموعتك بعد.",
+    "noSavedDescription": "قائمة أمنياتك فارغة حالياً.",
+    "ownedSinceFallback": "مملوك منذ: يونيو 2022"
   },
   "cart": {
     "title": "السلة",

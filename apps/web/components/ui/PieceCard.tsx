@@ -34,7 +34,7 @@ export function PieceCard({
 }: PieceCardProps) {
   const content = (
     <>
-      <div className={cn("relative aspect-4/5 overflow-hidden bg-(--color-surface)", imageClassName)}>
+      <div className={cn("relative w-full aspect-square md:aspect-4/5 overflow-hidden bg-(--color-surface)", imageClassName)}>
         {piece.imageUrl ? (
           <OptimizedImage
             src={piece.imageUrl}
@@ -57,17 +57,17 @@ export function PieceCard({
           </span>
         ) : null}
       </div>
-      <div className="flex flex-col gap-2 p-4">
+      <div className="flex flex-col gap-1 md:gap-2 p-2 md:p-4">
         {piece.collectionName ? (
-          <p className="text-xs tracking-[0.14em] uppercase text-(--color-text-muted)">
+          <p className="text-[0.625rem] md:text-xs tracking-[0.14em] uppercase text-(--color-text-muted)">
             {piece.collectionName}
           </p>
         ) : null}
-        <h3 className="font-english text-xl leading-tight text-(--color-text)">
+        <h3 className="font-english text-sm md:text-xl leading-tight text-(--color-text)">
           {piece.name}
         </h3>
         {piece.subtitle ? (
-          <p className="text-xs tracking-[0.14em] uppercase text-(--color-text-muted)">
+          <p className="text-[0.625rem] md:text-xs tracking-[0.14em] uppercase text-(--color-text-muted)">
             {piece.subtitle}
           </p>
         ) : null}
@@ -77,7 +77,7 @@ export function PieceCard({
           </p>
         ) : null}
         {showExplore ? (
-          <p className="text-xs tracking-[0.12em] uppercase text-(--color-text-muted) group-hover:text-(--color-accent)">
+          <p className="text-[0.625rem] md:text-xs tracking-[0.12em] uppercase text-[#1F5750] group-hover:text-(--color-accent)">
             Explore Piece <span className="rtl:rotate-180 inline-block">→</span>
           </p>
         ) : piece.serialNumber ? (

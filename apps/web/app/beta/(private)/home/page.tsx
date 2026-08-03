@@ -4,6 +4,7 @@ import {
   ExploreCollections,
   SelectedForYou,
   YourCollection,
+  AboutDadan,
 } from "@/features/home";
 
 export default async function HomePage() {
@@ -14,6 +15,7 @@ export default async function HomePage() {
       <SelectedForYou />
       <ExploreCollections />
       <YourCollection />
+      <AboutDadan />
     </>
   );
 }

@@ -17,15 +17,15 @@ export function EmptyState({
 
   return (
     <div
-      className={`flex flex-col items-center justify-center rounded-[var(--radius-panel)] border border-dashed px-6 py-16 text-center ${
+      className={`flex flex-col items-center justify-center rounded-(--radius-panel) border border-dashed px-6 py-16 text-center ${
         isLight
-          ? "border-[var(--color-border)] bg-[var(--color-surface)]"
-          : "border-[var(--color-border)] bg-[var(--color-surface)]"
+          ? "border-border bg-(--color-surface)"
+          : "border-border bg-(--color-surface)"
       }`}
     >
       <p
         className={`font-display text-2xl ${
-          isLight ? "text-[var(--color-text)]" : "text-[var(--color-ivory)]"
+          isLight ? "text-(--color-text)" : "text-(--color-ivory)"
         }`}
       >
         {title}
@@ -33,7 +33,7 @@ export function EmptyState({
       {description ? (
         <p
           className={`mt-3 max-w-md text-sm ${
-            isLight ? "text-[var(--color-text-muted)]" : "text-[var(--color-ivory-muted)]"
+            isLight ? "text-(--color-text-muted)" : "text-(--color-ivory-muted)"
           }`}
         >
           {description}
@@ -42,10 +42,10 @@ export function EmptyState({
       {action ? (
         <Link
           href={action.href}
-          className={`mt-8 inline-flex min-h-11 items-center rounded-[var(--radius-button)] px-6 text-sm tracking-[0.1em] uppercase transition-colors ${
+          className={`mt-8 inline-flex min-h-11 items-center rounded-(--radius-button) px-6 text-sm tracking-widest uppercase transition-colors ${
             isLight
-              ? "border border-[var(--color-accent)] bg-[var(--color-accent)] text-white hover:bg-transparent hover:text-[var(--color-accent)]"
-              : "border border-[var(--color-gold)] bg-transparent text-[var(--color-gold)] hover:bg-[var(--color-gold)] hover:text-[var(--color-void)]"
+              ? "border border-(--color-accent) bg-(--color-accent) text-white hover:bg-transparent hover:text-(--color-accent)"
+              : "border border-(--color-gold) bg-transparent text-(--color-gold) hover:bg-(--color-gold) hover:text-void"
           }`}
         >
           {action.label}

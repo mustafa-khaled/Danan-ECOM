@@ -79,6 +79,9 @@
     "ownedSince": "OWNED SINCE",
     "explorePiece": "Explore Piece",
     "aboutDadan": "About DADAN",
+    "aboutSubtitle": "More Than Jewelry. Tells A Story",
+    "aboutFullDescription": "DADAN is a private jewelry house where stories, heritage, and human connections are transformed into wearable pieces. Every collection begins with a story, every piece belongs to that story, and every owner becomes part of its continuation",
+    "exploreTheHouse": "Explore The House",
     "aboutDescription": "DADAN celebrates Saudi heritage through contemporary jewelry craftsmanship.",
     "welcomeBack": "Welcome back",
     "wardrobeEmpty": "Your wardrobe is empty",
@@ -170,6 +173,19 @@
     "collectionSummary": "Collection Summary",
     "ownedPieces": "{count} Owned Pieces",
     "updateError": "Could not update profile"
+  },
+  "myCollection": {
+    "myCollection": "My Collection",
+    "wishList": "Wish List",
+    "collectionSummary": "My Collection Summary",
+    "wishListSummary": "Wish List Summary",
+    "ownedPieces": "{count} Owned Pieces",
+    "savedPieces": "{count} Saved Pieces",
+    "noOwnedPieces": "No Owned Pieces",
+    "noSavedPieces": "No Saved Pieces",
+    "noOwnedDescription": "You haven't registered any pieces in your collection yet.",
+    "noSavedDescription": "Your wish list is currently empty.",
+    "ownedSinceFallback": "OWNED SINCE: JUNE 2022"
   },
   "cart": {
     "title": "Cart",

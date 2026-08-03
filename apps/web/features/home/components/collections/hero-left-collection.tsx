@@ -1,4 +1,4 @@
-import Link from "next/link";
+import { ArrowLink } from "@/components/ui/ArrowLink";
 import Image from "next/image";
 import type { CollectionSummary } from "@/features/collections";
 
@@ -34,13 +34,15 @@ export function HeroLeftCollection({
             {collection.description}
           </p>
         )}
-        <Link
+        <ArrowLink
           href={`/beta/collections/${collection.slug}`}
-          className="mt-6 lg:mt-8 inline-flex h-12 sm:h-14.25 lg:h-16 p-3.5 lg:px-8 bg-[#4CBEAE] w-full max-w-xs sm:max-w-md lg:max-w-lg items-center justify-between text-xs sm:text-sm lg:text-base font-semibold text-white transition-colors hover:bg-[#3FA899]"
+          variant="teal"
+          size="lg"
+          fullWidth
+          className="mt-6 lg:mt-8 max-w-xs sm:max-w-md lg:max-w-lg"
         >
-          <span>Explore Your Experience</span>
-          <span className="rtl:rotate-180 text-base lg:text-lg">→</span>
-        </Link>
+          Explore Your Experience
+        </ArrowLink>
       </div>
     </div>
   );

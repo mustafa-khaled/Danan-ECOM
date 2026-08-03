@@ -1,69 +1,12 @@
 "use client";
 
 import { useState } from "react";
+import { useTranslations } from "next-intl";
 import Link from "next/link";
 import { PieceCard } from "@/components/ui/PieceCard";
 import { EmptyState } from "@/shared/components/feedback/empty-state";
-
-export interface OwnedPieceItem {
-  id: string;
-  name: string;
-  serialNumber?: string;
-  imageUrl?: string | null;
-  acquiredAt?: string;
-  slug?: string;
-}
-
-export interface SavedPieceItem {
-  id: string;
-  name: string;
-  serialNumber?: string;
-  imageUrl?: string | null;
-  collectionName?: string;
-  price?: string;
-  slug?: string;
-}
-
-const DEFAULT_OWNED_PIECES: OwnedPieceItem[] = [
-  {
-    id: "owned-1",
-    name: "HERITAGE PENDANT",
-    acquiredAt: "OWNED SINCE: JUNE 2022",
-    imageUrl: "/assets/heritage-pendant.png",
-    slug: "heritage-pendant",
-  },
-  {
-    id: "owned-2",
-    name: "HERITAGE PENDANT",
-    acquiredAt: "OWNED SINCE: JUNE 2022",
-    imageUrl: "/assets/heritage-pendant2.png",
-    slug: "heritage-pendant",
-  },
-  {
-    id: "owned-3",
-    name: "HERITAGE PENDANT",
-    acquiredAt: "OWNED SINCE: JUNE 2022",
-    imageUrl: "/assets/W7.png",
-    slug: "heritage-pendant",
-  },
-];
-
-const DEFAULT_SAVED_PIECES: SavedPieceItem[] = [
-  {
-    id: "saved-1",
-    name: "MAWADDAH PENDANT",
-    collectionName: "HERITAGE COLLECTION",
-    imageUrl: "/assets/mawaddah.png",
-    slug: "mawaddah",
-  },
-  {
-    id: "saved-2",
-    name: "TRIANGLE PENDANT",
-    collectionName: "DADAN COLLECTION",
-    imageUrl: "/assets/W10.png",
-    slug: "triangle-pendant",
-  },
-];
+import { SectionHead } from "@/components/ui";
+import { OwnedPieceItem, SavedPieceItem } from "../types";
 
 interface CollectionsGridProps {
   ownedPieces?: OwnedPieceItem[];
@@ -71,80 +14,90 @@ interface CollectionsGridProps {
 }
 
 export default function CollectionsGrid({
-  ownedPieces = DEFAULT_OWNED_PIECES,
-  savedPieces = DEFAULT_SAVED_PIECES,
+  ownedPieces = [],
+  savedPieces = [],
 }: CollectionsGridProps) {
-  const [activeTab, setActiveTab] = useState<"collection" | "wishlist">("collection");
+  const [activeTab, setActiveTab] = useState<"collection" | "wishlist">(
+    "collection",
+  );
+  const t = useTranslations("myCollection");
 
-  const displayOwned = ownedPieces.length > 0 ? ownedPieces : DEFAULT_OWNED_PIECES;
-  const displaySaved = savedPieces.length > 0 ? savedPieces : DEFAULT_SAVED_PIECES;
-
-  const currentItems = activeTab === "collection" ? displayOwned : displaySaved;
+  const currentItems = activeTab === "collection" ? ownedPieces : savedPieces;
 
   return (
     <div className="flex flex-col gap-8 md:flex-row md:items-start md:gap-12 py-8">
       {/* Left Sidebar Navigation */}
       <aside className="w-full md:w-64 shrink-0">
-        <div className="flex md:flex-col gap-2">
+        <div className="grid grid-cols-2 md:grid-cols-1 gap-2">
           <button
             type="button"
             onClick={() => setActiveTab("collection")}
-            className={`w-full text-left px-5 py-3.5 text-sm font-medium transition-colors duration-200 ${
+            className={`w-full text-left px-3 py-2.5 md:px-5 md:py-3.5 text-xs md:text-sm font-medium transition-colors duration-200 ${
               activeTab === "collection"
                 ? "bg-[#B56B5D] text-white"
                 : "bg-[#F5F5F5] hover:bg-[#EBEBEB] text-[#1A1A1A]"
             }`}
           >
-            My Collection
+            {t("myCollection")}
           </button>
           <button
             type="button"
             onClick={() => setActiveTab("wishlist")}
-            className={`w-full text-left px-5 py-3.5 text-sm font-medium transition-colors duration-200 ${
+            className={`w-full text-left px-3 py-2.5 md:px-5 md:py-3.5 text-xs md:text-sm font-medium transition-colors duration-200 ${
               activeTab === "wishlist"
                 ? "bg-[#B56B5D] text-white"
                 : "bg-[#F5F5F5] hover:bg-[#EBEBEB] text-[#1A1A1A]"
             }`}
           >
-            Wish List
+            {t("wishList")}
           </button>
         </div>
       </aside>
 
       {/* Main Content Area */}
       <main className="flex-1 w-full">
-        <div className="mb-8">
-          <h2 className="font-english text-2xl md:text-3xl text-(--color-text)">
-            {activeTab === "collection" ? "My Collection Summary" : "Wish List Summary"}
-          </h2>
-          <p className="mt-2 text-sm text-(--color-text-muted)">
-            {activeTab === "collection"
-              ? `${displayOwned.length} Owned Pieces`
-              : `${displaySaved.length} Saved Pieces`}
-          </p>
-        </div>
+        <SectionHead
+          title={activeTab === "collection" ? t("collectionSummary") : t("wishListSummary")}
+          subtitle={
+            activeTab === "collection"
+              ? t("ownedPieces", { count: ownedPieces.length })
+              : t("savedPieces", { count: savedPieces.length })
+          }
+        />
 
         {currentItems.length === 0 ? (
           <EmptyState
-            title={activeTab === "collection" ? "No Owned Pieces" : "No Saved Pieces"}
+            title={
+              activeTab === "collection" ? t("noOwnedPieces") : t("noSavedPieces")
+            }
             description={
               activeTab === "collection"
-                ? "You haven't registered any pieces in your collection yet."
-                : "Your wish list is currently empty."
+                ? t("noOwnedDescription")
+                : t("noSavedDescription")
             }
           />
         ) : (
-          <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+          <div
+            className={`grid gap-6 lg:grid-cols-3 ${currentItems.length === 1 ? "grid-cols-1" : "grid-cols-2"}`}
+          >
             {activeTab === "collection"
-              ? (displayOwned as OwnedPieceItem[]).map((piece) => {
+              ? (ownedPieces as OwnedPieceItem[]).map((piece, index) => {
                   const href = piece.slug ? `/beta/pieces/${piece.slug}` : `#`;
+                  const isLastOdd =
+                    currentItems.length % 2 !== 0 &&
+                    index === currentItems.length - 1;
                   return (
-                    <Link key={piece.id} href={href} className="block">
+                    <Link
+                      key={piece.id}
+                      href={href}
+                      className={`block ${isLastOdd ? "col-span-2 lg:col-span-1" : ""}`}
+                    >
                       <PieceCard
                         piece={{
                           id: piece.id,
                           name: piece.name,
-                          subtitle: piece.acquiredAt || "OWNED SINCE: JUNE 2022",
+                          subtitle:
+                            piece.acquiredAt || t("ownedSinceFallback"),
                           imageUrl: piece.imageUrl,
                         }}
                         showExplore
@@ -152,10 +105,17 @@ export default function CollectionsGrid({
                     </Link>
                   );
                 })
-              : (displaySaved as SavedPieceItem[]).map((piece) => {
+              : (savedPieces as SavedPieceItem[]).map((piece, index) => {
                   const href = piece.slug ? `/beta/pieces/${piece.slug}` : `#`;
+                  const isLastOdd =
+                    currentItems.length % 2 !== 0 &&
+                    index === currentItems.length - 1;
                   return (
-                    <Link key={piece.id} href={href} className="block">
+                    <Link
+                      key={piece.id}
+                      href={href}
+                      className={`block ${isLastOdd ? "col-span-2 lg:col-span-1" : ""}`}
+                    >
                       <PieceCard
                         piece={{
                           id: piece.id,
@@ -175,4 +135,3 @@ export default function CollectionsGrid({
     </div>
   );
 }
-

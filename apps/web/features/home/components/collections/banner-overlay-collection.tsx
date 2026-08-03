@@ -1,4 +1,4 @@
-import Link from "next/link";
+import { ArrowLink } from "@/components/ui/ArrowLink";
 import Image from "next/image";
 import type { CollectionSummary } from "@/features/collections";
 
@@ -26,13 +26,15 @@ export function BannerOverlayCollection({
             {collection.description}
           </p>
         )}
-        <Link
+        <ArrowLink
           href={`/beta/collections/${collection.slug}`}
-          className="mt-5 lg:mt-7 inline-flex h-11 sm:h-12 lg:h-14 p-3 lg:px-7 bg-[#4CBEAE] w-full max-w-xs lg:max-w-sm items-center justify-between text-xs sm:text-sm lg:text-base font-semibold text-white transition-colors hover:bg-[#3FA899]"
+          variant="teal"
+          size="lg"
+          fullWidth
+          className="mt-5 lg:mt-7 max-w-xs lg:max-w-sm"
         >
-          <span>Explore Collection</span>
-          <span className="rtl:rotate-180 text-sm lg:text-base">→</span>
-        </Link>
+          Explore Collection
+        </ArrowLink>
       </div>
     </div>
   );

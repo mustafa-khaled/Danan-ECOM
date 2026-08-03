@@ -1,12 +1,10 @@
 import { CollectionsBanner } from "@/features/collections";
 import { getSessionCookieHeader } from "@/features/auth/server/session";
-import CollectionsGrid, {
-  OwnedPieceItem,
-  SavedPieceItem,
-} from "@/features/collections/components/collections-grid";
+import CollectionsGrid from "@/features/collections/components/collections-grid";
 import Container from "@/components/ui/container";
 import { fetchWardrobe } from "@/features/wardrobe";
 import { fetchSaved } from "@/features/saved";
+import { OwnedPieceItem, SavedPieceItem } from "@/features/collections/types";
 
 export default async function CollectionsPage() {
   const cookie = await getSessionCookieHeader();

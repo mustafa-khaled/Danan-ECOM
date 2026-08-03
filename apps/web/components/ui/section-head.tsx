@@ -1,4 +1,4 @@
-import Link from "next/link";
+import { ArrowLink } from "./ArrowLink";
 import React from "react";
 
 interface SectionHeadProps {
@@ -15,26 +15,22 @@ export default function SectionHead({
   subtitle,
 }: SectionHeadProps) {
   return (
-    <div className="mb-8 flex flex-col justify-between gap-4 sm:flex-row sm:items-end">
+    <div className="mb-4 md:mb-8 flex flex-col justify-between gap-2 md:gap-4 sm:flex-row sm:items-end">
       <div>
-        <h2 className="font-english text-3xl font-bold tracking-tight text-(--color-text) sm:text-4xl">
+        <h2 className="font-english text-xl sm:text-3xl md:text-4xl font-bold tracking-tight text-(--color-text)">
           {title}
         </h2>
         {subtitle && (
-          <p className="mt-2 text-sm text-(--color-text-muted) sm:text-base">
+          <p className="mt-1 md:mt-2 text-xs sm:text-sm text-(--color-text-muted) md:text-base">
             {subtitle}
           </p>
         )}
       </div>
 
       {href && link && (
-        <Link
-          href={href}
-          className="inline-flex items-center justify-center gap-2 self-start bg-[#B56B5D] px-5 py-2.5 text-xs font-medium tracking-wide text-white transition-colors hover:bg-[#a05c50] sm:self-auto"
-        >
-          <span>{link}</span>
-          <span className="rtl:rotate-180 inline-block">→</span>
-        </Link>
+        <ArrowLink href={href} variant="primary" size="sm" className="self-start sm:self-auto">
+          {link}
+        </ArrowLink>
       )}
     </div>
   );

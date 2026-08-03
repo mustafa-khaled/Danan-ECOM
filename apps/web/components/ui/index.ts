@@ -40,3 +40,6 @@ export { OptimizedImage } from "./OptimizedImage";
 export type { OptimizedImageProps } from "./OptimizedImage";
 
 export { default as SectionHead } from "./section-head";
+
+export { ArrowLink } from "./ArrowLink";
+export type { ArrowLinkProps } from "./ArrowLink";
