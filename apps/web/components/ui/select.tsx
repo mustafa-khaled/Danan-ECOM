@@ -47,6 +47,45 @@ function SelectTrigger({
   );
 }
 
+/**
+ * Prevents Radix UI / react-remove-scroll from locking body scroll
+ * and removing the scrollbar when a select dropdown opens.
+ */
+function usePreventScrollLock(active: boolean) {
+  React.useEffect(() => {
+    if (!active) return;
+
+    const body = document.body;
+
+    function resetScrollLock() {
+      body.style.removeProperty("overflow");
+      body.style.removeProperty("padding-right");
+      body.style.removeProperty("margin-right");
+      body.style.removeProperty("--removed-body-scroll-bar-size");
+      body.removeAttribute("data-scroll-locked");
+    }
+
+    // Reset immediately in case styles were already applied
+    resetScrollLock();
+
+    const observer = new MutationObserver(() => {
+      if (
+        body.hasAttribute("data-scroll-locked") ||
+        body.style.overflow === "hidden"
+      ) {
+        resetScrollLock();
+      }
+    });
+
+    observer.observe(body, {
+      attributes: true,
+      attributeFilter: ["style", "data-scroll-locked"],
+    });
+
+    return () => observer.disconnect();
+  }, [active]);
+}
+
 function SelectContent({
   className,
   children,
@@ -54,6 +93,9 @@ function SelectContent({
   align = "center",
   ...props
 }: React.ComponentProps<typeof SelectPrimitive.Content>) {
+  const [open, setOpen] = React.useState(false);
+  usePreventScrollLock(open);
+
   return (
     <SelectPrimitive.Portal>
       <SelectPrimitive.Content
@@ -66,6 +108,10 @@ function SelectContent({
         )}
         position={position}
         align={align}
+        ref={(node) => {
+          // Content mounts when open, unmounts when closed
+          setOpen(!!node);
+        }}
         {...props}
       >
         <SelectScrollUpButton />

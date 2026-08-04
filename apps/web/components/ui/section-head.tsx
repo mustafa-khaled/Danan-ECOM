@@ -15,13 +15,13 @@ export default function SectionHead({
   subtitle,
 }: SectionHeadProps) {
   return (
-    <div className="mb-4 md:mb-8 flex flex-col justify-between gap-2 md:gap-4 sm:flex-row sm:items-end">
+    <div className="mb-4 md:mb-8 flex flex-col justify-between gap-4 sm:flex-row sm:items-end">
       <div>
-        <h2 className="font-english text-xl sm:text-3xl md:text-4xl font-bold tracking-tight text-(--color-text)">
+        <h2 className="font-english rtl:font-arabic text-[24px] font-bold leading-[100%] tracking-[-0.02em] text-(--color-text) sm:text-3xl md:text-4xl sm:leading-tight">
           {title}
         </h2>
         {subtitle && (
-          <p className="mt-1 md:mt-2 text-xs sm:text-sm text-(--color-text-muted) md:text-base">
+          <p className="font-manrope rtl:font-arabic mt-2 text-[17px] font-semibold leading-[100%] tracking-normal text-(--color-text-muted)">
             {subtitle}
           </p>
         )}

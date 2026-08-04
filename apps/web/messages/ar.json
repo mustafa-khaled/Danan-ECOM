@@ -67,6 +67,7 @@
     "tagline": "كل قطعة تحمل قصة.\nكل قصة تستحق أن تُحفظ."
   },
   "home": {
+    "heroTitle": "اكتشف قصصاً ومجموعات وقطعاً <bm></bm>مختارة <bd></bd>خصيصاً لك في <bm></bm>دار <bd></bd>دادان.",
     "continueExploring": "تابع الاستكشاف",
     "selectedForYou": "مختارة لك",
     "selectedForYouSubtitle": "قطع مختارة خصيصاً لك",
@@ -101,7 +102,11 @@
   "piece": {
     "addToCollection": "أضف إلى مجموعتك",
     "addToFavourites": "أضف إلى قائمة الأمنيات",
+    "partOfCollection": "جزء من مجموعة {collection}",
+    "becomePartOfStory": "كن جزءاً من القصة",
     "specs": "المواصفات",
+    "material": "المادة",
+    "stone": "الأحجار",
     "gold": "الذهب",
     "diamonds": "الألماس",
     "weight": "الوزن",

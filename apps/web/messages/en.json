@@ -67,6 +67,7 @@
     "tagline": "Every piece carries a story.\nEvery story deserves to be preserved."
   },
   "home": {
+    "heroTitle": "Discover stories, collections, and pieces <bm></bm>curated <bd></bd>exclusively for you within the <bm></bm>House of <bd></bd>DADAN.",
     "continueExploring": "Continue Exploring",
     "selectedForYou": "Selected For You",
     "selectedForYouSubtitle": "Pieces selected specially for you",
@@ -101,7 +102,11 @@
   "piece": {
     "addToCollection": "Add To Your Collection",
     "addToFavourites": "Add To Favourites List",
+    "partOfCollection": "Part of the {collection} Collection",
+    "becomePartOfStory": "Become Part of the Story",
     "specs": "Specifications",
+    "material": "Material",
+    "stone": "Stone",
     "gold": "Gold",
     "diamonds": "Diamonds",
     "weight": "Weight",
