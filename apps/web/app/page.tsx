@@ -1,4 +1,24 @@
 import Image from "next/image";
+import { ArrowUpRight } from "lucide-react";
+import Link from "next/link";
+
+function InstagramIcon({ className = "w-5 h-5" }: { className?: string }) {
+  return (
+    <svg
+      className={className}
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    >
+      <rect width="20" height="20" x="2" y="2" rx="5" ry="5" />
+      <path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z" />
+      <line x1="17.5" x2="17.51" y1="6.5" y2="6.5" />
+    </svg>
+  );
+}
 
 export default function ComingSoonPage() {
   return (
@@ -23,7 +43,7 @@ export default function ComingSoonPage() {
         </div>
 
         {/* Header (Logo) */}
-        <header className="relative z-20 flex justify-center pt-20 animate-slide-up">
+        <header className="relative z-20 flex px-30 gap-7.5 justify-center pt-20 flex-col animate-slide-up">
           <div className="relative w-55 h-9">
             <Image
               src="/assets/dadan-logo.png"
@@ -35,6 +55,21 @@ export default function ComingSoonPage() {
               className="object-contain"
             />
           </div>
+
+          <Link
+            href="https://www.instagram.com/dadanjewelr/"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="w-66 h-10 rounded-lg p-2 flex items-center justify-between bg-[#FFFFFF29] backdrop-blur-md text-white hover:bg-[#FFFFFF38] transition-colors duration-200"
+          >
+            <div className="flex items-center gap-2">
+              <InstagramIcon className="w-5 h-5 text-white" />
+              <span className="text-sm font-medium text-white tracking-wide">
+                Instagram
+              </span>
+            </div>
+            <ArrowUpRight className="w-5 h-5 text-white" />
+          </Link>
         </header>
 
         {/* Bottom Content / Footer */}
@@ -72,8 +107,8 @@ export default function ComingSoonPage() {
           <div className="absolute inset-0 bg-linear-to-b from-void/40 via-transparent to-void/50 z-10" />
         </div>
 
-        {/* Header (Logo) */}
-        <header className="relative z-20 flex justify-center pt-16 animate-slide-up">
+        {/* Header (Logo & Instagram) */}
+        <header className="relative z-20 flex px-6 justify-center pt-16 flex-col items-center gap-4 animate-slide-up">
           <div className="relative w-46.25 h-7.5">
             <Image
               src="/assets/dadan-logo.png"
@@ -85,6 +120,21 @@ export default function ComingSoonPage() {
               className="object-contain"
             />
           </div>
+
+          <Link
+            href="https://www.instagram.com/dadanjewelr/"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="w-66 h-10 rounded-lg p-2 flex items-center justify-between bg-[#FFFFFF29] backdrop-blur-md text-white hover:bg-[#FFFFFF38] transition-colors duration-200"
+          >
+            <div className="flex items-center gap-2">
+              <InstagramIcon className="w-5 h-5 text-white" />
+              <span className="text-sm font-medium text-white tracking-wide">
+                Instagram
+              </span>
+            </div>
+            <ArrowUpRight className="w-5 h-5 text-white" />
+          </Link>
         </header>
 
         {/* Bottom Content / Footer */}

@@ -75,7 +75,7 @@ export default function AccessGatePage() {
           priority={index === 0}
           quality={90}
           sizes="100vw"
-          className="object-cover object-top z-0"
+          className="object-cover z-0 object-[30%]"
           style={{
             opacity: activeIndex === index ? 1 : 0,
             transition: "opacity 1s ease-in-out",
