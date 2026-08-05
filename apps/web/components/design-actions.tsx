@@ -53,14 +53,15 @@ export function DesignActions({
   const error = addToCartError;
 
   return (
-    <div className="space-y-3">
-      <div className="grid grid-cols-2 gap-3">
-        {/* Primary: Add To Your Collection */}
+    <div className="w-full space-y-3">
+      {/* On mobile: 1 column stacked vertically. On sm/lg: 2 columns side-by-side */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-3.5 w-full">
+        {/* Primary CTA: Add To Your Collection */}
         <button
           type="button"
           disabled={isAddingToCart}
           onClick={handleAddToCart}
-          className="flex items-center justify-center gap-2 rounded-sm bg-[#4CBEAE] px-4 py-3.5 text-sm font-medium tracking-wide text-white transition-opacity hover:opacity-90 disabled:pointer-events-none disabled:opacity-50"
+          className="flex h-12 w-full items-center justify-center gap-2.5 rounded-[2px] bg-[#4CBEAE] px-4 text-center font-display text-sm font-semibold tracking-normal text-[#2D2321] transition-all hover:bg-[#45B1A1] disabled:pointer-events-none disabled:opacity-50 active:scale-[0.99]"
         >
           {isAddingToCart ? (
             "…"
@@ -78,12 +79,12 @@ export function DesignActions({
           )}
         </button>
 
-        {/* Secondary: Add To Favourites List */}
+        {/* Secondary CTA: Add To Favourites List */}
         <button
           type="button"
           disabled={isSaving || isUnsaving}
           onClick={handleToggleSave}
-          className="flex items-center justify-center gap-2 rounded-sm border border-border bg-transparent px-4 py-3.5 text-sm font-medium tracking-wide text-(--color-text) transition-colors hover:border-[#4CBEAE] disabled:pointer-events-none disabled:opacity-50"
+          className="flex h-12 w-full items-center justify-center gap-2.5 rounded-[2px] border border-gray-200 bg-white px-4 text-center font-display text-sm font-semibold tracking-normal text-[#2D2321] transition-all hover:border-gray-300 hover:bg-gray-50 disabled:pointer-events-none disabled:opacity-50 active:scale-[0.99]"
         >
           {isSaving || isUnsaving ? (
             "…"
@@ -95,7 +96,7 @@ export function DesignActions({
                 alt="Heart"
                 width={18}
                 height={18}
-                className={`size-4.5 object-contain ${isSaved ? "" : "opacity-80"}`}
+                className={`size-4.5 object-contain ${isSaved ? "" : "opacity-90"}`}
               />
             </>
           )}
@@ -110,4 +111,5 @@ export function DesignActions({
     </div>
   );
 }
+
 
