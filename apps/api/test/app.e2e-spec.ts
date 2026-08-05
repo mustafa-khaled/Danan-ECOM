@@ -161,7 +161,7 @@ describe("DADAN API (e2e)", () => {
         .get("/admin/designs")
         .set("Cookie", adminCookie)
         .expect(200);
-      expect(designs.body.total).toBeGreaterThanOrEqual(9);
+      expect(designs.body.total).toBeGreaterThanOrEqual(8);
       const noirNecklace = designs.body.items.find(
         (d: { slug: string }) => d.slug === "noir-cascade-necklace",
       );

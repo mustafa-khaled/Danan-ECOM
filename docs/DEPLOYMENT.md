@@ -472,9 +472,17 @@ The Prisma client is generated during the Docker build. You do not need to run `
 
 ### 7.4 Seed data
 
-> **Warning:** Never run `pnpm db:seed` against production. The seed script creates demo data with well-known passwords.
+> **Warning:** The seeder is destructive — it wipes the entire database and the uploads directory, then rebuilds the canonical dataset (4 collections, 8 designs, 16 pieces, demo clients/admins). Never run it against a database that holds real records unless you intend a full reset. It is blocked in production unless explicitly allowed.
 
-Create the first SUPER_ADMIN directly using the production API container. See §8.5.
+For a normal production deployment, do **not** seed. Instead create the first SUPER_ADMIN directly using the production API container. See §8.5.
+
+If you need to (re)seed the production catalog from scratch (e.g. a fresh server before launch), run:
+
+```bash
+scripts/seed-production.sh --force
+```
+
+This executes the seeder inside the running `api` container with `SEED_ALLOW_PRODUCTION=true` and `SEED_ASSETS_DIR=/app/seeder-assets` (the seed images are baked into the API image by `apps/api/Dockerfile`). It requires Docker Compose v2 and the `api` service to be healthy.
 
 ---
 

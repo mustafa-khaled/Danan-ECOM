@@ -1,4 +1,5 @@
 import type { ButtonHTMLAttributes } from "react";
+import { DadanSpinner } from "@/shared/components/feedback/loading-state";
 
 const sizeClasses = {
   sm: "min-h-11 px-4 text-xs tracking-[0.12em] uppercase",
@@ -24,8 +25,8 @@ export interface LuxuryButtonProps extends ButtonHTMLAttributes<HTMLButtonElemen
 export function LuxuryButton({ variant = "primary", size = "md", loading = false, disabled, className = "", type = "button", children, ...props }: LuxuryButtonProps) {
   const isDisabled = disabled || loading;
   return (
-    <button type={type} disabled={isDisabled} className={[sizeClasses[size], variantClasses[variant], isDisabled ? "pointer-events-none opacity-50" : "", className].filter(Boolean).join(" ")} {...props}>
-      {loading ? "\u2026" : children}
+    <button type={type} disabled={isDisabled} className={[sizeClasses[size], variantClasses[variant], "inline-flex items-center justify-center gap-2", isDisabled ? "pointer-events-none opacity-50" : "", className].filter(Boolean).join(" ")} {...props}>
+      {loading ? <DadanSpinner size="sm" /> : children}
     </button>
   );
 }

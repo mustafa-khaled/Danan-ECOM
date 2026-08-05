@@ -6,6 +6,7 @@ import { useState } from "react";
 import { useTranslations } from "next-intl";
 import { useAddToCart } from "@/features/cart";
 import { useSavePiece, useUnsavePiece } from "@/features/saved";
+import { DadanSpinner } from "@/shared/components/feedback/loading-state";
 
 interface DesignActionsProps {
   pieceId: string;
@@ -64,7 +65,7 @@ export function DesignActions({
           className="flex h-12 w-full items-center justify-center gap-2.5 rounded-[2px] bg-[#4CBEAE] px-4 text-center font-display text-sm font-semibold tracking-normal text-[#2D2321] transition-all hover:bg-[#45B1A1] disabled:pointer-events-none disabled:opacity-50 active:scale-[0.99]"
         >
           {isAddingToCart ? (
-            "…"
+            <DadanSpinner size="sm" />
           ) : (
             <>
               <span>{t("addToCollection")}</span>
@@ -87,7 +88,7 @@ export function DesignActions({
           className="flex h-12 w-full items-center justify-center gap-2.5 rounded-[2px] border border-gray-200 bg-white px-4 text-center font-display text-sm font-semibold tracking-normal text-[#2D2321] transition-all hover:border-gray-300 hover:bg-gray-50 disabled:pointer-events-none disabled:opacity-50 active:scale-[0.99]"
         >
           {isSaving || isUnsaving ? (
-            "…"
+            <DadanSpinner size="sm" />
           ) : (
             <>
               <span>{isSaved ? t("unsave") : t("addToFavourites")}</span>

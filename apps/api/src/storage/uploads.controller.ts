@@ -14,6 +14,7 @@ const EXTENSION_TO_MIME: Record<string, string> = {
   jpeg: "image/jpeg",
   png: "image/png",
   webp: "image/webp",
+  avif: "image/avif",
   pdf: "application/pdf",
 };
 
@@ -48,7 +49,15 @@ export class UploadsController {
       const contentType = mimeFromKey(storageKey);
 
       res.setHeader("Content-Type", contentType);
-      res.setHeader("Cache-Control", "public, max-age=31536000, immutable");
+
+      // Seed-managed assets live under <entity>/seed/<file> and share
+      // deterministic filenames across re-seeds while their content can
+      // change, so never cache them as immutable. Real user uploads are
+      // immutable and safe to cache for a year.
+      const cacheControl = storageKey.split("/").includes("seed")
+        ? "public, max-age=0, must-revalidate"
+        : "public, max-age=31536000, immutable";
+      res.setHeader("Cache-Control", cacheControl);
 
       stream.on("error", () => {
         if (!res.headersSent) res.sendStatus(404);

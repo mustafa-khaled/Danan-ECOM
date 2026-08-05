@@ -38,7 +38,7 @@ export default async function DesignDetailPage({
       {/* ── Section 1: Main Product Hero + Details Container ── */}
       <div className="grid lg:grid-cols-2 lg:items-stretch">
         {/* Left: Main Product Image */}
-        <div className="relative h-112 sm:h-136 lg:h-auto lg:min-h-170 xl:min-h-190 w-full overflow-hidden bg-[#0D1514]">
+        <div className="relative h-[calc(100dvh-78px)] lg:h-auto lg:min-h-[calc(100dvh-115px)] w-full overflow-hidden bg-[#0D1514]">
           {design.imageUrls[0] ? (
             <Image
               src={design.imageUrls[0]}

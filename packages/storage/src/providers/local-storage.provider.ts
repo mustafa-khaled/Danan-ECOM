@@ -83,4 +83,15 @@ export class LocalStorageProvider implements StorageProvider {
       return false;
     }
   }
+
+  async removeAll(): Promise<void> {
+    if (!existsSync(this.root)) {
+      return;
+    }
+    const { readdir, rm } = await import("node:fs/promises");
+    const entries = await readdir(this.root);
+    await Promise.all(
+      entries.map((entry) => rm(join(this.root, entry), { recursive: true, force: true })),
+    );
+  }
 }

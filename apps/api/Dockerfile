@@ -105,6 +105,9 @@ COPY --from=builder /app/apps/api/package.json ./apps/api/package.json
 COPY --from=builder /app/packages ./packages
 COPY --from=builder /app/package.json ./package.json
 COPY --from=builder /app/pnpm-workspace.yaml ./pnpm-workspace.yaml
+# Seed catalog assets (referenced by packages/db/prisma/seed-assets.ts via
+# SEED_ASSETS_DIR=/app/seeder-assets when seeding the production DB).
+COPY apps/web/public/seeder-assets /app/seeder-assets
 COPY apps/api/docker-entrypoint.sh /app/docker-entrypoint.sh
 RUN chmod +x /app/docker-entrypoint.sh
 

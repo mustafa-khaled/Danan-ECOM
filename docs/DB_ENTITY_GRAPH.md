@@ -2,7 +2,7 @@
 
 Complete reference for every entity in the DADAN Dijital database: what it is, every property it has, how it connects to every other entity, and what data actually lives in each table in the seeded dev environment.
 
-Source of truth: [`packages/db/prisma/schema.prisma`](../packages/db/prisma/schema.prisma) — **15 models · 7 enums · PostgreSQL via Prisma 6**. Seed data comes from [`packages/db/prisma/seed.ts`](../packages/db/prisma/seed.ts) and [`packages/db/prisma/seed-assets.ts`](../packages/db/prisma/seed-assets.ts). For a relationship-only view see [`packages/db/MODELS.md`](../packages/db/MODELS.md); this document supersedes it in detail but does not replace it.
+Source of truth: [`packages/db/prisma/schema.prisma`](../packages/db/prisma/schema.prisma) — **16 models · 10 enums · PostgreSQL via Prisma 6**. Seed data comes from [`packages/db/prisma/seed-data.ts`](../packages/db/prisma/seed-data.ts) (the canonical dataset), executed by [`packages/db/prisma/seed.ts`](../packages/db/prisma/seed.ts) with assets handled by [`packages/db/prisma/seed-assets.ts`](../packages/db/prisma/seed-assets.ts). For a relationship-only view see [`packages/db/MODELS.md`](../packages/db/MODELS.md); this document supersedes it in detail but does not replace it.
 
 ---
 
@@ -75,11 +75,11 @@ Each entity below lists its **role**, every **property**, its **relations**, and
 
 **Seed rows (3):**
 
-| displayName                    | email              | locale | houseKeyPrefix (plaintext key) | visibilityGroups                               |
-| ------------------------------ | ------------------ | ------ | ------------------------------ | ---------------------------------------------- |
-| أميرة الراشد (Amira Al-Rashid) | amira@example.com  | ar     | `dada` (`dadan-vip-key-001`)   | vip, collection-noir, collection-oasis, riyadh |
-| خالد الفارسي (Khalid Al-Farsi) | khalid@example.com | ar     | `dada` (`dadan-key-002`)       | standard, riyadh                               |
-| Layla Al-Mutairi               | layla@example.com  | en     | `dada` (`dadan-key-003`)       | vip, collection-gold, collection-oasis         |
+| displayName                    | email              | locale | houseKeyPrefix (plaintext key) | visibilityGroups                                                    |
+| ------------------------------ | ------------------ | ------ | ------------------------------ | ------------------------------------------------------------------- |
+| أميرة الراشد (Amira Al-Rashid) | amira@example.com  | ar     | `dada` (`dadan-vip-key-001`)   | vip, collection-noir, collection-oasis, collection-mawaddah, riyadh |
+| خالد الفارسي (Khalid Al-Farsi) | khalid@example.com | ar     | `dada` (`dadan-key-002`)       | standard, collection-heritage, riyadh                               |
+| Layla Al-Mutairi               | layla@example.com  | en     | `dada` (`dadan-key-003`)       | vip, collection-heritage, collection-oasis                          |
 
 ---
 
@@ -103,13 +103,16 @@ Each entity below lists its **role**, every **property**, its **relations**, and
 
 **Relations:** has many `Design`.
 
-**Seed rows (3):**
+**Seed rows (4):**
 
-| name / nameAr                 | slug              | sortOrder | visibilityGroups               |
-| ----------------------------- | ----------------- | --------- | ------------------------------ |
-| Collection Noir / تشكيلة نوار | `noir-collection` | 1         | vip, collection-noir           |
-| Gold Heritage / تراث الذهب    | `gold-heritage`   | 2         | vip, collection-gold, standard |
-| Oasis / الواحة                | `oasis`           | 3         | vip, collection-oasis          |
+| name / nameAr                 | slug              | sortOrder | visibilityGroups                   |
+| ----------------------------- | ----------------- | --------- | ---------------------------------- |
+| Collection Noir / تشكيلة نوار | `noir-collection` | 1         | vip, collection-noir               |
+| Gold Heritage / تراث الذهب    | `gold-heritage`   | 2         | vip, collection-heritage, standard |
+| Oasis / الواحة                | `oasis`           | 3         | vip, collection-oasis              |
+| Mawaddah / مودّة              | `mawaddah`        | 4         | vip, collection-mawaddah           |
+
+Each collection also stores a `coverImageLqip` (base64 webp data URL) generated from its `seeder-assets` cover for blur-up loading.
 
 ---
 
@@ -136,19 +139,20 @@ Each entity below lists its **role**, every **property**, its **relations**, and
 
 **Relations:** belongs to `Collection`; has many `Piece`, `DesignSpecification`, `OrderItem`.
 
-**Seed rows (9):**
+**Seed rows (8):**
 
-| slug                   | name / nameAr                                  | collection    | material                          | basePrice (SAR) | visibilityGroups               |
-| ---------------------- | ---------------------------------------------- | ------------- | --------------------------------- | --------------- | ------------------------------ |
-| `noir-ring-01`         | Noir Solitaire Ring / خاتم نوار سوليتير        | Noir          | 18K Gold, Black Diamond           | 45,000          | vip, collection-noir           |
-| `noir-necklace-01`     | Noir Cascade Necklace / عقد نوار المتدرج       | Noir          | 18K Gold, Onyx                    | 62,000          | vip, collection-noir           |
-| `noir-earrings-01`     | Noir Stud Earrings / أقراط نوار                | Noir          | 18K Gold, Black Diamond           | 38,000          | vip, collection-noir           |
-| `heritage-bracelet-01` | Heritage Cuff Bracelet / سوار التراث           | Gold Heritage | 22K Gold                          | 78,000          | vip, collection-gold, standard |
-| `heritage-earrings-01` | Heritage Drop Earrings / أقراط التراث المتدلية | Gold Heritage | 18K Gold, Emerald                 | 55,000          | collection-gold, standard      |
-| `heritage-pendant-01`  | Crescent Pendant / قلادة الهلال                | Gold Heritage | 21K Gold, Diamond                 | 32,000          | collection-gold, standard, vip |
-| `oasis-ring-01`        | Oasis Duet Ring / خاتم الواحة الثنائي          | Oasis         | 18K Rose & White Gold, Diamond    | 41,000          | vip, collection-oasis          |
-| `oasis-bracelet-01`    | Oasis Tennis Bracelet / سوار الواحة            | Oasis         | 18K White Gold, Diamond, Sapphire | 96,000          | vip, collection-oasis          |
-| `oasis-choker-01`      | Oasis Pearl Choker / طوق الواحة باللؤلؤ        | Oasis         | 18K White Gold, Pearl, Diamond    | 145,000         | vip, collection-oasis          |
+| slug                     | name / nameAr                                  | collection    | material                       | basePrice (SAR) | visibilityGroups                   |
+| ------------------------ | ---------------------------------------------- | ------------- | ------------------------------ | --------------- | ---------------------------------- |
+| `noir-solitaire-ring`    | Noir Solitaire Ring / خاتم نوار سوليتير        | Noir          | 18K Gold, Black Diamond        | 45,000          | vip, collection-noir               |
+| `noir-cascade-necklace`  | Noir Cascade Necklace / عقد نوار المتدرج       | Noir          | 18K Gold, Onyx                 | 62,000          | vip, collection-noir               |
+| `heritage-cuff-bracelet` | Heritage Cuff Bracelet / سوار التراث           | Gold Heritage | 22K Gold                       | 78,000          | vip, collection-heritage, standard |
+| `heritage-drop-earrings` | Heritage Drop Earrings / أقراط التراث المتدلية | Gold Heritage | 18K Gold, Emerald              | 55,000          | collection-heritage, standard      |
+| `oasis-duet-ring`        | Oasis Duet Ring / خاتم الواحة الثنائي          | Oasis         | 18K Rose & White Gold, Diamond | 41,000          | vip, collection-oasis              |
+| `oasis-pearl-choker`     | Oasis Pearl Choker / طوق الواحة باللؤلؤ        | Oasis         | 18K White Gold, Pearl, Diamond | 145,000         | vip, collection-oasis              |
+| `mawaddah-eternity-band` | Mawaddah Eternity Band / خاتم مودّة الأبدي     | Mawaddah      | 18K Rose Gold, Diamond         | 36,000          | vip, collection-mawaddah           |
+| `mawaddah-pendant-heart` | Mawaddah Heart Pendant / قلادة مودّة القلب     | Mawaddah      | 18K Gold, Diamond              | 28,000          | vip, collection-mawaddah           |
+
+Every design has 2–3 `imageUrls`/`imageLqips` entries pointing at its `seeder-assets` files (e.g. `designs/seed/product-1.avif`).
 
 ---
 
@@ -166,7 +170,7 @@ Each entity below lists its **role**, every **property**, its **relations**, and
 
 **Relations:** belongs to `Design`.
 
-**Seed rows (14 total, 1–2 per design):** e.g. `noir-ring-01` → `Stone: Black Diamond` (sortOrder 1), `Carat: 1.2 ct` (sortOrder 2); `heritage-bracelet-01` → `Engraving: Hand-engraved calligraphy`; `oasis-choker-01` → `Pearls: South Sea`. Every seeded design has at least one specification row; see `designSeeds[].specifications` in `seed.ts` for the full set.
+**Seed rows (12 total, 1–2 per design):** e.g. `noir-solitaire-ring` → `Stone: Black Diamond` (sortOrder 1), `Carat: 1.2 ct` (sortOrder 2); `heritage-cuff-bracelet` → `Engraving: Hand-engraved calligraphy`; `oasis-pearl-choker` → `Pearls: South Sea`. Every seeded design has at least one specification row; see `DESIGNS[].specifications` in `seed-data.ts` for the full set.
 
 ---
 
@@ -186,24 +190,26 @@ Each entity below lists its **role**, every **property**, its **relations**, and
 
 **Relations:** belongs to `Design` and (optionally) `Client` (owner); has many `OwnershipRecord`, `Certificate`, `TransferRequest`, `VerificationLog`, `OrderItem`, `SavedPiece`.
 
-**Seed rows (14):**
+**Seed rows (16):**
 
-| serialNumber         | design               | owner  | status                                     |
-| -------------------- | -------------------- | ------ | ------------------------------------------ |
-| DADAN-2026-NR-000001 | noir-ring-01         | Amira  | TRANSFER_PENDING _(after seeded transfer)_ |
-| DADAN-2026-NR-000002 | noir-necklace-01     | Amira  | OWNED                                      |
-| DADAN-2026-NR-000003 | noir-necklace-01     | —      | AVAILABLE                                  |
-| DADAN-2026-NR-000004 | noir-earrings-01     | —      | AVAILABLE                                  |
-| DADAN-2026-NR-000005 | noir-ring-01         | —      | AVAILABLE                                  |
-| DADAN-2026-GH-000001 | heritage-bracelet-01 | Khalid | OWNED                                      |
-| DADAN-2026-GH-000002 | heritage-bracelet-01 | —      | AVAILABLE                                  |
-| DADAN-2026-GH-000003 | heritage-earrings-01 | —      | AVAILABLE                                  |
-| DADAN-2026-GH-000004 | heritage-pendant-01  | —      | AVAILABLE                                  |
-| DADAN-2026-GH-000005 | heritage-pendant-01  | —      | RETIRED _(explicit override)_              |
-| DADAN-2026-OA-000001 | oasis-ring-01        | Layla  | TRANSFER_PENDING _(after seeded transfer)_ |
-| DADAN-2026-OA-000002 | oasis-bracelet-01    | —      | AVAILABLE                                  |
-| DADAN-2026-OA-000003 | oasis-choker-01      | —      | AVAILABLE                                  |
-| DADAN-2026-OA-000004 | oasis-ring-01        | —      | AVAILABLE                                  |
+| serialNumber         | design                 | owner  | status                                      |
+| -------------------- | ---------------------- | ------ | ------------------------------------------- |
+| DADAN-2026-NC-000001 | noir-solitaire-ring    | Amira  | TRANSFER*PENDING *(after seeded transfer)\_ |
+| DADAN-2026-NC-000002 | noir-solitaire-ring    | —      | AVAILABLE                                   |
+| DADAN-2026-NC-000003 | noir-cascade-necklace  | —      | AVAILABLE                                   |
+| DADAN-2026-NC-000004 | noir-cascade-necklace  | —      | AVAILABLE                                   |
+| DADAN-2026-GH-000001 | heritage-cuff-bracelet | Khalid | OWNED                                       |
+| DADAN-2026-GH-000002 | heritage-cuff-bracelet | —      | AVAILABLE                                   |
+| DADAN-2026-GH-000003 | heritage-drop-earrings | —      | AVAILABLE                                   |
+| DADAN-2026-GH-000004 | heritage-drop-earrings | —      | AVAILABLE                                   |
+| DADAN-2026-OA-000001 | oasis-duet-ring        | Layla  | OWNED                                       |
+| DADAN-2026-OA-000002 | oasis-duet-ring        | —      | AVAILABLE                                   |
+| DADAN-2026-OA-000003 | oasis-pearl-choker     | —      | AVAILABLE                                   |
+| DADAN-2026-OA-000004 | oasis-pearl-choker     | —      | AVAILABLE                                   |
+| DADAN-2026-MA-000001 | mawaddah-eternity-band | Amira  | OWNED                                       |
+| DADAN-2026-MA-000002 | mawaddah-eternity-band | —      | AVAILABLE                                   |
+| DADAN-2026-MA-000003 | mawaddah-pendant-heart | —      | AVAILABLE                                   |
+| DADAN-2026-MA-000004 | mawaddah-pendant-heart | —      | AVAILABLE                                   |
 
 ---
 
@@ -224,7 +230,7 @@ Each entity below lists its **role**, every **property**, its **relations**, and
 
 **Relations:** belongs to `Piece` and `Client`; optionally linked to a `Certificate`.
 
-**Seed rows (3):** one `PURCHASE` record per initially-owned piece — Amira/`DADAN-2026-NR-000001`, Khalid/`DADAN-2026-GH-000001`, Layla/`DADAN-2026-OA-000001` — each with note `"Initial seed ownership"`. Further rows (transfers, additional purchases) are created at runtime by the transfer/order services, not by the seed script.
+**Seed rows (4):** one `PURCHASE` record per initially-owned piece — Amira/`DADAN-2026-NC-000001` and `DADAN-2026-MA-000001`, Khalid/`DADAN-2026-GH-000001`, Layla/`DADAN-2026-OA-000001` — each with note `"Initial seed ownership"`. Further rows (transfers, additional purchases) are created at runtime by the transfer/order services, not by the seed script.
 
 ---
 
@@ -251,10 +257,10 @@ Each entity below lists its **role**, every **property**, its **relations**, and
 
 | certificateNumber  | serial               | owner  |
 | ------------------ | -------------------- | ------ |
-| CERT-2026-A3F1C09B | DADAN-2026-NR-000001 | Amira  |
-| CERT-2026-B7E2D04A | DADAN-2026-NR-000002 | Amira  |
-| CERT-2026-C1D4E88F | DADAN-2026-GH-000001 | Khalid |
-| CERT-2026-D9A6F21C | DADAN-2026-OA-000001 | Layla  |
+| CERT-2026-A3F1C09B | DADAN-2026-NC-000001 | Amira  |
+| CERT-2026-B7E2D04A | DADAN-2026-GH-000001 | Khalid |
+| CERT-2026-C1D4E88F | DADAN-2026-OA-000001 | Layla  |
+| CERT-2026-D9A6F21C | DADAN-2026-MA-000001 | Amira  |
 
 ---
 
@@ -282,7 +288,7 @@ Each entity below lists its **role**, every **property**, its **relations**, and
 
 | client | pieces                                     | status    | paymentMethod | paymentReference            |
 | ------ | ------------------------------------------ | --------- | ------------- | --------------------------- |
-| Amira  | DADAN-2026-NR-000001, DADAN-2026-NR-000002 | FULFILLED | MADA          | `seed_DADAN-2026-NR-000001` |
+| Amira  | DADAN-2026-NC-000001, DADAN-2026-MA-000001 | FULFILLED | MADA          | `seed_DADAN-2026-NC-000001` |
 | Khalid | DADAN-2026-GH-000001                       | PAID      | MADA          | `seed_DADAN-2026-GH-000001` |
 | Layla  | DADAN-2026-OA-000001                       | FULFILLED | MADA          | `seed_DADAN-2026-OA-000001` |
 
@@ -304,7 +310,7 @@ Each `totalAmount` = sum of the pieces' design `basePrice` × 1.15 (15% VAT), ro
 
 **Relations:** belongs to `Order`, `Piece`, `Design`.
 
-**Seed rows (3):** one per seeded order — `DADAN-2026-NR-000001` and `DADAN-2026-NR-000002` under Amira's order, `DADAN-2026-GH-000001` under Khalid's order, `DADAN-2026-OA-000001` under Layla's order — each priced at the design's `basePrice`.
+**Seed rows (4):** one per seeded order item — `DADAN-2026-NC-000001` and `DADAN-2026-MA-000001` under Amira's order, `DADAN-2026-GH-000001` under Khalid's order, `DADAN-2026-OA-000001` under Layla's order — each priced at the design's `basePrice`.
 
 ---
 
@@ -320,14 +326,16 @@ Each `totalAmount` = sum of the pieces' design `basePrice` × 1.15 (15% VAT), ro
 
 **Relations:** belongs to `Client` and `Piece`; composite PK `(clientId, pieceId)` prevents duplicate saves.
 
-**Seed rows (4):**
+**Seed rows (6):**
 
 | client | saved piece          |
 | ------ | -------------------- |
 | Amira  | DADAN-2026-OA-000003 |
-| Amira  | DADAN-2026-NR-000004 |
-| Khalid | DADAN-2026-GH-000004 |
-| Layla  | DADAN-2026-OA-000002 |
+| Amira  | DADAN-2026-GH-000002 |
+| Khalid | DADAN-2026-MA-000004 |
+| Khalid | DADAN-2026-NC-000004 |
+| Layla  | DADAN-2026-NC-000002 |
+| Layla  | DADAN-2026-GH-000004 |
 
 ---
 
@@ -353,14 +361,13 @@ Each `totalAmount` = sum of the pieces' design `basePrice` × 1.15 (15% VAT), ro
 
 **Relations:** belongs to `Piece`, two `Client` relations (sender/recipient), optionally reviewed by `AdminUser`.
 
-**Seed rows (2):**
+**Seed rows (1):**
 
 | piece                | from → to      | type | status                                              |
 | -------------------- | -------------- | ---- | --------------------------------------------------- |
-| DADAN-2026-NR-000001 | Amira → Khalid | GIFT | DADAN_REVIEW (sender + recipient already confirmed) |
-| DADAN-2026-OA-000001 | Layla → Amira  | SALE | INITIATED                                           |
+| DADAN-2026-NC-000001 | Amira → Khalid | GIFT | DADAN_REVIEW (sender + recipient already confirmed) |
 
-Both associated pieces were set to `PieceStatus.TRANSFER_PENDING` as part of seeding.
+The transferred piece is set to `PieceStatus.TRANSFER_PENDING` as part of seeding.
 
 ---
 
@@ -445,7 +452,7 @@ Both associated pieces were set to `PieceStatus.TRANSFER_PENDING` as part of see
 
 **Relations:** none (no DB FK; linked by convention to `Client`/`Piece`).
 
-**Seed rows:** none. Created/deleted at runtime by `apps/api/src/cart/cart.service.ts` as clients add pieces to cart or their hold expires.
+**Seed rows (1):** Amira holds `DADAN-2026-OA-000004` in her cart with a 7-day expiry.
 
 ---
 
@@ -458,6 +465,8 @@ Both associated pieces were set to `PieceStatus.TRANSFER_PENDING` as part of see
 | `TransferType`       | `SALE`, `GIFT`, `INHERITANCE`                                                                               | `TransferRequest.transferType`    |
 | `TransferStatus`     | `INITIATED`, `SENDER_CONFIRMED`, `RECIPIENT_CONFIRMED`, `DADAN_REVIEW`, `APPROVED`, `REJECTED`, `CANCELLED` | `TransferRequest.status`          |
 | `OrderStatus`        | `PENDING`, `PAID`, `PROCESSING`, `FULFILLED`, `CANCELLED`                                                   | `Order.status`                    |
+| `PaymentStatus`      | `PENDING`, `AUTHORIZED`, `PAID`, `FAILED`, `PARTIALLY_REFUNDED`, `REFUNDED`, `DISPUTED`                     | `Order.paymentStatus`             |
+| `FulfillmentStatus`  | `UNFULFILLED`, `PROCESSING`, `SHIPPED`, `DELIVERED`, `RETURNED`                                             | `Order.fulfillmentStatus`         |
 | `VerificationResult` | `FOUND`, `NOT_FOUND`                                                                                        | `VerificationLog.result`          |
 | `AdminRole`          | `SUPER_ADMIN`, `STAFF`, `VIEWER`                                                                            | `AdminUser.role`                  |
 | `ActorType`          | `CLIENT`, `ADMIN`, `SYSTEM`                                                                                 | `AuditLog.actorType`              |

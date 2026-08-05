@@ -33,10 +33,12 @@
     "@dadan/storage": "workspace:*",
     "@dadan/utils": "workspace:*",
     "@types/bcrypt": "^5.0.2",
+    "@types/sharp": "^0.32.0",
     "dotenv-cli": "^8.0.0",
     "eslint-config-prettier": "^10.0.1",
     "eslint": "^9.20.1",
     "prisma": "^6.4.1",
+    "sharp": "^0.35.3",
     "tsx": "^4.19.3",
     "typescript": "^5.7.3"
   }

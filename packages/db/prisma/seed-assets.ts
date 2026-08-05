@@ -1,98 +1,120 @@
 import { readFile } from "node:fs/promises";
 import { existsSync } from "node:fs";
 import * as path from "node:path";
+import sharp from "sharp";
 import { storage } from "@dadan/storage";
+import { COLLECTIONS, DESIGNS } from "./seed-data";
 
-interface SeedImageConfig {
+// ---------------------------------------------------------------------------
+// Seed assets — the single source of truth for every image the catalog uses.
+//
+// All files live in the `seeder-assets/` directory and are uploaded to storage
+// under a deterministic `designs/seed/` or `collections/seed/` key. Every seed
+// run wipes the storage root first, so the resulting store contains exactly the
+// files referenced by the dataset and nothing else.
+// ---------------------------------------------------------------------------
+
+export interface SeedAsset {
   filename: string;
-  storageKey: string;
-  contentType: string;
-  sourceDir: "web-products" | "web-collections";
+  key: string;
 }
 
-const WEB_PUBLIC_DIR = path.resolve(__dirname, "../../../apps/web/public");
+const MIME_BY_EXT: Record<string, string> = {
+  avif: "image/avif",
+  png: "image/png",
+  jpg: "image/jpeg",
+  jpeg: "image/jpeg",
+  webp: "image/webp",
+};
 
-const SEED_IMAGES: SeedImageConfig[] = [
-  // Product / design images (W-prefixed from apps/web/public/products/)
-  { filename: "W7.png", storageKey: "designs/seed/W7.png", contentType: "image/png", sourceDir: "web-products" },
-  { filename: "W8.png", storageKey: "designs/seed/W8.png", contentType: "image/png", sourceDir: "web-products" },
-  { filename: "W9.png", storageKey: "designs/seed/W9.png", contentType: "image/png", sourceDir: "web-products" },
-  { filename: "W10.png", storageKey: "designs/seed/W10.png", contentType: "image/png", sourceDir: "web-products" },
-  { filename: "W12.png", storageKey: "designs/seed/W12.png", contentType: "image/png", sourceDir: "web-products" },
-  { filename: "W13.png", storageKey: "designs/seed/W13.png", contentType: "image/png", sourceDir: "web-products" },
-  { filename: "W14.png", storageKey: "designs/seed/W14.png", contentType: "image/png", sourceDir: "web-products" },
-  { filename: "W15.png", storageKey: "designs/seed/W15.png", contentType: "image/png", sourceDir: "web-products" },
-  { filename: "W16.png", storageKey: "designs/seed/W16.png", contentType: "image/png", sourceDir: "web-products" },
-  { filename: "W17.png", storageKey: "designs/seed/W17.png", contentType: "image/png", sourceDir: "web-products" },
-  { filename: "W18.png", storageKey: "designs/seed/W18.png", contentType: "image/png", sourceDir: "web-products" },
-
-  // Collection cover images (W-prefixed from apps/web/public/collections/)
-  { filename: "W24.png", storageKey: "collections/seed/W24.png", contentType: "image/png", sourceDir: "web-collections" },
-  { filename: "W25.png", storageKey: "collections/seed/W25.png", contentType: "image/png", sourceDir: "web-collections" },
-  { filename: "W26.png", storageKey: "collections/seed/W26.png", contentType: "image/png", sourceDir: "web-collections" },
-  { filename: "W27.png", storageKey: "collections/seed/W27.png", contentType: "image/png", sourceDir: "web-collections" },
-  { filename: "W28.png", storageKey: "collections/seed/W28.png", contentType: "image/png", sourceDir: "web-collections" },
-  { filename: "W29.png", storageKey: "collections/seed/W29.png", contentType: "image/png", sourceDir: "web-collections" },
-];
-
-const SEED_IMAGE_MAP: Record<string, string> = Object.fromEntries(
-  SEED_IMAGES.map((img) => [img.filename, img.storageKey]),
+export const SEED_ASSETS_DIR = path.resolve(
+  process.env.SEED_ASSETS_DIR ??
+    path.join(__dirname, "../../../apps/web/public/seeder-assets"),
 );
 
-export function seedImageKey(filename: string): string {
-  const key = SEED_IMAGE_MAP[filename];
-  if (!key) throw new Error(`Unknown seed image: ${filename}`);
+export const SEED_ASSETS: SeedAsset[] = [
+  ...COLLECTIONS.map((c) => ({ filename: c.cover, key: `collections/seed/${c.cover}` })),
+  ...DESIGNS.flatMap((d) =>
+    d.images.map((image) => ({ filename: image, key: `designs/seed/${image}` })),
+  ),
+];
+
+export function seedCoverKey(filename: string): string {
+  const key = `collections/seed/${filename}`;
+  if (!SEED_ASSETS.some((a) => a.key === key)) {
+    throw new Error(`Unknown collection cover asset: ${filename}`);
+  }
   return key;
 }
 
-function getSourceDirectory(sourceDir: SeedImageConfig["sourceDir"]): string {
-  switch (sourceDir) {
-    case "web-products":
-      return path.join(WEB_PUBLIC_DIR, "products");
-    case "web-collections":
-      return path.join(WEB_PUBLIC_DIR, "collections");
-    default:
-      throw new Error(`Unknown source directory: ${sourceDir}`);
+export function seedImageKey(filename: string): string {
+  const key = `designs/seed/${filename}`;
+  if (!SEED_ASSETS.some((a) => a.key === key)) {
+    throw new Error(`Unknown design image asset: ${filename}`);
+  }
+  return key;
+}
+
+function contentTypeFor(filename: string): string {
+  const ext = path.extname(filename).slice(1).toLowerCase();
+  const mime = MIME_BY_EXT[ext];
+  if (!mime) {
+    throw new Error(`Unsupported seed asset extension: ${ext}`);
+  }
+  return mime;
+}
+
+/** Throws unless every referenced asset exists in the seeder-assets directory. */
+export function validateSeedAssets(): void {
+  const missing = SEED_ASSETS.filter(
+    (asset) => !existsSync(path.join(SEED_ASSETS_DIR, asset.filename)),
+  );
+  if (missing.length > 0) {
+    throw new Error(
+      `Missing seed assets (expected in ${SEED_ASSETS_DIR}):\n  ` +
+        missing.map((a) => a.filename).join("\n  "),
+    );
   }
 }
 
-export async function seedAssets(): Promise<{ uploaded: number; skipped: number; missing: number }> {
-  const provider = process.env.STORAGE_PROVIDER ?? "local";
+const lqipCache = new Map<string, Promise<string>>();
 
-  if (provider !== "local") {
-    const missing = [!process.env.S3_ENDPOINT, !process.env.S3_ACCESS_KEY, !process.env.S3_SECRET_KEY];
-    if (missing.some(Boolean)) {
-      console.log("⏭  Skipping seed assets (remote storage not configured)");
-      return { uploaded: 0, skipped: SEED_IMAGES.length, missing: 0 };
-    }
+/** Deterministic low-quality image placeholder (base64 webp data URL) for blur-up. */
+export function seedLqip(filename: string): Promise<string> {
+  const cached = lqipCache.get(filename);
+  if (cached) {
+    return cached;
   }
+  const filePath = path.join(SEED_ASSETS_DIR, filename);
+  const promise = sharp(filePath)
+    .resize(20, 25, { fit: "cover" })
+    .blur(5)
+    .webp({ quality: 20 })
+    .toBuffer()
+    .then((webp) => `data:image/webp;base64,${webp.toString("base64")}`);
+  lqipCache.set(filename, promise);
+  return promise;
+}
 
-  console.log("Uploading seed catalog images...");
+export interface SeedAssetResult {
+  uploaded: number;
+}
+
+/** Wipes the storage root, then uploads exactly the referenced assets. */
+export async function seedAssets(): Promise<SeedAssetResult> {
+  validateSeedAssets();
+
+  console.log("Preparing storage (wiping existing files)...");
+  await storage.removeAll();
+
   let uploaded = 0;
-  let skipped = 0;
-  let missingCount = 0;
-
-  for (const image of SEED_IMAGES) {
-    const exists = await storage.exists(image.storageKey);
-    if (exists) {
-      skipped++;
-      continue;
-    }
-
-    const sourceDir = getSourceDirectory(image.sourceDir);
-    const filePath = path.join(sourceDir, image.filename);
-
-    if (!existsSync(filePath)) {
-      console.log(`  ✗ ${image.storageKey} (source not found: ${filePath})`);
-      missingCount++;
-      continue;
-    }
-
+  for (const asset of SEED_ASSETS) {
+    const filePath = path.join(SEED_ASSETS_DIR, asset.filename);
     const bytes = await readFile(filePath);
-    await storage.upload(image.storageKey, bytes, { contentType: image.contentType });
-    console.log(`  ✓ ${image.storageKey} (${(bytes.length / 1024).toFixed(0)} KB)`);
+    await storage.upload(asset.key, bytes, { contentType: contentTypeFor(asset.filename) });
+    console.log(`  ✓ ${asset.key} (${(bytes.length / 1024).toFixed(0)} KB)`);
     uploaded++;
   }
 
-  return { uploaded, skipped, missing: missingCount };
+  return { uploaded };
 }

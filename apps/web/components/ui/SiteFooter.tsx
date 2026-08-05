@@ -6,79 +6,97 @@ import { useTranslations } from "next-intl";
 export function SiteFooter() {
   const t = useTranslations("footer");
 
-  const columns = [
-    {
-      title: t("explore"),
-      links: [
-        { href: "/beta/home", label: t("stories") },
-        { href: "/beta/collections", label: t("collections") },
-        { href: "/beta/wardrobe", label: t("myCollection") },
-      ],
-    },
-    {
-      title: t("theHouse"),
-      links: [
-        { href: "/beta/home", label: t("about") },
-        { href: "/beta/home", label: t("philosophy") },
-        { href: "/beta/wardrobe", label: t("ownership") },
-      ],
-    },
-    {
-      title: t("assistance"),
-      links: [
-        { href: "/beta/home", label: t("contact") },
-        { href: "/beta", label: t("houseAssistance") },
-        { href: "/beta/home", label: t("privacy") },
-      ],
-    },
-  ];
+  const exploreColumn = {
+    title: t("explore"),
+    links: [
+      { href: "/beta/home", label: t("stories") },
+      { href: "/beta/collections", label: t("collections") },
+      { href: "/beta/wardrobe", label: t("myCollection") },
+    ],
+  };
+
+  const houseColumn = {
+    title: t("theHouse"),
+    links: [
+      { href: "/beta/home", label: t("about") },
+      { href: "/beta/home", label: t("philosophy") },
+      { href: "/beta/wardrobe", label: t("ownership") },
+    ],
+  };
+
+  const assistanceColumn = {
+    title: t("assistance"),
+    links: [
+      { href: "/beta/home", label: t("contact") },
+      { href: "/beta", label: t("houseAssistance") },
+      { href: "/beta/home", label: t("privacy") },
+    ],
+  };
 
   const taglineLines = t("tagline").split("\n");
 
   return (
-    <footer
-      className="mt-auto text-white"
-      style={{ backgroundColor: "#1c2028" }}
-    >
-      {/* Brand hero section */}
-      <div className="px-6 pt-12 pb-0 sm:px-12 lg:px-16">
-        <h2
-          className="text-4xl font-bold tracking-tight text-white sm:text-5xl"
-          style={{ fontFamily: "var(--font-body)" }}
-        >
-          {t("brandName")}
-        </h2>
-        <p
-          className="mt-2 text-lg sm:text-xl"
-          style={{ color: "rgba(255, 255, 255, 0.35)" }}
-        >
-          {t("brandTagline")}
-        </p>
-      </div>
+    <footer className="mt-auto bg-[#13161D] text-white w-full">
+      <div className="mx-auto max-w-7xl px-6 py-12 sm:px-12 lg:px-16 lg:py-16">
+        {/* ── Brand Hero Section ── */}
+        <div className="mb-16 sm:mb-24 lg:mb-32">
+          <h2 className="font-display text-3xl font-bold tracking-tight text-white sm:text-4xl lg:text-5xl">
+            {t("brandName")}
+          </h2>
+          <p className="mt-2 text-base font-medium text-[#5A6474] sm:text-lg lg:text-xl">
+            {t("brandTagline")}
+          </p>
+        </div>
 
-      {/* Spacer matching the design's generous whitespace */}
-      <div className="h-32 sm:h-44 lg:h-56" />
+        {/* ── Grid Columns Section ── */}
+        {/* Mobile: 2 columns grid (Explore + The House top, Assistance bottom left). Desktop: 3 columns */}
+        <div className="grid grid-cols-2 gap-x-8 gap-y-12 sm:grid-cols-3 lg:gap-x-16">
+          {/* Column 1: Explore */}
+          <div className="flex flex-col justify-between">
+            <div>
+              <h3 className="mb-4 text-base font-bold tracking-normal text-white sm:text-lg">
+                {exploreColumn.title}
+              </h3>
+              <ul className="space-y-3">
+                {exploreColumn.links.map((link) => (
+                  <li key={link.label}>
+                    <Link
+                      href={link.href}
+                      className="text-sm text-[#D1D5DB] transition-colors hover:text-white sm:text-base font-normal"
+                    >
+                      {link.label}
+                    </Link>
+                  </li>
+                ))}
+              </ul>
+            </div>
 
-      {/* Navigation columns */}
-      <div className="grid gap-10 px-6 pb-12 sm:grid-cols-3 sm:px-12 lg:px-16">
-        {columns.map((column) => (
-          <div key={column.title}>
-            <h3 className="mb-4 text-base font-bold tracking-wide text-white sm:text-lg">
-              {column.title}
+            {/* Copyright & Tagline (Positioned below Explore column on Desktop) */}
+            <div className="hidden sm:block mt-12 pt-4">
+              <p className="text-sm font-bold text-white">
+                {t("copyright")}
+              </p>
+              <div className="mt-3 space-y-1">
+                {taglineLines.map((line, i) => (
+                  <p key={i} className="text-xs sm:text-sm text-[#9CA3AF] leading-relaxed">
+                    {line}
+                  </p>
+                ))}
+              </div>
+            </div>
+          </div>
+
+          {/* Column 2: The House */}
+          <div>
+            <h3 className="mb-4 text-base font-bold tracking-normal text-white sm:text-lg">
+              {houseColumn.title}
             </h3>
-            <ul className="space-y-2.5">
-              {column.links.map((link) => (
+            <ul className="space-y-3">
+              {houseColumn.links.map((link) => (
                 <li key={link.label}>
                   <Link
                     href={link.href}
-                    className="text-sm transition-colors sm:text-base"
-                    style={{ color: "rgba(255, 255, 255, 0.7)" }}
-                    onMouseEnter={(e) =>
-                      (e.currentTarget.style.color = "rgba(255, 255, 255, 1)")
-                    }
-                    onMouseLeave={(e) =>
-                      (e.currentTarget.style.color = "rgba(255, 255, 255, 0.7)")
-                    }
+                    className="text-sm text-[#D1D5DB] transition-colors hover:text-white sm:text-base font-normal"
                   >
                     {link.label}
                   </Link>
@@ -86,29 +104,42 @@ export function SiteFooter() {
               ))}
             </ul>
           </div>
-        ))}
-      </div>
 
-      {/* Bottom section — copyright & tagline */}
-      <div className="px-6 pb-10 pt-4 sm:px-12 lg:px-16">
-        <p
-          className="text-sm font-medium text-white"
-          style={{ color: "rgba(255, 255, 255, 0.7)" }}
-        >
-          {t("copyright")}
-        </p>
-        <div className="mt-3">
-          {taglineLines.map((line, i) => (
-            <p
-              key={i}
-              className="text-sm leading-relaxed"
-              style={{ color: "rgba(255, 255, 255, 0.5)" }}
-            >
-              {line}
-            </p>
-          ))}
+          {/* Column 3: Assistance */}
+          <div>
+            <h3 className="mb-4 text-base font-bold tracking-normal text-white sm:text-lg">
+              {assistanceColumn.title}
+            </h3>
+            <ul className="space-y-3">
+              {assistanceColumn.links.map((link) => (
+                <li key={link.label}>
+                  <Link
+                    href={link.href}
+                    className="text-sm text-[#D1D5DB] transition-colors hover:text-white sm:text-base font-normal"
+                  >
+                    {link.label}
+                  </Link>
+                </li>
+              ))}
+            </ul>
+          </div>
+        </div>
+
+        {/* ── Mobile Copyright & Tagline (Shown at bottom on Mobile) ── */}
+        <div className="block sm:hidden mt-12 pt-6 border-t border-white/5">
+          <p className="text-sm font-bold text-white">
+            {t("copyright")}
+          </p>
+          <div className="mt-3 space-y-1">
+            {taglineLines.map((line, i) => (
+              <p key={i} className="text-xs text-[#9CA3AF] leading-relaxed">
+                {line}
+              </p>
+            ))}
+          </div>
         </div>
       </div>
     </footer>
   );
 }
+

@@ -2,7 +2,7 @@ import Image from "next/image";
 
 export function OriginStory() {
   return (
-    <section className="relative w-full min-h-[calc(100dvh-4rem)] md:min-h-[calc(100dvh-5rem)] overflow-hidden bg-black flex flex-col justify-end">
+    <section className="relative w-full min-h-[calc(100dvh-78px)] md:min-h-[calc(100dvh-115px)] overflow-hidden bg-black flex flex-col justify-end">
       {/* Background Image */}
       <Image
         src="/assets/story/dadan-origin-story.avif"

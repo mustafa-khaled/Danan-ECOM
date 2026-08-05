@@ -25,140 +25,85 @@ export function DesktopHeader({
   const tNav = useTranslations("nav");
 
   return (
-    <header className="sticky top-0 z-50 border-b border-black/5 bg-white/90 backdrop-blur-md">
-      {/* ── Top row: logo + utility icons / burger button ── */}
-      <Container>
-        <div className="flex items-center justify-between pt-4 pb-2">
-          <Link href="/beta/home" className="shrink-0">
-            <Image
-              src="/assets/dadan-logo.png"
-              alt="DADAN"
-              width={120}
-              height={20}
-              priority
-              className="invert"
-            />
-          </Link>
+    <header className="sticky top-0 z-50 w-full bg-white border-b border-gray-100 h-19.5 md:h-28.75 transition-all">
+      <Container className="h-full flex items-center justify-between relative py-2.5 md:py-4">
+        {/* ── Left Section: Logo + Greeting (Stacked on Mobile, Row-space-between structure on Desktop) ── */}
+        <div className="flex flex-col justify-center gap-0.5 md:justify-between h-full w-full md:w-auto">
+          {/* Logo Brand */}
+          <div className="flex items-center justify-between w-full md:w-auto">
+            <Link href="/beta/home" className="inline-flex items-center gap-2">
+              <Image
+                src="/assets/dadan-logo.png"
+                alt="DADAN"
+                width={125}
+                height={20}
+                priority
+                className="invert object-contain h-5 md:h-6 w-auto"
+              />
+            </Link>
+          </div>
 
-          {/* Desktop utility icons */}
-          <div className="hidden md:flex items-center gap-4">
-            {/* Notification bell */}
+          {/* Greeting text in SERIF font matching design */}
+          <p className="font-display text-xs md:text-sm lg:text-base font-normal text-[#2D2321] tracking-normal">
+            {greeting} {displayName}
+          </p>
+        </div>
+
+        {/* ── Desktop Right Section (Utility Icons Top, Navigation Links Bottom) ── */}
+        <div className="hidden md:flex flex-col justify-between items-end h-full">
+          {/* Top Utility Icons */}
+          <div className="flex items-center gap-5 lg:gap-6">
+            {/* Notification Bell Icon */}
             <button
               type="button"
-              className="flex size-8 items-center justify-center text-(--color-text) transition-colors hover:text-(--color-accent)"
+              className="flex items-center justify-center text-[#2D2321] transition-colors hover:text-black"
               aria-label={tNav("notifications")}
             >
               <svg
                 width="18"
                 height="18"
                 viewBox="0 0 24 24"
-                fill="none"
+                fill="currentColor"
                 aria-hidden="true"
               >
-                <path
-                  d="M12 2C10.3431 2 8.84344 2.67143 7.75736 3.75736C6.67143 4.84344 6 6.34315 6 8C6 11.0902 5.22047 13.206 4.34966 14.5395C3.90474 15.2185 3.44591 15.6541 3.09778 15.9076C2.92477 16.0337 2.78267 16.1132 2.68712 16.1602C2.63947 16.1836 2.60345 16.1984 2.58186 16.2064L2.56223 16.2134L2 16.4V18H22V16.4L21.4378 16.2134L21.4181 16.2064C21.3966 16.1984 21.3605 16.1836 21.3129 16.1602C21.2173 16.1132 21.0752 16.0337 20.9022 15.9076C20.5541 15.2185 20.0953 15.2185 19.6503 14.5395C18.7795 13.206 18 11.0902 18 8C18 6.34315 17.3286 4.84344 16.2426 3.75736C15.1566 2.67143 13.6569 2 12 2Z"
-                  stroke="currentColor"
-                  strokeWidth="1.5"
-                />
-                <path
-                  d="M9 18C9 19.6569 10.3431 21 12 21C13.6569 21 15 19.6569 15 18"
-                  stroke="currentColor"
-                  strokeWidth="1.5"
-                />
+                <path d="M12 22c1.1 0 2-.9 2-2h-4c0 1.1.89 2 2 2zm6-6v-5c0-3.07-1.64-5.64-4.5-6.32V4c0-.83-.67-1.5-1.5-1.5s-1.5.67-1.5 1.5v.68C7.63 5.36 6 7.92 6 11v5l-2 2v1h16v-1l-2-2z" />
               </svg>
             </button>
 
-            {/* User profile */}
+            {/* Profile Icon */}
             <Link
               href="/beta/profile"
-              className="flex size-8 items-center justify-center text-(--color-text) transition-colors hover:text-(--color-accent)"
+              className="flex items-center justify-center text-[#2D2321] transition-colors hover:text-black"
               aria-label={tNav("profile")}
             >
               <svg
                 width="18"
                 height="18"
                 viewBox="0 0 24 24"
-                fill="none"
+                fill="currentColor"
                 aria-hidden="true"
               >
-                <circle
-                  cx="12"
-                  cy="8"
-                  r="4"
-                  stroke="currentColor"
-                  strokeWidth="1.5"
-                />
-                <path
-                  d="M4 21C4 16.5817 7.58172 13 12 13C16.4183 13 20 16.5817 20 21"
-                  stroke="currentColor"
-                  strokeWidth="1.5"
-                />
+                <path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z" />
               </svg>
             </Link>
 
-            {/* Language selector */}
-            <LocaleSelect syncProfile />
+            {/* Language Selector */}
+            <LocaleSelect syncProfile className="text-[#2D2321] font-sans font-medium text-sm" />
           </div>
 
-          {/* Mobile burger toggle button */}
-          <button
-            type="button"
-            className="flex size-10 items-center justify-center rounded-md bg-white text-(--color-text) shadow-xs transition-colors hover:bg-gray-50 hover:text-(--color-accent) md:hidden"
-            onClick={onToggleMobileMenu}
-            aria-label="Toggle navigation menu"
-            aria-expanded={isMobileMenuOpen}
-          >
-            {isMobileMenuOpen ? (
-              <svg
-                width="26"
-                height="26"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="2"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-              >
-                <line x1="18" y1="6" x2="6" y2="18" />
-                <line x1="6" y1="6" x2="18" y2="18" />
-              </svg>
-            ) : (
-              <svg
-                width="26"
-                height="26"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="2"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-              >
-                <line x1="4" y1="6" x2="20" y2="6" />
-                <line x1="4" y1="12" x2="20" y2="12" />
-                <line x1="4" y1="18" x2="20" y2="18" />
-              </svg>
-            )}
-          </button>
-        </div>
-
-        {/* ── Bottom row: greeting (Mobile & Desktop) + desktop navigation ── */}
-        <div className="flex items-center justify-between pt-1 pb-4">
-          <p className="font-english text-base font-normal text-(--color-text)">
-            {greeting} {displayName}
-          </p>
-
-          <nav aria-label="Primary" className="hidden md:block text-right">
-            <ul className="flex flex-wrap items-center justify-end gap-6 sm:gap-8">
+          {/* Bottom Desktop Navigation Links */}
+          <nav aria-label="Primary">
+            <ul className="flex items-center gap-6 lg:gap-8">
               {primaryNavItems.map((item) => {
                 const isActive = pathname.startsWith(item.href);
                 return (
                   <li key={item.href}>
                     <Link
                       href={item.href}
-                      className={`font-manrope font-medium text-lg leading-[100%] tracking-[-0.02em] transition-colors ${
+                      className={`font-sans font-medium text-sm lg:text-[15px] transition-colors ${
                         isActive
-                          ? "text-(--color-accent)"
-                          : "text-(--color-text-muted) hover:text-(--color-accent)"
+                          ? "text-[#000000] font-semibold"
+                          : "text-[#374151] hover:text-[#000000]"
                       }`}
                     >
                       {tNav(item.labelKey)}
@@ -169,7 +114,32 @@ export function DesktopHeader({
             </ul>
           </nav>
         </div>
+
+        {/* ── Mobile Burger Menu Button (Aligned 100% vertically centered in mobile header height) ── */}
+        <button
+          type="button"
+          className="flex md:hidden absolute right-4 sm:right-8 top-1/2 -translate-y-1/2 items-center justify-center p-1.5 text-[#2D2321] transition-colors"
+          onClick={onToggleMobileMenu}
+          aria-label="Toggle navigation menu"
+          aria-expanded={isMobileMenuOpen}
+        >
+          <svg
+            width="26"
+            height="26"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2"
+            strokeLinecap="round"
+          >
+            <line x1="4" y1="7" x2="20" y2="7" />
+            <line x1="4" y1="12" x2="20" y2="12" />
+            <line x1="4" y1="17" x2="20" y2="17" />
+          </svg>
+        </button>
       </Container>
     </header>
   );
 }
+
+

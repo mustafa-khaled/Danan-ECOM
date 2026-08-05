@@ -9,7 +9,7 @@ export default function HeroSection() {
 
   return (
     <section className="relative overflow-hidden">
-      <div className="relative h-[calc(100dvh-6rem)] bg-(--color-surface)">
+      <div className="relative h-[calc(100dvh-78px)] md:h-[calc(100dvh-115px)] bg-(--color-surface)">
         <Image
           src="/assets/dadan-model.avif"
           alt={t("aboutDadan")}

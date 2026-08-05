@@ -34,7 +34,7 @@ export default async function CollectionDetailPage({
   return (
     <>
       <section className="mb-10 overflow-hidden">
-        <div className="relative h-153.75 md:h-215.5 w-full bg-(--color-surface)">
+        <div className="relative h-[calc(100dvh-78px)] md:h-[calc(100dvh-115px)] w-full bg-(--color-surface)">
           {collection.coverImageUrl ? (
             <Image
               src={collection.coverImageUrl}

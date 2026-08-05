@@ -22,6 +22,7 @@ export const ALLOWED_IMAGE_MIMES = new Set([
   "image/jpeg",
   "image/png",
   "image/webp",
+  "image/avif",
 ]);
 
 export const ALLOWED_PDF_MIME = "application/pdf";

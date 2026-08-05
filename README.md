@@ -67,11 +67,16 @@ packages/
 
 ## Database Seeding
 
+The seeder is the single source of truth for the DADAN catalog. It wipes the
+database and uploads directory, then rebuilds a deterministic dataset
+(4 collections, 8 designs, 16 pieces, demo clients/admins). Both commands below
+produce the exact same result, so re-running is always safe.
+
 ### Development
 
 ```bash
-pnpm db:seed          # Seed (idempotent, safe to re-run)
-pnpm db:seed:reset    # Clear all data and re-seed from scratch
+pnpm db:seed          # Full reset + re-seed (idempotent)
+pnpm db:seed:reset    # Same as above (kept for compatibility)
 ```
 
 ### Server / Staging
@@ -79,26 +84,33 @@ pnpm db:seed:reset    # Clear all data and re-seed from scratch
 ```bash
 scripts/seed-catalog.sh                          # Default (development)
 scripts/seed-catalog.sh --environment=staging     # Staging
-scripts/seed-catalog.sh --reset                   # Reset seed data
 scripts/seed-catalog.sh --migrate                 # Run migrations first
 ```
 
 ### Production
 
-Seeding in production is blocked by default. To override:
+Seeding wipes the database and uploads, and is blocked in production unless
+explicitly allowed. To seed the production catalog from the `api` container:
 
 ```bash
-scripts/seed-catalog.sh --environment=production --force
+scripts/seed-production.sh --force
 ```
 
 ### How images are resolved
 
-Seed images are sourced from `apps/web/public/products/` (W7-W18) and `apps/web/public/collections/` (W24-W29). During seeding, they are uploaded to the configured storage provider (local by default at `/app/uploads`). The database stores storage keys (e.g., `designs/seed/W7.png`), and the API resolves them to public URLs at response time via `/api/uploads/{key}`.
+Seed images come exclusively from `apps/web/public/seeder-assets/`
+(`collection-1..4.avif` covers + `product-1..22.avif` design images, 26 files
+total). The seeder validates that every referenced file exists, wipes the
+storage root, and uploads exactly those files under deterministic
+`collections/seed/` and `designs/seed/` keys. It also generates base64 webp
+LQIPs for blur-up loading. The database stores storage keys (e.g.,
+`designs/seed/product-1.avif`), and the API resolves them to public URLs at
+response time via `/api/uploads/{key}`.
 
 ### Troubleshooting
 
-- **"Refusing to seed: environment=production"** — Set `SEED_ALLOW_PRODUCTION=true` or use `--force`
-- **Missing source images** — Ensure `apps/web/public/products/` and `apps/web/public/collections/` contain the W-prefixed PNGs
+- **"Refusing to seed: environment=production"** — Set `SEED_ALLOW_PRODUCTION=true` or use `--force` (`scripts/seed-production.sh`)
+- **"Missing seed assets"** — Ensure `apps/web/public/seeder-assets/` contains all 26 files; override the directory with `SEED_ASSETS_DIR`
 - **Database connection errors** — Verify `DATABASE_URL` in `.env` and that PostgreSQL is running
 - **Storage errors** — Verify `STORAGE_PROVIDER` and `STORAGE_LOCAL_PATH` in `.env`
 

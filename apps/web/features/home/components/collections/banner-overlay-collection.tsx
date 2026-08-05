@@ -16,7 +16,19 @@ export function BannerOverlayCollection({
         sizes="(max-width: 768px) 100vw, 50vw"
         className="object-cover transition-transform duration-700 group-hover:scale-105"
       />
+
+      {/* Dark linear gradient overlay */}
       <div className="absolute inset-0 bg-linear-to-t from-black/80 via-black/30 to-transparent" />
+
+      {/* Monotone noise effect filter (Size 1.9, Density 100%, #FFFFFF29 / 16% opacity) */}
+      <div
+        className="absolute inset-0 pointer-events-none mix-blend-overlay z-5 bg-[#FFFFFF29] opacity-16"
+        style={{
+          backgroundImage: `url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='monotoneNoise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='1.9' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23monotoneNoise)'/%3E%3C/svg%3E")`,
+        }}
+      />
+
+      {/* Text & action content */}
       <div className="relative z-10 flex flex-col items-start">
         <h3 className="font-english text-white font-semibold text-2xl sm:text-3xl lg:text-4xl xl:text-5xl">
           {collection.name}
@@ -39,3 +51,4 @@ export function BannerOverlayCollection({
     </div>
   );
 }
+

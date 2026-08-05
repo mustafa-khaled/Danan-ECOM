@@ -1,4 +1,5 @@
 import { Suspense } from "react";
+import { LoadingState } from "@/shared/components/feedback/loading-state";
 
 export default function BetaLayout({
   children,
@@ -7,13 +8,7 @@ export default function BetaLayout({
 }) {
   return (
     <div data-theme="client" className="min-h-dvh bg-transparent">
-      <Suspense
-        fallback={
-          <div className="flex min-h-dvh items-center justify-center">
-            Loading...
-          </div>
-        }
-      >
+      <Suspense fallback={<LoadingState fullScreen />}>
         {children}
       </Suspense>
     </div>
