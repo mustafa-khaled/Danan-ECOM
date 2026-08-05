@@ -10,7 +10,7 @@ export function BannerOverlayCollection({
   return (
     <div className="relative min-h-95 sm:min-h-115 lg:min-h-140 xl:min-h-160 bg-(--color-surface) overflow-hidden group flex flex-col justify-end p-8 sm:p-12 lg:p-16">
       <Image
-        src={collection.coverImageUrl || "/assets/dadan-model.png"}
+        src={collection.coverImageUrl || "/assets/dadan-model.avif"}
         alt={collection.name}
         fill
         sizes="(max-width: 768px) 100vw, 50vw"

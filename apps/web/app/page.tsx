@@ -30,7 +30,7 @@ export default function ComingSoonPage() {
         {/* Background Image with Ken Burns Zoom */}
         <div className="absolute inset-0 z-0 overflow-hidden">
           <Image
-            src="/assets/dadan-model.png"
+            src="/assets/dadan-model.avif"
             alt="DADAN background"
             fill
             priority
@@ -95,7 +95,7 @@ export default function ComingSoonPage() {
         {/* Background Image with Ken Burns Zoom */}
         <div className="absolute inset-0 z-0 overflow-hidden">
           <Image
-            src="/assets/dadan-model.png"
+            src="/assets/dadan-model.avif"
             alt="DADAN background"
             fill
             priority

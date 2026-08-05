@@ -11,7 +11,7 @@ export default function HeroSection() {
     <section className="relative overflow-hidden">
       <div className="relative h-[calc(100dvh-6rem)] bg-(--color-surface)">
         <Image
-          src="/assets/dadan-model.png"
+          src="/assets/dadan-model.avif"
           alt={t("aboutDadan")}
           fill
           priority

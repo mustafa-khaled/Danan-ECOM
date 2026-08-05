@@ -11,8 +11,8 @@ import { LocaleSelect } from "@/shared/providers/locale-provider";
 import Link from "next/link";
 
 const BACKGROUND_IMAGES = [
-  "/assets/dadan-model.png",
-  "/assets/coming-soon2.png",
+  "/assets/dadan-model.avif",
+  "/assets/coming-soon2.avif",
 ] as const;
 
 const ROTATION_INTERVAL_MS = 6000;
@@ -166,7 +166,7 @@ export default function AccessGatePage() {
             >
               <div className="w-13 h-13 rounded-xl overflow-hidden shrink-0 relative max-sm:w-10 max-sm:h-10">
                 <Image
-                  src="/assets/featuredPieces.png"
+                  src="/assets/featuredPieces.avif"
                   alt={t("featuredPieces")}
                   fill
                   sizes="52px"
@@ -198,7 +198,7 @@ export default function AccessGatePage() {
             >
               <div className="w-13 h-13 rounded-xl overflow-hidden shrink-0 relative max-sm:w-10 max-sm:h-10">
                 <Image
-                  src="/assets/aboutTheHouse.png"
+                  src="/assets/aboutTheHouse.avif"
                   alt={t("aboutTheHouse")}
                   fill
                   sizes="52px"

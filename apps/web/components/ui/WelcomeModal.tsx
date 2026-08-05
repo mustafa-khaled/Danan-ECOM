@@ -40,7 +40,7 @@ export function WelcomeModal() {
         </button>
         <div className="relative hidden w-1/2 md:block">
           <Image
-            src="/assets/dadan-model.png"
+            src="/assets/dadan-model.avif"
             alt="DADAN"
             fill
             sizes="(max-width: 768px) 0px, 448px"
@@ -51,9 +51,7 @@ export function WelcomeModal() {
           <h2 className="font-english text-3xl text-(--color-text)">
             {t("title", { name: displayName })}
           </h2>
-          <p className="mt-4 text-(--color-text-muted)">
-            {t("description")}
-          </p>
+          <p className="mt-4 text-(--color-text-muted)">{t("description")}</p>
           <button
             type="button"
             onClick={dismiss}

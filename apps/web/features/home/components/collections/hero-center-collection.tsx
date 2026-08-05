@@ -10,7 +10,7 @@ export function HeroCenterCollection({
   return (
     <div className="relative aspect-video sm:aspect-16/7 lg:aspect-16/6 min-h-105 sm:min-h-125 lg:min-h-150 xl:min-h-170 bg-(--color-surface) overflow-hidden group">
       <Image
-        src={collection.coverImageUrl || "/assets/mawaddah.png"}
+        src={collection.coverImageUrl || "/assets/mawaddah.avif"}
         alt={collection.name}
         fill
         sizes="100vw"

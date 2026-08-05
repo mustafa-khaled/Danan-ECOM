@@ -21,7 +21,12 @@ export default function AboutDadan() {
 
         {/* Mobile CTA — full width, shown only on mobile */}
         <div className="mt-4 md:hidden">
-          <ArrowLink href="/beta/our-story" variant="primary" size="md" fullWidth>
+          <ArrowLink
+            href="/beta/our-story"
+            variant="primary"
+            size="md"
+            fullWidth
+          >
             {t("exploreTheHouse")}
           </ArrowLink>
         </div>
@@ -43,7 +48,7 @@ export default function AboutDadan() {
 
             <div className="relative aspect-4/5 w-full overflow-hidden">
               <Image
-                src="/assets/about-dadan.png"
+                src="/assets/about-dadan.avif"
                 alt={t("aboutDadan")}
                 fill
                 sizes="(max-width: 768px) 100vw, 50vw"

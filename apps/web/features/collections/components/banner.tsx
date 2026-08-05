@@ -6,7 +6,7 @@ export default function CollectionsBanner() {
     <section className="relative w-full h-45 xs:h-[220px] sm:h-75 md:h-95 lg:h-106.5 overflow-hidden">
       {/* Background Image */}
       <Image
-        src="/assets/dadan-model.png"
+        src="/assets/dadan-model.avif"
         alt="DADAN Collection Banner"
         fill
         priority
@@ -28,4 +28,3 @@ export default function CollectionsBanner() {
     </section>
   );
 }
-
