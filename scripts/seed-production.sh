@@ -66,11 +66,13 @@ if ! $COMPOSE exec -T api test -d /app/seeder-assets; then
   exit 1
 fi
 
+# pnpm links workspace package bins under packages/db/node_modules/.bin (not
+# the workspace root .bin), mirroring docker-entrypoint.sh's prisma invocation.
 $COMPOSE exec -T \
   -e SEED_ALLOW_PRODUCTION=true \
   -e SEED_ASSETS_DIR=/app/seeder-assets \
   -w /app/packages/db \
-  api /app/node_modules/.bin/tsx prisma/seed.ts
+  api ./node_modules/.bin/tsx prisma/seed.ts
 
 echo ""
 echo "=== Production seeding completed successfully ==="

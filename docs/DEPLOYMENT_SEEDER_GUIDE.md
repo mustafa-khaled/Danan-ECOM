@@ -216,15 +216,16 @@ showing in Noir Cascade Necklace gallery, `product-5` / `product-22` new content
 
 ## 5. Troubleshooting
 
-| Symptom                                    | Cause                                          | Fix                                                          |
-| ------------------------------------------ | ---------------------------------------------- | ------------------------------------------------------------ |
-| `Refusing to seed: environment=production` | Guard active; `SEED_ALLOW_PRODUCTION` not set  | Use `scripts/seed-production.sh --force` (sets it)           |
-| `Missing seed assets (expected in ...)`    | File not baked into image                      | Rebuild api image; make sure all 27 files committed + pulled |
-| `/app/seeder-assets not found`             | Stale api image                                | `docker compose build api`, then `up -d`                     |
-| `EACCES` / permission denied on uploads    | Volume not owned by 1001                       | `sudo chown -R 1001:1001 /opt/dadan/data/uploads/`           |
-| api not healthy → seed script error        | Migrations not applied / depends_on            | Wait for healthchecks; `docker compose logs api`             |
-| Image 404 after seed                       | `removeAll()` wiped prior uploads, key changed | Re-seed; keys are deterministic `<entity>/seed/<file>`       |
-| Old image still shown                      | Browser/optimizer cache                        | Hard refresh; seed paths now `must-revalidate`               |
+| Symptom                                            | Cause                                                                            | Fix                                                                                            |
+| -------------------------------------------------- | -------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------- |
+| `Refusing to seed: environment=production`         | Guard active; `SEED_ALLOW_PRODUCTION` not set                                    | Use `scripts/seed-production.sh --force` (sets it)                                             |
+| `Missing seed assets (expected in ...)`            | File not baked into image                                                        | Rebuild api image; make sure all 27 files committed + pulled                                   |
+| `/app/seeder-assets not found`                     | Stale api image                                                                  | `docker compose build api`, then `up -d`                                                       |
+| `exec: "/app/node_modules/.bin/tsx": no such file` | pnpm links bins under `packages/<pkg>/node_modules/.bin`, not the workspace root | Use the fixed `seed-production.sh` (invokes `./node_modules/.bin/tsx` from `/app/packages/db`) |
+| `EACCES` / permission denied on uploads            | Volume not owned by 1001                                                         | `sudo chown -R 1001:1001 /opt/dadan/data/uploads/`                                             |
+| api not healthy → seed script error                | Migrations not applied / depends_on                                              | Wait for healthchecks; `docker compose logs api`                                               |
+| Image 404 after seed                               | `removeAll()` wiped prior uploads, key changed                                   | Re-seed; keys are deterministic `<entity>/seed/<file>`                                         |
+| Old image still shown                              | Browser/optimizer cache                                                          | Hard refresh; seed paths now `must-revalidate`                                                 |
 
 ---
 
