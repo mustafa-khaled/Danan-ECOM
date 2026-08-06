@@ -7,14 +7,19 @@ import type { ReactNode } from "react";
 
 export interface AccountNavItem {
   href: string;
-  labelKey: "overview" | "personalInfo" | "myCollection" | "certificates" | "wishlist";
+  labelKey:
+    | "overview"
+    | "personalInfo"
+    | "myCollection"
+    | "certificates"
+    | "wishlist";
 }
 
 const accountNavItems: AccountNavItem[] = [
   { href: "/beta/profile", labelKey: "overview" },
   { href: "/beta/profile", labelKey: "personalInfo" },
-  { href: "/beta/wardrobe", labelKey: "myCollection" },
-  { href: "/beta/wardrobe/certificates", labelKey: "certificates" },
+  { href: "/beta/profile/wardrobe", labelKey: "myCollection" },
+  { href: "/beta/profile/wardrobe/certificates", labelKey: "certificates" },
   { href: "/beta/saved", labelKey: "wishlist" },
 ];
 
@@ -53,7 +58,9 @@ export function AccountLayout({ children, title }: AccountLayoutProps) {
         </nav>
       </aside>
       <div>
-        <h1 className="mb-8 font-english text-3xl text-[var(--color-text)]">{title}</h1>
+        <h1 className="mb-8 font-english text-3xl text-[var(--color-text)]">
+          {title}
+        </h1>
         {children}
       </div>
     </div>

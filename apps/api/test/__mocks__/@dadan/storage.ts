@@ -1,6 +1,7 @@
 export const storage = {
   upload: jest.fn().mockResolvedValue(undefined),
   exists: jest.fn().mockResolvedValue(false),
+  stat: jest.fn().mockResolvedValue({ size: 100, mtimeMs: 1700000000000 }),
   createReadStream: jest.fn(),
   getSignedUrl: jest.fn().mockResolvedValue("https://mock-url.test/file.png"),
   delete: jest.fn().mockResolvedValue(undefined),

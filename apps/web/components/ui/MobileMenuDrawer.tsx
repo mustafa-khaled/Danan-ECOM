@@ -120,7 +120,7 @@ export function MobileMenuDrawer({
 
               {/* User profile */}
               <Link
-                href="/beta/profile"
+                href="/beta/profile/wardrobe"
                 onClick={onClose}
                 className="flex size-9 items-center justify-center text-(--color-text) transition-colors hover:text-(--color-accent)"
                 aria-label={tNav("profile")}

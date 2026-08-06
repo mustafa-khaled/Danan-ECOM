@@ -8,6 +8,7 @@ export interface StorageProvider {
   getSignedUrl(key: string, options?: SignedUrlOptions): Promise<string>;
   delete(key: string): Promise<void>;
   exists(key: string): Promise<boolean>;
+  stat(key: string): Promise<{ size: number; mtimeMs: number }>;
   /** Removes every stored object under the provider root. */
   removeAll(): Promise<void>;
 }

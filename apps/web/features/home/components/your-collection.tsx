@@ -50,7 +50,7 @@ export default async function YourCollection() {
       name: item.design?.name || "",
       imageUrl: item.design?.images?.[0] || "",
       ownedSince: formattedDate,
-      href: `/beta/wardrobe/${item.id}`,
+      href: `/beta/profile/wardrobe/${item.id}`,
     };
   });
 
@@ -59,7 +59,7 @@ export default async function YourCollection() {
       <section className="py-12 sm:py-16">
         <SectionHead
           title={t("yourCollection")}
-          href="/beta/wardrobe"
+          href="/beta/profile/wardrobe"
           link={t("exploreAll")}
           subtitle={t("yourCollectionSubtitle")}
         />

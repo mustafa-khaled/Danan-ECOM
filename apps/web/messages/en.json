@@ -130,7 +130,8 @@
     "emptyDescription": "Purchased and transferred pieces will appear here.",
     "transferOwnership": "Transfer Ownership",
     "viewCertificate": "View Certificate",
-    "verifyAuthenticity": "Verify Authenticity"
+    "verifyAuthenticity": "Verify Authenticity",
+    "specs": "Specifications"
   },
   "transfers": {
     "title": "Transfers",

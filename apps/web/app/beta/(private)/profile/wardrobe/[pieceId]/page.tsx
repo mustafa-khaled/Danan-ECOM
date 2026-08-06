@@ -13,7 +13,9 @@ interface WardrobePiecePageProps {
   params: Promise<{ pieceId: string }>;
 }
 
-export default async function WardrobePiecePage({ params }: WardrobePiecePageProps) {
+export default async function WardrobePiecePage({
+  params,
+}: WardrobePiecePageProps) {
   const { pieceId } = await params;
   const cookie = await getSessionCookieHeader();
   const t = await getTranslations("wardrobe");
@@ -38,20 +40,26 @@ export default async function WardrobePiecePage({ params }: WardrobePiecePagePro
 
   return (
     <>
-      <nav aria-label="Breadcrumb" className="mb-6 text-xs tracking-[0.12em] uppercase">
-        <ol className="flex flex-wrap items-center gap-2 text-[var(--color-text-muted)]">
+      <nav
+        aria-label="Breadcrumb"
+        className="mb-6 text-xs tracking-[0.12em] uppercase"
+      >
+        <ol className="flex flex-wrap items-center gap-2 text-(--color-text-muted)">
           <li>
-            <Link href="/beta/wardrobe" className="hover:text-[var(--color-accent)]">
+            <Link
+              href="/beta/profile/wardrobe"
+              className="hover:text-(--color-accent)"
+            >
               {t("title")}
             </Link>
           </li>
           <li aria-hidden="true">/</li>
-          <li className="text-[var(--color-text)]">{design.name}</li>
+          <li className="text-(--color-text)">{design.name}</li>
         </ol>
       </nav>
 
       <div className="grid gap-10 lg:grid-cols-2">
-        <div className="relative aspect-[4/5] overflow-hidden border border-[var(--color-border)] bg-[var(--color-surface)]">
+        <div className="relative aspect-4/5 overflow-hidden border border-border bg-(--color-surface)">
           {design.imageUrls[0] ? (
             <Image
               src={design.imageUrls[0]}
@@ -61,7 +69,7 @@ export default async function WardrobePiecePage({ params }: WardrobePiecePagePro
               className="object-cover"
             />
           ) : (
-            <div className="flex h-full items-center justify-center font-display text-4xl text-[var(--color-text-muted)]">
+            <div className="flex h-full items-center justify-center font-display text-4xl text-(--color-text-muted)">
               DADAN
             </div>
           )}
@@ -69,10 +77,12 @@ export default async function WardrobePiecePage({ params }: WardrobePiecePagePro
 
         <section className="space-y-6">
           <div>
-            <p className="text-xs tracking-[0.16em] uppercase text-[var(--color-text-muted)]">
+            <p className="text-xs tracking-[0.16em] uppercase text-(--color-text-muted)">
               {design.collection.name}
             </p>
-            <h1 className="mt-2 font-english text-4xl text-[var(--color-text)]">{design.name}</h1>
+            <h1 className="mt-2 font-english text-4xl text-(--color-text)">
+              {design.name}
+            </h1>
             <div className="mt-4 flex flex-wrap items-center gap-3">
               <SerialBadge serial={String(piece.serialNumber)} />
               <StatusPill status={String(piece.status)} />
@@ -94,18 +104,18 @@ export default async function WardrobePiecePage({ params }: WardrobePiecePagePro
             />
             <Link
               href="/beta/verify"
-              className="inline-flex min-h-11 items-center justify-center border border-[var(--color-accent)] px-6 text-sm tracking-[0.1em] uppercase text-[var(--color-accent)] transition-colors hover:bg-[var(--color-accent)] hover:text-white"
+              className="inline-flex min-h-11 items-center justify-center border border-(--color-accent) px-6 text-sm tracking-widest uppercase text-(--color-accent) transition-colors hover:bg-(--color-accent) hover:text-white"
             >
               {t("verifyAuthenticity")}
             </Link>
           </div>
 
           {piece.activeTransfer ? (
-            <p className="text-sm text-[var(--color-text-muted)]">
+            <p className="text-sm text-(--color-text-muted)">
               A transfer is in progress.{" "}
               <Link
                 href={`/beta/transfers/${(piece.activeTransfer as { id: string }).id}`}
-                className="text-[var(--color-accent)] underline-offset-4 hover:underline"
+                className="text-(--color-accent) underline-offset-4 hover:underline"
               >
                 View transfer
               </Link>
@@ -113,7 +123,9 @@ export default async function WardrobePiecePage({ params }: WardrobePiecePagePro
           ) : null}
 
           <div>
-            <h2 className="font-english text-xl text-[var(--color-text)]">{t("specs")}</h2>
+            <h2 className="font-english text-xl text-(--color-text)">
+              {t("specs")}
+            </h2>
             <dl className="mt-4 space-y-3 text-sm">
               <SpecRow label="Material" value={design.material} />
               <SpecRow label="Weight" value={`${design.weight} g`} />
@@ -131,9 +143,11 @@ export default async function WardrobePiecePage({ params }: WardrobePiecePagePro
 
 function SpecRow({ label, value }: { label: string; value: string }) {
   return (
-    <div className="flex justify-between gap-4 border-b border-[var(--color-border)] pb-2">
-      <dt className="tracking-[0.08em] uppercase text-[var(--color-text-muted)]">{label}</dt>
-      <dd className="text-[var(--color-text)]">{value}</dd>
+    <div className="flex justify-between gap-4 border-b border-border pb-2">
+      <dt className="tracking-[0.08em] uppercase text-(--color-text-muted)">
+        {label}
+      </dt>
+      <dd className="text-(--color-text)">{value}</dd>
     </div>
   );
 }

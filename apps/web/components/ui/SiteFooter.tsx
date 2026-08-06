@@ -11,7 +11,7 @@ export function SiteFooter() {
     links: [
       { href: "/beta/home", label: t("stories") },
       { href: "/beta/collections", label: t("collections") },
-      { href: "/beta/wardrobe", label: t("myCollection") },
+      { href: "/beta/profile/wardrobe", label: t("myCollection") },
     ],
   };
 
@@ -20,7 +20,7 @@ export function SiteFooter() {
     links: [
       { href: "/beta/home", label: t("about") },
       { href: "/beta/home", label: t("philosophy") },
-      { href: "/beta/wardrobe", label: t("ownership") },
+      { href: "/beta/profile/wardrobe", label: t("ownership") },
     ],
   };
 
@@ -73,12 +73,13 @@ export function SiteFooter() {
 
             {/* Copyright & Tagline (Positioned below Explore column on Desktop) */}
             <div className="hidden sm:block mt-12 pt-4">
-              <p className="text-sm font-bold text-white">
-                {t("copyright")}
-              </p>
+              <p className="text-sm font-bold text-white">{t("copyright")}</p>
               <div className="mt-3 space-y-1">
                 {taglineLines.map((line, i) => (
-                  <p key={i} className="text-xs sm:text-sm text-[#9CA3AF] leading-relaxed">
+                  <p
+                    key={i}
+                    className="text-xs sm:text-sm text-[#9CA3AF] leading-relaxed"
+                  >
                     {line}
                   </p>
                 ))}
@@ -127,9 +128,7 @@ export function SiteFooter() {
 
         {/* ── Mobile Copyright & Tagline (Shown at bottom on Mobile) ── */}
         <div className="block sm:hidden mt-12 pt-6 border-t border-white/5">
-          <p className="text-sm font-bold text-white">
-            {t("copyright")}
-          </p>
+          <p className="text-sm font-bold text-white">{t("copyright")}</p>
           <div className="mt-3 space-y-1">
             {taglineLines.map((line, i) => (
               <p key={i} className="text-xs text-[#9CA3AF] leading-relaxed">
@@ -142,4 +141,3 @@ export function SiteFooter() {
     </footer>
   );
 }
-

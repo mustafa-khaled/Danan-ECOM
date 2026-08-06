@@ -76,6 +76,7 @@ const nextConfig: NextConfig = {
   output: "standalone",
   transpilePackages: [],
   images: {
+    unoptimized: true,
     formats: ["image/webp", "image/avif"],
     remotePatterns,
   },

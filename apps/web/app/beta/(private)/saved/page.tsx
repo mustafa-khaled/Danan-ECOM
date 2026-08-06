@@ -28,7 +28,7 @@ export default async function SavedPage() {
             {saved.map((entry) => {
               const href = entry.piece.design.slug
                 ? `/beta/pieces/${entry.piece.design.slug}`
-                : `/beta/wardrobe/${entry.piece.id}`;
+                : `/beta/profile/wardrobe/${entry.piece.id}`;
               return (
                 <Link key={entry.piece.id} href={href}>
                   <PieceCard

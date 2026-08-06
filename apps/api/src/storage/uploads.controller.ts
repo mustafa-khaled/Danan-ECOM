@@ -1,3 +1,4 @@
+import { createHash } from "node:crypto";
 import {
   Controller,
   Get,
@@ -23,6 +24,37 @@ function mimeFromKey(key: string): string {
   return EXTENSION_TO_MIME[ext] ?? "application/octet-stream";
 }
 
+function etagFromStat(key: string, size: number, mtimeMs: number): string {
+  const digest = createHash("sha256")
+    .update(key)
+    .update("\0")
+    .update(String(size))
+    .update("\0")
+    .update(String(mtimeMs))
+    .digest("hex")
+    .slice(0, 32);
+  return `W/"${digest}"`;
+}
+
+function ifNoneMatchMatches(header: string | undefined, etag: string): boolean {
+  if (!header) return false;
+  const expected = etag.replace(/^W\//, "");
+  return header
+    .split(",")
+    .map((token) => token.trim().replace(/^W\//, "").replace(/^"(.*)"$/, "$1"))
+    .includes(expected);
+}
+
+function ifModifiedSinceFresh(
+  header: string | undefined,
+  mtimeMs: number,
+): boolean {
+  if (!header) return false;
+  const since = Date.parse(header);
+  if (Number.isNaN(since)) return false;
+  return Math.floor(mtimeMs / 1000) <= Math.floor(since / 1000);
+}
+
 // Image-heavy pages fetch many assets at once; the global IP throttle would
 // starve legitimate gallery loads.
 @Public()
@@ -45,10 +77,13 @@ export class UploadsController {
     }
 
     try {
-      const stream = await storage.createReadStream(storageKey);
+      const { size, mtimeMs } = await storage.stat(storageKey);
       const contentType = mimeFromKey(storageKey);
+      const etag = etagFromStat(storageKey, size, mtimeMs);
 
       res.setHeader("Content-Type", contentType);
+      res.setHeader("ETag", etag);
+      res.setHeader("Last-Modified", new Date(mtimeMs).toUTCString());
 
       // Seed-managed assets live under <entity>/seed/<file> and share
       // deterministic filenames across re-seeds while their content can
@@ -58,6 +93,18 @@ export class UploadsController {
         ? "public, max-age=0, must-revalidate"
         : "public, max-age=31536000, immutable";
       res.setHeader("Cache-Control", cacheControl);
+
+      if (ifNoneMatchMatches(req.headers["if-none-match"], etag)) {
+        res.status(304).end();
+        return;
+      }
+
+      if (ifModifiedSinceFresh(req.headers["if-modified-since"], mtimeMs)) {
+        res.status(304).end();
+        return;
+      }
+
+      const stream = await storage.createReadStream(storageKey);
 
       stream.on("error", () => {
         if (!res.headersSent) res.sendStatus(404);

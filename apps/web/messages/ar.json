@@ -130,7 +130,8 @@
     "emptyDescription": "ستظهر القطع المشتراة والمحولة هنا.",
     "transferOwnership": "تحويل الملكية",
     "viewCertificate": "عرض الشهادة",
-    "verifyAuthenticity": "التحقق من الأصالة"
+    "verifyAuthenticity": "التحقق من الأصالة",
+    "specs": "المواصفات"
   },
   "transfers": {
     "title": "التحويلات",

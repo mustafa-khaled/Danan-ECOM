@@ -11,7 +11,7 @@ export default function CollectionsBanner() {
         fill
         priority
         sizes="100vw"
-        className="object-cover object-top"
+        className="object-cover object-[0_18%]"
       />
 
       {/* Centered DADAN Logo Overlay */}

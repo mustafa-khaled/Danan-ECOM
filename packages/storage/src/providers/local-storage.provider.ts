@@ -1,5 +1,5 @@
 import { createReadStream, existsSync, mkdirSync, constants } from "node:fs";
-import { access, mkdir, readFile, unlink, writeFile } from "node:fs/promises";
+import { access, mkdir, readFile, stat, unlink, writeFile } from "node:fs/promises";
 import { join, normalize, resolve, sep } from "node:path";
 import type { Readable } from "node:stream";
 import { validateUpload, validateMagicBytes } from "../validation";
@@ -82,6 +82,12 @@ export class LocalStorageProvider implements StorageProvider {
     } catch {
       return false;
     }
+  }
+
+  async stat(key: string): Promise<{ size: number; mtimeMs: number }> {
+    const fullPath = this.resolvePath(key);
+    const info = await stat(fullPath);
+    return { size: info.size, mtimeMs: info.mtimeMs };
   }
 
   async removeAll(): Promise<void> {

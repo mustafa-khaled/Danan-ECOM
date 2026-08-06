@@ -15,7 +15,7 @@ export function SpotlightLightCollection({
       {/* Product Image Box: Mobile (352x360), Desktop (484x634) */}
       <div className="relative w-88 h-90 lg:w-121 lg:h-158.5 max-w-full mb-6 lg:mb-8 overflow-hidden opacity-100 rotate-0">
         <Image
-          src={collection.coverImageUrl || "/assets/heritage-pendant.png"}
+          src={collection.coverImageUrl || "/assets/mawaddah.avif"}
           alt={collection.name}
           fill
           sizes="(max-width: 768px) 100vw, 50vw"

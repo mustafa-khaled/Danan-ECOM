@@ -31,7 +31,6 @@ export { SiteFooter } from "./SiteFooter";
 export { SplitHeroLayout } from "./SplitHeroLayout";
 export { WelcomeModal, AccessGateHeader } from "./WelcomeModal";
 export { AccountLayout } from "./AccountLayout";
-export { WardrobeLayout } from "./WardrobeLayout";
 
 export { StatusPill } from "./StatusPill";
 export type { StatusPillProps } from "./StatusPill";
@@ -43,3 +42,4 @@ export { default as SectionHead } from "./section-head";
 
 export { ArrowLink } from "./ArrowLink";
 export type { ArrowLinkProps } from "./ArrowLink";
+

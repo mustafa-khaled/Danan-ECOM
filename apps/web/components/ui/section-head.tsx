@@ -1,3 +1,4 @@
+import { cn } from "@/lib/utils";
 import { ArrowLink } from "./ArrowLink";
 import React from "react";
 
@@ -6,6 +7,7 @@ interface SectionHeadProps {
   href?: string;
   link?: string;
   subtitle?: string;
+  className?: string;
 }
 
 export default function SectionHead({
@@ -13,9 +15,15 @@ export default function SectionHead({
   href,
   link,
   subtitle,
+  className,
 }: SectionHeadProps) {
   return (
-    <div className="mb-4 md:mb-8 flex flex-col justify-between gap-4 sm:flex-row sm:items-end">
+    <div
+      className={cn(
+        "mb-4 md:mb-8 flex flex-col justify-between gap-4 sm:flex-row sm:items-end",
+        className,
+      )}
+    >
       <div>
         <h2 className="font-english rtl:font-arabic text-[24px] font-bold leading-[100%] tracking-[-0.02em] text-(--color-text) sm:text-3xl md:text-4xl sm:leading-tight">
           {title}
@@ -28,7 +36,12 @@ export default function SectionHead({
       </div>
 
       {href && link && (
-        <ArrowLink href={href} variant="primary" size="sm" className="self-start sm:self-auto">
+        <ArrowLink
+          href={href}
+          variant="primary"
+          size="sm"
+          className="self-start sm:self-auto"
+        >
           {link}
         </ArrowLink>
       )}
