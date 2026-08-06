@@ -43,7 +43,7 @@ export default function ComingSoonPage() {
         </div>
 
         {/* Header (Logo) */}
-        <header className="relative z-20 flex px-30 gap-7.5 justify-center pt-20 flex-col animate-slide-up">
+        <header className="relative z-20 flex justify-center pt-20 animate-slide-up">
           <div className="relative w-55 h-9">
             <Image
               src="/assets/dadan-logo.png"
@@ -55,33 +55,26 @@ export default function ComingSoonPage() {
               className="object-contain"
             />
           </div>
-
-          <Link
-            href="https://www.instagram.com/dadanjewelr/"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="w-66 h-10 rounded-lg p-2 flex items-center justify-between bg-[#FFFFFF29] backdrop-blur-md text-white hover:bg-[#FFFFFF38] transition-colors duration-200"
-          >
-            <div className="flex items-center gap-2">
-              <InstagramIcon className="w-5 h-5 text-white" />
-              <span className="text-sm font-medium text-white tracking-wide">
-                Instagram
-              </span>
-            </div>
-            <ArrowUpRight className="w-5 h-5 text-white" />
-          </Link>
         </header>
 
         {/* Bottom Content / Footer */}
         <footer className="absolute z-20 px-10.25 w-full flex justify-between items-center bottom-[27%] text-center select-none">
           <div className="animate-slide-up [animation-delay:500ms]">
-            <p className="font-english font-semibold text-[30px] leading-[100%] tracking-tighter text-ivory">
+            <p className="font-english font-semibold text-[64px] leading-[100%] tracking-tighter text-ivory">
               Soon
             </p>
           </div>
 
+          <Link
+            href="https://www.instagram.com/dadanjewelr/"
+            target="_blank"
+            rel="noopener noreferrer"
+          >
+            <InstagramIcon className="size-12.5" />
+          </Link>
+
           <div className="animate-slide-up [animation-delay:300ms]">
-            <p className="font-arabic font-normal text-[24px] leading-[100%] tracking-tighter text-ivory mb-2">
+            <p className="font-arabic font-normal text-[64px] leading-[100%] tracking-tighter text-ivory mb-2">
               قريبا
             </p>
           </div>
@@ -101,7 +94,7 @@ export default function ComingSoonPage() {
             priority
             quality={75}
             sizes="100vw"
-            className="object-cover object-[22%]"
+            className="object-cover object-[40%]"
           />
           {/* Gentle dark gradient overlay for optimal readability */}
           <div className="absolute inset-0 bg-linear-to-b from-void/40 via-transparent to-void/50 z-10" />
@@ -120,33 +113,27 @@ export default function ComingSoonPage() {
               className="object-contain"
             />
           </div>
-
-          <Link
-            href="https://www.instagram.com/dadanjewelr/"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="w-66 h-10 rounded-lg p-2 flex items-center justify-between bg-[#FFFFFF29] backdrop-blur-md text-white hover:bg-[#FFFFFF38] transition-colors duration-200"
-          >
-            <div className="flex items-center gap-2">
-              <InstagramIcon className="w-5 h-5 text-white" />
-              <span className="text-sm font-medium text-white tracking-wide">
-                Instagram
-              </span>
-            </div>
-            <ArrowUpRight className="w-5 h-5 text-white" />
-          </Link>
         </header>
 
         {/* Bottom Content / Footer */}
         <footer className="absolute z-20 px-12.75 w-full flex justify-between items-center bottom-[18%] text-center select-none">
           <div className="animate-slide-up [animation-delay:500ms]">
-            <p className="font-english font-semibold text-[30px] leading-[100%] tracking-tighter text-ivory">
+            <p className="font-english text-[32px] leading-[100%] tracking-tighter text-ivory">
               Soon
             </p>
           </div>
+          <div>
+            <Link
+              href="https://www.instagram.com/dadanjewelr/"
+              target="_blank"
+              rel="noopener noreferrer"
+            >
+              <InstagramIcon className="size-6" />
+            </Link>
+          </div>
 
           <div className="animate-slide-up [animation-delay:300ms]">
-            <p className="font-arabic font-normal text-[24px] leading-[100%] tracking-tighter text-ivory mb-2">
+            <p className="font-arabic text-[32px] leading-[100%] tracking-tighter text-ivory mb-2">
               قريبا
             </p>
           </div>
