@@ -72,7 +72,7 @@ export function DesktopHeader({
 
             {/* Profile Icon */}
             <Link
-              href="/beta/profile"
+              href="/beta/profile/wardrobe"
               className="flex items-center justify-center text-[#2D2321] transition-colors hover:text-black"
               aria-label={tNav("profile")}
             >
