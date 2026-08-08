@@ -1,10 +1,12 @@
 "use client";
 
+import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { FormEvent, useState } from "react";
 import { useTranslations } from "next-intl";
-import { GoldDivider, LuxuryButton } from "@/components/ui";
+import { CheckCircle2 } from "lucide-react";
 import { useInitiateTransfer } from "@/features/transfers";
+import { DadanSpinner } from "@/shared/components/feedback/loading-state";
 
 interface TransferInitiateProps {
   pieceId: string;
@@ -46,42 +48,43 @@ export function TransferInitiate({ pieceId, pieceName, serialNumber }: TransferI
 
   if (!open) {
     return (
-      <LuxuryButton variant="ghost" onClick={() => setOpen(true)}>
-        {wardrobeT("transferOwnership")}
-      </LuxuryButton>
+      <button
+        type="button"
+        onClick={() => setOpen(true)}
+        className="flex h-12 w-full items-center justify-center gap-2.5 rounded-[2px] bg-[#4CBEAE] px-4 text-center font-display text-sm font-semibold tracking-normal text-[#2D2321] transition-all hover:bg-[#45B1A1] active:scale-[0.99]"
+      >
+        <span>{wardrobeT("transferOwnership")}</span>
+        <Image
+          src="/shopping.png"
+          alt="Transfer"
+          width={18}
+          height={18}
+          className="size-4.5 object-contain"
+        />
+      </button>
     );
   }
 
   return (
-    <section className="rounded-[var(--radius-panel)] border border-[var(--color-border)] bg-[var(--color-surface)] p-6">
-      <h2 className="font-display text-xl text-[var(--color-ivory)]">
-        {wardrobeT("transferOwnership")}
-      </h2>
-      <p className="mt-2 text-sm text-[var(--color-ivory-muted)]">
-        {t("initiateDescription", { pieceName, serialNumber })}
-      </p>
-      <GoldDivider className="my-6" />
+    <section className="w-full rounded-[2px] border border-gray-200 bg-white p-5 space-y-4">
+      <div>
+        <h2 className="font-display text-base font-bold text-[#2D2321]">
+          {wardrobeT("transferOwnership")}
+        </h2>
+        <p className="mt-1 text-xs text-gray-500">
+          {t("initiateDescription", { pieceName, serialNumber })}
+        </p>
+      </div>
+
       <form onSubmit={handleSubmit} className="space-y-4">
-        <label className="block">
-          <span className="mb-2 block text-xs tracking-[0.12em] uppercase text-[var(--color-ivory-muted)]">
-            {t("recipientHouseKey")}
-          </span>
-          <input
-            name="recipientHouseKey"
-            type="password"
-            required
-            autoComplete="off"
-            className="min-h-11 w-full rounded-[var(--radius-item)] border border-[var(--color-border)] bg-[var(--color-void)] px-4 text-[var(--color-ivory)] focus-visible:outline-none focus-visible:shadow-[var(--shadow-focus)]"
-          />
-        </label>
-        <label className="block">
-          <span className="mb-2 block text-xs tracking-[0.12em] uppercase text-[var(--color-ivory-muted)]">
+        <label className="block space-y-1.5">
+          <span className="block text-xs font-semibold text-[#2D2321]">
             {t("transferType")}
           </span>
           <select
             name="transferType"
             defaultValue="GIFT"
-            className="min-h-11 w-full rounded-[var(--radius-item)] border border-[var(--color-border)] bg-[var(--color-void)] px-4 text-[var(--color-ivory)] focus-visible:outline-none focus-visible:shadow-[var(--shadow-focus)]"
+            className="h-11 w-full rounded-[2px] border border-gray-200 bg-gray-50 px-3 text-sm text-[#2D2321] focus:border-[#4CBEAE] focus:bg-white focus:outline-none"
           >
             {TRANSFER_TYPES.map((type) => (
               <option key={type.value} value={type.value}>
@@ -90,18 +93,49 @@ export function TransferInitiate({ pieceId, pieceName, serialNumber }: TransferI
             ))}
           </select>
         </label>
+
+        <label className="block space-y-1.5">
+          <span className="block text-xs font-semibold text-[#2D2321]">
+            {t("recipientHouseKey")}
+          </span>
+          <input
+            name="recipientHouseKey"
+            type="text"
+            required
+            autoComplete="off"
+            placeholder="Recipient House ID or Email"
+            className="h-11 w-full rounded-[2px] border border-gray-200 bg-gray-50 px-3 text-sm text-[#2D2321] placeholder:text-gray-400 focus:border-[#4CBEAE] focus:bg-white focus:outline-none"
+          />
+        </label>
+
         {error ? (
-          <p role="alert" className="text-sm text-[var(--color-ruby)]">
+          <p role="alert" className="text-xs text-red-600">
             {error instanceof Error ? error.message : t("initiateError")}
           </p>
         ) : null}
-        <div className="flex flex-wrap gap-3">
-          <LuxuryButton type="submit" loading={isPending}>
-            {t("initiateTransfer")}
-          </LuxuryButton>
-          <LuxuryButton type="button" variant="ghost" onClick={() => setOpen(false)}>
+
+        <div className="flex gap-3 pt-1">
+          <button
+            type="submit"
+            disabled={isPending}
+            className="flex h-11 flex-1 items-center justify-center gap-2 rounded-[2px] bg-[#4CBEAE] px-4 font-display text-sm font-semibold text-[#2D2321] transition-all hover:bg-[#45B1A1] disabled:opacity-50"
+          >
+            {isPending ? (
+              <DadanSpinner size="sm" />
+            ) : (
+              <>
+                <span>Submit</span>
+                <CheckCircle2 className="size-4 text-[#2D2321]" />
+              </>
+            )}
+          </button>
+          <button
+            type="button"
+            onClick={() => setOpen(false)}
+            className="flex h-11 items-center justify-center rounded-[2px] border border-gray-200 bg-white px-4 font-display text-sm font-medium text-[#2D2321] hover:bg-gray-50"
+          >
             {common("cancel")}
-          </LuxuryButton>
+          </button>
         </div>
       </form>
     </section>
