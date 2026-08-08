@@ -1,13 +1,14 @@
 import Image from "next/image";
 import Link from "next/link";
 import { getTranslations, getLocale } from "next-intl/server";
-import { SerialBadge } from "@/components/ui";
+import { SectionHead, SerialBadge } from "@/components/ui";
 import { CartItemActions } from "@/components/cart-item-actions";
 import { EmptyState } from "@/shared/components/feedback/empty-state";
 import { fetchCart } from "@/features/cart";
 import { formatPrice } from "@/shared/utils/format";
 import { getSessionCookieHeader } from "@/features/auth/server/session";
 import type { Locale } from "@/i18n/routing";
+import Container from "@/components/ui/container";
 
 export default async function CartPage() {
   const cookie = await getSessionCookieHeader();
@@ -18,10 +19,8 @@ export default async function CartPage() {
   const validItems = items.filter((item) => item.piece);
 
   return (
-    <>
-      <header className="mb-10 space-y-3">
-        <h1 className="font-english text-4xl text-(--color-text)">{t("title")}</h1>
-      </header>
+    <Container className="pt-2">
+      <SectionHead title={t("title")} />
 
       {validItems.length === 0 ? (
         <EmptyState
@@ -63,7 +62,11 @@ export default async function CartPage() {
                   </div>
                   <div className="flex flex-col items-end gap-2">
                     <p className="font-english text-lg text-(--color-text)">
-                      {formatPrice(piece.design.basePrice, piece.design.currency, locale)}
+                      {formatPrice(
+                        piece.design.basePrice,
+                        piece.design.currency,
+                        locale,
+                      )}
                     </p>
                     <CartItemActions pieceId={piece.id} />
                   </div>
@@ -73,15 +76,21 @@ export default async function CartPage() {
           </ul>
 
           <aside className="h-fit border border-border bg-(--color-surface) p-6">
-            <h2 className="font-english text-xl text-(--color-text)">{t("total")}</h2>
+            <h2 className="font-english text-xl text-(--color-text)">
+              {t("total")}
+            </h2>
             <dl className="mt-4 space-y-3 text-sm">
               <div className="flex justify-between">
                 <dt className="text-(--color-text-muted)">{t("subtotal")}</dt>
-                <dd>{formatPrice(summary.subtotal, summary.currency, locale)}</dd>
+                <dd>
+                  {formatPrice(summary.subtotal, summary.currency, locale)}
+                </dd>
               </div>
               <div className="flex justify-between">
                 <dt className="text-(--color-text-muted)">{t("vat")}</dt>
-                <dd>{formatPrice(summary.vatAmount, summary.currency, locale)}</dd>
+                <dd>
+                  {formatPrice(summary.vatAmount, summary.currency, locale)}
+                </dd>
               </div>
               <div className="flex justify-between font-english text-lg text-(--color-text)">
                 <dt>{t("total")}</dt>
@@ -97,6 +106,6 @@ export default async function CartPage() {
           </aside>
         </div>
       )}
-    </>
+    </Container>
   );
 }

@@ -1,17 +1,16 @@
 import { getTranslations } from "next-intl/server";
 import { VerifyForm } from "@/components/verify-form";
+import Container from "@/components/ui/container";
+import { SectionHead } from "@/components/ui";
 
 export default async function VerifyPage() {
   const t = await getTranslations("verify");
 
   return (
-    <>
-      <header className="mb-10 space-y-3">
-        <h1 className="font-english text-4xl text-[var(--color-text)]">{t("title")}</h1>
-        <p className="max-w-2xl text-[var(--color-text-muted)]">{t("description")}</p>
-      </header>
+    <Container className="py-4">
+      <SectionHead title={t("title")} subtitle={t("description")} />
 
       <VerifyForm />
-    </>
+    </Container>
   );
 }

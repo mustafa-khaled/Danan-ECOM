@@ -99,22 +99,22 @@ export function CheckoutForm({ summary }: CheckoutFormProps) {
   return (
     <form onSubmit={handleSubmit} className="space-y-8" noValidate>
       {step === 1 ? (
-        <section className="rounded-[var(--radius-panel)] border border-[var(--color-border)] bg-[var(--color-surface)] p-6">
-          <h2 className="font-display text-xl text-[var(--color-ivory)]">Order Review</h2>
-          <p className="mt-2 text-sm text-[var(--color-ivory-muted)]">
+        <section className="rounded-(--radius-panel) border border-border bg-(--color-surface) p-6">
+          <h2 className="font-display text-xl text-(--color-ivory)">Order Review</h2>
+          <p className="mt-2 text-sm text-(--color-ivory-muted)">
             Confirm your selection before entering shipping details.
           </p>
           <GoldDivider className="my-6" />
           <dl className="space-y-3 text-sm">
             <div className="flex justify-between">
-              <dt className="text-[var(--color-ivory-muted)]">Subtotal</dt>
+              <dt className="text-(--color-ivory-muted)">Subtotal</dt>
               <dd>{formatPrice(summary.subtotal, summary.currency)}</dd>
             </div>
             <div className="flex justify-between">
-              <dt className="text-[var(--color-ivory-muted)]">VAT ({Math.round(summary.vatRate * 100)}%)</dt>
+              <dt className="text-(--color-ivory-muted)">VAT ({Math.round(summary.vatRate * 100)}%)</dt>
               <dd>{formatPrice(summary.vatAmount, summary.currency)}</dd>
             </div>
-            <div className="flex justify-between font-display text-lg text-[var(--color-gold-light)]">
+            <div className="flex justify-between font-display text-lg text-gold-light">
               <dt>Total</dt>
               <dd>{formatPrice(summary.total, summary.currency)}</dd>
             </div>
@@ -122,8 +122,8 @@ export function CheckoutForm({ summary }: CheckoutFormProps) {
         </section>
       ) : (
         <>
-          <section className="rounded-[var(--radius-panel)] border border-[var(--color-border)] bg-[var(--color-surface)] p-6">
-            <h2 className="font-display text-xl text-[var(--color-ivory)]">Shipping Address</h2>
+          <section className="rounded-(--radius-panel) border border-border bg-(--color-surface) p-6">
+            <h2 className="font-display text-xl text-(--color-ivory)">Shipping Address</h2>
             <div className="mt-6 grid gap-4 sm:grid-cols-2">
               <Field
                 label="Full Name"
@@ -153,11 +153,11 @@ export function CheckoutForm({ summary }: CheckoutFormProps) {
             </div>
           </section>
 
-          <section className="rounded-[var(--radius-panel)] border border-[var(--color-border)] bg-[var(--color-surface)] p-6">
-            <h2 className="font-display text-xl text-[var(--color-ivory)]">Payment</h2>
+          <section className="rounded-(--radius-panel) border border-border bg-(--color-surface) p-6">
+            <h2 className="font-display text-xl text-(--color-ivory)">Payment</h2>
             {isLivePayment ? (
               <div className="mt-6">
-                <Suspense fallback={<div className="text-sm text-[var(--color-ivory-muted)]">Loading payment form...</div>}>
+                <Suspense fallback={<div className="text-sm text-(--color-ivory-muted)">Loading payment form...</div>}>
                   <TapCardElement
                     ref={tapCardRef}
                     amount={summary.total}
@@ -168,13 +168,13 @@ export function CheckoutForm({ summary }: CheckoutFormProps) {
                   />
                 </Suspense>
                 {cardError ? (
-                  <p role="alert" className="mt-3 text-sm text-[var(--color-ruby)]">
+                  <p role="alert" className="mt-3 text-sm text-(--color-ruby)">
                     {cardError}
                   </p>
                 ) : null}
               </div>
             ) : (
-              <p className="mt-6 text-xs text-[var(--color-ivory-muted)]">
+              <p className="mt-6 text-xs text-(--color-ivory-muted)">
                 Payment is processed securely via mock gateway for this preview.
               </p>
             )}
@@ -183,7 +183,7 @@ export function CheckoutForm({ summary }: CheckoutFormProps) {
       )}
 
       {error ? (
-        <p role="alert" className="text-sm text-[var(--color-ruby)]">
+        <p role="alert" className="text-sm text-(--color-ruby)">
           {error instanceof Error ? error.message : "Checkout failed"}
         </p>
       ) : null}
@@ -226,7 +226,7 @@ function Field({
 
   return (
     <label className={`block ${className}`} htmlFor={fieldId}>
-      <span className="mb-2 block text-xs tracking-[0.12em] uppercase text-[var(--color-ivory-muted)]">
+      <span className="mb-2 block text-xs tracking-[0.12em] uppercase text-(--color-ivory-muted)">
         {label}
       </span>
       <input
@@ -236,10 +236,10 @@ function Field({
         defaultValue={defaultValue}
         aria-invalid={error ? true : undefined}
         aria-describedby={error ? `${fieldId}-error` : undefined}
-        className="min-h-11 w-full rounded-[var(--radius-item)] border border-[var(--color-border)] bg-[var(--color-void)] px-4 text-[var(--color-ivory)] focus-visible:outline-none focus-visible:shadow-[var(--shadow-focus)]"
+        className="min-h-11 w-full rounded-(--radius-item) border border-border bg-void px-4 text-(--color-ivory) focus-visible:outline-none focus-visible:shadow-(--shadow-focus)"
       />
       {error ? (
-        <p id={`${fieldId}-error`} role="alert" className="mt-1 text-xs text-[var(--color-ruby)]">
+        <p id={`${fieldId}-error`} role="alert" className="mt-1 text-xs text-(--color-ruby)">
           {error}
         </p>
       ) : null}

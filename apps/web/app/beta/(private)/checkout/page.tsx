@@ -3,6 +3,8 @@ import { CheckoutForm } from "@/components/checkout-form";
 import { EmptyState } from "@/shared/components/feedback/empty-state";
 import { fetchCart } from "@/features/cart";
 import { getSessionCookieHeader } from "@/features/auth/server/session";
+import Container from "@/components/ui/container";
+import { SectionHead } from "@/components/ui";
 
 export default async function CheckoutPage() {
   const cookie = await getSessionCookieHeader();
@@ -12,12 +14,8 @@ export default async function CheckoutPage() {
   const validItems = items.filter((item) => item.piece);
 
   return (
-    <>
-      <header className="mb-10 space-y-3">
-        <h1 className="font-english text-4xl text-[var(--color-text)]">
-          {t("title")}
-        </h1>
-      </header>
+    <Container className="py-4">
+      <SectionHead title={t("title")} />
 
       {validItems.length === 0 ? (
         <EmptyState
@@ -30,6 +28,6 @@ export default async function CheckoutPage() {
           <CheckoutForm summary={summary} />
         </div>
       )}
-    </>
+    </Container>
   );
 }
