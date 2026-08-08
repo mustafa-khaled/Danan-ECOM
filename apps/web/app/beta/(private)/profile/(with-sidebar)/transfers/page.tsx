@@ -11,10 +11,7 @@ export default async function TransfersPage() {
 
   return (
     <>
-      <SectionHead
-        title="Transfers"
-        subtitle="Manage outgoing and incoming ownership transfer requests"
-      />
+      <SectionHead title="Transfers" />
 
       <TransfersList
         transfers={transfers}
@@ -24,4 +21,3 @@ export default async function TransfersPage() {
     </>
   );
 }
-
