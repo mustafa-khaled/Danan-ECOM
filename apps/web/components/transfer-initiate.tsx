@@ -14,7 +14,11 @@ interface TransferInitiateProps {
   serialNumber: string;
 }
 
-export function TransferInitiate({ pieceId, pieceName, serialNumber }: TransferInitiateProps) {
+export function TransferInitiate({
+  pieceId,
+  pieceName,
+  serialNumber,
+}: TransferInitiateProps) {
   const router = useRouter();
   const t = useTranslations("transfers");
   const common = useTranslations("common");
@@ -32,14 +36,20 @@ export function TransferInitiate({ pieceId, pieceName, serialNumber }: TransferI
     event.preventDefault();
 
     const form = new FormData(event.currentTarget);
-    const recipientHouseKey = String(form.get("recipientHouseKey") ?? "").trim();
+    const recipientHouseKey = String(
+      form.get("recipientHouseKey") ?? "",
+    ).trim();
     const transferType = String(form.get("transferType") ?? "GIFT") as
       | "SALE"
       | "GIFT"
       | "INHERITANCE";
 
     try {
-      const result = await initiateTransfer({ pieceId, transferType, recipientHouseKey });
+      const result = await initiateTransfer({
+        pieceId,
+        transferType,
+        recipientHouseKey,
+      });
       router.push(`/beta/transfers/${result.transferId}`);
     } catch {
       /* error is rendered via the mutation's `error` state */
@@ -96,6 +106,7 @@ export function TransferInitiate({ pieceId, pieceName, serialNumber }: TransferI
 
         <label className="block space-y-1.5">
           <span className="block text-xs font-semibold text-[#2D2321]">
+            {/* House Id not House Key */}
             {t("recipientHouseKey")}
           </span>
           <input

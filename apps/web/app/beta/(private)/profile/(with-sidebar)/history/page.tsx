@@ -1,17 +1,8 @@
-import Link from "next/link";
 import { getTranslations } from "next-intl/server";
-import { EmptyState } from "@/shared/components/feedback/empty-state";
 import { fetchWardrobe, fetchWardrobePiece } from "@/features/wardrobe";
 import { getSessionCookieHeader } from "@/features/auth/server/session";
 import { SectionHead } from "@/components/ui";
-
-interface HistoryEvent {
-  id: string;
-  pieceName: string;
-  pieceId: string;
-  date: string;
-  type: string;
-}
+import { HistoryList, HistoryEvent } from "@/features/profile/components/history-list";
 
 export default async function HistoryPage() {
   const cookie = await getSessionCookieHeader();
@@ -59,29 +50,12 @@ export default async function HistoryPage() {
   return (
     <>
       <SectionHead title="History" />
-
-      {events.length === 0 ? (
-        <EmptyState title={t("empty")} description={t("emptyDescription")} />
-      ) : (
-        <ul className="space-y-4">
-          {events.map((event) => (
-            <li key={event.id} className="border border-border bg-white p-6">
-              <p className="text-xs tracking-[0.14em] uppercase text-(--color-text-muted)">
-                {t("certificateIssued")}
-              </p>
-              <Link
-                href={`/beta/profile/wardrobe/${event.pieceId}`}
-                className="mt-2 block font-english text-lg text-(--color-text) hover:text-[#BC776E]"
-              >
-                {event.pieceName}
-              </Link>
-              <p className="mt-2 text-sm text-(--color-text-muted)">
-                {new Date(event.date).toLocaleDateString()} · {event.type}
-              </p>
-            </li>
-          ))}
-        </ul>
-      )}
+      <HistoryList
+        events={events}
+        emptyTitle={t("empty")}
+        emptyDescription={t("emptyDescription")}
+      />
     </>
   );
 }
+
