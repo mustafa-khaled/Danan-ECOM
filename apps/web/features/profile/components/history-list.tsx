@@ -54,7 +54,7 @@ export function HistoryList({
   const formatTime = (dateStr: string) => {
     try {
       const d = new Date(dateStr);
-      if (isNaN(d.getTime())) return "09:42 AM";
+      if (isNaN(d.getTime())) return "--:--";
       const timeString = d.toLocaleTimeString("en-US", {
         hour: "2-digit",
         minute: "2-digit",
@@ -62,7 +62,7 @@ export function HistoryList({
       });
       return timeString;
     } catch {
-      return "09:42 AM";
+      return "--:--";
     }
   };
 

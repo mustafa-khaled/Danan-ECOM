@@ -9,6 +9,7 @@ import {
 import { OrdersService } from "./orders.service";
 import { ClientGuard } from "../auth/guards/client.guard";
 import { CurrentClient } from "../auth/decorators/current-client.decorator";
+import { PaginationQueryDto } from "../common/dto/pagination.dto";
 import { CurrentLocale } from "../common/i18n/locale";
 import type { ClientSession, Locale } from "@dadan/types";
 
@@ -21,15 +22,9 @@ export class ClientOrdersController {
   list(
     @CurrentClient() client: ClientSession,
     @CurrentLocale() locale: Locale,
-    @Query("page") page?: string,
-    @Query("limit") limit?: string,
+    @Query() query: PaginationQueryDto,
   ) {
-    return this.orders.getClientOrders(
-      client.clientId,
-      page ? parseInt(page, 10) : undefined,
-      limit ? parseInt(limit, 10) : undefined,
-      locale,
-    );
+    return this.orders.getClientOrders(client.clientId, query.page, query.limit, locale);
   }
 
   @Get(":orderId")

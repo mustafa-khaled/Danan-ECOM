@@ -87,6 +87,8 @@ enum ActorType {
 
 model Client {
   id               String   @id @default(uuid())
+  /// Shareable 6-character identifier for transfers (e.g., "A7X9B2"). NOT the login credential.
+  houseId          String   @unique
   houseKey         String   @unique
   houseKeyPrefix   String
   displayName      String
@@ -278,6 +280,7 @@ model Order {
   items  OrderItem[]
 
   @@index([clientId, status])
+  @@index([clientId, placedAt(sort: Desc)])
   @@index([paymentReference])
   @@index([paymentStatus])
   @@index([fulfillmentStatus])

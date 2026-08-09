@@ -4,10 +4,12 @@ import {
   Get,
   Param,
   Post,
+  Query,
   Req,
   UseGuards,
 } from "@nestjs/common";
 import type { Request } from "express";
+import { TransferStatus } from "@dadan/db";
 import { TransfersService } from "./transfers.service";
 import { ClientGuard } from "../auth/guards/client.guard";
 import { CurrentClient } from "../auth/decorators/current-client.decorator";
@@ -62,8 +64,9 @@ export class ClientTransfersController {
   list(
     @CurrentClient() client: ClientSession,
     @CurrentLocale() locale: Locale,
+    @Query("status") status?: TransferStatus,
   ) {
-    return this.transfers.listClientTransfers(client.clientId, locale);
+    return this.transfers.listClientTransfers(client.clientId, locale, status);
   }
 
   @Get(":transferId")

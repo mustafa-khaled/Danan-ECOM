@@ -17,6 +17,7 @@ import { CurrentAdmin } from "../admin/auth/decorators/current-admin.decorator";
 import type { AdminSession } from "@dadan/types";
 import type { Request } from "express";
 import { getClientIp } from "../common/constants";
+import { PaginationQueryDto } from "../common/dto/pagination.dto";
 import { CreateClientDto } from "./dto/create-client.dto";
 import { UpdateClientDto } from "./dto/update-client.dto";
 import { VisibilityGroupsDto } from "./dto/visibility-groups.dto";
@@ -27,11 +28,8 @@ export class AdminClientsController {
   constructor(private readonly clients: ClientsService) {}
 
   @Get()
-  list(@Query("page") page?: string, @Query("limit") limit?: string) {
-    return this.clients.listClients(
-      page ? parseInt(page, 10) : undefined,
-      limit ? parseInt(limit, 10) : undefined,
-    );
+  list(@Query() query: PaginationQueryDto) {
+    return this.clients.listClients(query.page, query.limit);
   }
 
   @Post()

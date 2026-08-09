@@ -1,4 +1,4 @@
-import { IsEnum, IsString, MinLength } from "class-validator";
+import { IsEnum, IsString, Length, Matches } from "class-validator";
 import { TransferType } from "@dadan/db";
 
 export class InitiateTransferDto {
@@ -8,7 +8,12 @@ export class InitiateTransferDto {
   @IsEnum(TransferType)
   transferType!: TransferType;
 
+  /**
+   * Recipient's shareable house ID (6 alphanumeric characters).
+   * This is NOT the login credential (houseKey) - it's safe to share.
+   */
   @IsString()
-  @MinLength(1)
-  recipientHouseKey!: string;
+  @Length(6, 6, { message: "House ID must be exactly 6 characters" })
+  @Matches(/^[A-Z0-9]{6}$/i, { message: "House ID must contain only letters and numbers" })
+  recipientHouseId!: string;
 }

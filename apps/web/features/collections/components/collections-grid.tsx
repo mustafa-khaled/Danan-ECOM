@@ -1,12 +1,14 @@
 "use client";
 
 import { useState } from "react";
-import { useTranslations } from "next-intl";
+import { useTranslations, useLocale } from "next-intl";
 import Link from "next/link";
 import { PieceCard } from "@/components/ui/PieceCard";
 import { EmptyState } from "@/shared/components/feedback/empty-state";
 import { SectionHead } from "@/components/ui";
+import { formatPrice } from "@/shared/utils/format";
 import { OwnedPieceItem, SavedPieceItem } from "../types";
+import type { Locale } from "@/i18n/routing";
 
 interface CollectionsGridProps {
   ownedPieces?: OwnedPieceItem[];
@@ -21,6 +23,7 @@ export default function CollectionsGrid({
     "collection",
   );
   const t = useTranslations("myCollection");
+  const locale = useLocale() as Locale;
 
   const currentItems = activeTab === "collection" ? ownedPieces : savedPieces;
 
@@ -110,6 +113,9 @@ export default function CollectionsGrid({
                   const isLastOdd =
                     currentItems.length % 2 !== 0 &&
                     index === currentItems.length - 1;
+                  const formattedPrice = piece.price && piece.currency
+                    ? formatPrice(piece.price, piece.currency, locale)
+                    : piece.price;
                   return (
                     <Link
                       key={piece.id}
@@ -121,7 +127,7 @@ export default function CollectionsGrid({
                           id: piece.id,
                           name: piece.name,
                           collectionName: piece.collectionName,
-                          price: piece.price,
+                          price: formattedPrice,
                           imageUrl: piece.imageUrl,
                         }}
                         showExplore

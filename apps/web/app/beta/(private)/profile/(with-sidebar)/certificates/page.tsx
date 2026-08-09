@@ -19,13 +19,13 @@ export default async function CertificatesPage() {
         <EmptyState title={t("empty")} description={t("emptyDescription")} />
       ) : (
         <div className="grid grid-cols-2 md:grid-cols-3 gap-4 sm:gap-6">
-          {wardrobe.map((item, index) => {
+          {wardrobe.map((item) => {
             const issueDate = item?.ownershipHistory?.[0]?.acquiredAt
               ? new Date(item.ownershipHistory[0].acquiredAt).toLocaleDateString("en-US", {
                   month: "long",
                   year: "numeric",
                 })
-              : "MARCH 2026";
+              : null;
 
             return (
               <Link
@@ -35,14 +35,16 @@ export default async function CertificatesPage() {
                 style={{ backgroundColor: "var(--Contessa-50, #FBF7F7)" }}
               >
                 <h3 className="font-bold text-base sm:text-lg text-[#1E293B] tracking-tight">
-                  CERTIFICATE #{String(index + 1).padStart(3, "0")}
+                  {item.serialNumber}
                 </h3>
                 <p className="mt-2.5 text-xs sm:text-sm font-medium uppercase text-[#525866]">
                   {item.design.name}
                 </p>
-                <p className="mt-2 text-[11px] sm:text-xs uppercase text-[#667085]">
-                  ISSUED {issueDate.toUpperCase()}
-                </p>
+                {issueDate && (
+                  <p className="mt-2 text-[11px] sm:text-xs uppercase text-[#667085]">
+                    ISSUED {issueDate.toUpperCase()}
+                  </p>
+                )}
                 <div className="mt-4 flex items-center justify-between">
                   <span className="text-sm sm:text-base font-medium text-[#BC776E]">
                     {t("view")}

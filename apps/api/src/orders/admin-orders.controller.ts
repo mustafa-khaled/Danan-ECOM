@@ -15,6 +15,7 @@ import { AdminGuard } from "../admin/auth/guards/admin.guard";
 import { CurrentAdmin } from "../admin/auth/decorators/current-admin.decorator";
 import type { AdminSession } from "@dadan/types";
 import { getClientIp } from "../common/constants";
+import { PaginationQueryDto } from "../common/dto/pagination.dto";
 import { UpdateOrderStatusDto } from "./dto/update-order-status.dto";
 
 @Controller("admin/orders")
@@ -24,17 +25,11 @@ export class AdminOrdersController {
 
   @Get()
   list(
-    @Query("page") page?: string,
-    @Query("limit") limit?: string,
+    @Query() query: PaginationQueryDto,
     @Query("status") status?: OrderStatus,
     @Query("clientId") clientId?: string,
   ) {
-    return this.orders.listAdminOrders(
-      page ? parseInt(page, 10) : undefined,
-      limit ? parseInt(limit, 10) : undefined,
-      status,
-      clientId,
-    );
+    return this.orders.listAdminOrders(query.page, query.limit, status, clientId);
   }
 
   @Get(":id")

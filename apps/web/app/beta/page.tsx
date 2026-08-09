@@ -161,7 +161,7 @@ export default function AccessGatePage() {
           {/* Bottom navigation cards */}
           <div className="flex gap-4 mt-6 access-gate-animate-in-delayed-3 max-md:gap-3 max-sm:flex-col max-sm:gap-3">
             <Link
-              href="#"
+              href="/beta/pieces"
               className="flex items-center gap-3 justify-between flex-1 min-w-0 h-19 pt-3 pb-3 ps-3 pe-4 bg-[#BF7266] rounded-xl text-white no-underline transition-all duration-250 ease-in-out cursor-pointer hover:bg-[#b3685c] hover:-translate-y-px group max-sm:h-16"
             >
               <div className="w-13 h-13 rounded-xl overflow-hidden shrink-0 relative max-sm:w-10 max-sm:h-10">
@@ -193,7 +193,7 @@ export default function AccessGatePage() {
               </svg>
             </Link>
             <Link
-              href="#"
+              href="/beta/our-story"
               className="flex items-center gap-3 justify-between flex-1 min-w-0 h-19 pt-3 pb-3 ps-3 pe-4 bg-[#BF7266] rounded-xl text-white no-underline transition-all duration-250 ease-in-out cursor-pointer hover:bg-[#b3685c] hover:-translate-y-px group max-sm:h-16"
             >
               <div className="w-13 h-13 rounded-xl overflow-hidden shrink-0 relative max-sm:w-10 max-sm:h-10">

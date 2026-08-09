@@ -19,7 +19,7 @@ const accountNavItems: AccountNavItem[] = [
   { href: "/beta/profile", labelKey: "overview" },
   { href: "/beta/profile", labelKey: "personalInfo" },
   { href: "/beta/profile/wardrobe", labelKey: "myCollection" },
-  { href: "/beta/profile/wardrobe/certificates", labelKey: "certificates" },
+  { href: "/beta/profile/certificates", labelKey: "certificates" },
   { href: "/beta/saved", labelKey: "wishlist" },
 ];
 

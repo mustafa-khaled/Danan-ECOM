@@ -36,7 +36,7 @@ export class PiecesService {
     private readonly visibility: VisibilityService,
   ) {}
 
-  async getWardrobe(clientId: string, locale: Locale = "ar") {
+  async getWardrobe(clientId: string, locale: Locale = "ar", limit?: number) {
     const pieces = await this.prisma.db.piece.findMany({
       where: { currentOwnerId: clientId },
       include: {
@@ -56,39 +56,45 @@ export class PiecesService {
       orderBy: { updatedAt: "desc" },
     });
 
+    let sortedPieces = pieces
+      .map((p) => ({
+        id: p.id,
+        serialNumber: p.serialNumber,
+        status: p.status,
+        design: {
+          name: pickLocalized(locale, p.design.name, p.design.nameAr),
+          slug: p.design.slug,
+          images: p.design.imageUrls,
+          specifications: localizeSpecifications(
+            p.design.specifications,
+            locale,
+          ),
+          collection: pickLocalized(
+            locale,
+            p.design.collection.name,
+            p.design.collection.nameAr,
+          ),
+        },
+        certificate: p.certificates[0] ?? null,
+        acquiredAt: p.ownershipRecords[0]?.acquiredAt ?? p.registeredAt,
+      }))
+      .sort(
+        (a, b) =>
+          new Date(b.acquiredAt).getTime() - new Date(a.acquiredAt).getTime(),
+      );
+
+    if (limit && limit > 0) {
+      sortedPieces = sortedPieces.slice(0, limit);
+    }
+
     return Promise.all(
-      pieces
-        .map((p) => ({
-          id: p.id,
-          serialNumber: p.serialNumber,
-          status: p.status,
-          design: {
-            name: pickLocalized(locale, p.design.name, p.design.nameAr),
-            images: p.design.imageUrls,
-            specifications: localizeSpecifications(
-              p.design.specifications,
-              locale,
-            ),
-            collection: pickLocalized(
-              locale,
-              p.design.collection.name,
-              p.design.collection.nameAr,
-            ),
-          },
-          certificate: p.certificates[0] ?? null,
-          acquiredAt: p.ownershipRecords[0]?.acquiredAt ?? p.registeredAt,
-        }))
-        .sort(
-          (a, b) =>
-            new Date(b.acquiredAt).getTime() - new Date(a.acquiredAt).getTime(),
-        )
-        .map(async (entry) => ({
-          ...entry,
-          design: {
-            ...entry.design,
-            images: await this.storage.resolvePublicUrls(entry.design.images),
-          },
-        })),
+      sortedPieces.map(async (entry) => ({
+        ...entry,
+        design: {
+          ...entry.design,
+          images: await this.storage.resolvePublicUrls(entry.design.images),
+        },
+      })),
     );
   }
 
@@ -178,6 +184,40 @@ export class PiecesService {
         };
       }),
     );
+  }
+
+  /**
+   * Get combined collection data for a client in a single request.
+   * Returns both owned pieces and saved pieces with UI-ready format.
+   */
+  async getMyCollection(clientId: string, locale: Locale = "ar") {
+    const [owned, saved] = await Promise.all([
+      this.getWardrobe(clientId, locale),
+      this.getSavedPieces(clientId, locale),
+    ]);
+
+    return {
+      owned: owned.map((p) => ({
+        id: p.id,
+        serialNumber: p.serialNumber,
+        name: p.design.name,
+        slug: p.design.slug,
+        imageUrl: p.design.images[0] ?? null,
+        acquiredAt: p.acquiredAt,
+        collection: p.design.collection,
+      })),
+      saved: saved.map((s) => ({
+        id: s.piece.id,
+        serialNumber: s.piece.serialNumber,
+        name: s.piece.design.name,
+        slug: s.piece.design.slug,
+        imageUrl: s.piece.design.imageUrls[0] ?? null,
+        savedAt: s.savedAt,
+        collection: s.piece.design.collection.name,
+        price: s.piece.design.basePrice,
+        currency: s.piece.design.currency,
+      })),
+    };
   }
 
   async savePiece(clientId: string, clientGroups: string[], pieceId: string) {

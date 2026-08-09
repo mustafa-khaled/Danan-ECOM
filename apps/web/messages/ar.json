@@ -116,6 +116,13 @@
     "unsave": "إلغاء الحفظ",
     "addToCartError": "تعذرت الإضافة إلى السلة"
   },
+  "pieces": {
+    "title": "استكشف جميع القطع",
+    "subtitle": "اكتشف مجموعتنا الكاملة من قطع دادان الأصلية",
+    "empty": "لا توجد قطع متاحة",
+    "emptyDescription": "ستظهر القطع هنا عندما تكون متاحة.",
+    "backToHome": "العودة للرئيسية"
+  },
   "wardrobe": {
     "title": "خزانتك",
     "owned": "القطع المملوكة",
@@ -145,8 +152,9 @@
     "gift": "هدية",
     "sale": "بيع",
     "inheritance": "إرث",
-    "recipientHouseKey": "مفتاح بيت المستلم",
-    "initiateDescription": "قم بتحويل {pieceName} ({serialNumber}) إلى عميل آخر من دادان. يجب على المستلم مشاركة مفتاح بيته معك. يؤكد الطرفان الموافقة، ثم تتواصل دادان معهما وتوافق على التحويل.",
+    "recipientHouseId": "معرّف بيت المستلم",
+    "recipientHouseIdPlaceholder": "مثال: A7X9B2",
+    "initiateDescription": "قم بتحويل {pieceName} ({serialNumber}) إلى عميل آخر من دادان. يجب على المستلم مشاركة معرّف بيته معك. يؤكد الطرفان الموافقة، ثم تتواصل دادان معهما وتوافق على التحويل.",
     "initiateTransfer": "بدء التحويل",
     "initiateError": "تعذر بدء التحويل",
     "confirmAsSender": "تأكيد كطرف مُحوِّل",
@@ -170,6 +178,8 @@
     "memberSince": "عضو منذ {date}",
     "houseMembership": "عضوية البيت",
     "houseKey": "مفتاح البيت",
+    "houseId": "معرف البيت (للتحويلات)",
+    "houseIdHelperText": "شارك هذا المعرف مع الآخرين لاستلام تحويلات القطع",
     "name": "الاسم",
     "email": "البريد الإلكتروني",
     "phone": "الهاتف",
@@ -191,7 +201,7 @@
     "noSavedPieces": "لا توجد قطع محفوظة",
     "noOwnedDescription": "لم تقم بتسجيل أي قطع في مجموعتك بعد.",
     "noSavedDescription": "قائمة أمنياتك فارغة حالياً.",
-    "ownedSinceFallback": "مملوك منذ: يونيو 2022"
+    "ownedSinceFallback": "مملوك"
   },
   "cart": {
     "title": "السلة",

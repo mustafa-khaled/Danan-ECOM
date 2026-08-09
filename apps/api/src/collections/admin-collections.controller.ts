@@ -19,6 +19,7 @@ import { AdminGuard } from "../admin/auth/guards/admin.guard";
 import { CurrentAdmin } from "../admin/auth/decorators/current-admin.decorator";
 import type { AdminSession } from "@dadan/types";
 import { getClientIp } from "../common/constants";
+import { PaginationQueryDto } from "../common/dto/pagination.dto";
 import { CreateCollectionDto } from "./dto/create-collection.dto";
 import { CreateDesignDto } from "./dto/create-design.dto";
 import { UpdateCollectionDto } from "./dto/update-collection.dto";
@@ -31,14 +32,8 @@ export class AdminCollectionsController {
   constructor(private readonly collections: CollectionsService) {}
 
   @Get("collections")
-  listCollections(
-    @Query("page") page?: string,
-    @Query("limit") limit?: string,
-  ) {
-    return this.collections.listCollectionsAdmin(
-      page ? parseInt(page, 10) : undefined,
-      limit ? parseInt(limit, 10) : undefined,
-    );
+  listCollections(@Query() query: PaginationQueryDto) {
+    return this.collections.listCollectionsAdmin(query.page, query.limit);
   }
 
   @Get("collections/:id")
@@ -48,15 +43,10 @@ export class AdminCollectionsController {
 
   @Get("designs")
   listDesigns(
-    @Query("page") page?: string,
-    @Query("limit") limit?: string,
+    @Query() query: PaginationQueryDto,
     @Query("collectionId") collectionId?: string,
   ) {
-    return this.collections.listDesignsAdmin(
-      page ? parseInt(page, 10) : undefined,
-      limit ? parseInt(limit, 10) : undefined,
-      collectionId,
-    );
+    return this.collections.listDesignsAdmin(query.page, query.limit, collectionId);
   }
 
   @Get("designs/:id")

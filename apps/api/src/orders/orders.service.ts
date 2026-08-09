@@ -244,21 +244,30 @@ export class OrdersService {
       this.prisma.db.order.count({ where: { clientId } }),
     ]);
 
+    // Collect all unique image URLs across all order items for batched resolution
+    const allImageUrls: (string | null | undefined)[] = [];
+    for (const order of items) {
+      for (const item of order.items) {
+        allImageUrls.push(...item.design.imageUrls);
+      }
+    }
+
+    // Resolve all URLs in a single batch
+    const urlMap = await this.storage.resolvePublicUrlsBatch(allImageUrls);
+
     return {
-      items: await Promise.all(
-        items.map(async (order) => ({
-          ...order,
-          items: await Promise.all(
-            order.items.map(async (item) => ({
-              ...item,
-              design: {
-                ...localizeDesign(item.design, locale),
-                imageUrls: await this.storage.resolvePublicUrls(item.design.imageUrls),
-              },
-            })),
-          ),
+      items: items.map((order) => ({
+        ...order,
+        items: order.items.map((item) => ({
+          ...item,
+          design: {
+            ...localizeDesign(item.design, locale),
+            imageUrls: item.design.imageUrls
+              .map((url) => urlMap.get(url))
+              .filter((url): url is string => url !== undefined),
+          },
         })),
-      ),
+      })),
       total,
       page: p,
       limit: l,
@@ -280,17 +289,24 @@ export class OrdersService {
     });
     if (!order) throw new NotFoundException("errors.ORDER_NOT_FOUND");
 
+    // Collect all image URLs for batched resolution
+    const allImageUrls: (string | null | undefined)[] = [];
+    for (const item of order.items) {
+      allImageUrls.push(...item.design.imageUrls);
+    }
+    const urlMap = await this.storage.resolvePublicUrlsBatch(allImageUrls);
+
     return {
       ...order,
-      items: await Promise.all(
-        order.items.map(async (item) => ({
-          ...item,
-          design: {
-            ...localizeDesign(item.design, locale),
-            imageUrls: await this.storage.resolvePublicUrls(item.design.imageUrls),
-          },
-        })),
-      ),
+      items: order.items.map((item) => ({
+        ...item,
+        design: {
+          ...localizeDesign(item.design, locale),
+          imageUrls: item.design.imageUrls
+            .map((url) => urlMap.get(url))
+            .filter((url): url is string => url !== undefined),
+        },
+      })),
     };
   }
 

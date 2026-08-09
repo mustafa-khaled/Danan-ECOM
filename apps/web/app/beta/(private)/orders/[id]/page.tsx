@@ -9,6 +9,7 @@ import { formatPrice } from "@/shared/utils/format";
 import { getSessionCookieHeader } from "@/features/auth/server/session";
 import type { Locale } from "@/i18n/routing";
 import Container from "@/components/ui/container";
+import { OrderCancelButton } from "@/components/order-cancel-button";
 
 interface OrderDetailPageProps {
   params: Promise<{ id: string }>;
@@ -55,7 +56,10 @@ export default async function OrderDetailPage({
           title="Order Details"
           subtitle={`Placed ${new Date(order.placedAt).toLocaleString()}`}
         />
-        <StatusPill status={order.status} />
+        <div className="flex items-center gap-4">
+          <StatusPill status={order.status} />
+          <OrderCancelButton orderId={order.id} status={order.status} />
+        </div>
       </header>
 
       <div className="grid gap-8 lg:grid-cols-2">

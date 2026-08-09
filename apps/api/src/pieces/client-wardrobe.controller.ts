@@ -2,6 +2,7 @@ import {
   Controller,
   Get,
   Param,
+  Query,
   UseGuards,
 } from "@nestjs/common";
 import { PiecesService } from "./pieces.service";
@@ -19,8 +20,18 @@ export class ClientWardrobeController {
   list(
     @CurrentClient() client: ClientSession,
     @CurrentLocale() locale: Locale,
+    @Query("limit") limit?: string,
   ) {
-    return this.pieces.getWardrobe(client.clientId, locale);
+    const limitNum = limit ? parseInt(limit, 10) : undefined;
+    return this.pieces.getWardrobe(client.clientId, locale, limitNum);
+  }
+
+  @Get("my-collection")
+  getMyCollection(
+    @CurrentClient() client: ClientSession,
+    @CurrentLocale() locale: Locale,
+  ) {
+    return this.pieces.getMyCollection(client.clientId, locale);
   }
 
   @Get(":pieceId")

@@ -16,6 +16,7 @@ import { Roles } from "../admin/auth/decorators/roles.decorator";
 import { CurrentAdmin } from "../admin/auth/decorators/current-admin.decorator";
 import type { AdminSession } from "@dadan/types";
 import { getClientIp } from "../common/constants";
+import { PaginationQueryDto } from "../common/dto/pagination.dto";
 import { ApproveTransferDto, RejectTransferDto } from "./dto/transfer-action.dto";
 
 @Controller("admin/transfers")
@@ -24,16 +25,8 @@ export class AdminTransfersController {
   constructor(private readonly transfers: TransfersService) {}
 
   @Get()
-  list(
-    @Query("page") page?: string,
-    @Query("limit") limit?: string,
-    @Query("status") status?: TransferStatus,
-  ) {
-    return this.transfers.listAdminTransfers(
-      page ? parseInt(page, 10) : undefined,
-      limit ? parseInt(limit, 10) : undefined,
-      status,
-    );
+  list(@Query() query: PaginationQueryDto, @Query("status") status?: TransferStatus) {
+    return this.transfers.listAdminTransfers(query.page, query.limit, status);
   }
 
   @Get(":id")

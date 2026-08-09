@@ -37,5 +37,6 @@ export interface SavedPieceItem {
   imageUrl?: string | null;
   collectionName?: string;
   price?: string;
+  currency?: string;
   slug?: string;
 }

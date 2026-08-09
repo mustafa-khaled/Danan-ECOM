@@ -37,7 +37,7 @@ export function TransfersList({
   const formatStartedDate = (dateStr: string) => {
     try {
       const date = new Date(dateStr);
-      if (isNaN(date.getTime())) return "STARTED YESTERDAY";
+      if (isNaN(date.getTime())) return "STARTED --";
       const now = new Date();
       const diffTime = Math.abs(now.getTime() - date.getTime());
       const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
@@ -45,7 +45,7 @@ export function TransfersList({
       if (diffDays === 1) return "STARTED YESTERDAY";
       return `STARTED ${date.toLocaleDateString("en-US", { day: "numeric", month: "short", year: "numeric" }).toUpperCase()}`;
     } catch {
-      return "STARTED YESTERDAY";
+      return "STARTED --";
     }
   };
 
@@ -116,7 +116,7 @@ export function TransfersList({
             return (
               <Link
                 key={transfer.id}
-                href={`/beta/transfers/${transfer.id}`}
+                href={`/beta/profile/transfers/${transfer.id}`}
                 className="group block rounded-xl sm:rounded-2xl p-4 sm:p-5 transition-shadow hover:shadow-sm"
                 style={{ backgroundColor: "var(--Contessa-50, #FBF7F7)" }}
               >

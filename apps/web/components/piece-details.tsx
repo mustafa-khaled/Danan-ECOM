@@ -4,8 +4,6 @@ import type { Locale } from "@/i18n/routing";
 import { DesignActions } from "./design-actions";
 import { WardrobeActions } from "./wardrobe-actions";
 import { formatPrice } from "@/shared/utils/format";
-import { fetchSaved } from "@/features/saved";
-import { getSessionCookieHeader } from "@/features/auth/server/session";
 import type { DesignDetail } from "@/features/pieces";
 
 interface WardrobeInfo {
@@ -28,10 +26,7 @@ export default async function PieceDetails({
 }: PieceDetailsProps) {
   const t = await getTranslations("piece");
   const locale = (await getLocale()) as Locale;
-  const cookie = await getSessionCookieHeader();
 
-  const saved = await fetchSaved(cookie);
-  const savedIds = new Set(saved.map((s) => s.piece.id));
   const firstAvailable = design.availablePieces?.[0];
 
   return (
@@ -117,7 +112,7 @@ export default async function PieceDetails({
             ) : (design.availablePieces?.length ?? 0) > 0 && firstAvailable ? (
               <DesignActions
                 pieceId={firstAvailable.id}
-                initialSaved={savedIds.has(firstAvailable.id)}
+                initialSaved={firstAvailable.isSaved}
               />
             ) : (
               <p className="text-sm text-gray-500">

@@ -48,6 +48,7 @@ export interface SeedDesign {
 
 export interface SeedClient {
   key: ClientKey;
+  houseId: string;
   houseKeyPlain: string;
   displayName: string;
   email: string;
@@ -319,6 +320,7 @@ export const ALL_REFERENCED_ASSETS: string[] = [
 export const CLIENTS: SeedClient[] = [
   {
     key: "amira",
+    houseId: "AMR2K9",
     houseKeyPlain: "dadan-vip-key-001",
     displayName: "أميرة الراشد",
     email: "amira@example.com",
@@ -327,6 +329,7 @@ export const CLIENTS: SeedClient[] = [
   },
   {
     key: "khalid",
+    houseId: "KHL3M7",
     houseKeyPlain: "dadan-key-002",
     displayName: "خالد الفارسي",
     email: "khalid@example.com",
@@ -335,6 +338,7 @@ export const CLIENTS: SeedClient[] = [
   },
   {
     key: "layla",
+    houseId: "LYL4N8",
     houseKeyPlain: "dadan-key-003",
     displayName: "Layla Al-Mutairi",
     email: "layla@example.com",

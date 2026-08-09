@@ -109,6 +109,7 @@ async function main() {
     for (const c of CLIENTS) {
       const client = await tx.client.create({
         data: {
+          houseId: c.houseId,
           houseKey: houseKeyHashes[c.key],
           houseKeyPrefix: c.houseKeyPlain.slice(0, 4),
           displayName: c.displayName,

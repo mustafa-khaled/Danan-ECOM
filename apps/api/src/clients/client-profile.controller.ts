@@ -21,6 +21,11 @@ export class ClientProfileController {
     return this.clients.getProfile(client.clientId);
   }
 
+  @Get("summary")
+  getProfileSummary(@CurrentClient() client: ClientSession) {
+    return this.clients.getProfileSummary(client.clientId);
+  }
+
   @Patch()
   updateProfile(
     @CurrentClient() client: ClientSession,

@@ -133,6 +133,7 @@ export class CollectionsService {
     slug: string,
     clientGroups: string[],
     locale: Locale = "ar",
+    clientId?: string,
   ) {
     const design = await this.prisma.db.design.findUnique({
       where: { slug },
@@ -151,6 +152,19 @@ export class CollectionsService {
       !this.visibility.canAccess(clientGroups, design.collection.visibilityGroups)
     ) {
       throw new NotFoundException("errors.DESIGN_NOT_FOUND");
+    }
+
+    // Get saved piece IDs for this client (if authenticated)
+    let savedPieceIds: Set<string> = new Set();
+    if (clientId) {
+      const savedPieces = await this.prisma.db.savedPiece.findMany({
+        where: {
+          clientId,
+          pieceId: { in: design.pieces.map((p) => p.id) },
+        },
+        select: { pieceId: true },
+      });
+      savedPieceIds = new Set(savedPieces.map((s) => s.pieceId));
     }
 
     return {
@@ -179,6 +193,7 @@ export class CollectionsService {
         id: p.id,
         serialNumber: p.serialNumber,
         status: p.status,
+        isSaved: savedPieceIds.has(p.id),
       })),
     };
   }

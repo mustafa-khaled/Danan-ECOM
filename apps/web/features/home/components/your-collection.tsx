@@ -14,13 +14,27 @@ interface DisplayPiece {
   href: string;
 }
 
+function formatAcquiredDate(dateStr: string): string {
+  try {
+    const d = new Date(dateStr);
+    if (!isNaN(d.getTime())) {
+      return d
+        .toLocaleDateString("en-US", { month: "long", year: "numeric" })
+        .toUpperCase();
+    }
+  } catch {
+    // Fallback empty
+  }
+  return "";
+}
+
 export default async function YourCollection() {
   const cookie = await getSessionCookieHeader();
   const t = await getTranslations("home");
 
   let wardrobe: WardrobePiece[] = [];
   try {
-    wardrobe = await fetchWardrobe(cookie);
+    wardrobe = await fetchWardrobe(cookie, { limit: 3 });
   } catch {
     wardrobe = [];
   }
@@ -29,30 +43,13 @@ export default async function YourCollection() {
     return null;
   }
 
-  const items: DisplayPiece[] = wardrobe.slice(0, 3).map((item) => {
-    const acquiredDate = item.ownershipHistory?.[0]?.acquiredAt;
-    let formattedDate = "";
-    if (acquiredDate) {
-      try {
-        const d = new Date(acquiredDate);
-        if (!isNaN(d.getTime())) {
-          formattedDate = d
-            .toLocaleDateString("en-US", { month: "long", year: "numeric" })
-            .toUpperCase();
-        }
-      } catch {
-        // Fallback empty
-      }
-    }
-
-    return {
-      id: item.id,
-      name: item.design?.name || "",
-      imageUrl: item.design?.images?.[0] || "",
-      ownedSince: formattedDate,
-      href: `/beta/profile/wardrobe/${item.id}`,
-    };
-  });
+  const items: DisplayPiece[] = wardrobe.map((item) => ({
+    id: item.id,
+    name: item.design?.name || "",
+    imageUrl: item.design?.images?.[0] || "",
+    ownedSince: formatAcquiredDate(item.acquiredAt),
+    href: `/beta/profile/wardrobe/${item.id}`,
+  }));
 
   return (
     <Container>

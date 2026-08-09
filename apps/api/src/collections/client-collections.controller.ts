@@ -2,6 +2,7 @@ import { Controller, Get, Param, Query, UseGuards } from "@nestjs/common";
 import { CollectionsService } from "./collections.service";
 import { ClientGuard } from "../auth/guards/client.guard";
 import { CurrentClient } from "../auth/decorators/current-client.decorator";
+import { PaginationQueryDto } from "../common/dto/pagination.dto";
 import { CurrentLocale } from "../common/i18n/locale";
 import type { ClientSession, Locale } from "@dadan/types";
 
@@ -26,14 +27,13 @@ export class ClientCollectionsController {
     @CurrentClient() client: ClientSession,
     @CurrentLocale() locale: Locale,
     @Param("slug") slug: string,
-    @Query("page") page?: string,
-    @Query("limit") limit?: string,
+    @Query() query: PaginationQueryDto,
   ) {
     return this.collections.getCollectionBySlug(
       slug,
       client.visibilityGroups,
-      page ? parseInt(page, 10) : undefined,
-      limit ? parseInt(limit, 10) : undefined,
+      query.page,
+      query.limit,
       locale,
     );
   }
@@ -48,6 +48,7 @@ export class ClientCollectionsController {
       slug,
       client.visibilityGroups,
       locale,
+      client.clientId,
     );
   }
 }

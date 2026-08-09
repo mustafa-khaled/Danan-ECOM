@@ -18,5 +18,6 @@ export interface DesignDetail {
     id: string;
     serialNumber: string;
     status: string;
+    isSaved: boolean;
   }>;
 }

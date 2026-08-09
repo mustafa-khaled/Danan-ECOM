@@ -7,6 +7,8 @@ export const envSchema = z
       .default("development"),
     PORT: z.coerce.number().int().positive().default(4000),
     DATABASE_URL: z.string().min(1),
+    /** Statement timeout in milliseconds. Prevents runaway queries. Default: 30000 (30s). */
+    DATABASE_STATEMENT_TIMEOUT_MS: z.coerce.number().int().min(1000).max(300_000).default(30_000),
     REDIS_URL: z.string().min(1),
     JWT_SECRET: z.string().min(32),
     HOUSE_KEY_SALT: z.coerce.number().int().min(4).max(20).default(12),

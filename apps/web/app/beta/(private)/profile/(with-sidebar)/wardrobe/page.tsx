@@ -36,7 +36,7 @@ export default async function WardrobePage() {
                   collectionName: item.design.collection,
                   subtitle: item?.ownershipHistory?.[0]?.acquiredAt
                     ? `OWNED SINCE: ${new Date(item?.ownershipHistory?.[0]?.acquiredAt).toLocaleDateString("en-US", { month: "long", year: "numeric" }).toUpperCase()}`
-                    : "OWNED SINCE: JUNE 2022",
+                    : undefined,
                 }}
                 showExplore={true}
               />

@@ -37,7 +37,7 @@ export default async function TransferDetailPage({ params }: TransferDetailPageP
       <nav aria-label="Breadcrumb" className="mb-6 text-xs tracking-[0.12em] uppercase">
         <ol className="flex flex-wrap items-center gap-2 text-[var(--color-text-muted)]">
           <li>
-            <Link href="/beta/transfers" className="hover:text-[var(--color-accent)]">
+            <Link href="/beta/profile/transfers" className="hover:text-[var(--color-accent)]">
               Transfers
             </Link>
           </li>

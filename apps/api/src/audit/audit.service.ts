@@ -15,13 +15,15 @@ export class AuditService {
     metadata?: Prisma.InputJsonValue;
     ipAddress?: string;
   }) {
-    const { ipAddress, ...rest } = params;
     return this.prisma.db.auditLog.create({
       data: {
-        ...rest,
-        metadata: ipAddress
-          ? { ...(params.metadata as object), ipAddress }
-          : params.metadata,
+        actorType: params.actorType,
+        actorId: params.actorId,
+        action: params.action,
+        targetType: params.targetType,
+        targetId: params.targetId,
+        metadata: params.metadata,
+        ipAddress: params.ipAddress,
       },
     });
   }

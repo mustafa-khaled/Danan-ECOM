@@ -36,9 +36,9 @@ export function TransferInitiate({
     event.preventDefault();
 
     const form = new FormData(event.currentTarget);
-    const recipientHouseKey = String(
-      form.get("recipientHouseKey") ?? "",
-    ).trim();
+    const recipientHouseId = String(
+      form.get("recipientHouseId") ?? "",
+    ).trim().toUpperCase();
     const transferType = String(form.get("transferType") ?? "GIFT") as
       | "SALE"
       | "GIFT"
@@ -48,9 +48,9 @@ export function TransferInitiate({
       const result = await initiateTransfer({
         pieceId,
         transferType,
-        recipientHouseKey,
+        recipientHouseId,
       });
-      router.push(`/beta/transfers/${result.transferId}`);
+      router.push(`/beta/profile/transfers/${result.transferId}`);
     } catch {
       /* error is rendered via the mutation's `error` state */
     }
@@ -106,16 +106,17 @@ export function TransferInitiate({
 
         <label className="block space-y-1.5">
           <span className="block text-xs font-semibold text-[#2D2321]">
-            {/* House Id not House Key */}
-            {t("recipientHouseKey")}
+            {t("recipientHouseId")}
           </span>
           <input
-            name="recipientHouseKey"
+            name="recipientHouseId"
             type="text"
             required
             autoComplete="off"
-            placeholder="Recipient House ID or Email"
-            className="h-11 w-full rounded-[2px] border border-gray-200 bg-gray-50 px-3 text-sm text-[#2D2321] placeholder:text-gray-400 focus:border-[#4CBEAE] focus:bg-white focus:outline-none"
+            maxLength={6}
+            pattern="[A-Za-z0-9]{6}"
+            placeholder={t("recipientHouseIdPlaceholder")}
+            className="h-11 w-full rounded-[2px] border border-gray-200 bg-gray-50 px-3 text-sm uppercase text-[#2D2321] placeholder:text-gray-400 placeholder:normal-case focus:border-[#4CBEAE] focus:bg-white focus:outline-none"
           />
         </label>
 

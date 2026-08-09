@@ -5,6 +5,7 @@ import {
   getSessionCookieHeader,
   requireClientSession,
 } from "@/features/auth/server/session";
+import { HouseIdDisplay } from "@/components/house-id-display";
 
 export default async function ProfilePage() {
   const session = await requireClientSession();
@@ -40,7 +41,16 @@ export default async function ProfilePage() {
         <h3 className="mb-4 font-english text-xl text-[#1D1D1D] font-semibold">
           {t("houseMembership")}
         </h3>
-        <p className="text-sm text-[#52525B]">{t("houseKey")}: ••••••••</p>
+        <div className="space-y-4">
+          <p className="text-sm text-[#52525B]">{t("houseKey")}: ••••••••</p>
+          {profile?.houseId && (
+            <HouseIdDisplay
+              houseId={profile.houseId}
+              label={t("houseId")}
+              helperText={t("houseIdHelperText")}
+            />
+          )}
+        </div>
       </section>
     </div>
   );

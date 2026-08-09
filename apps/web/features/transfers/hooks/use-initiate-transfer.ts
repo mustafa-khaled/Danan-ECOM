@@ -14,7 +14,7 @@ export function useInitiateTransfer() {
     mutationFn: (body: {
       pieceId: string;
       transferType: "SALE" | "GIFT" | "INHERITANCE";
-      recipientHouseKey: string;
+      recipientHouseId: string;
     }) => initiateTransferApi(body),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: transfersKeys.all });

@@ -15,6 +15,7 @@ import { AdminGuard } from "../admin/auth/guards/admin.guard";
 import { CurrentAdmin } from "../admin/auth/decorators/current-admin.decorator";
 import type { AdminSession } from "@dadan/types";
 import { getClientIp } from "../common/constants";
+import { PaginationQueryDto } from "../common/dto/pagination.dto";
 import { RegisterPieceDto } from "./dto/register-piece.dto";
 import { UpdatePieceDto } from "./dto/update-piece.dto";
 import { AssignPieceDto } from "./dto/assign-piece.dto";
@@ -34,11 +35,8 @@ export class AdminPiecesController {
   }
 
   @Get()
-  list(@Query("page") page?: string, @Query("limit") limit?: string) {
-    return this.pieces.listPieces(
-      page ? parseInt(page, 10) : undefined,
-      limit ? parseInt(limit, 10) : undefined,
-    );
+  list(@Query() query: PaginationQueryDto) {
+    return this.pieces.listPieces(query.page, query.limit);
   }
 
   @Get(":id")

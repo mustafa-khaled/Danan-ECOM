@@ -1,30 +1,21 @@
 import Container from "@/components/ui/container";
 import Link from "next/link";
-import {
-  getSessionCookieHeader,
-  requireClientSession,
-} from "@/features/auth/server/session";
-import { fetchWardrobe } from "@/features/wardrobe";
-import { fetchTransfers } from "@/features/transfers";
+import { getSessionCookieHeader } from "@/features/auth/server/session";
+import { fetchProfileSummary } from "@/features/profile";
 
 export default async function ProfileInformation() {
-  const session = await requireClientSession().catch(() => null);
   const cookie = await getSessionCookieHeader().catch(() => "");
+  const summary = await fetchProfileSummary(cookie).catch(() => null);
 
-  const [wardrobe, transfers] = await Promise.all([
-    fetchWardrobe(cookie).catch(() => []),
-    fetchTransfers(cookie).catch(() => []),
-  ]);
+  if (!summary) {
+    return null;
+  }
 
-  // const profile = await fetchProfile(cookie);
-
-  const displayName = session?.displayName || "Ahmed Gad";
-  const memberSinceYear = "2026";
-  const ownedCount = wardrobe.length;
-  const certificatesCount = wardrobe.length;
-  const pendingTransfersCount = transfers.filter(
-    (t) => t.status === "PENDING",
-  ).length;
+  const displayName = summary.displayName;
+  const memberSinceYear = new Date(summary.memberSince).getFullYear().toString();
+  const ownedCount = summary.ownedPiecesCount;
+  const certificatesCount = summary.certificatesCount;
+  const pendingTransfersCount = summary.pendingTransfersCount;
 
   return (
     <section className="my-6 md:my-8">
@@ -49,14 +40,14 @@ export default async function ProfileInformation() {
               {ownedCount} Owned {ownedCount === 1 ? "Piece" : "Pieces"}
             </Link>
             <Link
-              href="/beta/profile/wardrobe/certificates"
+              href="/beta/profile/certificates"
               className="hover:text-black transition-colors"
             >
               {certificatesCount}{" "}
               {certificatesCount === 1 ? "Certificate" : "Certificates"}
             </Link>
             <Link
-              href="/beta/transfers"
+              href="/beta/profile/transfers"
               className="hover:text-black transition-colors"
             >
               {pendingTransfersCount} Pending{" "}
@@ -73,14 +64,14 @@ export default async function ProfileInformation() {
               {ownedCount} Owned {ownedCount === 1 ? "Piece" : "Pieces"}
             </Link>
             <Link
-              href="/beta/profile/wardrobe/certificates"
+              href="/beta/profile/certificates"
               className="hover:text-black transition-colors text-center"
             >
               {certificatesCount}{" "}
               {certificatesCount === 1 ? "Certificate" : "Certificates"}
             </Link>
             <Link
-              href="/beta/transfers"
+              href="/beta/profile/transfers"
               className="hover:text-black transition-colors text-center"
             >
               {pendingTransfersCount} Pending{" "}

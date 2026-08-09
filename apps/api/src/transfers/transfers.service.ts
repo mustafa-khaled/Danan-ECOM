@@ -6,7 +6,6 @@ import {
   Injectable,
   Logger,
   NotFoundException,
-  UnauthorizedException,
 } from "@nestjs/common";
 import { InjectQueue } from "@nestjs/bullmq";
 import { Queue } from "bullmq";
@@ -21,17 +20,16 @@ import {
 import type { Locale } from "@dadan/types";
 import { canTransitionTransfer, maskDisplayName } from "@dadan/utils";
 import { localizeDesign, pickLocalized } from "../common/i18n/localize";
-import { AuthService } from "../auth/auth.service";
 import { AuditService } from "../audit/audit.service";
 import { CERTIFICATE_QUEUE } from "../certificates/jobs/certificate-job.processor";
 import type { GenerateCertificateJobData } from "../certificates/jobs/certificate-job.processor";
+import { ClientsService } from "../clients/clients.service";
 import { NotificationsService } from "../notifications/notifications.service";
 import { PrismaService } from "../prisma/prisma.service";
 import { RedisService } from "../redis/redis.service";
 import { StorageService } from "../storage/storage.service";
 import {
   paginationParams,
-  AUTH_FAILURE_MESSAGE,
   RATE_LIMIT_MAX,
   RATE_LIMIT_WINDOW_SECONDS,
 } from "../common/constants";
@@ -42,7 +40,7 @@ export class TransfersService {
 
   constructor(
     private readonly prisma: PrismaService,
-    private readonly auth: AuthService,
+    private readonly clients: ClientsService,
     private readonly audit: AuditService,
     @InjectQueue(CERTIFICATE_QUEUE) private readonly certificateQueue: Queue<GenerateCertificateJobData>,
     private readonly notifications: NotificationsService,
@@ -55,7 +53,7 @@ export class TransfersService {
     data: {
       pieceId: string;
       transferType: TransferType;
-      recipientHouseKey: string;
+      recipientHouseId: string;
     },
     ipAddress?: string,
     locale: Locale = "ar",
@@ -77,12 +75,16 @@ export class TransfersService {
     });
     if (!piece) throw new NotFoundException("errors.PIECE_NOT_FOUND");
 
-    const recipient = await this.auth.findClientByHouseKey(
-      data.recipientHouseKey,
-      clientId,
-    );
+    // Find recipient by their shareable house ID (NOT the login credential)
+    const recipient = await this.clients.findClientByHouseId(data.recipientHouseId);
     if (!recipient) {
-      throw new UnauthorizedException(AUTH_FAILURE_MESSAGE);
+      throw new NotFoundException("errors.RECIPIENT_NOT_FOUND");
+    }
+    if (!recipient.isActive) {
+      throw new BadRequestException("errors.RECIPIENT_INACTIVE");
+    }
+    if (recipient.id === clientId) {
+      throw new BadRequestException("errors.CANNOT_TRANSFER_TO_SELF");
     }
 
     const transfer = await this.prisma.db.$transaction(
@@ -346,10 +348,15 @@ export class TransfersService {
     return updated;
   }
 
-  async listClientTransfers(clientId: string, locale: Locale = "ar") {
+  async listClientTransfers(
+    clientId: string,
+    locale: Locale = "ar",
+    status?: TransferStatus,
+  ) {
     const transfers = await this.prisma.db.transferRequest.findMany({
       where: {
         OR: [{ fromClientId: clientId }, { toClientId: clientId }],
+        ...(status ? { status } : {}),
       },
       include: {
         piece: { include: { design: true } },

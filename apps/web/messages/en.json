@@ -116,6 +116,13 @@
     "unsave": "Unsave",
     "addToCartError": "Could not add to cart"
   },
+  "pieces": {
+    "title": "Explore All Pieces",
+    "subtitle": "Discover our complete collection of authentic DADAN pieces",
+    "empty": "No pieces available",
+    "emptyDescription": "Pieces will appear here when available.",
+    "backToHome": "Back to Home"
+  },
   "wardrobe": {
     "title": "Your Wardrobe",
     "owned": "Owned Pieces",
@@ -145,8 +152,9 @@
     "gift": "Gift",
     "sale": "Sale",
     "inheritance": "Inheritance",
-    "recipientHouseKey": "Recipient House Key",
-    "initiateDescription": "Transfer {pieceName} ({serialNumber}) to another DADAN client. The recipient must share their House Key with you. Both parties confirm, then DADAN reviews and approves the transfer.",
+    "recipientHouseId": "Recipient House ID",
+    "recipientHouseIdPlaceholder": "e.g. A7X9B2",
+    "initiateDescription": "Transfer {pieceName} ({serialNumber}) to another DADAN client. The recipient must share their House ID with you. Both parties confirm, then DADAN reviews and approves the transfer.",
     "initiateTransfer": "Initiate Transfer",
     "initiateError": "Transfer could not be initiated",
     "confirmAsSender": "Confirm as Sender",
@@ -170,6 +178,8 @@
     "memberSince": "Member since {date}",
     "houseMembership": "House Membership",
     "houseKey": "House Key",
+    "houseId": "House ID (for transfers)",
+    "houseIdHelperText": "Share this ID with others to receive piece transfers",
     "name": "Name",
     "email": "Email",
     "phone": "Phone",
@@ -191,7 +201,7 @@
     "noSavedPieces": "No Saved Pieces",
     "noOwnedDescription": "You haven't registered any pieces in your collection yet.",
     "noSavedDescription": "Your wish list is currently empty.",
-    "ownedSinceFallback": "OWNED SINCE: JUNE 2022"
+    "ownedSinceFallback": "OWNED"
   },
   "cart": {
     "title": "Cart",

@@ -26,11 +26,43 @@ export class ClientsService {
     return safe;
   }
 
+  /**
+   * Generate a 6-character alphanumeric house ID for sharing in transfers.
+   * Excludes confusing characters: 0, O, 1, I, L
+   */
+  generateHouseId(): string {
+    const chars = "ABCDEFGHJKMNPQRSTUVWXYZ23456789";
+    let result = "";
+    for (let i = 0; i < 6; i++) {
+      result += chars.charAt(Math.floor(Math.random() * chars.length));
+    }
+    return result;
+  }
+
+  /**
+   * Generate a unique house ID, retrying if collision occurs.
+   */
+  private async generateUniqueHouseId(): Promise<string> {
+    const maxAttempts = 10;
+    for (let attempt = 0; attempt < maxAttempts; attempt++) {
+      const houseId = this.generateHouseId();
+      const existing = await this.prisma.db.client.findUnique({
+        where: { houseId },
+        select: { id: true },
+      });
+      if (!existing) {
+        return houseId;
+      }
+    }
+    throw new Error("Failed to generate unique house ID after maximum attempts");
+  }
+
   async getProfile(clientId: string) {
     const client = await this.prisma.db.client.findUnique({
       where: { id: clientId },
       select: {
         id: true,
+        houseId: true,
         displayName: true,
         email: true,
         phone: true,
@@ -43,12 +75,58 @@ export class ClientsService {
     return client;
   }
 
+  /**
+   * Get profile summary with aggregated counts for dashboard display.
+   * Single optimized query instead of multiple frontend fetches.
+   */
+  async getProfileSummary(clientId: string) {
+    const client = await this.prisma.db.client.findUnique({
+      where: { id: clientId },
+      select: {
+        id: true,
+        houseId: true,
+        displayName: true,
+        createdAt: true,
+        _count: {
+          select: {
+            ownedPieces: true,
+            certificates: true,
+          },
+        },
+      },
+    });
+    if (!client) throw new NotFoundException("errors.CLIENT_NOT_FOUND");
+
+    const pendingTransfersCount = await this.prisma.db.transferRequest.count({
+      where: {
+        OR: [
+          { fromClientId: clientId },
+          { toClientId: clientId },
+        ],
+        status: {
+          notIn: ["APPROVED", "REJECTED", "CANCELLED"],
+        },
+      },
+    });
+
+    return {
+      id: client.id,
+      houseId: client.houseId,
+      displayName: client.displayName,
+      memberSince: client.createdAt,
+      ownedPiecesCount: client._count.ownedPieces,
+      certificatesCount: client._count.certificates,
+      pendingTransfersCount,
+    };
+  }
+
   async updateProfile(clientId: string, data: { phone?: string; locale?: string }) {
     return this.prisma.db.client.update({
       where: { id: clientId },
       data,
       select: {
         id: true,
+        houseId: true,
         displayName: true,
         email: true,
         phone: true,
@@ -68,6 +146,7 @@ export class ClientsService {
         orderBy: { createdAt: "desc" },
         select: {
           id: true,
+          houseId: true,
           displayName: true,
           email: true,
           houseKeyPrefix: true,
@@ -103,12 +182,14 @@ export class ClientsService {
   ) {
     const plainKey = this.auth.generateHouseKey();
     const hashed = await this.auth.hashHouseKey(plainKey);
+    const houseId = await this.generateUniqueHouseId();
     const groups = data.visibilityGroups
       ? this.visibility.normalizeGroups(data.visibilityGroups)
       : [];
 
     const client = await this.prisma.db.client.create({
       data: {
+        houseId,
         houseKey: hashed,
         houseKeyPrefix: plainKey.slice(0, 4),
         displayName: data.displayName,
@@ -153,6 +234,23 @@ export class ClientsService {
     if (!client) throw new NotFoundException("errors.CLIENT_NOT_FOUND");
 
     return this.stripHouseKey(client);
+  }
+
+  /**
+   * Find a client by their shareable house ID (used for transfers).
+   * Returns only the necessary fields for transfer recipient identification.
+   */
+  async findClientByHouseId(houseId: string) {
+    const client = await this.prisma.db.client.findUnique({
+      where: { houseId: houseId.toUpperCase() },
+      select: {
+        id: true,
+        houseId: true,
+        displayName: true,
+        isActive: true,
+      },
+    });
+    return client;
   }
 
   async updateClient(

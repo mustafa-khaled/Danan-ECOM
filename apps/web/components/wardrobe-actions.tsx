@@ -56,7 +56,7 @@ export function WardrobeActions({
         <p className="text-sm text-gray-500">
           A transfer is in progress.{" "}
           <Link
-            href={`/beta/transfers/${activeTransfer.id}`}
+            href={`/beta/profile/transfers/${activeTransfer.id}`}
             className="text-[#4CBEAE] underline-offset-4 hover:underline font-medium"
           >
             View transfer

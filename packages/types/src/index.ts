@@ -9,6 +9,8 @@ export interface ClientSession {
 
 export interface ClientProfile {
   id: string;
+  /** Shareable 6-character identifier for transfers. NOT the login credential. */
+  houseId: string;
   displayName: string;
   email: string;
   phone: string | null;
