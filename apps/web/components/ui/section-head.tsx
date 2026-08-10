@@ -25,11 +25,11 @@ export default function SectionHead({
       )}
     >
       <div>
-        <h2 className="font-english rtl:font-arabic text-[24px] font-bold leading-[100%] tracking-[-0.02em] text-(--color-text) sm:text-3xl md:text-4xl sm:leading-tight">
+        <h2 className="font-heading rtl:font-arabic text-2xl font-bold leading-tight tracking-tight text-ds-text sm:text-3xl md:text-4xl">
           {title}
         </h2>
         {subtitle && (
-          <p className="font-manrope rtl:font-arabic mt-2 text-[17px] font-semibold leading-[100%] tracking-normal text-(--color-text-muted)">
+          <p className="font-body rtl:font-arabic mt-2 text-base font-medium leading-snug text-ds-text-secondary">
             {subtitle}
           </p>
         )}

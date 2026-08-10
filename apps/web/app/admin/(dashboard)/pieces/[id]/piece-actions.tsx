@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { LuxuryButton } from "@/components/ui";
+import { Button } from "@/components/ui";
 import { updatePiece, assignPiece } from "@/features/admin/api/fetch-admin-pieces";
 
 interface PieceActionsProps {
@@ -79,9 +79,9 @@ export function PieceActions({ pieceId, currentStatus, hasOwner }: PieceActionsP
         </h2>
         <div className="flex flex-wrap gap-3">
           {["AVAILABLE", "OWNED", "TRANSFER_PENDING", "RETIRED"].map((status) => (
-            <LuxuryButton
+            <Button
               key={status}
-              variant="ghost"
+              variant="outline"
               size="sm"
               disabled={currentStatus === status}
               loading={isUpdating}
@@ -89,7 +89,7 @@ export function PieceActions({ pieceId, currentStatus, hasOwner }: PieceActionsP
               className={currentStatus === status ? "opacity-40" : ""}
             >
               {status.replace(/_/g, " ")}
-            </LuxuryButton>
+            </Button>
           ))}
         </div>
       </div>
@@ -130,13 +130,14 @@ export function PieceActions({ pieceId, currentStatus, hasOwner }: PieceActionsP
               </select>
             </div>
             <div className="flex items-end">
-              <LuxuryButton
+              <Button
                 onClick={handleAssign}
                 loading={isAssigning}
                 size="sm"
+                variant="primary"
               >
                 Assign
-              </LuxuryButton>
+              </Button>
             </div>
           </div>
         </div>

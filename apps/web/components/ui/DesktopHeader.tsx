@@ -25,7 +25,7 @@ export function DesktopHeader({
   const tNav = useTranslations("nav");
 
   return (
-    <header className="sticky top-0 z-50 w-full bg-white border-b border-gray-100 h-19.5 md:h-28.75 transition-all">
+    <header className="sticky top-0 z-50 w-full bg-ds-background border-b border-ds-border h-19.5 md:h-28.75 transition-all">
       <Container className="h-full flex items-center justify-between relative py-2.5 md:py-4">
         {/* ── Left Section: Logo + Greeting (Stacked on Mobile, Row-space-between structure on Desktop) ── */}
         <div className="flex flex-col justify-center gap-0.5 md:justify-between h-full w-full md:w-auto">
@@ -44,7 +44,7 @@ export function DesktopHeader({
           </div>
 
           {/* Greeting text in SERIF font matching design */}
-          <p className="font-display text-xs md:text-sm lg:text-base font-normal text-[#2D2321] tracking-normal">
+          <p className="font-display text-xs md:text-sm lg:text-base font-normal text-ds-secondary tracking-normal">
             {greeting} {displayName}
           </p>
         </div>
@@ -56,7 +56,7 @@ export function DesktopHeader({
             {/* Notification Bell Icon */}
             <button
               type="button"
-              className="flex items-center justify-center text-[#2D2321] transition-colors hover:text-black"
+              className="flex items-center justify-center text-ds-secondary transition-colors hover:text-ds-text"
               aria-label={tNav("notifications")}
             >
               <svg
@@ -73,7 +73,7 @@ export function DesktopHeader({
             {/* Profile Icon */}
             <Link
               href="/beta/profile/wardrobe"
-              className="flex items-center justify-center text-[#2D2321] transition-colors hover:text-black"
+              className="flex items-center justify-center text-ds-secondary transition-colors hover:text-ds-text"
               aria-label={tNav("profile")}
             >
               <svg
@@ -88,7 +88,7 @@ export function DesktopHeader({
             </Link>
 
             {/* Language Selector */}
-            <LocaleSelect syncProfile className="text-[#2D2321] font-sans font-medium text-sm" />
+            <LocaleSelect syncProfile className="text-ds-secondary font-body font-medium text-sm" />
           </div>
 
           {/* Bottom Desktop Navigation Links */}
@@ -100,10 +100,10 @@ export function DesktopHeader({
                   <li key={item.href}>
                     <Link
                       href={item.href}
-                      className={`font-sans font-medium text-sm lg:text-[15px] transition-colors ${
+                      className={`font-body font-medium text-sm lg:text-body transition-colors ${
                         isActive
-                          ? "text-[#000000] font-semibold"
-                          : "text-[#374151] hover:text-[#000000]"
+                          ? "text-ds-text font-semibold"
+                          : "text-ds-text-secondary hover:text-ds-text"
                       }`}
                     >
                       {tNav(item.labelKey)}
@@ -118,7 +118,7 @@ export function DesktopHeader({
         {/* ── Mobile Burger Menu Button (Aligned 100% vertically centered in mobile header height) ── */}
         <button
           type="button"
-          className="flex md:hidden absolute right-4 sm:right-8 top-1/2 -translate-y-1/2 items-center justify-center p-1.5 text-[#2D2321] transition-colors"
+          className="flex md:hidden absolute right-4 sm:right-8 top-1/2 -translate-y-1/2 items-center justify-center p-1.5 text-ds-secondary transition-colors"
           onClick={onToggleMobileMenu}
           aria-label="Toggle navigation menu"
           aria-expanded={isMobileMenuOpen}

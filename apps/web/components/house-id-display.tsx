@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { Copy, Check } from "lucide-react";
+import { Button } from "@/components/ui/Button";
 
 interface HouseIdDisplayProps {
   houseId: string;
@@ -24,31 +25,23 @@ export function HouseIdDisplay({ houseId, label, helperText }: HouseIdDisplayPro
 
   return (
     <div className="space-y-2">
-      <p className="text-sm text-[#52525B]">{label}</p>
+      <p className="text-sm text-ds-text-secondary font-body">{label}</p>
       <div className="flex items-center gap-3">
-        <code className="px-4 py-2 bg-gray-100 rounded-md font-mono text-lg tracking-widest text-[#1D1D1D] select-all">
+        <code className="px-4 py-2 bg-ds-surface rounded-(--radius-sm) font-mono text-lg tracking-widest text-ds-text select-all border border-ds-border-light">
           {houseId}
         </code>
-        <button
+        <Button
           type="button"
           onClick={handleCopy}
-          className="flex items-center gap-1.5 px-3 py-2 text-sm font-medium text-[#4CBEAE] border border-[#4CBEAE] rounded-md hover:bg-[#4CBEAE]/10 transition-colors"
+          variant="outline"
+          size="sm"
+          iconLeft={copied ? <Check className="size-4 text-ds-success" /> : <Copy className="size-4" />}
           aria-label="Copy House ID"
         >
-          {copied ? (
-            <>
-              <Check className="w-4 h-4" />
-              Copied
-            </>
-          ) : (
-            <>
-              <Copy className="w-4 h-4" />
-              Copy
-            </>
-          )}
-        </button>
+          {copied ? "Copied" : "Copy"}
+        </Button>
       </div>
-      <p className="text-xs text-[#71717A]">{helperText}</p>
+      <p className="text-xs text-ds-text-muted font-body">{helperText}</p>
     </div>
   );
 }

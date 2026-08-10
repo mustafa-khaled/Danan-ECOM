@@ -112,7 +112,7 @@ export default function AccessGatePage() {
 
         {/* Main content — vertically centered */}
         <main className="flex flex-col justify-end flex-1 max-w-3xl py-8 max-md:max-w-full max-sm:py-4">
-          <h1 className="font-english text-[72px] font-bold text-white leading-[1.1] tracking-[-0.02em] mb-8 access-gate-animate-in max-lg:text-[56px] max-md:text-[44px] max-md:mb-6 max-sm:text-[32px] max-sm:mb-4">
+          <h1 className="font-english text-display font-bold text-white leading-[1.1] tracking-[-0.02em] mb-8 access-gate-animate-in max-lg:text-[56px] max-md:text-[44px] max-md:mb-6 max-sm:text-[32px] max-sm:mb-4">
             {t("title")}
           </h1>
 
@@ -129,7 +129,7 @@ export default function AccessGatePage() {
           >
             <label
               htmlFor="house-key"
-              className="font-manrope text-sm font-semibold text-white tracking-[0.02em]"
+              className="font-body text-sm font-semibold text-white tracking-[0.02em]"
             >
               {t("houseKey")}
             </label>
@@ -142,17 +142,17 @@ export default function AccessGatePage() {
               value={houseKey}
               onChange={(event) => setHouseKey(event.target.value)}
               placeholder={t("houseKeyPlaceholder")}
-              className="w-full py-3.5 px-5 bg-white border-none rounded-md font-manrope text-[0.9375rem] text-admin-text outline-none transition-shadow duration-200 ease-in-out placeholder:text-[#999999] placeholder:italic focus:shadow-[0_0_0_3px_rgba(255,255,255,0.25)] max-sm:py-3 max-sm:px-4 max-sm:text-sm"
+              className="w-full py-3.5 px-5 bg-white border-none rounded-(--radius-md) font-body text-body text-ds-text outline-none transition-shadow duration-200 ease-in-out placeholder:text-ds-text-muted placeholder:italic focus:shadow-[0_0_0_3px_rgba(255,255,255,0.25)] max-sm:py-3 max-sm:px-4 max-sm:text-sm"
             />
             {error ? (
-              <p role="alert" className="text-[0.8125rem] text-red-300 mt-1">
+              <p role="alert" className="text-body-sm text-red-300 mt-1">
                 {error}
               </p>
             ) : null}
             <button
               type="submit"
               disabled={isPending}
-              className="mt-2 w-full py-3.5 px-5 bg-white text-admin-text font-manrope text-[0.9375rem] font-semibold rounded-md cursor-pointer transition-all duration-200 ease-in-out hover:bg-white/90 disabled:opacity-50 disabled:cursor-not-allowed max-sm:py-3 max-sm:px-4 max-sm:text-sm"
+              className="mt-2 w-full py-3.5 px-5 bg-white text-ds-text font-body text-body font-semibold rounded-(--radius-md) cursor-pointer transition-all duration-200 ease-in-out hover:bg-white/90 disabled:opacity-50 disabled:cursor-not-allowed max-sm:py-3 max-sm:px-4 max-sm:text-sm"
             >
               {isPending ? t("entering") : t("houseKey")}
             </button>
@@ -162,9 +162,9 @@ export default function AccessGatePage() {
           <div className="flex gap-4 mt-6 access-gate-animate-in-delayed-3 max-md:gap-3 max-sm:flex-col max-sm:gap-3">
             <Link
               href="/beta/pieces"
-              className="flex items-center gap-3 justify-between flex-1 min-w-0 h-19 pt-3 pb-3 ps-3 pe-4 bg-[#BF7266] rounded-xl text-white no-underline transition-all duration-250 ease-in-out cursor-pointer hover:bg-[#b3685c] hover:-translate-y-px group max-sm:h-16"
+              className="flex items-center gap-3 justify-between flex-1 min-w-0 h-19 pt-3 pb-3 ps-3 pe-4 bg-ds-primary rounded-xl text-ds-primary-foreground no-underline transition-all duration-200 ease-in-out cursor-pointer hover:bg-ds-primary-hover hover:-translate-y-px group max-sm:h-16"
             >
-              <div className="w-13 h-13 rounded-xl overflow-hidden shrink-0 relative max-sm:w-10 max-sm:h-10">
+              <div className="w-13 h-13 rounded-lg overflow-hidden shrink-0 relative max-sm:w-10 max-sm:h-10">
                 <Image
                   src="/assets/featuredPieces.avif"
                   alt={t("featuredPieces")}
@@ -173,7 +173,7 @@ export default function AccessGatePage() {
                   className="object-cover"
                 />
               </div>
-              <span className="flex-1 font-manrope text-sm font-semibold leading-[100%] tracking-[-0.02em] max-sm:text-xs">
+              <span className="flex-1 font-body text-sm font-semibold leading-none tracking-tight max-sm:text-xs">
                 {t("featuredPieces")}
               </span>
               <svg
@@ -194,9 +194,9 @@ export default function AccessGatePage() {
             </Link>
             <Link
               href="/beta/our-story"
-              className="flex items-center gap-3 justify-between flex-1 min-w-0 h-19 pt-3 pb-3 ps-3 pe-4 bg-[#BF7266] rounded-xl text-white no-underline transition-all duration-250 ease-in-out cursor-pointer hover:bg-[#b3685c] hover:-translate-y-px group max-sm:h-16"
+              className="flex items-center gap-3 justify-between flex-1 min-w-0 h-19 pt-3 pb-3 ps-3 pe-4 bg-ds-primary rounded-xl text-ds-primary-foreground no-underline transition-all duration-200 ease-in-out cursor-pointer hover:bg-ds-primary-hover hover:-translate-y-px group max-sm:h-16"
             >
-              <div className="w-13 h-13 rounded-xl overflow-hidden shrink-0 relative max-sm:w-10 max-sm:h-10">
+              <div className="w-13 h-13 rounded-lg overflow-hidden shrink-0 relative max-sm:w-10 max-sm:h-10">
                 <Image
                   src="/assets/aboutTheHouse.avif"
                   alt={t("aboutTheHouse")}
@@ -206,7 +206,7 @@ export default function AccessGatePage() {
                   style={{ objectPosition: "70% center" }}
                 />
               </div>
-              <span className="flex-1 font-manrope text-sm font-semibold leading-[100%] tracking-[-0.02em] max-sm:text-xs">
+              <span className="flex-1 font-body text-sm font-semibold leading-none tracking-tight max-sm:text-xs">
                 {t("aboutTheHouse")}
               </span>
               <svg

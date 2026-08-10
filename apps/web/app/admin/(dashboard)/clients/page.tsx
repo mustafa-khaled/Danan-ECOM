@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { StatusPill, LuxuryButton } from "@/components/ui";
+import { StatusPill, Button } from "@/components/ui";
 import { AdminPagination } from "@/components/admin-pagination";
 import { AdminSearch } from "@/components/admin-search";
 import { fetchAdminClients } from "@/features/admin";
@@ -20,45 +20,45 @@ export default async function ClientsPage({
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="font-display text-3xl tracking-[0.06em] uppercase">Clients</h1>
-          <p className="mt-2 text-sm text-[var(--color-ivory-muted)]">
+          <h1 className="font-heading text-3xl font-bold tracking-tight text-ds-text">Clients</h1>
+          <p className="mt-2 text-sm text-ds-text-secondary font-body">
             {total} registered {total === 1 ? "client" : "clients"}
           </p>
         </div>
         <Link href="/admin/clients/new">
-          <LuxuryButton size="sm">Create Client</LuxuryButton>
+          <Button size="sm" variant="primary">Create Client</Button>
         </Link>
       </div>
 
       <AdminSearch placeholder="Search clients by name or email..." />
 
-      <div className="overflow-x-auto rounded-[var(--radius-panel)] border border-[var(--color-border)] bg-[var(--color-surface)]">
-        <table className="min-w-full text-left text-sm">
+      <div className="overflow-x-auto rounded-[var(--radius-md)] border border-ds-border bg-ds-background">
+        <table className="min-w-full text-left text-sm font-body">
           <caption className="sr-only">Registered clients</caption>
-          <thead className="border-b border-[var(--color-border)] text-xs tracking-[0.12em] uppercase text-[var(--color-ivory-muted)]">
+          <thead className="border-b border-ds-border text-xs tracking-wider uppercase text-ds-text-secondary bg-ds-surface">
             <tr>
-              <th className="px-4 py-3 font-normal">Name</th>
-              <th className="px-4 py-3 font-normal">Email</th>
-              <th className="px-4 py-3 font-normal">Key prefix</th>
-              <th className="px-4 py-3 font-normal">Pieces</th>
-              <th className="px-4 py-3 font-normal">Status</th>
-              <th className="px-4 py-3 font-normal">Actions</th>
+              <th className="px-4 py-3 font-semibold">Name</th>
+              <th className="px-4 py-3 font-semibold">Email</th>
+              <th className="px-4 py-3 font-semibold">Key prefix</th>
+              <th className="px-4 py-3 font-semibold">Pieces</th>
+              <th className="px-4 py-3 font-semibold">Status</th>
+              <th className="px-4 py-3 font-semibold">Actions</th>
             </tr>
           </thead>
-          <tbody className="divide-y divide-[var(--color-border)]">
+          <tbody className="divide-y divide-ds-border">
             {items.map((client) => (
-              <tr key={client.id}>
-                <td className="px-4 py-4 font-display tracking-[0.04em]">{client.displayName}</td>
-                <td className="px-4 py-4 text-[var(--color-ivory-muted)]">{client.email}</td>
-                <td className="px-4 py-4 font-mono text-xs">{client.houseKeyPrefix}</td>
-                <td className="px-4 py-4">{client.pieceCount}</td>
+              <tr key={client.id} className="hover:bg-ds-surface/50 transition-colors">
+                <td className="px-4 py-4 font-semibold text-ds-text">{client.displayName}</td>
+                <td className="px-4 py-4 text-ds-text-secondary">{client.email}</td>
+                <td className="px-4 py-4 font-mono text-xs text-ds-text">{client.houseKeyPrefix}</td>
+                <td className="px-4 py-4 text-ds-text">{client.pieceCount}</td>
                 <td className="px-4 py-4">
                   <StatusPill status={client.isActive ? "ACTIVE" : "INACTIVE"} />
                 </td>
                 <td className="px-4 py-4">
                   <Link
                     href={`/admin/clients/${client.id}`}
-                    className="text-xs uppercase tracking-[0.1em] text-[var(--color-accent)] hover:underline"
+                    className="text-xs uppercase tracking-wider font-semibold text-ds-primary hover:underline"
                   >
                     Edit
                   </Link>
@@ -67,7 +67,7 @@ export default async function ClientsPage({
             ))}
             {items.length === 0 && (
               <tr>
-                <td colSpan={6} className="px-4 py-8 text-center text-[var(--color-ivory-muted)]">
+                <td colSpan={6} className="px-4 py-8 text-center text-ds-text-muted">
                   {q ? `No clients matching "${q}".` : "No clients registered yet. Create your first client to get started."}
                 </td>
               </tr>

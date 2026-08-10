@@ -4,7 +4,7 @@ import dynamic from "next/dynamic";
 import { useLocale } from "next-intl";
 import { useRouter } from "next/navigation";
 import { FormEvent, Suspense, useRef, useState } from "react";
-import { GoldDivider, LuxuryButton } from "@/components/ui";
+import { Button, Input } from "@/components/ui";
 import { formatPrice } from "@/shared/utils/format";
 import { PAYMENT_MODE } from "@/shared/lib/constants";
 import { useCheckout, type TapCardElementHandle } from "@/features/checkout";
@@ -99,22 +99,22 @@ export function CheckoutForm({ summary }: CheckoutFormProps) {
   return (
     <form onSubmit={handleSubmit} className="space-y-8" noValidate>
       {step === 1 ? (
-        <section className="rounded-(--radius-panel) border border-border bg-(--color-surface) p-6">
-          <h2 className="font-display text-xl text-(--color-ivory)">Order Review</h2>
-          <p className="mt-2 text-sm text-(--color-ivory-muted)">
+        <section className="rounded-(--radius-md) border border-ds-border bg-ds-background p-6 shadow-sm">
+          <h2 className="font-heading text-xl text-ds-text">Order Review</h2>
+          <p className="mt-2 text-sm text-ds-text-secondary">
             Confirm your selection before entering shipping details.
           </p>
-          <GoldDivider className="my-6" />
+          <div className="my-6 border-t border-ds-border" />
           <dl className="space-y-3 text-sm">
             <div className="flex justify-between">
-              <dt className="text-(--color-ivory-muted)">Subtotal</dt>
-              <dd>{formatPrice(summary.subtotal, summary.currency)}</dd>
+              <dt className="text-ds-text-secondary">Subtotal</dt>
+              <dd className="font-medium text-ds-text">{formatPrice(summary.subtotal, summary.currency)}</dd>
             </div>
             <div className="flex justify-between">
-              <dt className="text-(--color-ivory-muted)">VAT ({Math.round(summary.vatRate * 100)}%)</dt>
-              <dd>{formatPrice(summary.vatAmount, summary.currency)}</dd>
+              <dt className="text-ds-text-secondary">VAT ({Math.round(summary.vatRate * 100)}%)</dt>
+              <dd className="font-medium text-ds-text">{formatPrice(summary.vatAmount, summary.currency)}</dd>
             </div>
-            <div className="flex justify-between font-display text-lg text-gold-light">
+            <div className="flex justify-between font-heading text-lg font-bold text-ds-text pt-2 border-t border-ds-border-light">
               <dt>Total</dt>
               <dd>{formatPrice(summary.total, summary.currency)}</dd>
             </div>
@@ -122,42 +122,42 @@ export function CheckoutForm({ summary }: CheckoutFormProps) {
         </section>
       ) : (
         <>
-          <section className="rounded-(--radius-panel) border border-border bg-(--color-surface) p-6">
-            <h2 className="font-display text-xl text-(--color-ivory)">Shipping Address</h2>
+          <section className="rounded-(--radius-md) border border-ds-border bg-ds-background p-6 shadow-sm">
+            <h2 className="font-heading text-xl text-ds-text">Shipping Address</h2>
             <div className="mt-6 grid gap-4 sm:grid-cols-2">
-              <Field
+              <Input
                 label="Full Name"
                 name="fullName"
                 required
                 className="sm:col-span-2"
                 error={fieldErrors.fullName}
               />
-              <Field label="Phone" name="phone" required error={fieldErrors.phone} />
-              <Field
+              <Input label="Phone" name="phone" required error={fieldErrors.phone} />
+              <Input
                 label="Address Line 1"
                 name="line1"
                 required
                 className="sm:col-span-2"
                 error={fieldErrors.line1}
               />
-              <Field
+              <Input
                 label="Address Line 2"
                 name="line2"
                 className="sm:col-span-2"
                 error={fieldErrors.line2}
               />
-              <Field label="City" name="city" required error={fieldErrors.city} />
-              <Field label="Region" name="region" required error={fieldErrors.region} />
-              <Field label="Postal Code" name="postalCode" required error={fieldErrors.postalCode} />
-              <Field label="Country" name="country" defaultValue="SA" required error={fieldErrors.country} />
+              <Input label="City" name="city" required error={fieldErrors.city} />
+              <Input label="Region" name="region" required error={fieldErrors.region} />
+              <Input label="Postal Code" name="postalCode" required error={fieldErrors.postalCode} />
+              <Input label="Country" name="country" defaultValue="SA" required error={fieldErrors.country} />
             </div>
           </section>
 
-          <section className="rounded-(--radius-panel) border border-border bg-(--color-surface) p-6">
-            <h2 className="font-display text-xl text-(--color-ivory)">Payment</h2>
+          <section className="rounded-(--radius-md) border border-ds-border bg-ds-background p-6 shadow-sm">
+            <h2 className="font-heading text-xl text-ds-text">Payment</h2>
             {isLivePayment ? (
               <div className="mt-6">
-                <Suspense fallback={<div className="text-sm text-(--color-ivory-muted)">Loading payment form...</div>}>
+                <Suspense fallback={<div className="text-sm text-ds-text-secondary">Loading payment form...</div>}>
                   <TapCardElement
                     ref={tapCardRef}
                     amount={summary.total}
@@ -168,13 +168,13 @@ export function CheckoutForm({ summary }: CheckoutFormProps) {
                   />
                 </Suspense>
                 {cardError ? (
-                  <p role="alert" className="mt-3 text-sm text-(--color-ruby)">
+                  <p role="alert" className="mt-3 text-sm text-ds-error">
                     {cardError}
                   </p>
                 ) : null}
               </div>
             ) : (
-              <p className="mt-6 text-xs text-(--color-ivory-muted)">
+              <p className="mt-6 text-xs text-ds-text-secondary">
                 Payment is processed securely via mock gateway for this preview.
               </p>
             )}
@@ -183,66 +183,26 @@ export function CheckoutForm({ summary }: CheckoutFormProps) {
       )}
 
       {error ? (
-        <p role="alert" className="text-sm text-(--color-ruby)">
+        <p role="alert" className="text-sm text-ds-error">
           {error instanceof Error ? error.message : "Checkout failed"}
         </p>
       ) : null}
 
       <div className="flex flex-wrap gap-3">
         {step === 2 ? (
-          <LuxuryButton
+          <Button
             type="button"
-            variant="ghost"
+            variant="outline"
             onClick={() => setStep(1)}
             disabled={isSubmitting}
           >
             Back
-          </LuxuryButton>
+          </Button>
         ) : null}
-        <LuxuryButton type="submit" loading={isSubmitting}>
+        <Button type="submit" loading={isSubmitting} variant="primary">
           {step === 1 ? "Confirm and Continue" : isSubmitting ? "Processing…" : "Complete Purchase"}
-        </LuxuryButton>
+        </Button>
       </div>
     </form>
-  );
-}
-
-function Field({
-  label,
-  name,
-  required,
-  className = "",
-  defaultValue,
-  error,
-}: {
-  label: string;
-  name: string;
-  required?: boolean;
-  className?: string;
-  defaultValue?: string;
-  error?: string;
-}) {
-  const fieldId = `checkout-${name}`;
-
-  return (
-    <label className={`block ${className}`} htmlFor={fieldId}>
-      <span className="mb-2 block text-xs tracking-[0.12em] uppercase text-(--color-ivory-muted)">
-        {label}
-      </span>
-      <input
-        id={fieldId}
-        name={name}
-        required={required}
-        defaultValue={defaultValue}
-        aria-invalid={error ? true : undefined}
-        aria-describedby={error ? `${fieldId}-error` : undefined}
-        className="min-h-11 w-full rounded-(--radius-item) border border-border bg-void px-4 text-(--color-ivory) focus-visible:outline-none focus-visible:shadow-(--shadow-focus)"
-      />
-      {error ? (
-        <p id={`${fieldId}-error`} role="alert" className="mt-1 text-xs text-(--color-ruby)">
-          {error}
-        </p>
-      ) : null}
-    </label>
   );
 }

@@ -8,7 +8,7 @@ import {
   Req,
   UseGuards,
 } from "@nestjs/common";
-import { AdminRole, TransferStatus } from "@dadan/db";
+import { AdminRole } from "@dadan/db";
 import type { Request } from "express";
 import { TransfersService } from "./transfers.service";
 import { AdminGuard } from "../admin/auth/guards/admin.guard";
@@ -16,7 +16,7 @@ import { Roles } from "../admin/auth/decorators/roles.decorator";
 import { CurrentAdmin } from "../admin/auth/decorators/current-admin.decorator";
 import type { AdminSession } from "@dadan/types";
 import { getClientIp } from "../common/constants";
-import { PaginationQueryDto } from "../common/dto/pagination.dto";
+import { AdminTransferQueryDto } from "./dto/admin-transfer-query.dto";
 import { ApproveTransferDto, RejectTransferDto } from "./dto/transfer-action.dto";
 
 @Controller("admin/transfers")
@@ -25,8 +25,8 @@ export class AdminTransfersController {
   constructor(private readonly transfers: TransfersService) {}
 
   @Get()
-  list(@Query() query: PaginationQueryDto, @Query("status") status?: TransferStatus) {
-    return this.transfers.listAdminTransfers(query.page, query.limit, status);
+  list(@Query() query: AdminTransferQueryDto) {
+    return this.transfers.listAdminTransfers(query.page, query.limit, query.status);
   }
 
   @Get(":id")

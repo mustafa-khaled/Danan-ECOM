@@ -1,7 +1,7 @@
 "use client";
 
 import { useTranslations } from "next-intl";
-import { LuxuryButton } from "@/components/ui";
+import { Button } from "@/components/ui/Button";
 import { useConfirmTransferSender, useConfirmTransferRecipient, useCancelTransfer } from "@/features/transfers";
 
 interface TransferActionsProps {
@@ -32,8 +32,9 @@ export function TransferActions({ transferId, status, role }: TransferActionsPro
   return (
     <div className="flex flex-wrap gap-3">
       {canConfirmSender ? (
-        <LuxuryButton
+        <Button
           loading={isConfirmingSender}
+          variant="primary"
           onClick={async () => {
             try {
               await confirmSender(transferId);
@@ -41,11 +42,12 @@ export function TransferActions({ transferId, status, role }: TransferActionsPro
           }}
         >
           {t("confirmAsSender")}
-        </LuxuryButton>
+        </Button>
       ) : null}
       {canConfirmRecipient ? (
-        <LuxuryButton
+        <Button
           loading={isConfirmingRecipient}
+          variant="primary"
           onClick={async () => {
             try {
               await confirmRecipient(transferId);
@@ -53,11 +55,11 @@ export function TransferActions({ transferId, status, role }: TransferActionsPro
           }}
         >
           {t("confirmAsRecipient")}
-        </LuxuryButton>
+        </Button>
       ) : null}
       {canCancel ? (
-        <LuxuryButton
-          variant="danger"
+        <Button
+          variant="destructive"
           loading={isCancelling}
           onClick={async () => {
             try {
@@ -66,10 +68,10 @@ export function TransferActions({ transferId, status, role }: TransferActionsPro
           }}
         >
           {t("cancelTransfer")}
-        </LuxuryButton>
+        </Button>
       ) : null}
       {error ? (
-        <p role="alert" className="w-full text-sm text-[var(--color-ruby)]">
+        <p role="alert" className="w-full text-sm text-ds-error font-body">
           {error instanceof Error ? error.message : t("actionFailed")}
         </p>
       ) : null}

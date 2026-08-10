@@ -70,41 +70,41 @@ export function HistoryList({
     <div className="space-y-6">
       <Select value={filter} onValueChange={setFilter}>
         <SelectTrigger
-          className="flex w-full items-center justify-between sm:max-w-[50%] rounded-xl bg-[#F1F3F5] px-4 py-3.5 sm:px-5 font-bold text-base sm:text-lg text-[#1E293B] shadow-none outline-none transition-colors hover:bg-[#E5E8EB] cursor-pointer [&_svg]:size-5 [&_svg]:text-[#1E293B] [&_svg]:opacity-100"
+          className="flex w-full items-center justify-between sm:max-w-[50%] rounded-[var(--radius-md)] bg-ds-surface px-4 py-3 sm:px-5 font-bold text-base text-ds-text shadow-none outline-none transition-colors hover:bg-ds-surface-warm cursor-pointer [&_svg]:size-5 [&_svg]:text-ds-text [&_svg]:opacity-100"
           aria-label="Filter timeline"
         >
           <SelectValue placeholder="This Week" />
         </SelectTrigger>
 
-        <SelectContent className="z-50 w-(--radix-select-trigger-width) min-w-(--radix-select-trigger-width) overflow-hidden rounded-xl border border-gray-100 bg-white p-1.5 shadow-lg">
+        <SelectContent className="z-[var(--z-popover)] w-(--radix-select-trigger-width) min-w-(--radix-select-trigger-width) overflow-hidden rounded-[var(--radius-md)] border border-ds-border bg-ds-background p-1.5 shadow-lg">
           <SelectItem
             value="this-week"
-            className="cursor-pointer font-medium text-[#1E293B]"
+            className="cursor-pointer font-medium text-ds-text"
           >
             This Week
           </SelectItem>
           <SelectItem
             value="this-month"
-            className="cursor-pointer font-medium text-[#1E293B]"
+            className="cursor-pointer font-medium text-ds-text"
           >
             This Month
           </SelectItem>
           <SelectItem
             value="this-year"
-            className="cursor-pointer font-medium text-[#1E293B]"
+            className="cursor-pointer font-medium text-ds-text"
           >
             This Year
           </SelectItem>
           <SelectItem
             value="all"
-            className="cursor-pointer font-medium text-[#1E293B]"
+            className="cursor-pointer font-medium text-ds-text"
           >
             All History
           </SelectItem>
         </SelectContent>
       </Select>
 
-      {/* History Events List matching Image 1 */}
+      {/* History Events List */}
       {filteredEvents.length === 0 ? (
         <EmptyState title={emptyTitle} description={emptyDescription} />
       ) : (
@@ -113,26 +113,25 @@ export function HistoryList({
             <Link
               key={event.id}
               href={`/beta/profile/wardrobe/${event.pieceId}`}
-              className="group block rounded-lg p-3 sm:p-4 transition-shadow hover:shadow-sm"
-              style={{ backgroundColor: "var(--Contessa-50, #FBF7F7)" }}
+              className="group block rounded-[var(--radius-lg)] p-4 sm:p-5 bg-ds-surface-warm border border-ds-border-light transition-shadow hover:shadow-md"
             >
-              <h3 className="font-bold text-base sm:text-lg text-[#1E293B] tracking-tight uppercase">
+              <h3 className="font-bold text-base text-ds-text tracking-tight uppercase font-body">
                 {event.type === "OWNED" || event.type === "ISSUED"
                   ? "OWNERSHIP CERTIFICATE"
                   : event.type.replace(/_/g, " ").toUpperCase()}
               </h3>
-              <p className="mt-2 text-xs sm:text-sm font-medium uppercase text-[#525866]">
+              <p className="mt-2 text-xs sm:text-sm font-medium uppercase text-ds-text-secondary font-body">
                 {event.pieceName}
               </p>
-              <p className="mt-2 text-[11px] sm:text-xs uppercase text-[#667085]">
+              <p className="mt-2 text-[11px] sm:text-xs uppercase text-ds-text-muted font-body">
                 {formatTime(event.date)}
               </p>
               <div className="mt-4 sm:mt-5 flex items-center justify-between">
-                <span className="text-sm sm:text-base font-medium text-[#BC776E]">
+                <span className="text-sm sm:text-base font-medium text-ds-primary">
                   View Certificate
                 </span>
                 <ArrowRight
-                  className="w-4 h-4 sm:w-5 sm:h-5 text-[#BC776E] transition-transform group-hover:translate-x-1"
+                  className="w-4 h-4 sm:w-5 sm:h-5 text-ds-primary transition-transform group-hover:translate-x-1"
                   strokeWidth={1.5}
                 />
               </div>

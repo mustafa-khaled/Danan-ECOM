@@ -5,6 +5,7 @@ import { useTranslations } from "next-intl";
 import { useEffect, useState } from "react";
 import { LocaleSelect } from "@/shared/providers/locale-provider";
 import { useClientContext } from "@/shared/providers/client-context";
+import { Button } from "./Button";
 
 const WELCOME_SEEN_KEY = "dadan_welcome_seen";
 
@@ -28,12 +29,12 @@ export function WelcomeModal() {
   if (!open) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
-      <div className="relative flex w-full max-w-4xl overflow-hidden bg-white shadow-xl md:flex-row">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-ds-overlay-heavy p-4">
+      <div className="relative flex w-full max-w-4xl overflow-hidden bg-ds-background rounded-lg border border-ds-border shadow-xl md:flex-row">
         <button
           type="button"
           onClick={dismiss}
-          className="absolute inset-e-4 top-4 z-10 flex size-8 items-center justify-center rounded-full bg-white/90 text-(--color-text) transition-colors hover:bg-white"
+          className="absolute inset-e-4 top-4 z-10 flex size-8 items-center justify-center rounded-full bg-ds-background/90 text-ds-text transition-colors hover:bg-ds-surface"
           aria-label="Close"
         >
           ×
@@ -48,18 +49,19 @@ export function WelcomeModal() {
           />
         </div>
         <div className="flex flex-1 flex-col justify-center px-8 py-12">
-          <h2 className="font-english text-3xl text-(--color-text)">
+          <h2 className="font-heading text-3xl text-ds-text">
             {t("title", { name: displayName })}
           </h2>
-          <p className="mt-4 text-(--color-text-muted)">{t("description")}</p>
-          <button
-            type="button"
-            onClick={dismiss}
-            className="mt-8 inline-flex min-h-11 w-fit items-center gap-2 bg-(--color-accent) px-6 text-sm tracking-widest uppercase text-white transition-opacity hover:opacity-90"
-          >
-            {t("cta")}
-            <span className="rtl:rotate-180">→</span>
-          </button>
+          <p className="mt-4 text-ds-text-secondary">{t("description")}</p>
+          <div className="mt-8">
+            <Button
+              onClick={dismiss}
+              variant="secondary"
+              arrow
+            >
+              {t("cta")}
+            </Button>
+          </div>
         </div>
       </div>
     </div>

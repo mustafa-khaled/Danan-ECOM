@@ -9,7 +9,7 @@ interface SplitHeroLayoutProps {
 
 export function SplitHeroLayout({ imageSrc, imageAlt, children }: SplitHeroLayoutProps) {
   return (
-    <div className="flex min-h-dvh w-full bg-white">
+    <div className="flex min-h-dvh w-full bg-ds-background">
       <div className="relative hidden w-[55%] shrink-0 overflow-hidden md:block">
         <Image
           src={imageSrc}
@@ -21,7 +21,7 @@ export function SplitHeroLayout({ imageSrc, imageAlt, children }: SplitHeroLayou
           className="object-cover object-top"
         />
       </div>
-      <div className="flex min-h-dvh flex-1 flex-col bg-white px-6 py-8 text-[var(--color-text)] md:px-14">
+      <div className="flex min-h-dvh flex-1 flex-col bg-ds-background px-6 py-8 text-ds-text md:px-14">
         {children}
       </div>
     </div>

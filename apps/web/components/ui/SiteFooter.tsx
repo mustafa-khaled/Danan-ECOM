@@ -36,14 +36,14 @@ export function SiteFooter() {
   const taglineLines = t("tagline").split("\n");
 
   return (
-    <footer className="mt-auto bg-[#13161D] text-white w-full">
+    <footer className="mt-auto bg-ds-dark-bg text-ds-dark-text w-full">
       <div className="mx-auto max-w-7xl px-6 py-12 sm:px-12 lg:px-16 lg:py-16">
         {/* ── Brand Hero Section ── */}
         <div className="mb-16 sm:mb-24 lg:mb-32">
           <h2 className="font-display text-3xl font-bold tracking-tight text-white sm:text-4xl lg:text-5xl">
             {t("brandName")}
           </h2>
-          <p className="mt-2 text-base font-medium text-[#5A6474] sm:text-lg lg:text-xl">
+          <p className="mt-2 text-base font-medium text-neutral-600 sm:text-lg lg:text-xl">
             {t("brandTagline")}
           </p>
         </div>
@@ -62,7 +62,7 @@ export function SiteFooter() {
                   <li key={link.label}>
                     <Link
                       href={link.href}
-                      className="text-sm text-[#D1D5DB] transition-colors hover:text-white sm:text-base font-normal"
+                      className="text-sm text-ds-dark-text transition-colors hover:text-white sm:text-base font-normal"
                     >
                       {link.label}
                     </Link>
@@ -78,7 +78,7 @@ export function SiteFooter() {
                 {taglineLines.map((line, i) => (
                   <p
                     key={i}
-                    className="text-xs sm:text-sm text-[#9CA3AF] leading-relaxed"
+                    className="text-xs sm:text-sm text-ds-dark-text-muted leading-relaxed"
                   >
                     {line}
                   </p>
@@ -97,7 +97,7 @@ export function SiteFooter() {
                 <li key={link.label}>
                   <Link
                     href={link.href}
-                    className="text-sm text-[#D1D5DB] transition-colors hover:text-white sm:text-base font-normal"
+                    className="text-sm text-ds-dark-text transition-colors hover:text-white sm:text-base font-normal"
                   >
                     {link.label}
                   </Link>
@@ -116,7 +116,7 @@ export function SiteFooter() {
                 <li key={link.label}>
                   <Link
                     href={link.href}
-                    className="text-sm text-[#D1D5DB] transition-colors hover:text-white sm:text-base font-normal"
+                    className="text-sm text-ds-dark-text transition-colors hover:text-white sm:text-base font-normal"
                   >
                     {link.label}
                   </Link>
@@ -127,11 +127,11 @@ export function SiteFooter() {
         </div>
 
         {/* ── Mobile Copyright & Tagline (Shown at bottom on Mobile) ── */}
-        <div className="block sm:hidden mt-12 pt-6 border-t border-white/5">
+        <div className="block sm:hidden mt-12 pt-6 border-t border-ds-dark-border">
           <p className="text-sm font-bold text-white">{t("copyright")}</p>
           <div className="mt-3 space-y-1">
             {taglineLines.map((line, i) => (
-              <p key={i} className="text-xs text-[#9CA3AF] leading-relaxed">
+              <p key={i} className="text-xs text-ds-dark-text-muted leading-relaxed">
                 {line}
               </p>
             ))}

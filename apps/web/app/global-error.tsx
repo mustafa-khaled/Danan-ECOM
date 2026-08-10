@@ -20,8 +20,8 @@ export default function GlobalError({
         <div
           style={{
             minHeight: "100vh",
-            backgroundColor: "#0a0a0a",
-            color: "#f5f0e8",
+            backgroundColor: "#FFFFFF",
+            color: "#1A1A1A",
             display: "flex",
             alignItems: "center",
             justifyContent: "center",
@@ -31,8 +31,9 @@ export default function GlobalError({
           <div style={{ maxWidth: "28rem", width: "100%", textAlign: "center" }}>
             <h1
               style={{
+                fontFamily: "'EB Garamond', Georgia, serif",
                 fontSize: "2.25rem",
-                fontWeight: 500,
+                fontWeight: 700,
                 marginBottom: "1rem",
               }}
             >
@@ -40,7 +41,7 @@ export default function GlobalError({
             </h1>
             <p
               style={{
-                color: "#9e9a93",
+                color: "#555555",
                 marginBottom: "2rem",
                 lineHeight: 1.6,
               }}
@@ -51,7 +52,7 @@ export default function GlobalError({
               <p
                 style={{
                   fontSize: "0.75rem",
-                  color: "#9e9a93",
+                  color: "#9CA3AF",
                   marginBottom: "1.5rem",
                   fontFamily: "monospace",
                 }}
@@ -71,13 +72,13 @@ export default function GlobalError({
                 onClick={reset}
                 style={{
                   padding: "0.75rem 1.5rem",
-                  backgroundColor: "#f5f0e8",
-                  color: "#0a0a0a",
+                  backgroundColor: "#B56B5D",
+                  color: "#FFFFFF",
                   border: "none",
-                  borderRadius: "2px",
+                  borderRadius: "6px",
                   fontWeight: 500,
                   cursor: "pointer",
-                  fontSize: "1rem",
+                  fontSize: "0.9375rem",
                 }}
               >
                 Try Again
@@ -87,12 +88,12 @@ export default function GlobalError({
                 style={{
                   padding: "0.75rem 1.5rem",
                   backgroundColor: "transparent",
-                  color: "#f5f0e8",
-                  border: "1px solid #2a2a2a",
-                  borderRadius: "2px",
+                  color: "#1A1A1A",
+                  border: "1px solid #D4D4D4",
+                  borderRadius: "6px",
                   fontWeight: 500,
                   textDecoration: "none",
-                  fontSize: "1rem",
+                  fontSize: "0.9375rem",
                 }}
               >
                 Go Home

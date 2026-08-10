@@ -8,14 +8,13 @@ import {
   Req,
   UseGuards,
 } from "@nestjs/common";
-import { OrderStatus } from "@dadan/db";
 import type { Request } from "express";
 import { OrdersService } from "./orders.service";
 import { AdminGuard } from "../admin/auth/guards/admin.guard";
 import { CurrentAdmin } from "../admin/auth/decorators/current-admin.decorator";
 import type { AdminSession } from "@dadan/types";
 import { getClientIp } from "../common/constants";
-import { PaginationQueryDto } from "../common/dto/pagination.dto";
+import { AdminOrderQueryDto } from "./dto/admin-order-query.dto";
 import { UpdateOrderStatusDto } from "./dto/update-order-status.dto";
 
 @Controller("admin/orders")
@@ -24,12 +23,8 @@ export class AdminOrdersController {
   constructor(private readonly orders: OrdersService) {}
 
   @Get()
-  list(
-    @Query() query: PaginationQueryDto,
-    @Query("status") status?: OrderStatus,
-    @Query("clientId") clientId?: string,
-  ) {
-    return this.orders.listAdminOrders(query.page, query.limit, status, clientId);
+  list(@Query() query: AdminOrderQueryDto) {
+    return this.orders.listAdminOrders(query.page, query.limit, query.status, query.clientId);
   }
 
   @Get(":id")

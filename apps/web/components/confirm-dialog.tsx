@@ -1,7 +1,8 @@
 "use client";
 
 import { createContext, useCallback, useContext, useRef, useState } from "react";
-import { LuxuryButton } from "@/components/ui";
+import { Button } from "@/components/ui/Button";
+import { Modal } from "@/components/ui/Modal";
 
 interface ConfirmOptions {
   title: string;
@@ -48,47 +49,40 @@ export function ConfirmProvider({ children }: { children: React.ReactNode }) {
     <ConfirmContext.Provider value={{ confirm }}>
       {children}
       {state?.open && (
-        <div
-          className="fixed inset-0 z-50 flex items-center justify-center bg-black/60"
-          role="dialog"
-          aria-modal="true"
-          aria-labelledby="confirm-title"
-          aria-describedby="confirm-message"
-        >
-          <div className="mx-4 w-full max-w-md rounded-[var(--radius-panel)] border border-[var(--color-border)] bg-[var(--color-surface)] p-6 shadow-xl">
-            <h2
-              id="confirm-title"
-              className="font-display text-xl tracking-[0.04em] uppercase"
-            >
-              {state.title}
-            </h2>
-            <p id="confirm-message" className="mt-3 text-sm text-[var(--color-ivory-muted)]">
-              {state.message}
-            </p>
-            <div className="mt-6 flex justify-end gap-3">
-              <LuxuryButton
+        <Modal
+          open
+          title={state.title}
+          onClose={handleCancel}
+          size="sm"
+          footer={
+            <>
+              <Button
                 variant="ghost"
                 size="sm"
                 onClick={handleCancel}
               >
                 {state.cancelLabel ?? "Cancel"}
-              </LuxuryButton>
-              <LuxuryButton
+              </Button>
+              <Button
                 size="sm"
-                onClick={handleConfirm}
-                className={
+                variant={
                   state.variant === "danger"
-                    ? "bg-red-600 hover:bg-red-700"
+                    ? "destructive"
                     : state.variant === "warning"
-                      ? "bg-[var(--color-warning)] hover:opacity-90"
-                      : ""
+                      ? "primary"
+                      : "primary"
                 }
+                onClick={handleConfirm}
               >
                 {state.confirmLabel ?? "Confirm"}
-              </LuxuryButton>
-            </div>
-          </div>
-        </div>
+              </Button>
+            </>
+          }
+        >
+          <p className="text-sm text-ds-text-secondary">
+            {state.message}
+          </p>
+        </Modal>
       )}
     </ConfirmContext.Provider>
   );

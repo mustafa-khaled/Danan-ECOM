@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import { LuxuryButton } from "@/components/ui";
+import { Button } from "@/components/ui";
 import { registerPiece } from "@/features/admin/api/fetch-admin-pieces";
 import type { AdminDesignListItem } from "@/features/admin/types";
 
@@ -102,16 +102,16 @@ export function RegisterPieceForm({ designs }: RegisterPieceFormProps) {
       </div>
 
       <div className="flex gap-4">
-        <LuxuryButton type="submit" loading={isSubmitting}>
+        <Button type="submit" loading={isSubmitting} variant="primary">
           Register Piece
-        </LuxuryButton>
-        <LuxuryButton
+        </Button>
+        <Button
           type="button"
-          variant="ghost"
+          variant="outline"
           onClick={() => router.push("/admin/pieces")}
         >
           Cancel
-        </LuxuryButton>
+        </Button>
       </div>
     </form>
   );

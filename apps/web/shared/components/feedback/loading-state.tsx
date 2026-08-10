@@ -16,10 +16,10 @@ export function DadanSpinner({
 }) {
   return (
     <div className={cn("relative flex items-center justify-center shrink-0", className)}>
-      {/* Outer rotating metallic aura ring */}
+      {/* Outer rotating aura ring */}
       <div
         className={cn(
-          "rounded-full border-2 border-gray-200/80 border-t-[#2D2321] border-r-[#4CBEAE] animate-spin duration-700",
+          "rounded-full border-2 border-ds-border/60 border-t-ds-secondary border-r-ds-teal animate-spin duration-700",
           size === "sm" && "size-5 border",
           size === "md" && "size-24 sm:size-28",
           size === "lg" && "size-32 sm:size-36"
@@ -30,7 +30,7 @@ export function DadanSpinner({
       <div className="absolute inset-0 flex items-center justify-center">
         <svg
           className={cn(
-            "text-[#2D2321] animate-pulse",
+            "text-ds-secondary animate-pulse",
             size === "sm" && "size-2.5",
             size === "md" && "size-10 sm:size-12",
             size === "lg" && "size-14 sm:size-16"
@@ -71,7 +71,7 @@ export function LoadingState({
       className={cn(
         "flex flex-col items-center justify-center text-center p-6 transition-all duration-300",
         fullScreen
-          ? "fixed inset-0 z-50 bg-white/95 backdrop-blur-md min-h-screen"
+          ? "fixed inset-0 z-50 bg-ds-background/95 backdrop-blur-md min-h-screen"
           : "min-h-[calc(100dvh-78px)] md:min-h-[calc(100dvh-115px)] w-full",
         className
       )}
@@ -82,7 +82,7 @@ export function LoadingState({
       <div className="mt-6 flex flex-col items-center gap-1.5">
         <span
           className={cn(
-            "font-display font-bold tracking-[0.3em] text-[#2D2321] uppercase",
+            "font-heading font-bold tracking-[0.3em] text-ds-secondary uppercase",
             size === "sm" && "text-xs",
             size === "md" && "text-base sm:text-lg",
             size === "lg" && "text-xl sm:text-2xl"
@@ -91,7 +91,7 @@ export function LoadingState({
           DADAN
         </span>
         {label ? (
-          <span className="font-sans text-xs tracking-widest text-gray-400 uppercase">
+          <span className="font-body text-xs tracking-widest text-ds-text-secondary uppercase">
             {label}
           </span>
         ) : null}

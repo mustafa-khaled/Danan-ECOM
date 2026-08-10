@@ -20,6 +20,7 @@ import { CurrentAdmin } from "../admin/auth/decorators/current-admin.decorator";
 import type { AdminSession } from "@dadan/types";
 import { getClientIp } from "../common/constants";
 import { PaginationQueryDto } from "../common/dto/pagination.dto";
+import { AdminDesignQueryDto } from "./dto/admin-design-query.dto";
 import { CreateCollectionDto } from "./dto/create-collection.dto";
 import { CreateDesignDto } from "./dto/create-design.dto";
 import { UpdateCollectionDto } from "./dto/update-collection.dto";
@@ -42,11 +43,8 @@ export class AdminCollectionsController {
   }
 
   @Get("designs")
-  listDesigns(
-    @Query() query: PaginationQueryDto,
-    @Query("collectionId") collectionId?: string,
-  ) {
-    return this.collections.listDesignsAdmin(query.page, query.limit, collectionId);
+  listDesigns(@Query() query: AdminDesignQueryDto) {
+    return this.collections.listDesignsAdmin(query.page, query.limit, query.collectionId);
   }
 
   @Get("designs/:id")

@@ -38,10 +38,10 @@ export default function ProfileAside() {
               >
                 <Link
                   href={item.href}
-                  className={`block w-full px-4 py-3 text-center lg:text-start text-xs sm:text-sm font-medium transition-colors duration-200 ${
+                  className={`block w-full px-4 py-3 text-center lg:text-start text-xs sm:text-sm font-medium rounded-[var(--radius-sm)] transition-colors duration-200 ${
                     isActive
-                      ? "bg-[#BC776E] text-white"
-                      : "bg-[#FBF8F3] text-[#2D2D2D] hover:bg-[#F3EFE6]"
+                      ? "bg-ds-primary text-ds-primary-foreground font-semibold"
+                      : "bg-ds-surface-warm text-ds-text hover:bg-ds-surface-warm-hover"
                   }`}
                 >
                   {item.label}
@@ -54,4 +54,3 @@ export default function ProfileAside() {
     </aside>
   );
 }
-

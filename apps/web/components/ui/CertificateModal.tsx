@@ -1,7 +1,8 @@
 "use client";
 
 import { useLocale, useTranslations } from "next-intl";
-import { LuxuryModal } from "./LuxuryModal";
+import { Modal } from "./Modal";
+import { Button } from "./Button";
 import { SerialBadge } from "./SerialBadge";
 
 /**
@@ -46,7 +47,7 @@ export function CertificateModal({ open, onClose, certificate }: CertificateModa
     day: "numeric",
   });
   return (
-    <LuxuryModal
+    <Modal
       open={open}
       title={t("certificateOfAuthenticity")}
       onClose={onClose}
@@ -56,36 +57,37 @@ export function CertificateModal({ open, onClose, certificate }: CertificateModa
             href={certificate.pdfUrl}
             target="_blank"
             rel="noopener noreferrer"
-            className="inline-flex min-h-11 items-center justify-center rounded-[var(--radius-button)] border border-[var(--color-gold)] bg-transparent px-6 text-sm tracking-[0.1em] uppercase text-[var(--color-gold)] transition-colors hover:bg-[var(--color-gold)] hover:text-[var(--color-void)]"
           >
-            {t("downloadPdf")}
+            <Button variant="outline" size="md">
+              {t("downloadPdf")}
+            </Button>
           </a>
         ) : null
       }
     >
       <div className="space-y-4">
         {certificate.pieceName ? (
-          <p className="font-display text-lg text-[var(--color-ivory)]">{certificate.pieceName}</p>
+          <p className="ds-h5 text-ds-text">{certificate.pieceName}</p>
         ) : null}
         {certificate.serialNumber ? <SerialBadge serial={certificate.serialNumber} /> : null}
         <dl className="space-y-3 text-sm">
-          <div className="flex justify-between gap-4 border-b border-[var(--color-border)] pb-2">
-            <dt className="tracking-[0.1em] uppercase text-[var(--color-ivory-muted)]">
+          <div className="flex justify-between gap-4 border-b border-ds-border pb-2">
+            <dt className="tracking-widest uppercase text-ds-text-secondary">
               {t("certificateNumber")}
             </dt>
-            <dd className="font-mono text-[var(--color-ivory)]">{certificate.certificateNumber}</dd>
+            <dd className="font-mono text-ds-text">{certificate.certificateNumber}</dd>
           </div>
-          <div className="flex justify-between gap-4 border-b border-[var(--color-border)] pb-2">
-            <dt className="tracking-[0.1em] uppercase text-[var(--color-ivory-muted)]">
+          <div className="flex justify-between gap-4 border-b border-ds-border pb-2">
+            <dt className="tracking-widest uppercase text-ds-text-secondary">
               {t("issuedLabel")}
             </dt>
-            <dd className="text-[var(--color-ivory)]">{issuedDate}</dd>
+            <dd className="text-ds-text">{issuedDate}</dd>
           </div>
         </dl>
         {certificate.qrCodeData ? (
-          <p className="text-xs leading-relaxed text-[var(--color-ivory-muted)]">{t("qrHint")}</p>
+          <p className="text-xs leading-relaxed text-ds-text-muted">{t("qrHint")}</p>
         ) : null}
       </div>
-    </LuxuryModal>
+    </Modal>
   );
 }

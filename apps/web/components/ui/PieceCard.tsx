@@ -34,7 +34,7 @@ export function PieceCard({
 }: PieceCardProps) {
   const content = (
     <>
-      <div className={cn("relative w-full aspect-square md:aspect-4/5 overflow-hidden bg-(--color-surface)", imageClassName)}>
+      <div className={cn("relative w-full aspect-square md:aspect-4/5 overflow-hidden bg-ds-surface", imageClassName)}>
         {piece.imageUrl ? (
           <OptimizedImage
             src={piece.imageUrl}
@@ -47,37 +47,37 @@ export function PieceCard({
             quality={80}
           />
         ) : (
-          <div className="flex h-full items-center justify-center text-(--color-text-muted)">
+          <div className="flex h-full items-center justify-center text-ds-text-muted">
             <span className="font-display text-lg">DADAN</span>
           </div>
         )}
         {badge === "certificateActive" ? (
-          <span className="absolute inset-s-3 top-3 bg-(--color-accent) px-2 py-1 text-[0.625rem] tracking-widest uppercase text-white">
+          <span className="absolute inset-s-3 top-3 bg-ds-secondary px-2 py-1 text-[0.625rem] tracking-widest uppercase text-white">
             Certificate Active
           </span>
         ) : null}
       </div>
       <div className="flex flex-col gap-1 md:gap-2 p-2 md:p-4">
         {piece.collectionName ? (
-          <p className="text-[0.625rem] md:text-xs tracking-[0.14em] uppercase text-(--color-text-muted)">
+          <p className="text-[0.625rem] md:text-xs tracking-[0.14em] uppercase text-ds-text-secondary">
             {piece.collectionName}
           </p>
         ) : null}
-        <h3 className="font-english text-sm md:text-xl leading-tight text-(--color-text)">
+        <h3 className="font-heading text-sm md:text-xl leading-tight text-ds-text">
           {piece.name}
         </h3>
         {piece.subtitle ? (
-          <p className="text-[0.625rem] md:text-xs tracking-[0.14em] uppercase text-(--color-text-muted)">
+          <p className="text-[0.625rem] md:text-xs tracking-[0.14em] uppercase text-ds-text-secondary">
             {piece.subtitle}
           </p>
         ) : null}
         {piece.price ? (
-          <p className="font-display text-sm tracking-[0.08em] text-(--color-text)">
+          <p className="font-display text-sm tracking-[0.08em] text-ds-text">
             {piece.price}
           </p>
         ) : null}
         {showExplore ? (
-          <p className="text-[0.625rem] md:text-xs tracking-[0.12em] uppercase text-[#1F5750] group-hover:text-(--color-accent)">
+          <p className="text-[0.625rem] md:text-xs tracking-[0.12em] uppercase text-ds-teal-800 group-hover:text-ds-secondary">
             Explore Piece <span className="rtl:rotate-180 inline-block">→</span>
           </p>
         ) : piece.serialNumber ? (
@@ -87,12 +87,10 @@ export function PieceCard({
     </>
   );
 
-  const sharedClasses = [
-    "group block overflow-hidden border border-[var(--color-border)] bg-white transition-colors duration-200 hover:border-[var(--color-accent)]",
+  const sharedClasses = cn(
+    "group block overflow-hidden border border-ds-border bg-ds-background transition-colors duration-200 hover:border-ds-secondary",
     className,
-  ]
-    .filter(Boolean)
-    .join(" ");
+  );
 
   if (onSelect) {
     return (

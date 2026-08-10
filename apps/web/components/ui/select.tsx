@@ -30,8 +30,8 @@ function SelectTrigger({
       data-slot="select-trigger"
       data-size={size}
       className={cn(
-        "flex w-fit items-center justify-between gap-1 rounded-md border border-border bg-transparent px-3 py-1.5 text-sm whitespace-nowrap text-(--color-text) shadow-none outline-none transition-colors",
-        "focus-visible:shadow-(--shadow-focus)",
+        "flex w-fit items-center justify-between gap-1 rounded-(--radius-sm) border border-ds-border bg-ds-background px-3 py-1.5 text-sm whitespace-nowrap text-ds-text shadow-none outline-none transition-colors duration-200",
+        "focus-visible:border-ds-border-focus",
         "disabled:cursor-not-allowed disabled:opacity-50",
         "data-[size=default]:min-h-9 data-[size=sm]:min-h-8",
         "[&_svg]:pointer-events-none [&_svg]:shrink-0",
@@ -41,7 +41,7 @@ function SelectTrigger({
     >
       {children}
       <SelectPrimitive.Icon asChild>
-        <ChevronDownIcon className="size-3 opacity-70 rtl:rotate-180" aria-hidden />
+        <ChevronDownIcon className="size-3 opacity-70 rtl:rotate-180 text-ds-text-secondary" aria-hidden />
       </SelectPrimitive.Icon>
     </SelectPrimitive.Trigger>
   );
@@ -101,7 +101,7 @@ function SelectContent({
       <SelectPrimitive.Content
         data-slot="select-content"
         className={cn(
-          "relative z-50 max-h-(--radix-select-content-available-height) min-w-32 overflow-x-hidden overflow-y-auto rounded-md border border-border bg-(--color-surface) text-(--color-text) shadow-md",
+          "relative z-(--z-popover) max-h-(--radix-select-content-available-height) min-w-32 overflow-x-hidden overflow-y-auto rounded-(--radius-md) border border-ds-border bg-ds-background text-ds-text shadow-lg",
           position === "popper" &&
             "data-[side=bottom]:translate-y-1 data-[side=left]:-translate-x-1 data-[side=right]:translate-x-1 data-[side=top]:-translate-y-1",
           className,
@@ -134,7 +134,7 @@ function SelectLabel({ className, ...props }: React.ComponentProps<typeof Select
   return (
     <SelectPrimitive.Label
       data-slot="select-label"
-      className={cn("px-2 py-1.5 text-xs text-(--color-ivory-muted)", className)}
+      className={cn("px-2 py-1.5 text-xs text-ds-text-secondary font-medium", className)}
       {...props}
     />
   );
@@ -145,8 +145,8 @@ function SelectItem({ className, children, ...props }: React.ComponentProps<type
     <SelectPrimitive.Item
       data-slot="select-item"
       className={cn(
-        "relative flex w-full cursor-default items-center gap-2 rounded-sm py-1.5 ps-2 pe-8 text-sm outline-none select-none",
-        "focus:bg-muted focus:text-(--color-text)",
+        "relative flex w-full cursor-default items-center gap-2 rounded-(--radius-sm) py-1.5 ps-2 pe-8 text-sm outline-none select-none",
+        "focus:bg-ds-surface focus:text-ds-text",
         "data-disabled:pointer-events-none data-disabled:opacity-50",
         className,
       )}
@@ -154,7 +154,7 @@ function SelectItem({ className, children, ...props }: React.ComponentProps<type
     >
       <span className="absolute inset-e-2 flex size-3.5 items-center justify-center">
         <SelectPrimitive.ItemIndicator>
-          <CheckIcon className="size-4" aria-hidden />
+          <CheckIcon className="size-4 text-ds-text" aria-hidden />
         </SelectPrimitive.ItemIndicator>
       </span>
       <SelectPrimitive.ItemText>{children}</SelectPrimitive.ItemText>
@@ -166,7 +166,7 @@ function SelectSeparator({ className, ...props }: React.ComponentProps<typeof Se
   return (
     <SelectPrimitive.Separator
       data-slot="select-separator"
-      className={cn("-mx-1 my-1 h-px bg-border", className)}
+      className={cn("-mx-1 my-1 h-px bg-ds-border", className)}
       {...props}
     />
   );

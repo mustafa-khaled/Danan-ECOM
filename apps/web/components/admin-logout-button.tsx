@@ -2,6 +2,7 @@
 
 import { useRouter } from "next/navigation";
 import { useLogout } from "@/features/auth";
+import { Button } from "@/components/ui/Button";
 
 export function AdminLogoutButton() {
   const router = useRouter();
@@ -18,13 +19,14 @@ export function AdminLogoutButton() {
   }
 
   return (
-    <button
+    <Button
       type="button"
       onClick={handleLogout}
-      disabled={isPending}
-      className="inline-flex min-h-11 items-center rounded-[var(--radius-item)] border border-[var(--color-border)] px-4 text-xs tracking-[0.12em] uppercase text-[var(--color-ivory-muted)] transition-colors hover:border-[var(--color-ruby)] hover:text-[var(--color-ruby)] focus-visible:shadow-[var(--shadow-focus)] disabled:opacity-50"
+      loading={isPending}
+      variant="outline"
+      size="sm"
     >
-      {isPending ? "Signing out\u2026" : "Sign out"}
-    </button>
+      {isPending ? "Signing out…" : "Sign out"}
+    </Button>
   );
 }

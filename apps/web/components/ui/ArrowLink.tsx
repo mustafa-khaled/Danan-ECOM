@@ -1,6 +1,12 @@
 import Link from "next/link";
 import { cn } from "@/lib/utils";
 
+/* ═══════════════════════════════════════════════════════════════════════════
+   ARROW LINK — Navigation link with arrow icon
+   ═══════════════════════════════════════════════════════════════════════════
+   Uses DS color tokens. Renders as a Next.js Link with button-like styling.
+   ═══════════════════════════════════════════════════════════════════════════ */
+
 type ArrowLinkVariant = "primary" | "teal" | "outline" | "text";
 type ArrowLinkSize = "sm" | "md" | "lg";
 
@@ -15,13 +21,13 @@ export interface ArrowLinkProps {
 
 const variantStyles: Record<ArrowLinkVariant, string> = {
   primary:
-    "bg-[#B56B5D] text-white hover:bg-[#a05c50]",
+    "bg-ds-primary text-ds-primary-foreground hover:bg-ds-primary-hover",
   teal:
-    "bg-[#4CBEAE] text-white hover:bg-[#3FA899]",
+    "bg-ds-teal text-ds-teal-foreground hover:bg-ds-teal-hover",
   outline:
-    "border border-(--color-border) text-(--color-text) hover:border-(--color-accent) hover:text-(--color-accent)",
+    "border border-ds-border text-ds-text hover:border-ds-border-hover",
   text:
-    "text-[#1F5750] hover:text-(--color-accent)",
+    "text-ds-teal-800 hover:text-ds-secondary",
 };
 
 const sizeStyles: Record<ArrowLinkSize, string> = {
@@ -42,7 +48,7 @@ export function ArrowLink({
     <Link
       href={href}
       className={cn(
-        "inline-flex items-center gap-2 font-medium tracking-wide transition-colors",
+        "inline-flex items-center gap-2 font-medium tracking-wide transition-colors duration-200 rounded-(--radius-button)",
         variantStyles[variant],
         sizeStyles[size],
         fullWidth ? "w-full justify-between" : "w-fit justify-center",
@@ -50,7 +56,7 @@ export function ArrowLink({
       )}
     >
       <span>{children}</span>
-      <span className="rtl:rotate-180 inline-block">→</span>
+      <span className="rtl:rotate-180 inline-block" aria-hidden="true">→</span>
     </Link>
   );
 }

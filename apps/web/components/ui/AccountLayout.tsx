@@ -43,10 +43,10 @@ export function AccountLayout({ children, title }: AccountLayoutProps) {
                 <li key={item.labelKey}>
                   <Link
                     href={item.href}
-                    className={`block px-4 py-2.5 text-sm transition-colors ${
+                    className={`block px-4 py-2.5 text-sm rounded-(--radius-sm) transition-colors ${
                       isActive
-                        ? "bg-[var(--color-surface)] font-medium text-[var(--color-accent)]"
-                        : "text-[var(--color-text-muted)] hover:text-[var(--color-accent)]"
+                        ? "bg-ds-surface font-semibold text-ds-text"
+                        : "text-ds-text-secondary hover:text-ds-text hover:bg-ds-surface/50"
                     }`}
                   >
                     {t(item.labelKey)}
@@ -58,7 +58,7 @@ export function AccountLayout({ children, title }: AccountLayoutProps) {
         </nav>
       </aside>
       <div>
-        <h1 className="mb-8 font-english text-3xl text-[var(--color-text)]">
+        <h1 className="mb-8 font-heading text-3xl text-ds-text">
           {title}
         </h1>
         {children}

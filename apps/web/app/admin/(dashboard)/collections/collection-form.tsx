@@ -4,7 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { useForm, type Resolver } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { LuxuryButton } from "@/components/ui";
+import { Button } from "@/components/ui";
 import { useConfirm } from "@/components/confirm-dialog";
 import type { AdminCollectionDetail } from "@/features/admin/types";
 import {
@@ -213,28 +213,28 @@ export function CollectionForm({ collection, mode }: CollectionFormProps) {
       </div>
 
       <div className="flex gap-4">
-        <LuxuryButton type="submit" loading={isSubmitting}>
+        <Button type="submit" loading={isSubmitting} variant="primary">
           {mode === "create" ? "Create Collection" : "Save Changes"}
-        </LuxuryButton>
+        </Button>
 
-        <LuxuryButton
+        <Button
           type="button"
-          variant="ghost"
+          variant="outline"
           onClick={() => router.push("/admin/collections")}
         >
           Cancel
-        </LuxuryButton>
+        </Button>
 
         {mode === "edit" && (
-          <LuxuryButton
+          <Button
             type="button"
-            variant="ghost"
+            variant="destructive"
             onClick={handleDelete}
             loading={isDeleting}
-            className="ms-auto border-red-500 text-red-500 hover:bg-red-500/10"
+            className="ms-auto"
           >
             Delete Collection
-          </LuxuryButton>
+          </Button>
         )}
       </div>
     </form>

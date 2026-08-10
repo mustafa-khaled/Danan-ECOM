@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { LuxuryButton } from "@/components/ui";
+import { Button, Input } from "@/components/ui";
 import { useLogin } from "@/features/auth";
 
 export function LoginForm() {
@@ -24,53 +24,37 @@ export function LoginForm() {
 
   return (
     <form onSubmit={handleSubmit} className="space-y-6">
-      <div className="space-y-2">
-        <label
-          htmlFor="email"
-          className="block text-xs tracking-[0.14em] uppercase text-(--color-ivory-muted)"
-        >
-          Email
-        </label>
-        <input
-          id="email"
-          name="email"
-          type="email"
-          autoComplete="username"
-          required
-          value={email}
-          onChange={(event) => setEmail(event.target.value)}
-          className="w-full rounded-(--radius-item) border border-border bg-(--color-surface) px-4 py-3 text-sm text-(--color-ivory) outline-none focus-visible:shadow-(--shadow-focus)"
-        />
-      </div>
+      <Input
+        label="Email"
+        id="email"
+        name="email"
+        type="email"
+        autoComplete="username"
+        required
+        value={email}
+        onChange={(event) => setEmail(event.target.value)}
+      />
 
-      <div className="space-y-2">
-        <label
-          htmlFor="password"
-          className="block text-xs tracking-[0.14em] uppercase text-(--color-ivory-muted)"
-        >
-          Password
-        </label>
-        <input
-          id="password"
-          name="password"
-          type="password"
-          autoComplete="current-password"
-          required
-          value={password}
-          onChange={(event) => setPassword(event.target.value)}
-          className="w-full rounded-(--radius-item) border border-border bg-(--color-surface) px-4 py-3 text-sm text-(--color-ivory) outline-none focus-visible:shadow-(--shadow-focus)"
-        />
-      </div>
+      <Input
+        label="Password"
+        id="password"
+        name="password"
+        type="password"
+        autoComplete="current-password"
+        required
+        value={password}
+        onChange={(event) => setPassword(event.target.value)}
+      />
 
       {error ? (
-        <p className="text-sm text-(--color-ruby)" role="alert">
+        <p className="text-sm text-ds-error font-body" role="alert">
           {error instanceof Error ? error.message : "Sign in failed"}
         </p>
       ) : null}
 
-      <LuxuryButton type="submit" loading={isPending} className="w-full">
+      <Button type="submit" loading={isPending} variant="primary" fullWidth>
         Sign in
-      </LuxuryButton>
+      </Button>
     </form>
   );
 }

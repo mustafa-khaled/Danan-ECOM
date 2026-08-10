@@ -15,12 +15,12 @@ export default function LayoutHero() {
         className="object-cover object-[0_1%]"
       />
 
-      {/* #1D1D1D9E Dark Overlay (62% opacity) */}
-      <div className="absolute inset-0 bg-[#1D1D1D9E] pointer-events-none z-1" />
+      {/* Dark Overlay */}
+      <div className="absolute inset-0 bg-black/60 pointer-events-none z-1" />
 
-      {/* Monotone noise effect filter (Size 0.5, Density 100%, Opacity 62%) */}
+      {/* Monotone noise effect filter */}
       <div
-        className="absolute inset-0 pointer-events-none mix-blend-overlay z-2 opacity-62"
+        className="absolute inset-0 pointer-events-none mix-blend-overlay z-2 opacity-60"
         style={{
           backgroundImage: `url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='monotoneNoise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.5' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23monotoneNoise)'/%3E%3C/svg%3E")`,
         }}

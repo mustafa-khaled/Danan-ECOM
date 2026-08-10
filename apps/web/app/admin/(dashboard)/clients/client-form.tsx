@@ -4,7 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { LuxuryButton } from "@/components/ui";
+import { Button } from "@/components/ui";
 import type { AdminClientDetail } from "@/features/admin/types";
 import {
   createClient,
@@ -137,17 +137,17 @@ export function ClientForm({ client, mode }: ClientFormProps) {
       </div>
 
       <div className="flex gap-4">
-        <LuxuryButton type="submit" loading={isSubmitting}>
+        <Button type="submit" loading={isSubmitting} variant="primary">
           {mode === "create" ? "Create Client" : "Save Changes"}
-        </LuxuryButton>
+        </Button>
 
-        <LuxuryButton
+        <Button
           type="button"
-          variant="ghost"
+          variant="outline"
           onClick={() => router.push("/admin/clients")}
         >
           Cancel
-        </LuxuryButton>
+        </Button>
       </div>
     </form>
   );

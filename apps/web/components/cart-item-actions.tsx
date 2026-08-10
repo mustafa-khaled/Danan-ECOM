@@ -1,7 +1,7 @@
 "use client";
 
 import { useTranslations } from "next-intl";
-import { LuxuryButton } from "@/components/ui";
+import { Button } from "@/components/ui/Button";
 import { useRemoveFromCart } from "@/features/cart";
 
 interface CartItemActionsProps {
@@ -22,11 +22,11 @@ export function CartItemActions({ pieceId }: CartItemActionsProps) {
 
   return (
     <div>
-      <LuxuryButton variant="ghost" size="sm" loading={isPending} onClick={handleRemove}>
+      <Button variant="ghost" size="sm" loading={isPending} onClick={handleRemove}>
         {t("remove")}
-      </LuxuryButton>
+      </Button>
       {error ? (
-        <p role="alert" className="mt-1 text-xs text-[var(--color-ruby)]">
+        <p role="alert" className="mt-1 text-xs text-ds-error font-body">
           {error instanceof Error ? error.message : t("removeError")}
         </p>
       ) : null}

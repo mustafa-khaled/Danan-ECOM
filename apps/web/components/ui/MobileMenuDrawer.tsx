@@ -22,29 +22,29 @@ export function MobileMenuDrawer({
     <div className="md:hidden">
       {/* Backdrop overlay */}
       <div
-        className={`fixed inset-0 z-50 bg-black/40 backdrop-blur-xs transition-opacity duration-300 ease-in-out ${
+        className={`fixed inset-0 z-50 bg-ds-overlay-heavy backdrop-blur-xs transition-opacity duration-300 ease-in-out ${
           isOpen ? "opacity-100 pointer-events-auto" : "opacity-0 pointer-events-none"
         }`}
         onClick={onClose}
         aria-hidden="true"
       />
 
-      {/* Side menu content panel - Full Height & Solid White Background */}
+      {/* Side menu content panel - Full Height & Solid Background */}
       <div
-        className={`fixed inset-y-0 right-0 z-50 flex h-dvh min-h-screen w-4/5 max-w-xs flex-col justify-between border-l border-black/10 bg-white p-6 shadow-2xl transition-transform duration-300 ease-in-out ${
+        className={`fixed inset-y-0 right-0 z-50 flex h-dvh min-h-screen w-4/5 max-w-xs flex-col justify-between border-l border-ds-border bg-ds-background p-6 shadow-2xl transition-transform duration-300 ease-in-out ${
           isOpen ? "translate-x-0 pointer-events-auto" : "translate-x-full pointer-events-none"
         }`}
       >
         <div className="flex flex-col gap-6">
           {/* Top row in drawer: Close button */}
-          <div className="flex items-center justify-between border-b border-black/5 pb-4">
-            <span className="font-english text-lg font-medium text-(--color-text)">
+          <div className="flex items-center justify-between border-b border-ds-border pb-4">
+            <span className="font-heading text-lg font-medium text-ds-text">
               DADAN
             </span>
             <button
               type="button"
               onClick={onClose}
-              className="flex size-8 items-center justify-center text-(--color-text) hover:text-(--color-accent)"
+              className="flex size-8 items-center justify-center text-ds-text hover:text-ds-secondary"
               aria-label="Close menu"
             >
               <svg
@@ -73,10 +73,10 @@ export function MobileMenuDrawer({
                     <Link
                       href={item.href}
                       onClick={onClose}
-                      className={`block font-manrope text-lg font-medium tracking-[-0.02em] transition-colors ${
+                      className={`block font-body text-lg font-medium tracking-tight transition-colors ${
                         isActive
-                          ? "text-(--color-accent)"
-                          : "text-(--color-text-muted) hover:text-(--color-accent)"
+                          ? "text-ds-secondary font-semibold"
+                          : "text-ds-text-secondary hover:text-ds-text"
                       }`}
                     >
                       {tNav(item.labelKey)}
@@ -89,13 +89,13 @@ export function MobileMenuDrawer({
         </div>
 
         {/* Bottom utilities section: profile, notification & language icons */}
-        <div className="border-t border-black/10 pt-4 bg-white">
+        <div className="border-t border-ds-border pt-4 bg-ds-background">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-4">
               {/* Notification bell */}
               <button
                 type="button"
-                className="flex size-9 items-center justify-center text-(--color-text) transition-colors hover:text-(--color-accent)"
+                className="flex size-9 items-center justify-center text-ds-text transition-colors hover:text-ds-secondary"
                 aria-label={tNav("notifications")}
               >
                 <svg
@@ -122,7 +122,7 @@ export function MobileMenuDrawer({
               <Link
                 href="/beta/profile/wardrobe"
                 onClick={onClose}
-                className="flex size-9 items-center justify-center text-(--color-text) transition-colors hover:text-(--color-accent)"
+                className="flex size-9 items-center justify-center text-ds-text transition-colors hover:text-ds-secondary"
                 aria-label={tNav("profile")}
               >
                 <svg

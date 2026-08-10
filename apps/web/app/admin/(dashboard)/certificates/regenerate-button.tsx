@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { LuxuryButton } from "@/components/ui";
+import { Button } from "@/components/ui/Button";
 import { regenerateCertificate } from "@/features/admin/api/fetch-admin-certificates";
 
 interface RegenerateButtonProps {
@@ -32,19 +32,19 @@ export function RegenerateButton({ pieceId }: RegenerateButtonProps) {
 
   return (
     <div className="flex items-center gap-2">
-      <LuxuryButton
+      <Button
         variant="ghost"
         size="sm"
         onClick={handleRegenerate}
         loading={isLoading}
       >
         Regenerate
-      </LuxuryButton>
+      </Button>
       {feedback && (
         <span
           role="status"
           aria-live="polite"
-          className={`text-xs ${feedback.type === "success" ? "text-green-500" : "text-red-500"}`}
+          className={`text-xs font-body ${feedback.type === "success" ? "text-ds-success-text" : "text-ds-error-text"}`}
         >
           {feedback.message}
         </span>

@@ -9,13 +9,13 @@ export default function AboutDadan() {
   const t = useTranslations("home");
 
   return (
-    <section className="bg-[#F6EFED] py-10 md:py-16">
+    <section className="bg-ds-surface-rose py-10 md:py-16">
       <Container>
         {/* Title + Subtitle — full width, top */}
-        <h2 className="font-english text-xl md:text-3xl font-bold tracking-tight text-(--color-text)">
+        <h2 className="font-heading text-xl md:text-3xl font-bold tracking-tight text-ds-text">
           {t("aboutDadan")}
         </h2>
-        <p className="mt-1 md:mt-2 text-xs md:text-sm text-(--color-text-muted) italic">
+        <p className="mt-1 md:mt-2 text-xs md:text-sm text-ds-text-secondary italic font-body">
           {t("aboutSubtitle")}
         </p>
 
@@ -42,11 +42,11 @@ export default function AboutDadan() {
 
           {/* Right — description + image */}
           <div className="flex flex-col gap-4 md:gap-6">
-            <p className="text-xs md:text-sm leading-relaxed text-(--color-text-muted)">
+            <p className="text-xs md:text-sm leading-relaxed text-ds-text-secondary font-body">
               {t("aboutFullDescription")}
             </p>
 
-            <div className="relative aspect-4/5 w-full overflow-hidden">
+            <div className="relative aspect-4/5 w-full overflow-hidden rounded-[var(--radius-lg)]">
               <Image
                 src="/assets/about-dadan.avif"
                 alt={t("aboutDadan")}

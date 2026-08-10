@@ -40,10 +40,10 @@ export function AdminSearch({ placeholder = "Search...", paramName = "q" }: Admi
         onChange={(e) => handleSearch(e.target.value)}
         placeholder={placeholder}
         aria-label={placeholder}
-        className="w-full max-w-sm rounded-[var(--radius-sm)] border border-[var(--color-border)] bg-[var(--color-surface)] px-4 py-2 text-sm text-[var(--color-text)] placeholder:text-[var(--color-ivory-muted)] focus:border-[var(--color-accent)] focus:outline-none"
+        className="w-full max-w-sm rounded-(--radius-sm) border border-(--color-border) bg-(--color-surface) px-4 py-2 text-sm text-(--color-text) placeholder:text-(--color-ivory-muted) focus:border-(--color-accent) focus:outline-none"
       />
       {isPending && (
-        <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-[var(--color-ivory-muted)]">
+        <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-(--color-ivory-muted)">
           ...
         </span>
       )}

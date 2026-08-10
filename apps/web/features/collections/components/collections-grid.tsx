@@ -35,10 +35,10 @@ export default function CollectionsGrid({
           <button
             type="button"
             onClick={() => setActiveTab("collection")}
-            className={`w-full text-left px-3 py-2.5 md:px-5 md:py-3.5 text-xs md:text-sm font-medium transition-colors duration-200 ${
+            className={`w-full text-left px-3 py-2.5 md:px-5 md:py-3.5 text-xs md:text-sm font-medium rounded-(--radius-sm) transition-colors duration-200 cursor-pointer ${
               activeTab === "collection"
-                ? "bg-[#B56B5D] text-white"
-                : "bg-[#F5F5F5] hover:bg-[#EBEBEB] text-[#1A1A1A]"
+                ? "bg-ds-primary text-ds-primary-foreground"
+                : "bg-ds-surface hover:bg-ds-surface-warm-hover text-ds-text"
             }`}
           >
             {t("myCollection")}
@@ -46,10 +46,10 @@ export default function CollectionsGrid({
           <button
             type="button"
             onClick={() => setActiveTab("wishlist")}
-            className={`w-full text-left px-3 py-2.5 md:px-5 md:py-3.5 text-xs md:text-sm font-medium transition-colors duration-200 ${
+            className={`w-full text-left px-3 py-2.5 md:px-5 md:py-3.5 text-xs md:text-sm font-medium rounded-(--radius-sm) transition-colors duration-200 cursor-pointer ${
               activeTab === "wishlist"
-                ? "bg-[#B56B5D] text-white"
-                : "bg-[#F5F5F5] hover:bg-[#EBEBEB] text-[#1A1A1A]"
+                ? "bg-ds-primary text-ds-primary-foreground"
+                : "bg-ds-surface hover:bg-ds-surface-warm-hover text-ds-text"
             }`}
           >
             {t("wishList")}

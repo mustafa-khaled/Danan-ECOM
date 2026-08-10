@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { LuxuryButton } from "@/components/ui";
+import { Button } from "@/components/ui";
 import { useConfirm } from "@/components/confirm-dialog";
 import {
   approveTransfer,
@@ -125,49 +125,48 @@ export function TransferActions({ transferId }: TransferActionsProps) {
           Record when you&apos;ve contacted the parties involved in this transfer.
         </p>
         <div className="flex gap-4">
-          <LuxuryButton
-            variant="ghost"
+          <Button
+            variant="outline"
             size="sm"
             onClick={handleContactSender}
             loading={isContactingSender}
           >
             Log Contact with Sender
-          </LuxuryButton>
-          <LuxuryButton
-            variant="ghost"
+          </Button>
+          <Button
+            variant="outline"
             size="sm"
             onClick={handleContactRecipient}
             loading={isContactingRecipient}
           >
             Log Contact with Recipient
-          </LuxuryButton>
+          </Button>
         </div>
       </div>
 
-      <div className="rounded-[var(--radius-panel)] border border-[var(--color-warning)]/40 bg-[var(--color-warning)]/10 p-6">
-        <h2 className="mb-4 font-display text-lg tracking-[0.06em] uppercase text-[var(--color-warning)]">
+      <div className="rounded-[var(--radius-panel)] border border-ds-warning-border bg-ds-warning-bg p-6">
+        <h2 className="mb-4 font-heading text-lg font-bold tracking-tight text-ds-warning-text uppercase">
           DADAN Review Actions
         </h2>
-        <p className="mb-4 text-sm text-[var(--color-ivory-muted)]">
+        <p className="mb-4 text-sm text-ds-text-secondary font-body">
           As a SUPER_ADMIN, you can approve or reject this transfer.
           Make sure you&apos;ve contacted both parties before making a decision.
         </p>
         <div className="flex gap-4">
-          <LuxuryButton
+          <Button
             onClick={handleApprove}
             loading={isApproving}
-            className="bg-green-600 hover:bg-green-700"
+            variant="teal"
           >
             Approve Transfer
-          </LuxuryButton>
-          <LuxuryButton
-            variant="ghost"
+          </Button>
+          <Button
+            variant="destructive"
             onClick={handleReject}
             loading={isRejecting}
-            className="border-red-500 text-red-500 hover:bg-red-500/10"
           >
             Reject Transfer
-          </LuxuryButton>
+          </Button>
         </div>
       </div>
     </div>

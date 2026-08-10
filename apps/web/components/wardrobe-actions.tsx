@@ -5,6 +5,7 @@ import { useTranslations } from "next-intl";
 import { BadgeCheck } from "lucide-react";
 import { CertificateViewer } from "@/components/certificate-viewer";
 import { TransferInitiate } from "@/components/transfer-initiate";
+import { Button } from "@/components/ui/Button";
 
 interface WardrobeActionsProps {
   pieceId: string;
@@ -42,22 +43,25 @@ export function WardrobeActions({
           serialNumber={serialNumber}
         />
 
-        <Link
-          href="/beta/verify"
-          className="flex h-12 w-full items-center justify-center gap-2.5 rounded-[2px] border border-gray-200 bg-white px-4 text-center font-display text-sm font-semibold tracking-normal text-[#2D2321] transition-all hover:border-gray-300 hover:bg-gray-50 active:scale-[0.99]"
-        >
-          <span>{t("verifyAuthenticity")}</span>
-          <BadgeCheck className="size-4.5 text-[#2D2321]" />
+        <Link href="/beta/verify">
+          <Button
+            variant="outline"
+            size="lg"
+            fullWidth
+            iconRight={<BadgeCheck className="size-4.5" />}
+          >
+            {t("verifyAuthenticity")}
+          </Button>
         </Link>
       </div>
 
       {/* Active Transfer Notice */}
       {activeTransfer ? (
-        <p className="text-sm text-gray-500">
+        <p className="text-sm text-ds-text-secondary font-body">
           A transfer is in progress.{" "}
           <Link
             href={`/beta/profile/transfers/${activeTransfer.id}`}
-            className="text-[#4CBEAE] underline-offset-4 hover:underline font-medium"
+            className="text-ds-teal-800 underline-offset-4 hover:underline font-medium"
           >
             View transfer
           </Link>

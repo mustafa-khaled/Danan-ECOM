@@ -6,7 +6,7 @@ import { useState } from "react";
 import { useTranslations } from "next-intl";
 import { useAddToCart } from "@/features/cart";
 import { useSavePiece, useUnsavePiece } from "@/features/saved";
-import { DadanSpinner } from "@/shared/components/feedback/loading-state";
+import { Button } from "@/components/ui/Button";
 
 interface DesignActionsProps {
   pieceId: string;
@@ -58,59 +58,53 @@ export function DesignActions({
       {/* On mobile: 1 column stacked vertically. On sm/lg: 2 columns side-by-side */}
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-3.5 w-full">
         {/* Primary CTA: Add To Your Collection */}
-        <button
+        <Button
           type="button"
-          disabled={isAddingToCart}
+          loading={isAddingToCart}
           onClick={handleAddToCart}
-          className="flex h-12 w-full items-center justify-center gap-2.5 rounded-[2px] bg-[#4CBEAE] px-4 text-center font-display text-sm font-semibold tracking-normal text-[#2D2321] transition-all hover:bg-[#45B1A1] disabled:pointer-events-none disabled:opacity-50 active:scale-[0.99]"
+          variant="teal"
+          size="lg"
+          fullWidth
+          iconRight={
+            <Image
+              src="/shopping.png"
+              alt="Shopping Bag"
+              width={18}
+              height={18}
+              className="size-4.5 object-contain"
+            />
+          }
         >
-          {isAddingToCart ? (
-            <DadanSpinner size="sm" />
-          ) : (
-            <>
-              <span>{t("addToCollection")}</span>
-              <Image
-                src="/shopping.png"
-                alt="Shopping Bag"
-                width={18}
-                height={18}
-                className="size-4.5 object-contain"
-              />
-            </>
-          )}
-        </button>
+          {t("addToCollection")}
+        </Button>
 
         {/* Secondary CTA: Add To Favourites List */}
-        <button
+        <Button
           type="button"
-          disabled={isSaving || isUnsaving}
+          loading={isSaving || isUnsaving}
           onClick={handleToggleSave}
-          className="flex h-12 w-full items-center justify-center gap-2.5 rounded-[2px] border border-gray-200 bg-white px-4 text-center font-display text-sm font-semibold tracking-normal text-[#2D2321] transition-all hover:border-gray-300 hover:bg-gray-50 disabled:pointer-events-none disabled:opacity-50 active:scale-[0.99]"
+          variant="outline"
+          size="lg"
+          fullWidth
+          iconRight={
+            <Image
+              src="/heart-fill.png"
+              alt="Heart"
+              width={18}
+              height={18}
+              className={`size-4.5 object-contain ${isSaved ? "" : "opacity-90"}`}
+            />
+          }
         >
-          {isSaving || isUnsaving ? (
-            <DadanSpinner size="sm" />
-          ) : (
-            <>
-              <span>{isSaved ? t("unsave") : t("addToFavourites")}</span>
-              <Image
-                src="/heart-fill.png"
-                alt="Heart"
-                width={18}
-                height={18}
-                className={`size-4.5 object-contain ${isSaved ? "" : "opacity-90"}`}
-              />
-            </>
-          )}
-        </button>
+          {isSaved ? t("unsave") : t("addToFavourites")}
+        </Button>
       </div>
 
       {error ? (
-        <p role="alert" className="text-sm text-(--color-ruby)">
+        <p role="alert" className="text-sm text-ds-error">
           {error instanceof Error ? error.message : t("addToCartError")}
         </p>
       ) : null}
     </div>
   );
 }
-
-

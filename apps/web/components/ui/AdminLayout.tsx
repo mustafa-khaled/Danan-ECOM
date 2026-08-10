@@ -1,24 +1,32 @@
 import type { ReactNode } from "react";
-import { GoldDivider } from "./GoldDivider";
+import { AdminSidebar } from "@/components/admin-sidebar";
+import { AdminTopbar } from "@/components/admin-topbar";
 
 export interface AdminLayoutProps {
   children: ReactNode;
   title?: string;
+  admin?: {
+    displayName: string;
+    email?: string;
+    role: string;
+    avatarUrl?: string;
+  };
 }
 
-export function AdminLayout({ children, title = "DADAN Admin" }: AdminLayoutProps) {
+export function AdminLayout({ children, title = "Collections", admin }: AdminLayoutProps) {
+  const fallbackAdmin = admin || {
+    displayName: "Account Manager",
+    email: "ahmedgad@gmail.com",
+    role: "SUPER_ADMIN",
+  };
+
   return (
-    <div data-theme="admin" className="min-h-dvh bg-[var(--color-void)] text-[var(--color-ivory)]">
-      <header className="border-b border-[var(--color-border)] bg-[var(--color-surface)]">
-        <div className="mx-auto flex max-w-7xl items-center justify-between px-4 py-5 sm:px-8">
-          <div>
-            <p className="font-display text-xl tracking-[0.06em] uppercase">{title}</p>
-            <p className="text-xs tracking-[0.14em] uppercase text-[var(--color-ivory-muted)]">Staff Dashboard</p>
-          </div>
-        </div>
-        <GoldDivider />
-      </header>
-      <main className="mx-auto max-w-7xl px-4 py-8 sm:px-8">{children}</main>
+    <div data-theme="admin" className="min-h-screen flex bg-[#F9F8F6] text-ds-text font-body">
+      <AdminSidebar admin={fallbackAdmin} />
+      <div className="flex-1 flex flex-col min-w-0">
+        <AdminTopbar title={title} admin={fallbackAdmin} />
+        <main className="flex-1 p-4 sm:p-8">{children}</main>
+      </div>
     </div>
   );
 }

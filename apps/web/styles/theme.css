@@ -1,108 +1,355 @@
 @import "tailwindcss";
 
-/*
-  Font for headline EB Garamond
-  Font for body Manrope
-*/
+/* ═══════════════════════════════════════════════════════════════════════════
+   DADAN DESIGN SYSTEM — Single Source of Truth
+   ═══════════════════════════════════════════════════════════════════════════
+   Fonts:   Headings → EB Garamond  |  Body → Manrope  |  Arabic → Amiri
+   Palette: Extracted from reference design images (8 color scales, 50–950)
+   ═══════════════════════════════════════════════════════════════════════════ */
 
+/* ─── Tailwind v4 @theme — Design Tokens ─── */
 @theme {
-  --color-void: #0a0a0a;
-  --color-surface: #141414;
-  --color-border: #2a2a2a;
-  --color-muted: #1e1e1e;
-  --color-gold: #c9a96e;
-  --color-gold-light: #e8d5a3;
-  --color-ivory: #f5f0e8;
-  --color-ivory-muted: #9e9a93;
-  --color-ruby: #8b1a1a;
-  --color-emerald: #1a5c3a;
+  /* ── Color Scales (from reference palette) ────────────────────────────── */
 
-  --color-primary: var(--color-gold);
-  --color-secondary: var(--color-ivory-muted);
-  --color-success: var(--color-emerald);
-  --color-warning: #d97706;
-  --color-danger: var(--color-ruby);
-  --color-surface-token: var(--color-surface);
-  --color-text: var(--color-ivory);
+  /* Brown / Warm Neutral */
+  --color-brown-50:  #FCF8FB;
+  --color-brown-100: #F6F5F4;
+  --color-brown-200: #EAE7E4;
+  --color-brown-300: #D9D3CD;
+  --color-brown-400: #B7ADA4;
+  --color-brown-500: #897F79;
+  --color-brown-600: #69615C;
+  --color-brown-700: #524B48;
+  --color-brown-800: #393431;
+  --color-brown-900: #292523;
+  --color-brown-950: #141210;
 
-  --color-admin-bg: #f8f6f2;
-  --color-admin-surface: #ffffff;
-  --color-admin-text: #1a1a1a;
+  /* Warm Gray */
+  --color-warm-50:  #FBF7F7;
+  --color-warm-100: #F6EFED;
+  --color-warm-200: #EEDEDB;
+  --color-warm-300: #E2C7C2;
+  --color-warm-400: #D6A198;
+  --color-warm-500: #BF7266;
+  --color-warm-600: #985B50;
+  --color-warm-700: #7A493F;
+  --color-warm-800: #5D372F;
+  --color-warm-900: #4A2A24;
+  --color-warm-950: #2A1612;
 
+  /* Earth / Olive */
+  --color-earth-50:  #FBF8F3;
+  --color-earth-100: #F7EFE4;
+  --color-earth-200: #EFDEC7;
+  --color-earth-300: #E4C79C;
+  --color-earth-400: #C9AC7F;
+  --color-earth-500: #A18762;
+  --color-earth-600: #846C4E;
+  --color-earth-700: #6A543D;
+  --color-earth-800: #52402E;
+  --color-earth-900: #423324;
+  --color-earth-950: #251B12;
+
+  /* Teal / Green */
+  --color-teal-50:  #E7FEFA;
+  --color-teal-100: #C7FCF3;
+  --color-teal-200: #82FAE9;
+  --color-teal-300: #5FE9D7;
+  --color-teal-400: #55D3C1;
+  --color-teal-500: #4CBEAE;
+  --color-teal-600: #3C9A8D;
+  --color-teal-700: #2A7168;
+  --color-teal-800: #1F5750;
+  --color-teal-900: #184742;
+  --color-teal-950: #0A2925;
+
+  /* Amber / Yellow */
+  --color-amber-50:  #FFF6EB;
+  --color-amber-100: #FFECD2;
+  --color-amber-200: #FFDCAB;
+  --color-amber-300: #FFC66D;
+  --color-amber-400: #FAAF07;
+  --color-amber-500: #E9A306;
+  --color-amber-600: #CA8A04;
+  --color-amber-700: #A06602;
+  --color-amber-800: #7F4C01;
+  --color-amber-900: #693D01;
+  --color-amber-950: #3D2200;
+
+  /* Cyan / Info */
+  --color-cyan-50:  #E6FFF2;
+  --color-cyan-100: #C5FFE2;
+  --color-cyan-200: #86FFC9;
+  --color-cyan-300: #0FF8AF;
+  --color-cyan-400: #0DE8A3;
+  --color-cyan-500: #0CDC0A;
+  --color-cyan-600: #1EC58B;
+  --color-cyan-700: #059669;
+  --color-cyan-800: #037351;
+  --color-cyan-900: #025C40;
+  --color-cyan-950: #013524;
+
+  /* Red / Error */
+  --color-red-50:  #FEF5F4;
+  --color-red-100: #FEE9E6;
+  --color-red-200: #FCD5D0;
+  --color-red-300: #FBB6AE;
+  --color-red-400: #FF8E82;
+  --color-red-500: #F7554D;
+  --color-red-600: #DC2626;
+  --color-red-700: #B41D1B;
+  --color-red-800: #951612;
+  --color-red-900: #7E110D;
+  --color-red-950: #4D0705;
+
+  /* Neutral / Cool Gray */
+  --color-neutral-50:  #F8F9FA;
+  --color-neutral-100: #F1F2F4;
+  --color-neutral-200: #E1E4E8;
+  --color-neutral-300: #CCD2D9;
+  --color-neutral-400: #A5AFBD;
+  --color-neutral-500: #778699;
+  --color-neutral-600: #5D697A;
+  --color-neutral-700: #4B5563;
+  --color-neutral-800: #353D48;
+  --color-neutral-900: #272D35;
+  --color-neutral-950: #13161C;
+
+  /* ── Semantic Color Tokens ───────────────────────────────────────────── */
+
+  /* Primary (Terracotta/Salmon) */
+  --color-ds-primary:            #B56B5D;
+  --color-ds-primary-hover:      #A05C50;
+  --color-ds-primary-active:     #8E5246;
+  --color-ds-primary-foreground: #FFFFFF;
+
+  /* Secondary (Dark Brown) */
+  --color-ds-secondary:            #2D2321;
+  --color-ds-secondary-hover:      #1A1412;
+  --color-ds-secondary-active:     #141210;
+  --color-ds-secondary-foreground: #FFFFFF;
+
+  /* Teal Accent */
+  --color-ds-teal:            #4CBEAE;
+  --color-ds-teal-hover:      #3FA899;
+  --color-ds-teal-active:     #3C9A8D;
+  --color-ds-teal-foreground: #FFFFFF;
+
+  /* Surfaces & Backgrounds */
+  --color-ds-background:      #FFFFFF;
+  --color-ds-surface:         #F5F5F5;
+  --color-ds-surface-warm:    #FBF8F3;
+  --color-ds-surface-warm-hover: #F3EFE6;
+  --color-ds-surface-rose:    #F6EFED;
+
+  /* Text */
+  --color-ds-text:            #1A1A1A;
+  --color-ds-text-secondary:  #555555;
+  --color-ds-text-muted:      #9CA3AF;
+  --color-ds-text-on-dark:    #FFFFFF;
+  --color-ds-text-on-primary: #FFFFFF;
+
+  /* Borders */
+  --color-ds-border:       #D4D4D4;
+  --color-ds-border-light: #E8E4DC;
+  --color-ds-border-hover: #B0B0B0;
+  --color-ds-border-focus: #000000;
+
+  /* Semantic States */
+  --color-ds-success:    #4CBEAE;
+  --color-ds-success-bg: #E7FEFA;
+  --color-ds-success-border: #C7FCF3;
+  --color-ds-success-text: #1F5750;
+
+  --color-ds-warning:    #FAAF07;
+  --color-ds-warning-bg: #FFF6EB;
+  --color-ds-warning-border: #FFECD2;
+  --color-ds-warning-text: #7F4C01;
+
+  --color-ds-error:      #DC2626;
+  --color-ds-error-bg:   #FEF5F4;
+  --color-ds-error-border: #FCD5D0;
+  --color-ds-error-text: #951612;
+
+  --color-ds-info:       #4CBEAE;
+  --color-ds-info-bg:    #E7FEFA;
+  --color-ds-info-border: #C7FCF3;
+  --color-ds-info-text:  #1F5750;
+
+  /* Footer / Dark Surface */
+  --color-ds-dark-bg:         #13161D;
+  --color-ds-dark-surface:    #1C1F27;
+  --color-ds-dark-text:       #D1D5DB;
+  --color-ds-dark-text-muted: #9CA3AF;
+  --color-ds-dark-border:     rgba(255, 255, 255, 0.05);
+
+  /* Disabled */
+  --color-ds-disabled-bg:   #F5F5F5;
+  --color-ds-disabled-text: #B0B0B0;
+
+  /* Overlay */
+  --color-ds-overlay: rgba(0, 0, 0, 0.5);
+  --color-ds-overlay-heavy: rgba(0, 0, 0, 0.75);
+
+  /* ── Typography ──────────────────────────────────────────────────────── */
+
+  --font-heading: "EB Garamond", Georgia, "Times New Roman", serif;
   --font-display: "Cormorant Garamond", Georgia, "Times New Roman", serif;
-  --font-english: "EB Garamond", Georgia, "Times New Roman", serif;
-  --font-body: "Manrope", system-ui, -apple-system, sans-serif;
-  --font-mono: "IBM Plex Mono", ui-monospace, monospace;
-  --font-arabic: "Amiri", "Noto Naskh Arabic", "Segoe UI", Tahoma, serif;
-  --font-manrope: "Manrope", system-ui, -apple-system, sans-serif;
+  --font-body:    "Manrope", system-ui, -apple-system, sans-serif;
+  --font-mono:    "IBM Plex Mono", ui-monospace, monospace;
+  --font-arabic:  "Amiri", "Noto Naskh Arabic", "Segoe UI", Tahoma, serif;
 
-  --spacing-1: 0.25rem;
-  --spacing-2: 0.5rem;
-  --spacing-3: 0.75rem;
-  --spacing-4: 1rem;
-  --spacing-6: 1.5rem;
-  --spacing-8: 2rem;
-  --spacing-12: 3rem;
-  --spacing-16: 4rem;
-  --spacing-24: 6rem;
-  --spacing-32: 8rem;
+  /* Keep backward-compat aliases */
+  --font-english: var(--font-heading);
+  --font-manrope: var(--font-body);
 
-  --radius-panel: 2px;
-  --radius-item: 2px;
-  --radius-button: 2px;
+  /* Type Scale */
+  --text-display: 4.5rem;    /* 72px */
+  --text-h1:      3rem;      /* 48px */
+  --text-h2:      2.25rem;   /* 36px */
+  --text-h3:      1.75rem;   /* 28px */
+  --text-h4:      1.5rem;    /* 24px */
+  --text-h5:      1.25rem;   /* 20px */
+  --text-h6:      1rem;      /* 16px */
+  --text-body-lg: 1.125rem;  /* 18px */
+  --text-body:    0.9375rem; /* 15px */
+  --text-body-sm: 0.8125rem; /* 13px */
+  --text-caption: 0.6875rem; /* 11px */
+  --text-label:   0.875rem;  /* 14px */
+  --text-overline: 0.75rem;  /* 12px */
 
-  --shadow-luxury: 0 1px 0 rgba(201, 169, 110, 0.15);
-  --shadow-gold-glow: 0 0 24px rgba(201, 169, 110, 0.12);
-  --shadow-focus: 0 0 0 2px var(--color-void), 0 0 0 4px var(--color-gold);
+  /* ── Spacing (4px base) ──────────────────────────────────────────────── */
+  --spacing-0:  0;
+  --spacing-0_5: 0.125rem;  /* 2px */
+  --spacing-1:  0.25rem;    /* 4px */
+  --spacing-1_5: 0.375rem;  /* 6px */
+  --spacing-2:  0.5rem;     /* 8px */
+  --spacing-2_5: 0.625rem;  /* 10px */
+  --spacing-3:  0.75rem;    /* 12px */
+  --spacing-3_5: 0.875rem;  /* 14px */
+  --spacing-4:  1rem;       /* 16px */
+  --spacing-5:  1.25rem;    /* 20px */
+  --spacing-6:  1.5rem;     /* 24px */
+  --spacing-8:  2rem;       /* 32px */
+  --spacing-10: 2.5rem;     /* 40px */
+  --spacing-12: 3rem;       /* 48px */
+  --spacing-16: 4rem;       /* 64px */
+  --spacing-20: 5rem;       /* 80px */
+  --spacing-24: 6rem;       /* 96px */
+  --spacing-32: 8rem;       /* 128px */
 
+  /* Page-level spacing */
+  --spacing-page-x:         1rem;      /* mobile */
+  --spacing-page-x-sm:      2rem;      /* sm+ */
+  --spacing-section-y:      2.5rem;    /* mobile */
+  --spacing-section-y-md:   4rem;      /* md+ */
+
+  /* ── Border Radius ───────────────────────────────────────────────────── */
+  --radius-none: 0;
+  --radius-sm:   0.25rem;   /* 4px  — inputs, badges */
+  --radius-md:   0.375rem;  /* 6px  — buttons, cards */
+  --radius-lg:   0.5rem;    /* 8px  — modals, dropdowns */
+  --radius-xl:   0.75rem;   /* 12px — featured cards, nav cards */
+  --radius-full: 9999px;    /* pills, avatars */
+
+  /* Backward-compat aliases */
+  --radius-panel:  var(--radius-md);
+  --radius-item:   var(--radius-sm);
+  --radius-button: var(--radius-md);
+
+  /* ── Shadows & Elevation ─────────────────────────────────────────────── */
+  --shadow-sm:  0 1px 2px rgba(0, 0, 0, 0.05);
+  --shadow-md:  0 4px 6px -1px rgba(0, 0, 0, 0.07), 0 2px 4px -2px rgba(0, 0, 0, 0.05);
+  --shadow-lg:  0 10px 15px -3px rgba(0, 0, 0, 0.08), 0 4px 6px -4px rgba(0, 0, 0, 0.04);
+  --shadow-xl:  0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.04);
+  --shadow-focus: 0 0 0 2px var(--color-ds-background), 0 0 0 4px var(--color-ds-border-focus);
+  --shadow-focus-error: 0 0 0 2px var(--color-ds-background), 0 0 0 4px var(--color-ds-error);
+
+  /* Backward-compat aliases */
+  --shadow-luxury: var(--shadow-sm);
+  --shadow-gold-glow: var(--shadow-md);
+
+  /* ── Transitions ─────────────────────────────────────────────────────── */
+  --transition-fast:   150ms cubic-bezier(0.4, 0, 0.2, 1);
+  --transition-base:   200ms cubic-bezier(0.4, 0, 0.2, 1);
+  --transition-slow:   300ms cubic-bezier(0.4, 0, 0.2, 1);
+  --transition-spring: 500ms cubic-bezier(0.16, 1, 0.3, 1);
+
+  /* ── Z-Index Scale ───────────────────────────────────────────────────── */
+  --z-base:     0;
+  --z-dropdown: 10;
+  --z-sticky:   20;
+  --z-fixed:    30;
+  --z-drawer:   40;
+  --z-modal:    50;
+  --z-popover:  60;
+  --z-toast:    70;
+
+  /* ── Animations ──────────────────────────────────────────────────────── */
   --animate-kenburns: kenburns 28s ease-in-out infinite;
   --animate-kenburns-mobile: kenburns-mobile 28s ease-in-out infinite;
   --animate-slide-up: slideUp 1.6s cubic-bezier(0.16, 1, 0.3, 1) forwards;
   --animate-fade-in: fadeIn 2s cubic-bezier(0.16, 1, 0.3, 1) forwards;
 }
 
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   ROOT — Light theme by default (client-facing)
+   ═══════════════════════════════════════════════════════════════════════════ */
+
 :root {
-  color-scheme: dark;
-
-  --typeui-surface: #000000;
-  --typeui-text: #ffffff;
-  --typeui-primary: #fafafa;
-  --typeui-spacing-unit: 8px;
-
-  --radius-panel: 2px;
-  --radius-item: calc(var(--radius-panel));
-  --radius-button: 2px;
-  --panel-padding: 1rem;
-  --radius-inner: calc(var(--radius-panel) - var(--panel-padding));
-}
-
-[data-theme="admin"] {
   color-scheme: light;
-  --color-void: #f8f6f2;
-  --color-surface: #ffffff;
-  --color-border: #e8e4dc;
-  --color-muted: #f0ece4;
-  --color-ivory: #1a1a1a;
-  --color-ivory-muted: #6b6560;
+
+  /* Map semantic tokens → CSS custom properties for runtime use */
+  --color-bg:         var(--color-ds-background);
+  --color-text:       var(--color-ds-text);
+  --color-text-muted: var(--color-ds-text-secondary);
+  --color-border:     var(--color-ds-border);
+  --color-surface:    var(--color-ds-surface);
+  --color-accent:     var(--color-ds-secondary);
+  --color-form-field: var(--color-ds-surface);
+  --color-void:       var(--color-ds-background);
+  --color-muted:      var(--color-ds-surface);
+
+  /* Legacy aliases for backward compat during migration */
+  --color-ivory:       var(--color-ds-text);
+  --color-ivory-muted: var(--color-ds-text-secondary);
+  --color-gold:        var(--color-ds-secondary);
+  --color-gold-light:  var(--color-ds-secondary-hover);
+  --color-ruby:        var(--color-ds-error);
+  --color-emerald:     var(--color-ds-success);
+  --color-primary:     var(--color-ds-primary);
+  --color-secondary:   var(--color-ds-text-secondary);
+  --color-success:     var(--color-ds-success);
+  --color-warning:     var(--color-ds-warning);
+  --color-danger:      var(--color-ds-error);
+
+  --panel-padding: 1rem;
 }
 
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   THEME VARIANTS
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+/* Client theme — light, customer-facing */
 [data-theme="client"] {
   color-scheme: light;
-  --color-bg: #ffffff;
-  --color-text: #1a1a1a;
-  --color-text-muted: #555555;
-  --color-border: #d4d4d4;
-  --color-surface: #f5f5f5;
-  --color-accent: #000000;
-  --color-form-field: #e9eff6;
-  --color-void: #ffffff;
-  --color-ivory: #1a1a1a;
-  --color-ivory-muted: #555555;
-  --color-gold: #000000;
-  --color-gold-light: #333333;
-  --color-muted: #f5f5f5;
-  --shadow-luxury: 0 1px 0 rgba(0, 0, 0, 0.06);
-  --shadow-focus: 0 0 0 2px #ffffff, 0 0 0 4px #000000;
+  --color-bg:         var(--color-ds-background);
+  --color-text:       var(--color-ds-text);
+  --color-text-muted: var(--color-ds-text-secondary);
+  --color-border:     var(--color-ds-border);
+  --color-surface:    var(--color-ds-surface);
+  --color-accent:     var(--color-ds-secondary);
+  --color-form-field: var(--color-ds-surface);
+  --color-void:       var(--color-ds-background);
+  --color-ivory:      var(--color-ds-text);
+  --color-ivory-muted: var(--color-ds-text-secondary);
+  --color-gold:       var(--color-ds-secondary);
+  --color-gold-light: var(--color-ds-secondary-hover);
+  --color-muted:      var(--color-ds-surface);
+  --shadow-luxury: var(--shadow-sm);
+  --shadow-focus: 0 0 0 2px var(--color-ds-background), 0 0 0 4px var(--color-ds-border-focus);
 }
 
 [data-theme="client"] body,
@@ -110,6 +357,33 @@
   background-color: var(--color-bg);
   color: var(--color-text);
 }
+
+/* Admin theme — light, warm-toned (will be refined when admin images arrive) */
+[data-theme="admin"] {
+  color-scheme: light;
+  --color-bg:         #f8f6f2;
+  --color-text:       var(--color-ds-text);
+  --color-text-muted: var(--color-ds-text-secondary);
+  --color-border:     var(--color-ds-border-light);
+  --color-surface:    #ffffff;
+  --color-void:       #f8f6f2;
+  --color-ivory:      var(--color-ds-text);
+  --color-ivory-muted: #6b6560;
+  --color-muted:      #f0ece4;
+  --color-gold:       var(--color-ds-primary);
+  --color-gold-light: var(--color-ds-primary-hover);
+  --shadow-focus: 0 0 0 2px #f8f6f2, 0 0 0 4px var(--color-ds-primary);
+
+  /* Legacy admin aliases */
+  --color-admin-bg:      var(--color-bg);
+  --color-admin-surface: var(--color-surface);
+  --color-admin-text:    var(--color-text);
+}
+
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   BASE STYLES
+   ═══════════════════════════════════════════════════════════════════════════ */
 
 *,
 *::before,
@@ -128,11 +402,20 @@ body {
   min-height: 100dvh;
   overflow-x: hidden;
   max-width: 100%;
-  background-color: var(--color-void);
-  color: var(--color-ivory);
-  font-family: var(--font-manrope);
+  background-color: var(--color-bg, var(--color-ds-background));
+  color: var(--color-text, var(--color-ds-text));
+  font-family: var(--font-body);
   line-height: 1.5;
   -webkit-font-smoothing: antialiased;
+}
+
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   FONT UTILITY CLASSES
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+.font-heading {
+  font-family: var(--font-heading);
 }
 
 .font-display {
@@ -140,7 +423,7 @@ body {
 }
 
 .font-english {
-  font-family: var(--font-english);
+  font-family: var(--font-heading);
 }
 
 .font-mono {
@@ -151,9 +434,117 @@ body {
   font-family: var(--font-arabic);
 }
 
-.font-manrope {
-  font-family: var(--font-manrope);
+.font-manrope,
+.font-body {
+  font-family: var(--font-body);
 }
+
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   DESIGN SYSTEM UTILITY CLASSES
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+/* Typography presets */
+.ds-display {
+  font-family: var(--font-heading);
+  font-size: var(--text-display);
+  font-weight: 700;
+  line-height: 1.1;
+  letter-spacing: -0.02em;
+}
+
+.ds-h1 {
+  font-family: var(--font-heading);
+  font-size: var(--text-h1);
+  font-weight: 700;
+  line-height: 1.15;
+  letter-spacing: -0.02em;
+}
+
+.ds-h2 {
+  font-family: var(--font-heading);
+  font-size: var(--text-h2);
+  font-weight: 700;
+  line-height: 1.2;
+  letter-spacing: -0.01em;
+}
+
+.ds-h3 {
+  font-family: var(--font-heading);
+  font-size: var(--text-h3);
+  font-weight: 600;
+  line-height: 1.25;
+}
+
+.ds-h4 {
+  font-family: var(--font-heading);
+  font-size: var(--text-h4);
+  font-weight: 600;
+  line-height: 1.3;
+}
+
+.ds-h5 {
+  font-family: var(--font-heading);
+  font-size: var(--text-h5);
+  font-weight: 600;
+  line-height: 1.35;
+}
+
+.ds-h6 {
+  font-family: var(--font-heading);
+  font-size: var(--text-h6);
+  font-weight: 600;
+  line-height: 1.4;
+}
+
+.ds-body-lg {
+  font-family: var(--font-body);
+  font-size: var(--text-body-lg);
+  font-weight: 400;
+  line-height: 1.6;
+}
+
+.ds-body {
+  font-family: var(--font-body);
+  font-size: var(--text-body);
+  font-weight: 400;
+  line-height: 1.6;
+}
+
+.ds-body-sm {
+  font-family: var(--font-body);
+  font-size: var(--text-body-sm);
+  font-weight: 400;
+  line-height: 1.5;
+}
+
+.ds-caption {
+  font-family: var(--font-body);
+  font-size: var(--text-caption);
+  font-weight: 500;
+  line-height: 1.4;
+}
+
+.ds-label {
+  font-family: var(--font-body);
+  font-size: var(--text-label);
+  font-weight: 600;
+  line-height: 1.4;
+}
+
+.ds-overline {
+  font-family: var(--font-body);
+  font-size: var(--text-overline);
+  font-weight: 600;
+  line-height: 1.3;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   GRADIENTS (from existing design)
+   ═══════════════════════════════════════════════════════════════════════════ */
 
 /* Hero-section gradient overlay */
 .hero-overlay-gradient {
@@ -168,6 +559,11 @@ body {
 .hero-cta-gradient {
   background: linear-gradient(89.06deg, #4cbeae -19.64%, #d6a198 105.79%);
 }
+
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   KEYFRAME ANIMATIONS
+   ═══════════════════════════════════════════════════════════════════════════ */
 
 @keyframes kenburns {
   0% {
@@ -221,6 +617,11 @@ body {
     opacity: 1;
   }
 }
+
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   ANIMATION UTILITY CLASSES
+   ═══════════════════════════════════════════════════════════════════════════ */
 
 .animate-slide-up {
   opacity: 0;

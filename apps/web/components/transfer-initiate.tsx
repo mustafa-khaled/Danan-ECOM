@@ -6,7 +6,7 @@ import { FormEvent, useState } from "react";
 import { useTranslations } from "next-intl";
 import { CheckCircle2 } from "lucide-react";
 import { useInitiateTransfer } from "@/features/transfers";
-import { DadanSpinner } from "@/shared/components/feedback/loading-state";
+import { Button, Input } from "@/components/ui";
 
 interface TransferInitiateProps {
   pieceId: string;
@@ -58,43 +58,48 @@ export function TransferInitiate({
 
   if (!open) {
     return (
-      <button
+      <Button
         type="button"
         onClick={() => setOpen(true)}
-        className="flex h-12 w-full items-center justify-center gap-2.5 rounded-[2px] bg-[#4CBEAE] px-4 text-center font-display text-sm font-semibold tracking-normal text-[#2D2321] transition-all hover:bg-[#45B1A1] active:scale-[0.99]"
+        variant="teal"
+        size="lg"
+        fullWidth
+        iconRight={
+          <Image
+            src="/shopping.png"
+            alt="Transfer"
+            width={18}
+            height={18}
+            className="size-4.5 object-contain"
+          />
+        }
       >
-        <span>{wardrobeT("transferOwnership")}</span>
-        <Image
-          src="/shopping.png"
-          alt="Transfer"
-          width={18}
-          height={18}
-          className="size-4.5 object-contain"
-        />
-      </button>
+        {wardrobeT("transferOwnership")}
+      </Button>
     );
   }
 
   return (
-    <section className="w-full rounded-[2px] border border-gray-200 bg-white p-5 space-y-4">
+    <section className="w-full rounded-(--radius-md) border border-ds-border bg-ds-background p-5 space-y-4 shadow-sm">
       <div>
-        <h2 className="font-display text-base font-bold text-[#2D2321]">
+        <h2 className="font-heading text-base font-bold text-ds-text">
           {wardrobeT("transferOwnership")}
         </h2>
-        <p className="mt-1 text-xs text-gray-500">
+        <p className="mt-1 text-xs text-ds-text-secondary font-body">
           {t("initiateDescription", { pieceName, serialNumber })}
         </p>
       </div>
 
       <form onSubmit={handleSubmit} className="space-y-4">
-        <label className="block space-y-1.5">
-          <span className="block text-xs font-semibold text-[#2D2321]">
+        <div className="flex flex-col gap-1.5">
+          <label htmlFor="transferType" className="ds-label text-ds-text">
             {t("transferType")}
-          </span>
+          </label>
           <select
+            id="transferType"
             name="transferType"
             defaultValue="GIFT"
-            className="h-11 w-full rounded-[2px] border border-gray-200 bg-gray-50 px-3 text-sm text-[#2D2321] focus:border-[#4CBEAE] focus:bg-white focus:outline-none"
+            className="min-h-11 w-full rounded-(--radius-sm) border border-ds-border bg-ds-background px-3 text-sm text-ds-text font-body outline-none focus:border-ds-border-focus"
           >
             {TRANSFER_TYPES.map((type) => (
               <option key={type.value} value={type.value}>
@@ -102,52 +107,45 @@ export function TransferInitiate({
               </option>
             ))}
           </select>
-        </label>
+        </div>
 
-        <label className="block space-y-1.5">
-          <span className="block text-xs font-semibold text-[#2D2321]">
-            {t("recipientHouseId")}
-          </span>
-          <input
-            name="recipientHouseId"
-            type="text"
-            required
-            autoComplete="off"
-            maxLength={6}
-            pattern="[A-Za-z0-9]{6}"
-            placeholder={t("recipientHouseIdPlaceholder")}
-            className="h-11 w-full rounded-[2px] border border-gray-200 bg-gray-50 px-3 text-sm uppercase text-[#2D2321] placeholder:text-gray-400 placeholder:normal-case focus:border-[#4CBEAE] focus:bg-white focus:outline-none"
-          />
-        </label>
+        <Input
+          label={t("recipientHouseId")}
+          name="recipientHouseId"
+          type="text"
+          required
+          autoComplete="off"
+          maxLength={6}
+          pattern="[A-Za-z0-9]{6}"
+          placeholder={t("recipientHouseIdPlaceholder")}
+          className="uppercase"
+        />
 
         {error ? (
-          <p role="alert" className="text-xs text-red-600">
+          <p role="alert" className="text-xs text-ds-error">
             {error instanceof Error ? error.message : t("initiateError")}
           </p>
         ) : null}
 
         <div className="flex gap-3 pt-1">
-          <button
+          <Button
             type="submit"
-            disabled={isPending}
-            className="flex h-11 flex-1 items-center justify-center gap-2 rounded-[2px] bg-[#4CBEAE] px-4 font-display text-sm font-semibold text-[#2D2321] transition-all hover:bg-[#45B1A1] disabled:opacity-50"
+            loading={isPending}
+            variant="teal"
+            size="md"
+            fullWidth
+            iconRight={<CheckCircle2 className="size-4" />}
           >
-            {isPending ? (
-              <DadanSpinner size="sm" />
-            ) : (
-              <>
-                <span>Submit</span>
-                <CheckCircle2 className="size-4 text-[#2D2321]" />
-              </>
-            )}
-          </button>
-          <button
+            Submit
+          </Button>
+          <Button
             type="button"
+            variant="outline"
+            size="md"
             onClick={() => setOpen(false)}
-            className="flex h-11 items-center justify-center rounded-[2px] border border-gray-200 bg-white px-4 font-display text-sm font-medium text-[#2D2321] hover:bg-gray-50"
           >
             {common("cancel")}
-          </button>
+          </Button>
         </div>
       </form>
     </section>

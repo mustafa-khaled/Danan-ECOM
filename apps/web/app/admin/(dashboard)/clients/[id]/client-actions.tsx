@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { LuxuryButton } from "@/components/ui";
+import { Button } from "@/components/ui";
 import { rotateClientKey, updateClient } from "@/features/admin/api/fetch-admin-clients";
 
 interface ClientActionsProps {
@@ -80,23 +80,22 @@ export function ClientActions({ clientId, isActive }: ClientActionsProps) {
           Account Actions
         </h2>
         <div className="flex flex-wrap gap-4">
-          <LuxuryButton
-            variant="ghost"
+          <Button
+            variant="outline"
             size="sm"
             onClick={handleToggleActive}
             loading={isToggling}
           >
             {isActive ? "Deactivate Client" : "Activate Client"}
-          </LuxuryButton>
-          <LuxuryButton
-            variant="ghost"
+          </Button>
+          <Button
+            variant="outline"
             size="sm"
             onClick={handleRotateKey}
             loading={isRotating}
-            className="border-[var(--color-warning)] text-[var(--color-warning)]"
           >
             Rotate House Key
-          </LuxuryButton>
+          </Button>
         </div>
       </div>
     </div>
