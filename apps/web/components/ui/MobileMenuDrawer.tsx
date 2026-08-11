@@ -93,7 +93,8 @@ export function MobileMenuDrawer({
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-4">
               {/* Notification bell */}
-              <button
+              <Link
+                href="/beta/notifications"
                 type="button"
                 className="flex size-9 items-center justify-center text-ds-text transition-colors hover:text-ds-secondary"
                 aria-label={tNav("notifications")}
@@ -116,7 +117,7 @@ export function MobileMenuDrawer({
                     strokeWidth="1.5"
                   />
                 </svg>
-              </button>
+              </Link>
 
               {/* User profile */}
               <Link
