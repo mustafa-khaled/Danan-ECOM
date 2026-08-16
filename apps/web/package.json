@@ -20,6 +20,7 @@
     "@tanstack/react-query": "^5.101.2",
     "@tap-payments/card-sdk": "^1.0.2",
     "clsx": "^2.1.1",
+    "embla-carousel-react": "^8.6.0",
     "lucide-react": "^1.27.0",
     "next": "^15.5.21",
     "next-intl": "^4.13.2",

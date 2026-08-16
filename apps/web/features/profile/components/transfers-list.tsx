@@ -68,13 +68,13 @@ export function TransfersList({
     <div className="space-y-6">
       <Select value={statusFilter} onValueChange={setStatusFilter}>
         <SelectTrigger
-          className="flex w-full items-center justify-between sm:max-w-[50%] rounded-[var(--radius-md)] bg-ds-surface px-4 py-3 sm:px-5 font-bold text-base text-ds-text shadow-none outline-none transition-colors hover:bg-ds-surface-warm cursor-pointer [&_svg]:size-5 [&_svg]:text-ds-text [&_svg]:opacity-100"
+          className="flex w-full items-center justify-between sm:max-w-[50%] rounded-(--radius-md) bg-ds-surface px-4 py-3 sm:px-5 font-bold text-base text-ds-text shadow-none outline-none transition-colors hover:bg-ds-surface-warm cursor-pointer [&_svg]:size-5 [&_svg]:text-ds-text [&_svg]:opacity-100"
           aria-label="Filter transfers"
         >
           <SelectValue placeholder="All Transfers" />
         </SelectTrigger>
 
-        <SelectContent className="z-[var(--z-popover)] w-(--radix-select-trigger-width) min-w-(--radix-select-trigger-width) overflow-hidden rounded-[var(--radius-md)] border border-ds-border bg-ds-background p-1.5 shadow-lg">
+        <SelectContent className="z-(--z-popover) w-(--radix-select-trigger-width) min-w-(--radix-select-trigger-width) overflow-hidden rounded-(--radius-md) border border-ds-border bg-ds-background p-1.5 shadow-lg">
           <SelectItem
             value="all"
             className="cursor-pointer font-medium text-ds-text"
@@ -109,7 +109,7 @@ export function TransfersList({
           action={{ href: "/beta/profile/wardrobe", label: "View Wardrobe" }}
         />
       ) : (
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 sm:gap-4">
           {filteredTransfers.map((transfer) => {
             const formattedStatus = formatTransferStatus(transfer.status);
             const badgeVariant = getStatusBadgeVariant(transfer.status);
@@ -118,7 +118,7 @@ export function TransfersList({
               <Link
                 key={transfer.id}
                 href={`/beta/profile/transfers/${transfer.id}`}
-                className="group block rounded-[var(--radius-lg)] p-4 sm:p-5 bg-ds-surface-warm border border-ds-border-light transition-shadow hover:shadow-md"
+                className="group block rounded-lg p-4 sm:p-5 bg-ds-surface-warm border border-ds-border-light transition-shadow hover:shadow-md"
               >
                 <div className="flex items-start justify-between gap-3">
                   <h3 className="font-bold text-base text-ds-text tracking-tight uppercase font-body">
@@ -133,7 +133,7 @@ export function TransfersList({
                   {transfer.transferType}
                 </p>
 
-                <p className="mt-2 text-[11px] sm:text-xs uppercase text-ds-text-muted font-body">
+                <p className="mt-2 text-caption sm:text-xs uppercase text-ds-text-muted font-body">
                   {formatStartedDate(transfer.initiatedAt)}
                 </p>
 

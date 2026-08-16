@@ -24,7 +24,7 @@ export default async function WardrobePage() {
           action={{ href: "/beta/collections", label: t("owned") }}
         />
       ) : (
-        <div className="grid gap-6 sm:grid-cols-2">
+        <div className="grid gap-2 sm:gap-4 sm:grid-cols-2">
           {wardrobe.map((item) => (
             <Link key={item.id} href={`/beta/profile/wardrobe/${item.id}`}>
               <PieceCard

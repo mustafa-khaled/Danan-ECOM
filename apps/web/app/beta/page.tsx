@@ -142,7 +142,7 @@ export default function AccessGatePage() {
               value={houseKey}
               onChange={(event) => setHouseKey(event.target.value)}
               placeholder={t("houseKeyPlaceholder")}
-              className="w-full py-3.5 px-5 bg-white border-none rounded-(--radius-md) font-body text-body text-ds-text outline-none transition-shadow duration-200 ease-in-out placeholder:text-ds-text-muted placeholder:italic focus:shadow-[0_0_0_3px_rgba(255,255,255,0.25)] max-sm:py-3 max-sm:px-4 max-sm:text-sm"
+              className="w-full py-3.5 px-5 bg-white border-none rounded-(--radius-md) font-body text-body text-ds-text outline-none transition-shadow duration-200 ease-in-out placeholder:text-ds-text-muted focus:shadow-[0_0_0_3px_rgba(255,255,255,0.25)] max-sm:py-3 max-sm:px-4 max-sm:text-sm"
             />
             {error ? (
               <p role="alert" className="text-body-sm text-red-300 mt-1">

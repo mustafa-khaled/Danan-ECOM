@@ -18,10 +18,12 @@ export default async function CertificatesPage() {
       {wardrobe.length === 0 ? (
         <EmptyState title={t("empty")} description={t("emptyDescription")} />
       ) : (
-        <div className="grid grid-cols-2 md:grid-cols-3 gap-4 sm:gap-6">
+        <div className="grid grid-cols-2 md:grid-cols-3 gap-2 sm:gap-4">
           {wardrobe.map((item) => {
             const issueDate = item?.ownershipHistory?.[0]?.acquiredAt
-              ? new Date(item.ownershipHistory[0].acquiredAt).toLocaleDateString("en-US", {
+              ? new Date(
+                  item.ownershipHistory[0].acquiredAt,
+                ).toLocaleDateString("en-US", {
                   month: "long",
                   year: "numeric",
                 })
@@ -41,7 +43,7 @@ export default async function CertificatesPage() {
                   {item.design.name}
                 </p>
                 {issueDate && (
-                  <p className="mt-2 text-[11px] sm:text-xs uppercase text-[#667085]">
+                  <p className="mt-2 text-caption sm:text-xs uppercase text-[#667085]">
                     ISSUED {issueDate.toUpperCase()}
                   </p>
                 )}
@@ -62,4 +64,3 @@ export default async function CertificatesPage() {
     </>
   );
 }
-

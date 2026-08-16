@@ -58,7 +58,7 @@ export function LocaleSelect({
         size="sm"
         aria-label="Switch language"
         className={cn(
-          "h-auto min-h-0 cursor-pointer border-none bg-transparent px-0 py-0 text-[0.8125rem] font-medium tracking-wide shadow-none focus-visible:shadow-none",
+          "h-auto min-h-0 cursor-pointer border-none! bg-transparent px-0 py-0 text-body-sm font-bold tracking-wide shadow-none focus-visible:shadow-none focus-visible:border-none! [&_svg]:text-white [&_svg]:opacity-100! [&_svg]:rtl:rotate-0!",
           className,
         )}
       >

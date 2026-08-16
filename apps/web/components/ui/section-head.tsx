@@ -40,7 +40,7 @@ export default function SectionHead({
           href={href}
           variant="primary"
           size="sm"
-          className="self-start sm:self-auto"
+          className="sm:w-auto w-full"
         >
           {link}
         </ArrowLink>

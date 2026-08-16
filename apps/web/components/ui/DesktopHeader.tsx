@@ -89,7 +89,7 @@ export function DesktopHeader({
             {/* Language Selector */}
             <LocaleSelect
               syncProfile
-              className="text-ds-secondary font-body font-medium text-sm"
+              className="[&_svg]:text-ds-secondary font-body font-medium text-sm"
             />
           </div>
 
@@ -120,7 +120,7 @@ export function DesktopHeader({
         {/* ── Mobile Burger Menu Button (Aligned 100% vertically centered in mobile header height) ── */}
         <button
           type="button"
-          className="flex md:hidden absolute right-4 sm:right-8 top-1/2 -translate-y-1/2 items-center justify-center p-1.5 text-ds-secondary transition-colors"
+          className="flex md:hidden absolute inset-e-4 sm:inset-e-8 top-1/2 -translate-y-1/2 items-center justify-center p-1.5 text-ds-secondary transition-colors"
           onClick={onToggleMobileMenu}
           aria-label="Toggle navigation menu"
           aria-expanded={isMobileMenuOpen}

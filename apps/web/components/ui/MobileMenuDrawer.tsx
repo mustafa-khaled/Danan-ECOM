@@ -23,7 +23,9 @@ export function MobileMenuDrawer({
       {/* Backdrop overlay */}
       <div
         className={`fixed inset-0 z-50 bg-ds-overlay-heavy backdrop-blur-xs transition-opacity duration-300 ease-in-out ${
-          isOpen ? "opacity-100 pointer-events-auto" : "opacity-0 pointer-events-none"
+          isOpen
+            ? "opacity-100 pointer-events-auto"
+            : "opacity-0 pointer-events-none"
         }`}
         onClick={onClose}
         aria-hidden="true"
@@ -32,7 +34,9 @@ export function MobileMenuDrawer({
       {/* Side menu content panel - Full Height & Solid Background */}
       <div
         className={`fixed inset-y-0 right-0 z-50 flex h-dvh min-h-screen w-4/5 max-w-xs flex-col justify-between border-l border-ds-border bg-ds-background p-6 shadow-2xl transition-transform duration-300 ease-in-out ${
-          isOpen ? "translate-x-0 pointer-events-auto" : "translate-x-full pointer-events-none"
+          isOpen
+            ? "translate-x-0 pointer-events-auto"
+            : "translate-x-full pointer-events-none"
         }`}
       >
         <div className="flex flex-col gap-6">
@@ -150,7 +154,7 @@ export function MobileMenuDrawer({
             </div>
 
             {/* Language selector */}
-            <LocaleSelect syncProfile />
+            <LocaleSelect syncProfile className="[&_svg]:text-ds-secondary " />
           </div>
         </div>
       </div>

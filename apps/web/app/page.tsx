@@ -51,7 +51,7 @@ export default function ComingSoonPage() {
               priority
               quality={75}
               sizes="220px"
-              className="object-contain invert"
+              className="object-contain"
             />
           </div>
         </header>
@@ -110,7 +110,7 @@ export default function ComingSoonPage() {
               priority
               quality={75}
               sizes="185px"
-              className="object-contain invert"
+              className="object-contain"
             />
           </div>
         </header>

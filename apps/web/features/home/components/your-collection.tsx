@@ -1,10 +1,11 @@
-import { PieceCard } from "@/components/ui/PieceCard";
 import Link from "next/link";
-import { getTranslations } from "next-intl/server";
 import Container from "@/components/ui/container";
+import { PieceCard } from "@/components/ui/PieceCard";
+import { getTranslations } from "next-intl/server";
 import { fetchWardrobe, type WardrobePiece } from "@/features/wardrobe";
 import { getSessionCookieHeader } from "@/features/auth/server/session";
 import { SectionHead } from "@/components/ui";
+import { CollectionCarousel } from "./collection-carousel";
 
 interface DisplayPiece {
   id: string;
@@ -61,8 +62,14 @@ export default async function YourCollection() {
           subtitle={t("yourCollectionSubtitle")}
         />
 
-        {/* ── Pieces Grid ── */}
-        <div className="grid grid-cols-2 gap-6 md:grid-cols-3 lg:gap-8">
+        {/* ── Mobile Carousel ── */}
+        <CollectionCarousel
+          items={items}
+          ownedSinceLabel={t("ownedSince")}
+        />
+
+        {/* ── Desktop Grid ── */}
+        <div className="hidden md:grid grid-cols-3 gap-6 lg:gap-8">
           {items.map((piece) => (
             <Link key={piece.id} href={piece.href} className="block">
               <PieceCard
@@ -83,3 +90,4 @@ export default async function YourCollection() {
     </Container>
   );
 }
+

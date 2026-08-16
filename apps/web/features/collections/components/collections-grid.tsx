@@ -81,7 +81,7 @@ export default function CollectionsGrid({
           />
         ) : (
           <div
-            className={`grid gap-6 lg:grid-cols-3 ${currentItems.length === 1 ? "grid-cols-1" : "grid-cols-2"}`}
+            className={`grid gap-2 sm:gap-4 lg:grid-cols-3 ${currentItems.length === 1 ? "grid-cols-1" : "grid-cols-2"}`}
           >
             {activeTab === "collection"
               ? (ownedPieces as OwnedPieceItem[]).map((piece, index) => {

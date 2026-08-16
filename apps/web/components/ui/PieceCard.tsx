@@ -34,7 +34,12 @@ export function PieceCard({
 }: PieceCardProps) {
   const content = (
     <>
-      <div className={cn("relative w-full aspect-square md:aspect-4/5 overflow-hidden bg-ds-surface", imageClassName)}>
+      <div
+        className={cn(
+          "relative w-full aspect-square md:aspect-4/5 overflow-hidden bg-ds-surface",
+          imageClassName,
+        )}
+      >
         {piece.imageUrl ? (
           <OptimizedImage
             src={piece.imageUrl}
@@ -57,7 +62,7 @@ export function PieceCard({
           </span>
         ) : null}
       </div>
-      <div className="flex flex-col gap-1 md:gap-2 p-2 md:p-4">
+      <div className="flex flex-col gap-1 md:gap-2 p-3 md:p-4">
         {piece.collectionName ? (
           <p className="text-[0.625rem] md:text-xs tracking-[0.14em] uppercase text-ds-text-secondary">
             {piece.collectionName}
@@ -77,8 +82,9 @@ export function PieceCard({
           </p>
         ) : null}
         {showExplore ? (
-          <p className="text-[0.625rem] md:text-xs tracking-[0.12em] uppercase text-ds-teal-800 group-hover:text-ds-secondary">
-            Explore Piece <span className="rtl:rotate-180 inline-block">→</span>
+          <p className="text-xs text-[#1F5750] font-semibold flex items-center justify-between tracking-[0.12em] text-ds-teal-800 group-hover:text-ds-secondary">
+            <span>Explore Piece</span>
+            <span className="rtl:rotate-180 inline-block">→</span>
           </p>
         ) : piece.serialNumber ? (
           <SerialBadge serial={piece.serialNumber} />
@@ -94,7 +100,11 @@ export function PieceCard({
 
   if (onSelect) {
     return (
-      <button type="button" className={`${sharedClasses} text-start`} onClick={() => onSelect(piece.id)}>
+      <button
+        type="button"
+        className={`${sharedClasses} text-start`}
+        onClick={() => onSelect(piece.id)}
+      >
         {content}
       </button>
     );

@@ -27,7 +27,7 @@ export default async function SelectedForYou() {
         />
 
         {/* ── Grid: 2 cols, 3rd item spans full width ── */}
-        <div className="grid grid-cols-2 gap-4 sm:gap-6">
+        <div className="grid grid-cols-2 gap-2 sm:gap-6">
           {selectedPieces.map((piece, index) => (
             <Link
               key={piece.designSlug}
@@ -46,7 +46,8 @@ export default async function SelectedForYou() {
                     ? formatPrice(piece.basePrice, piece.currency, locale)
                     : undefined,
                 }}
-                imageClassName="aspect-auto h-[280px] md:h-[480px] lg:h-[578px]"
+                imageClassName="aspect-auto h-[175px] md:h-[480px] lg:h-[578px]"
+                className="h-69.5 sm:h-auto"
                 showExplore
                 priority
               />
