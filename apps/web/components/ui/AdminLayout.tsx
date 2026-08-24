@@ -21,7 +21,7 @@ export function AdminLayout({ children, title = "Collections", admin }: AdminLay
   };
 
   return (
-    <div data-theme="admin" className="min-h-screen flex bg-[#F9F8F6] text-ds-text font-body">
+    <div data-theme="admin" className="min-h-screen flex bg-ds-surface-warm text-ds-text font-body">
       <AdminSidebar admin={fallbackAdmin} />
       <div className="flex-1 flex flex-col min-w-0">
         <AdminTopbar title={title} admin={fallbackAdmin} />

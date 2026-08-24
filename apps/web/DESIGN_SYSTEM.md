@@ -7,9 +7,9 @@ The DADAN Design System is the authoritative visual and component language for t
 ## Table of Contents
 
 1. [Foundations & Design Tokens](#1-foundations--design-tokens)
-   - [Color Palette](#color-palette)
+   - [Color Palette Matrix (8 Complete Scales)](#color-palette-matrix)
    - [Semantic Color Tokens](#semantic-color-tokens)
-   - [Typography Scale](#typography-scale)
+   - [Typography Scale & Classes Matrix](#typography-scale--classes-matrix)
    - [Spacing & Container Guidelines](#spacing--container-guidelines)
    - [Border Radius & Elevation](#border-radius--elevation)
    - [Z-Index & Transitions](#z-index--transitions)
@@ -17,16 +17,16 @@ The DADAN Design System is the authoritative visual and component language for t
    - [Button](#button)
    - [Input](#input)
    - [Alert](#alert)
-   - [Badge](#badge)
+   - [Badge & StatusPill](#badge--statuspill)
    - [Modal](#modal)
    - [ArrowLink](#arrowlink)
    - [PieceCard](#piececard)
-   - [StatusPill](#statuspill)
 3. [Layout Primitives](#3-layout-primitives)
    - [Container](#container)
    - [SectionHead](#sectionhead)
    - [SplitHeroLayout](#splitherolayout)
    - [AccountLayout](#accountlayout)
+   - [AdminLayout](#adminlayout)
 4. [Building New Features](#4-building-new-features)
 
 ---
@@ -35,24 +35,26 @@ The DADAN Design System is the authoritative visual and component language for t
 
 Design tokens live centrally in [`apps/web/styles/theme.css`](file:///Users/mustafakhaled/Documents/my-projects/Danan-main/apps/web/styles/theme.css) inside the Tailwind CSS `@theme` block and `:root` variables.
 
-### Color Palette
+### Color Palette Matrix
 
 Extracted from the brand reference palette, providing 8 complete scales (50–950):
 
-| Scale | Hex Range (50 → 950) | Primary Usage |
-|-------|----------------------|---------------|
-| **Brown** | `#FCF8FB` → `#141210` | Dark neutrals, deep background surfaces |
-| **Warm Gray** | `#FBF7F7` → `#2A1612` | Terracotta / Salmon brand accents |
-| **Earth / Olive** | `#FBF8F3` → `#251B12` | Warm section backgrounds & sidebars |
-| **Teal / Green** | `#E7FEFA` → `#0A2925` | Success indicators & secondary brand accents |
-| **Amber** | `#FFF6EB` → `#3D2200` | Warning & pending status states |
-| **Cyan** | `#E6FFF2` → `#013524` | Informational status indicators |
-| **Red** | `#FEF5F4` → `#4D0705` | Error states & destructive actions |
-| **Neutral Gray** | `#F8F9FA` → `#13161C` | Dark footer surfaces & standard borders |
+| Scale | 50 | 100 | 200 | 300 | 400 | 500 | 600 | 700 | 800 | 900 | 950 | Usage |
+|---|---|---|---|---|---|---|---|---|---|---|---|---|
+| **Brown / Taupe** | `#FCFBFB` | `#F6F5F4` | `#EAE7E4` | `#D9D3CD` | `#B7ADA4` | `#897F79` | `#69615C` | `#524B48` | `#393431` | `#292523` | `#141210` | Dark neutrals, deep canvas |
+| **Terracotta / Clay** | `#FBF7F7` | `#F6EFED` | `#EEDEDB` | `#E2C7C2` | `#D6A198` | `#BF7266` | `#985B50` | `#7A493F` | `#5D372F` | `#4A2A24` | `#2A1612` | Primary brand accent |
+| **Sand / Ochre** | `#FBF8F3` | `#F7EFE4` | `#EFDEC7` | `#E4C79C` | `#C9AC7F` | `#A18762` | `#846C4E` | `#6A543D` | `#52402E` | `#423324` | `#251B12` | Warm surfaces & sidebars |
+| **Danan Teal** | `#E7FEFA` | `#C7FCF3` | `#82FAE9` | `#5FE9D7` | `#55D3C1` | `#4CBEAE` | `#3C9A8D` | `#2A7168` | `#1F5750` | `#184742` | `#0A2925` | Success indicators, brand teal |
+| **Amber / Gold** | `#FFF6EB` | `#FFECD2` | `#FFDCAB` | `#FFC66D` | `#FAAF07` | `#E9A306` | `#CA8A04` | `#A06602` | `#7F4C01` | `#693D01` | `#3D2200` | Warning & pending states |
+| **Mint / Emerald** | `#E6FFF2` | `#C5FFE2` | `#86FFC9` | `#0FF8AF` | `#0DE8A3` | `#0CDC9A` | `#1EC58B` | `#059669` | `#037351` | `#025C40` | `#013524` | Active indicators |
+| **Crimson / Ruby** | `#FEF5F4` | `#FEE9E6` | `#FCD5D0` | `#FBB6AE` | `#FF8E82` | `#F7554D` | `#DC2626` | `#B41D1B` | `#951612` | `#7E110D` | `#4D0705` | Error states, delete actions |
+| **Slate / Navy-Gray** | `#F8F9FA` | `#F1F2F4` | `#E1E4E8` | `#CCD2D9` | `#A5AFBD` | `#778699` | `#5D697A` | `#4B5563` | `#353D48` | `#272D35` | `#13161C` | Dark footer surfaces & borders |
+
+---
 
 ### Semantic Color Tokens
 
-Never hardcode HEX values in components. Always reference semantic utility classes or CSS custom properties:
+Never hardcode HEX values in components. Always reference semantic utility classes:
 
 ```css
 /* Primary Action (Terracotta/Salmon) */
@@ -81,43 +83,53 @@ Never hardcode HEX values in components. Always reference semantic utility class
 --color-ds-text-muted:      #9CA3AF;
 
 /* Borders */
---color-ds-border:       #D4D4D4;
---color-ds-border-light: #E8E4DC;
+--color-ds-border:          #D4D4D4;
+--color-ds-border-light:    #E8E4DC;
 ```
 
-### Typography Scale
+---
 
-DADAN uses **EB Garamond** for luxury headings and **Manrope** for clean body text, with **Amiri** for Arabic support.
+### Typography Scale & Classes Matrix
 
-| Token | Class | Size | Font Family | Usage |
-|-------|-------|------|-------------|-------|
-| `display` | `.ds-display` | 4.5rem (72px) | EB Garamond | Hero headlines |
-| `h1` | `.ds-h1` | 3.0rem (48px) | EB Garamond | Page titles |
-| `h2` | `.ds-h2` | 2.25rem (36px) | EB Garamond | Major section headings |
-| `h3` | `.ds-h3` | 1.75rem (28px) | EB Garamond | Sub-section headings |
-| `h4` | `.ds-h4` | 1.5rem (24px) | EB Garamond | Card titles & modal titles |
-| `body-lg` | `.ds-body-lg` | 1.125rem (18px) | Manrope | Large intro copy |
-| `body` | `.ds-body` | 0.9375rem (15px) | Manrope | Default body text |
-| `body-sm` | `.ds-body-sm` | 0.8125rem (13px) | Manrope | Secondary body & table content |
-| `caption` | `.ds-caption` | 0.6875rem (11px) | Manrope | Badges & tiny labels |
-| `overline` | `.ds-overline` | 0.75rem (12px) | Manrope | Uppercase tracked labels |
+DADAN uses **EB Garamond** for luxury headings (`font-heading`) and **Manrope** for clean body text (`font-body`), with **Amiri** for Arabic support (`font-arabic`) and **IBM Plex Mono** for serial numbers (`font-mono`).
+
+All headings and body classes feature calibrated tracking (`letter-spacing: -2%` / `-0.02em`).
+
+#### Headings (EB Garamond)
+| Level | Size | Regular (400) | Medium (500) | SemiBold (600) |
+|---|---|---|---|---|
+| **H1** | `48px` (`3.0rem`) | `.text-h1-regular` | `.text-h1-medium` | `.text-h1-semibold` |
+| **H2** | `36px` (`2.25rem`) | `.text-h2-regular` | `.text-h2-medium` | `.text-h2-semibold` |
+| **H3** | `28px` (`1.75rem`) | `.text-h3-regular` | `.text-h3-medium` | `.text-h3-semibold` |
+| **H4** | `24px` (`1.5rem`) | `.text-h4-regular` | `.text-h4-medium` | `.text-h4-semibold` |
+| **H5** | `20px` (`1.25rem`) | `.text-h5-regular` | `.text-h5-medium` | `.text-h5-semibold` |
+| **H6** | `16px` (`1.0rem`) | `.text-h6-regular` | `.text-h6-medium` | `.text-h6-semibold` |
+
+#### Body (Manrope)
+| Level | Size | Regular (400) | Medium (500) | SemiBold (600) |
+|---|---|---|---|---|
+| **Body SM** | `12px` (`0.75rem`) | `.text-body-sm-regular` | `.text-body-sm-medium` | `.text-body-sm-semibold` |
+| **Body MD** | `14px` (`0.875rem`) | `.text-body-md-regular` | `.text-body-md-medium` | `.text-body-md-semibold` |
+| **Body LG** | `18px` (`1.125rem`) | `.text-body-lg-regular` | `.text-body-lg-medium` | `.text-body-lg-semibold` |
+
+---
 
 ### Spacing & Container Guidelines
 
 Container widths are strictly controlled via [`<Container size="..." />`](file:///Users/mustafakhaled/Documents/my-projects/Danan-main/apps/web/components/ui/container.tsx):
 
-- **Default**: `max-w-7xl` (1280px) for general content
-- **Narrow**: `max-w-4xl` (896px) for forms, articles, checkout
-- **Wide**: `max-w-[1440px]` for full header & banner sections
+- **Desktop (≥1536px / 1920px screen)**: Fixed `1792px` centered (`2xl:w-[1792px] mx-auto`) with no horizontal padding.
+- **Mobile (< 1536px)**: Full width with `15px` horizontal padding (`w-full px-[15px]`).
 
-Horizontal padding follows standard responsiveness: `px-4 sm:px-8`.
+---
 
 ### Border Radius & Elevation
 
-- `--radius-sm` (4px): Form inputs, badges, select dropdowns
-- `--radius-md` (6px): Buttons, standard cards, alerts
-- `--radius-lg` (8px): Modals, hero card containers, popovers
-- `--radius-xl` (12px): Featured navigation cards
+- `--radius-sm` (4px): Form inputs, badges, select dropdowns (`rounded-(--radius-sm)`)
+- `--radius-md` (6px): Buttons, standard cards, alerts (`rounded-(--radius-md)`)
+- `--radius-lg` (8px): Modals, hero card containers, popovers (`rounded-(--radius-lg)`)
+- `--radius-xl` (12px): Featured navigation cards (`rounded-(--radius-xl)`)
+- `--radius-full` (9999px): Pills, avatars (`rounded-(--radius-full)`)
 
 ---
 
@@ -126,9 +138,6 @@ Horizontal padding follows standard responsiveness: `px-4 sm:px-8`.
 All primitives reside in [`apps/web/components/ui/`](file:///Users/mustafakhaled/Documents/my-projects/Danan-main/apps/web/components/ui/) and are exported via `index.ts`.
 
 ### Button
-
-Unified button component replacing old ad-hoc buttons:
-
 ```tsx
 import { Button } from "@/components/ui";
 
@@ -140,9 +149,6 @@ import { Button } from "@/components/ui";
 ```
 
 ### Input
-
-Standardized form input with label, status validation (error, success, warning), helper text, and trailing icon:
-
 ```tsx
 import { Input } from "@/components/ui";
 
@@ -154,71 +160,24 @@ import { Input } from "@/components/ui";
 />
 ```
 
-### Alert
-
-Notification banner with 4 semantic variants:
-
+### PieceCard
 ```tsx
-import { Alert } from "@/components/ui";
+import { PieceCard } from "@/components/ui";
 
-<Alert variant="warning" dismissible>
-  A transfer is currently in progress.
-</Alert>
-```
-
-### Badge
-
-Status indicator with mono typography:
-
-```tsx
-import { Badge } from "@/components/ui";
-
-<Badge variant="success">APPROVED</Badge>
-```
-
-### Modal
-
-Accessible dialog component with backdrop, ESC dismissal, and focus trap:
-
-```tsx
-import { Modal, Button } from "@/components/ui";
-
-<Modal
-  open={isOpen}
-  title="Certificate of Authenticity"
-  onClose={() => setIsOpen(false)}
-  footer={<Button variant="outline" onClick={() => setIsOpen(false)}>Close</Button>}
->
-  <p>Certificate details here...</p>
-</Modal>
-```
-
----
-
-## 3. Layout Primitives
-
-### SectionHead
-
-Section title header with subtitle and optional call-to-action link:
-
-```tsx
-import { SectionHead } from "@/components/ui";
-
-<SectionHead
-  title="Curated Collections"
-  subtitle="Discover hand-crafted pieces designed with heritage and trust"
-  href="/beta/collections"
-  link="View All"
+<PieceCard
+  piece={{
+    id: "piece-1",
+    name: "Al-Ula Ring",
+    imageUrl: "/images/ring.png",
+    ownedSince: "AUGUST 2024",
+  }}
 />
 ```
 
 ---
 
-## 4. Building New Features
+## 3. Building New Features
 
-When creating a new feature or page:
-
-1. **Import Primitives**: Always import UI primitives (`Button`, `Input`, `Container`, `SectionHead`, etc.) from `@/components/ui`.
+1. **Import Primitives**: Always import UI primitives (`Button`, `Input`, `Container`, `SectionHead`, `PieceCard`, etc.) from `@/components/ui`.
 2. **Use Design Tokens**: Use Tailwind DS utility classes (`bg-ds-surface`, `text-ds-text`, `text-ds-text-secondary`, `border-ds-border`, `font-heading`, `font-body`) instead of raw hex codes.
-3. **Responsive Padding**: Wrap page sections in `<Container>` to guarantee consistent alignment.
-4. **Form Pattern**: Combine `<Input>` with `<Button variant="primary">` for clean, standard form layouts.
+3. **Responsive Padding**: Wrap page sections in `<Container>` to guarantee consistent alignment across all resolutions.

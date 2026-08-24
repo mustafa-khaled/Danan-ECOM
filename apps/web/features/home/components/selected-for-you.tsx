@@ -1,14 +1,11 @@
 import Link from "next/link";
 import { PieceCard, SectionHead } from "@/components/ui";
-import { formatPrice } from "@/shared/utils/format";
-import type { Locale } from "@/i18n/routing";
-import { getTranslations, getLocale } from "next-intl/server";
+import { getTranslations } from "next-intl/server";
 import { getSessionCookieHeader } from "@/features/auth/server/session";
 import { fetchSelectedForYou } from "../api/fetch-selected-for-you";
 import Container from "@/components/ui/container";
 
 export default async function SelectedForYou() {
-  const locale = (await getLocale()) as Locale;
   const cookie = await getSessionCookieHeader();
   const t = await getTranslations("home");
 
@@ -38,17 +35,10 @@ export default async function SelectedForYou() {
                 piece={{
                   id: piece.designSlug,
                   name: piece.name,
-                  serialNumber: piece.designSlug,
                   imageUrl: piece.imageUrl ?? undefined,
                   imageLqip: piece.imageLqip ?? undefined,
-                  collectionName: piece.collectionName,
-                  price: piece.basePrice
-                    ? formatPrice(piece.basePrice, piece.currency, locale)
-                    : undefined,
                 }}
                 imageClassName="aspect-auto h-[175px] md:h-[480px] lg:h-[578px]"
-                className="h-69.5 sm:h-auto"
-                showExplore
                 priority
               />
             </Link>

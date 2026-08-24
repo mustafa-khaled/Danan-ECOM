@@ -33,13 +33,13 @@ export default function Error({
         <div className="flex flex-col justify-center gap-4 sm:flex-row">
           <button
             onClick={reset}
-            className="rounded-[var(--radius-button)] bg-ivory px-6 py-3 font-medium text-void transition-opacity hover:opacity-90"
+            className="rounded-(--radius-button) bg-ivory px-6 py-3 font-medium text-void transition-opacity hover:opacity-90"
           >
             Try Again
           </button>
           <Link
             href="/"
-            className="rounded-[var(--radius-button)] border border-border bg-transparent px-6 py-3 font-medium text-ivory transition-colors hover:bg-surface"
+            className="rounded-(--radius-button) border border-border bg-transparent px-6 py-3 font-medium text-ivory transition-colors hover:bg-surface"
           >
             Go Home
           </Link>

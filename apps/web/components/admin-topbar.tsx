@@ -13,8 +13,8 @@ interface AdminTopbarProps {
 
 export function AdminTopbar({ title = "Collections", admin }: AdminTopbarProps) {
   return (
-    <header className="flex items-center justify-between py-6 px-4 sm:px-8 bg-transparent border-b border-[#EBEBEB]">
-      <h1 className="font-heading text-3xl sm:text-4xl font-bold text-[#1A1A1A] tracking-tight">
+    <header className="flex items-center justify-between py-6 px-4 sm:px-8 bg-transparent border-b border-ds-border-light">
+      <h1 className="font-heading text-2xl sm:text-3xl font-medium tracking-[-0.02em] text-ds-text">
         {title}
       </h1>
 
@@ -22,11 +22,11 @@ export function AdminTopbar({ title = "Collections", admin }: AdminTopbarProps) 
         {/* Bell Notification */}
         <button
           type="button"
-          className="relative p-2 rounded-full text-[#555555] hover:text-[#1A1A1A] hover:bg-[#F5F5F5] transition-colors cursor-pointer"
+          className="relative p-2 rounded-full text-ds-text-secondary hover:text-ds-text hover:bg-ds-surface transition-colors cursor-pointer"
           aria-label="Notifications"
         >
           <Bell className="w-5 h-5" />
-          <span className="absolute top-1.5 right-1.5 w-4 h-4 bg-[#DC2626] text-white text-[10px] font-bold rounded-full flex items-center justify-center shadow-xs">
+          <span className="absolute top-1.5 right-1.5 w-4 h-4 bg-ds-error text-white text-[10px] font-bold rounded-full flex items-center justify-center shadow-xs">
             2
           </span>
         </button>
@@ -34,19 +34,19 @@ export function AdminTopbar({ title = "Collections", admin }: AdminTopbarProps) 
         {/* Language Toggle Selector */}
         <button
           type="button"
-          className="flex items-center gap-1.5 px-2 py-1.5 rounded-lg text-xs font-medium text-[#555555] hover:text-[#1A1A1A] hover:bg-[#F5F5F5] transition-colors cursor-pointer"
+          className="flex items-center gap-1.5 px-2 py-1.5 rounded-lg text-xs font-medium text-ds-text-secondary hover:text-ds-text hover:bg-ds-surface transition-colors cursor-pointer"
         >
           <ChevronDown className="w-3.5 h-3.5 opacity-70" />
           <span className="text-base leading-none">🇬🇧</span>
         </button>
 
         {/* User Profile Avatar */}
-        <div className="w-9 h-9 rounded-full overflow-hidden border border-[#E0E0E0] bg-[#E8E4DC] flex items-center justify-center shrink-0 shadow-xs">
+        <div className="w-9 h-9 rounded-full overflow-hidden border border-ds-border bg-ds-surface-warm flex items-center justify-center shrink-0 shadow-xs">
           {admin?.avatarUrl ? (
             /* eslint-disable-next-line @next/next/no-img-element */
             <img src={admin.avatarUrl} alt={admin.displayName || "User"} className="w-full h-full object-cover" />
           ) : (
-            <span className="text-xs font-bold text-[#B56B5D]">
+            <span className="text-xs font-bold text-ds-primary">
               {admin?.displayName ? admin.displayName.substring(0, 2).toUpperCase() : "AM"}
             </span>
           )}

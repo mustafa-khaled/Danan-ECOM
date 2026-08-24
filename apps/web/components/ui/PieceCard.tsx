@@ -1,16 +1,12 @@
-import { SerialBadge } from "./SerialBadge";
 import { OptimizedImage } from "./OptimizedImage";
 import { cn } from "@/lib/utils";
 
 export interface PieceCardData {
   id: string;
   name: string;
-  serialNumber?: string;
   imageUrl?: string | null;
   imageLqip?: string | null;
-  collectionName?: string;
-  subtitle?: string;
-  price?: string;
+  ownedSince?: string;
 }
 
 export interface PieceCardProps {
@@ -18,8 +14,6 @@ export interface PieceCardProps {
   className?: string;
   imageClassName?: string;
   onSelect?: (pieceId: string) => void;
-  showExplore?: boolean;
-  badge?: "certificateActive";
   priority?: boolean;
 }
 
@@ -28,8 +22,6 @@ export function PieceCard({
   className = "",
   imageClassName,
   onSelect,
-  showExplore = false,
-  badge,
   priority = false,
 }: PieceCardProps) {
   const content = (
@@ -56,45 +48,28 @@ export function PieceCard({
             <span className="font-display text-lg">DADAN</span>
           </div>
         )}
-        {badge === "certificateActive" ? (
-          <span className="absolute inset-s-3 top-3 bg-ds-secondary px-2 py-1 text-[0.625rem] tracking-widest uppercase text-white">
-            Certificate Active
-          </span>
-        ) : null}
       </div>
-      <div className="flex flex-col gap-1 md:gap-2 p-3 md:p-4">
-        {piece.collectionName ? (
-          <p className="text-[0.625rem] md:text-xs tracking-[0.14em] uppercase text-ds-text-secondary">
-            {piece.collectionName}
-          </p>
-        ) : null}
-        <h3 className="font-heading text-sm md:text-xl leading-tight text-ds-text">
-          {piece.name}
-        </h3>
-        {piece.subtitle ? (
-          <p className="text-[0.625rem] md:text-xs tracking-[0.14em] uppercase text-ds-text-secondary">
-            {piece.subtitle}
-          </p>
-        ) : null}
-        {piece.price ? (
-          <p className="font-display text-sm tracking-[0.08em] text-ds-text">
-            {piece.price}
-          </p>
-        ) : null}
-        {showExplore ? (
-          <p className="text-xs text-[#1F5750] font-semibold flex items-center justify-between tracking-[0.12em] text-ds-teal-800 group-hover:text-ds-secondary">
-            <span>Explore Piece</span>
-            <span className="rtl:rotate-180 inline-block">→</span>
-          </p>
-        ) : piece.serialNumber ? (
-          <SerialBadge serial={piece.serialNumber} />
-        ) : null}
+      <div className="flex flex-1 flex-col justify-between gap-2 p-3 md:p-4">
+        <div className="space-y-1">
+          <h3 className="font-heading text-base md:text-xl font-medium tracking-[-0.02em] leading-tight text-ds-text">
+            {piece.name}
+          </h3>
+          {piece.ownedSince ? (
+            <p className="font-body text-xs font-normal tracking-[-0.02em] uppercase text-ds-text-secondary">
+              Owned Since: {piece.ownedSince}
+            </p>
+          ) : null}
+        </div>
+        <p className="font-body text-xs font-semibold flex items-center justify-between tracking-[-0.02em] text-teal-800 group-hover:text-ds-secondary mt-auto pt-1">
+          <span>Explore Piece</span>
+          <span className="rtl:rotate-180 inline-block">→</span>
+        </p>
       </div>
     </>
   );
 
   const sharedClasses = cn(
-    "group block overflow-hidden border border-ds-border bg-ds-background transition-colors duration-200 hover:border-ds-secondary",
+    "group flex flex-col h-full overflow-hidden border border-ds-border bg-ds-background transition-colors duration-200 hover:border-ds-secondary",
     className,
   );
 

@@ -7,9 +7,9 @@ interface ContainerProps {
 }
 
 const sizeClasses = {
-  default: "max-w-7xl",
-  narrow: "max-w-4xl",
-  wide: "max-w-[1440px]",
+  default: "w-full px-[15px] 2xl:w-[1792px] 2xl:px-0",
+  narrow: "max-w-4xl px-[15px] 2xl:px-0",
+  wide: "w-full px-[15px] 2xl:w-[1792px] 2xl:px-0",
 };
 
 export default function Container({
@@ -18,13 +18,7 @@ export default function Container({
   size = "default",
 }: ContainerProps) {
   return (
-    <div
-      className={cn(
-        "mx-auto w-full px-4 sm:px-8",
-        sizeClasses[size],
-        className,
-      )}
-    >
+    <div className={cn("mx-auto", sizeClasses[size], className)}>
       {children}
     </div>
   );

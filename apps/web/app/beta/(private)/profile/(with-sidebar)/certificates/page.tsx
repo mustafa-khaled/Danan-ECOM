@@ -33,26 +33,25 @@ export default async function CertificatesPage() {
               <Link
                 key={item.id}
                 href={`/beta/profile/wardrobe/${item.id}`}
-                className="group block rounded-lg p-3 sm:p-4 transition-shadow hover:shadow-sm"
-                style={{ backgroundColor: "var(--Contessa-50, #FBF7F7)" }}
+                className="group block rounded-(--radius-md) p-3 sm:p-4 bg-ds-surface-rose border border-ds-border-light transition-shadow hover:shadow-sm"
               >
-                <h3 className="font-bold text-base sm:text-lg text-[#1E293B] tracking-tight">
+                <h3 className="font-mono font-medium text-base sm:text-lg text-ds-text tracking-wide">
                   {item.serialNumber}
                 </h3>
-                <p className="mt-2.5 text-xs sm:text-sm font-medium uppercase text-[#525866]">
+                <p className="mt-2.5 text-xs sm:text-sm font-medium uppercase tracking-[-0.02em] text-ds-text-secondary">
                   {item.design.name}
                 </p>
                 {issueDate && (
-                  <p className="mt-2 text-caption sm:text-xs uppercase text-[#667085]">
+                  <p className="mt-2 text-caption sm:text-xs uppercase text-ds-text-muted">
                     ISSUED {issueDate.toUpperCase()}
                   </p>
                 )}
                 <div className="mt-4 flex items-center justify-between">
-                  <span className="text-sm sm:text-base font-medium text-[#BC776E]">
+                  <span className="text-sm sm:text-base font-medium text-ds-primary">
                     {t("view")}
                   </span>
                   <ArrowRight
-                    className="w-4 h-4 sm:w-5 sm:h-5 text-[#BC776E] transition-transform group-hover:translate-x-1"
+                    className="w-4 h-4 sm:w-5 sm:h-5 text-ds-primary transition-transform group-hover:translate-x-1"
                     strokeWidth={1.5}
                   />
                 </div>

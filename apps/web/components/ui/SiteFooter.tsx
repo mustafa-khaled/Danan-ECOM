@@ -43,7 +43,7 @@ export function SiteFooter() {
           <h2 className="font-display text-3xl font-bold tracking-tight text-white sm:text-4xl lg:text-5xl">
             {t("brandName")}
           </h2>
-          <p className="mt-2 text-base font-medium text-neutral-600 sm:text-lg lg:text-xl">
+          <p className="mt-2 text-base font-medium text-ds-dark-text-muted sm:text-lg lg:text-xl">
             {t("brandTagline")}
           </p>
         </div>

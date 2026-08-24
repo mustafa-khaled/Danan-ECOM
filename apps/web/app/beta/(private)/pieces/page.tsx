@@ -1,11 +1,9 @@
 import Link from "next/link";
-import { getTranslations, getLocale } from "next-intl/server";
+import { getTranslations } from "next-intl/server";
 import { PieceCard } from "@/components/ui";
 import { EmptyState } from "@/shared/components/feedback/empty-state";
 import { fetchCollections, fetchCollection } from "@/features/collections";
-import { formatPrice } from "@/shared/utils/format";
 import { getSessionCookieHeader } from "@/features/auth/server/session";
-import type { Locale } from "@/i18n/routing";
 import Container from "@/components/ui/container";
 
 interface DesignItem {
@@ -22,7 +20,6 @@ interface DesignItem {
 export default async function PiecesPage() {
   const cookie = await getSessionCookieHeader();
   const t = await getTranslations("pieces");
-  const locale = (await getLocale()) as Locale;
 
   let allDesigns: DesignItem[] = [];
 
@@ -75,12 +72,8 @@ export default async function PiecesPage() {
                 piece={{
                   id: design.id,
                   name: design.name,
-                  serialNumber: "Available",
                   imageUrl: design.imageUrls[0],
-                  collectionName: design.collectionName,
-                  price: formatPrice(design.basePrice, design.currency, locale),
                 }}
-                showExplore
               />
             </Link>
           ))}

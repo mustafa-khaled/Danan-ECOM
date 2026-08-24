@@ -33,7 +33,7 @@ export default function HeroSection() {
               );
               nextSection?.scrollIntoView({ behavior: "smooth" });
             }}
-            className="hero-cta-gradient w-[85%] sm:w-auto mt-6 inline-flex items-center justify-between gap-2 px-6 py-2.5 rounded-(--radius-button) font-body rtl:font-arabic text-sm font-medium tracking-wide text-ds-secondary transition-all duration-300 hover:scale-105 hover:shadow-lg cursor-pointer sm:mt-8"
+            className="hero-cta-gradient w-[85%] sm:w-auto mt-6 inline-flex items-center justify-between gap-2 px-6 py-2.5 font-body rtl:font-arabic text-sm font-medium tracking-wide text-ds-secondary transition-all duration-300 hover:scale-105 hover:shadow-lg cursor-pointer sm:mt-8"
           >
             {t("exploreAllPieces")}
             <ChevronsDown

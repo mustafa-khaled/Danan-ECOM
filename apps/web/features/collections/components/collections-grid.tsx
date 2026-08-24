@@ -99,11 +99,10 @@ export default function CollectionsGrid({
                         piece={{
                           id: piece.id,
                           name: piece.name,
-                          subtitle:
+                          ownedSince:
                             piece.acquiredAt || t("ownedSinceFallback"),
                           imageUrl: piece.imageUrl,
                         }}
-                        showExplore
                       />
                     </Link>
                   );
@@ -126,11 +125,8 @@ export default function CollectionsGrid({
                         piece={{
                           id: piece.id,
                           name: piece.name,
-                          collectionName: piece.collectionName,
-                          price: formattedPrice,
                           imageUrl: piece.imageUrl,
                         }}
-                        showExplore
                       />
                     </Link>
                   );

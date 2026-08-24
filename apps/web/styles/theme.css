@@ -12,7 +12,7 @@
   /* ── Color Scales (from reference palette) ────────────────────────────── */
 
   /* Brown / Warm Neutral */
-  --color-brown-50:  #FCF8FB;
+  --color-brown-50:  #FCFBFB;
   --color-brown-100: #F6F5F4;
   --color-brown-200: #EAE7E4;
   --color-brown-300: #D9D3CD;
@@ -82,7 +82,7 @@
   --color-cyan-200: #86FFC9;
   --color-cyan-300: #0FF8AF;
   --color-cyan-400: #0DE8A3;
-  --color-cyan-500: #0CDC0A;
+  --color-cyan-500: #0CDC9A;
   --color-cyan-600: #1EC58B;
   --color-cyan-700: #059669;
   --color-cyan-800: #037351;
@@ -212,8 +212,9 @@
   --text-h5:      1.25rem;   /* 20px */
   --text-h6:      1rem;      /* 16px */
   --text-body-lg: 1.125rem;  /* 18px */
-  --text-body:    0.9375rem; /* 15px */
-  --text-body-sm: 0.8125rem; /* 13px */
+  --text-body-md: 0.875rem;  /* 14px */
+  --text-body:    0.875rem;  /* 14px */
+  --text-body-sm: 0.75rem;   /* 12px */
   --text-caption: 0.6875rem; /* 11px */
   --text-label:   0.875rem;  /* 14px */
   --text-overline: 0.75rem;  /* 12px */
@@ -301,6 +302,8 @@
   color-scheme: light;
 
   /* Map semantic tokens → CSS custom properties for runtime use */
+  --font-heading:     var(--font-english, "EB Garamond", Georgia, serif);
+  --font-body:        var(--font-manrope, "Manrope", system-ui, sans-serif);
   --color-bg:         var(--color-ds-background);
   --color-text:       var(--color-ds-text);
   --color-text-muted: var(--color-ds-text-secondary);
@@ -441,10 +444,231 @@ body {
 
 
 /* ═══════════════════════════════════════════════════════════════════════════
-   DESIGN SYSTEM UTILITY CLASSES
+   DESIGN SYSTEM TYPOGRAPHY UTILITY CLASSES
    ═══════════════════════════════════════════════════════════════════════════ */
 
-/* Typography presets */
+/* ── Headings / EB Garamond (letter-spacing: -2% / -0.02em) ─────────────── */
+
+/* H1 (48px / 3rem) */
+.text-h1-regular {
+  font-family: var(--font-heading);
+  font-size: var(--text-h1);
+  font-weight: 400;
+  line-height: 1.15;
+  letter-spacing: -0.02em;
+}
+.text-h1-medium {
+  font-family: var(--font-heading);
+  font-size: var(--text-h1);
+  font-weight: 500;
+  line-height: 1.15;
+  letter-spacing: -0.02em;
+}
+.text-h1-semibold,
+.text-h1-bold {
+  font-family: var(--font-heading);
+  font-size: var(--text-h1);
+  font-weight: 600;
+  line-height: 1.15;
+  letter-spacing: -0.02em;
+}
+
+/* H2 (36px / 2.25rem) */
+.text-h2-regular {
+  font-family: var(--font-heading);
+  font-size: var(--text-h2);
+  font-weight: 400;
+  line-height: 1.2;
+  letter-spacing: -0.02em;
+}
+.text-h2-medium {
+  font-family: var(--font-heading);
+  font-size: var(--text-h2);
+  font-weight: 500;
+  line-height: 1.2;
+  letter-spacing: -0.02em;
+}
+.text-h2-semibold,
+.text-h2-bold {
+  font-family: var(--font-heading);
+  font-size: var(--text-h2);
+  font-weight: 600;
+  line-height: 1.2;
+  letter-spacing: -0.02em;
+}
+
+/* H3 (28px / 1.75rem) */
+.text-h3-regular {
+  font-family: var(--font-heading);
+  font-size: var(--text-h3);
+  font-weight: 400;
+  line-height: 1.25;
+  letter-spacing: -0.02em;
+}
+.text-h3-medium {
+  font-family: var(--font-heading);
+  font-size: var(--text-h3);
+  font-weight: 500;
+  line-height: 1.25;
+  letter-spacing: -0.02em;
+}
+.text-h3-semibold,
+.text-h3-bold {
+  font-family: var(--font-heading);
+  font-size: var(--text-h3);
+  font-weight: 600;
+  line-height: 1.25;
+  letter-spacing: -0.02em;
+}
+
+/* H4 (24px / 1.5rem) */
+.text-h4-regular {
+  font-family: var(--font-heading);
+  font-size: var(--text-h4);
+  font-weight: 400;
+  line-height: 1.3;
+  letter-spacing: -0.02em;
+}
+.text-h4-medium {
+  font-family: var(--font-heading);
+  font-size: var(--text-h4);
+  font-weight: 500;
+  line-height: 1.3;
+  letter-spacing: -0.02em;
+}
+.text-h4-semibold,
+.text-h4-bold {
+  font-family: var(--font-heading);
+  font-size: var(--text-h4);
+  font-weight: 600;
+  line-height: 1.3;
+  letter-spacing: -0.02em;
+}
+
+/* H5 (20px / 1.25rem) */
+.text-h5-regular {
+  font-family: var(--font-heading);
+  font-size: var(--text-h5);
+  font-weight: 400;
+  line-height: 1.35;
+  letter-spacing: -0.02em;
+}
+.text-h5-medium {
+  font-family: var(--font-heading);
+  font-size: var(--text-h5);
+  font-weight: 500;
+  line-height: 1.35;
+  letter-spacing: -0.02em;
+}
+.text-h5-semibold,
+.text-h5-bold {
+  font-family: var(--font-heading);
+  font-size: var(--text-h5);
+  font-weight: 600;
+  line-height: 1.35;
+  letter-spacing: -0.02em;
+}
+
+/* H6 (16px / 1.0rem) */
+.text-h6-regular {
+  font-family: var(--font-heading);
+  font-size: var(--text-h6);
+  font-weight: 400;
+  line-height: 1.4;
+  letter-spacing: -0.02em;
+}
+.text-h6-medium {
+  font-family: var(--font-heading);
+  font-size: var(--text-h6);
+  font-weight: 500;
+  line-height: 1.4;
+  letter-spacing: -0.02em;
+}
+.text-h6-semibold,
+.text-h6-bold {
+  font-family: var(--font-heading);
+  font-size: var(--text-h6);
+  font-weight: 600;
+  line-height: 1.4;
+  letter-spacing: -0.02em;
+}
+
+/* ── Body / Manrope (letter-spacing: -2% / -0.02em) ───────────────────────── */
+
+/* Body SM (12px / 0.75rem) */
+.text-body-sm-regular {
+  font-family: var(--font-body);
+  font-size: var(--text-body-sm);
+  font-weight: 400;
+  line-height: 1.5;
+  letter-spacing: -0.02em;
+}
+.text-body-sm-medium {
+  font-family: var(--font-body);
+  font-size: var(--text-body-sm);
+  font-weight: 500;
+  line-height: 1.5;
+  letter-spacing: -0.02em;
+}
+.text-body-sm-semibold,
+.text-body-sm-bold {
+  font-family: var(--font-body);
+  font-size: var(--text-body-sm);
+  font-weight: 600;
+  line-height: 1.5;
+  letter-spacing: -0.02em;
+}
+
+/* Body MD (14px / 0.875rem) */
+.text-body-md-regular {
+  font-family: var(--font-body);
+  font-size: var(--text-body-md);
+  font-weight: 400;
+  line-height: 1.5;
+  letter-spacing: -0.02em;
+}
+.text-body-md-medium {
+  font-family: var(--font-body);
+  font-size: var(--text-body-md);
+  font-weight: 500;
+  line-height: 1.5;
+  letter-spacing: -0.02em;
+}
+.text-body-md-semibold,
+.text-body-md-bold {
+  font-family: var(--font-body);
+  font-size: var(--text-body-md);
+  font-weight: 600;
+  line-height: 1.5;
+  letter-spacing: -0.02em;
+}
+
+/* Body LG (18px / 1.125rem) */
+.text-body-lg-regular {
+  font-family: var(--font-body);
+  font-size: var(--text-body-lg);
+  font-weight: 400;
+  line-height: 1.6;
+  letter-spacing: -0.02em;
+}
+.text-body-lg-medium {
+  font-family: var(--font-body);
+  font-size: var(--text-body-lg);
+  font-weight: 500;
+  line-height: 1.6;
+  letter-spacing: -0.02em;
+}
+.text-body-lg-semibold,
+.text-body-lg-bold {
+  font-family: var(--font-body);
+  font-size: var(--text-body-lg);
+  font-weight: 600;
+  line-height: 1.6;
+  letter-spacing: -0.02em;
+}
+
+/* ── Backward-Compatible Preset Shortcuts ────────────────────────────────── */
+
 .ds-display {
   font-family: var(--font-heading);
   font-size: var(--text-display);
@@ -452,86 +676,82 @@ body {
   line-height: 1.1;
   letter-spacing: -0.02em;
 }
-
 .ds-h1 {
   font-family: var(--font-heading);
   font-size: var(--text-h1);
-  font-weight: 700;
+  font-weight: 600;
   line-height: 1.15;
   letter-spacing: -0.02em;
 }
-
 .ds-h2 {
   font-family: var(--font-heading);
   font-size: var(--text-h2);
-  font-weight: 700;
+  font-weight: 600;
   line-height: 1.2;
-  letter-spacing: -0.01em;
+  letter-spacing: -0.02em;
 }
-
 .ds-h3 {
   font-family: var(--font-heading);
   font-size: var(--text-h3);
   font-weight: 600;
   line-height: 1.25;
+  letter-spacing: -0.02em;
 }
-
 .ds-h4 {
   font-family: var(--font-heading);
   font-size: var(--text-h4);
   font-weight: 600;
   line-height: 1.3;
+  letter-spacing: -0.02em;
 }
-
 .ds-h5 {
   font-family: var(--font-heading);
   font-size: var(--text-h5);
   font-weight: 600;
   line-height: 1.35;
+  letter-spacing: -0.02em;
 }
-
 .ds-h6 {
   font-family: var(--font-heading);
   font-size: var(--text-h6);
   font-weight: 600;
   line-height: 1.4;
+  letter-spacing: -0.02em;
 }
-
 .ds-body-lg {
   font-family: var(--font-body);
   font-size: var(--text-body-lg);
   font-weight: 400;
   line-height: 1.6;
+  letter-spacing: -0.02em;
 }
-
 .ds-body {
   font-family: var(--font-body);
-  font-size: var(--text-body);
+  font-size: var(--text-body-md);
   font-weight: 400;
-  line-height: 1.6;
+  line-height: 1.5;
+  letter-spacing: -0.02em;
 }
-
 .ds-body-sm {
   font-family: var(--font-body);
   font-size: var(--text-body-sm);
   font-weight: 400;
   line-height: 1.5;
+  letter-spacing: -0.02em;
 }
-
 .ds-caption {
   font-family: var(--font-body);
   font-size: var(--text-caption);
   font-weight: 500;
   line-height: 1.4;
 }
-
 .ds-label {
   font-family: var(--font-body);
   font-size: var(--text-label);
   font-weight: 600;
   line-height: 1.4;
+  letter-spacing: -0.02em;
 }
-
 .ds-overline {
   font-family: var(--font-body);
   font-size: var(--text-overline);

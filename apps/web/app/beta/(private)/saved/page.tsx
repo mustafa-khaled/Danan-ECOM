@@ -13,7 +13,7 @@ export default async function SavedPage() {
   return (
     <>
       <AccountLayout title={t("title")}>
-        <p className="mb-6 text-sm text-[var(--color-text-muted)]">
+        <p className="mb-6 text-sm text-(--color-text-muted)">
           {t("count", { count: saved.length })}
         </p>
 
@@ -35,11 +35,8 @@ export default async function SavedPage() {
                     piece={{
                       id: entry.piece.id,
                       name: entry.piece.design.name,
-                      serialNumber: entry.piece.serialNumber,
                       imageUrl: entry.piece.design.imageUrls?.[0],
-                      collectionName: entry.piece.design.collection?.name,
                     }}
-                    showExplore
                   />
                 </Link>
               );

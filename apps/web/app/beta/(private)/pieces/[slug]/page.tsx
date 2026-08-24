@@ -34,7 +34,7 @@ export default async function DesignDetailPage({
               {design.imageUrls.slice(1).map((url, i) => (
                 <div
                   key={i}
-                  className="relative h-56 lg:h-96 w-full overflow-hidden bg-[#0D1514] rounded-[2px]"
+                  className="relative h-56 lg:h-96 w-full overflow-hidden bg-ds-surface rounded-[2px]"
                 >
                   <Image
                     src={url}
@@ -50,10 +50,10 @@ export default async function DesignDetailPage({
 
           {design.story ? (
             <section className="py-6 lg:py-0 space-y-4">
-              <h2 className="font-display text-xl lg:text-2xl font-bold text-[#2D2321]">
+              <h2 className="font-display text-xl lg:text-2xl font-bold text-ds-text">
                 {t("storyOfProtection")}
               </h2>
-              <p className="font-sans text-sm sm:text-base font-medium text-[#2D2321]">
+              <p className="font-sans text-sm sm:text-base font-medium text-ds-text">
                 {t("partOfCollection", { collection: design.collection.name })}
               </p>
               <div className="space-y-3 text-sm sm:text-base leading-relaxed text-gray-600">

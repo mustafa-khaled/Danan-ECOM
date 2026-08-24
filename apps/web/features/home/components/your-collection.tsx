@@ -76,12 +76,9 @@ export default async function YourCollection() {
                 piece={{
                   id: piece.id,
                   name: piece.name,
-                  subtitle: piece.ownedSince
-                    ? `${t("ownedSince")}: ${piece.ownedSince}`
-                    : undefined,
+                  ownedSince: piece.ownedSince || undefined,
                   imageUrl: piece.imageUrl,
                 }}
-                showExplore
               />
             </Link>
           ))}

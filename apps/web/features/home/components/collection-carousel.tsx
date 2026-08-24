@@ -71,12 +71,9 @@ export function CollectionCarousel({
                   piece={{
                     id: piece.id,
                     name: piece.name,
-                    subtitle: piece.ownedSince
-                      ? `${ownedSinceLabel}: ${piece.ownedSince}`
-                      : undefined,
+                    ownedSince: piece.ownedSince || undefined,
                     imageUrl: piece.imageUrl,
                   }}
-                  showExplore
                 />
               </Link>
             </CarouselItem>

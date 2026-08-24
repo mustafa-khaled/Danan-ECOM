@@ -31,14 +31,13 @@ export default async function WardrobePage() {
                 piece={{
                   id: item.id,
                   name: item.design.name,
-                  serialNumber: item.serialNumber,
                   imageUrl: item.design.images[0],
-                  collectionName: item.design.collection,
-                  subtitle: item?.ownershipHistory?.[0]?.acquiredAt
-                    ? `OWNED SINCE: ${new Date(item?.ownershipHistory?.[0]?.acquiredAt).toLocaleDateString("en-US", { month: "long", year: "numeric" }).toUpperCase()}`
+                  ownedSince: item?.ownershipHistory?.[0]?.acquiredAt
+                    ? new Date(item.ownershipHistory[0].acquiredAt)
+                        .toLocaleDateString("en-US", { month: "long", year: "numeric" })
+                        .toUpperCase()
                     : undefined,
                 }}
-                showExplore={true}
               />
             </Link>
           ))}

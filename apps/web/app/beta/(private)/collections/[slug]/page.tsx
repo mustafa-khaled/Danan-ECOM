@@ -1,14 +1,12 @@
 import Image from "next/image";
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { getTranslations, getLocale } from "next-intl/server";
+import { getTranslations } from "next-intl/server";
 import { PieceCard } from "@/components/ui";
 import { EmptyState } from "@/shared/components/feedback/empty-state";
 import { ApiError } from "@/shared/lib/send-request";
 import { fetchCollection } from "@/features/collections";
-import { formatPrice } from "@/shared/utils/format";
 import { getSessionCookieHeader } from "@/features/auth/server/session";
-import type { Locale } from "@/i18n/routing";
 import Container from "@/components/ui/container";
 
 interface CollectionDetailPageProps {
@@ -21,7 +19,6 @@ export default async function CollectionDetailPage({
   const { slug } = await params;
   const cookie = await getSessionCookieHeader();
   const t = await getTranslations("collections");
-  const locale = (await getLocale()) as Locale;
 
   let collection;
   try {
@@ -86,16 +83,8 @@ export default async function CollectionDetailPage({
                   piece={{
                     id: design.id,
                     name: design.name,
-                    serialNumber: "Available",
                     imageUrl: design.imageUrls[0],
-                    collectionName: collection.name,
-                    price: formatPrice(
-                      design.basePrice,
-                      design.currency,
-                      locale,
-                    ),
                   }}
-                  showExplore
                 />
               </Link>
             ))}
