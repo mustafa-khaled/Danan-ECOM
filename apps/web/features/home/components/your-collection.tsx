@@ -60,6 +60,7 @@ export default async function YourCollection() {
           href="/beta/profile/wardrobe"
           link={t("exploreAll")}
           subtitle={t("yourCollectionSubtitle")}
+          className="[&_p]:text-h6 [&_p]:md:text-xl [&_p]:lg:text-h3"
         />
 
         {/* ── Mobile Carousel ── */}
@@ -69,7 +70,7 @@ export default async function YourCollection() {
         />
 
         {/* ── Desktop Grid ── */}
-        <div className="hidden md:grid grid-cols-3 gap-6 lg:gap-8">
+        <div className="hidden md:grid grid-cols-3 gap-4 lg:gap-6">
           {items.map((piece) => (
             <Link key={piece.id} href={piece.href} className="block">
               <PieceCard

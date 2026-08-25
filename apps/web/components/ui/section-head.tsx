@@ -20,16 +20,16 @@ export default function SectionHead({
   return (
     <div
       className={cn(
-        "mb-4 md:mb-8 flex flex-col justify-between gap-4 sm:flex-row sm:items-end",
+        "mb-6 md:mb-8 flex flex-col justify-between gap-5 sm:flex-row sm:items-end",
         className,
       )}
     >
-      <div>
-        <h2 className="font-heading rtl:font-arabic text-2xl sm:text-3xl md:text-4xl font-medium tracking-[-0.02em] leading-tight text-ds-text">
+      <div className="flex flex-col">
+        <h2 className="font-heading rtl:font-arabic font-bold tracking-[-0.02em] text-2xl leading-tight md:text-3xl md:leading-tight lg:text-h2 lg:leading-22 text-ds-text">
           {title}
         </h2>
         {subtitle && (
-          <p className="font-body rtl:font-arabic mt-2 text-sm sm:text-base font-normal tracking-[-0.02em] leading-relaxed text-ds-text-secondary">
+          <p className="font-body rtl:font-arabic font-semibold tracking-normal text-lg leading-snug md:text-xl lg:text-h3 text-ds-text-secondary">
             {subtitle}
           </p>
         )}
@@ -39,8 +39,9 @@ export default function SectionHead({
         <ArrowLink
           href={href}
           variant="primary"
-          size="sm"
+          size="lg"
           className="sm:w-auto w-full"
+          fullWidth
         >
           {link}
         </ArrowLink>

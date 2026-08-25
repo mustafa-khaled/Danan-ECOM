@@ -7,9 +7,9 @@ interface ContainerProps {
 }
 
 const sizeClasses = {
-  default: "w-full px-[15px] 2xl:w-[1792px] 2xl:px-0",
-  narrow: "max-w-4xl px-[15px] 2xl:px-0",
-  wide: "w-full px-[15px] 2xl:w-[1792px] 2xl:px-0",
+  default: "w-full max-w-[1792px] px-[15px] 2xl:px-0",
+  narrow: "w-full max-w-4xl px-[15px] 2xl:px-0",
+  wide: "w-full max-w-[1792px] px-[15px] 2xl:px-0",
 };
 
 export default function Container({

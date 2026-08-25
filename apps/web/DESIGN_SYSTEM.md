@@ -39,15 +39,15 @@ Design tokens live centrally in [`apps/web/styles/theme.css`](file:///Users/must
 
 Extracted from the brand reference palette, providing 8 complete scales (50–950):
 
-| Scale | 50 | 100 | 200 | 300 | 400 | 500 | 600 | 700 | 800 | 900 | 950 | Usage |
-|---|---|---|---|---|---|---|---|---|---|---|---|---|
-| **Brown / Taupe** | `#FCFBFB` | `#F6F5F4` | `#EAE7E4` | `#D9D3CD` | `#B7ADA4` | `#897F79` | `#69615C` | `#524B48` | `#393431` | `#292523` | `#141210` | Dark neutrals, deep canvas |
-| **Terracotta / Clay** | `#FBF7F7` | `#F6EFED` | `#EEDEDB` | `#E2C7C2` | `#D6A198` | `#BF7266` | `#985B50` | `#7A493F` | `#5D372F` | `#4A2A24` | `#2A1612` | Primary brand accent |
-| **Sand / Ochre** | `#FBF8F3` | `#F7EFE4` | `#EFDEC7` | `#E4C79C` | `#C9AC7F` | `#A18762` | `#846C4E` | `#6A543D` | `#52402E` | `#423324` | `#251B12` | Warm surfaces & sidebars |
-| **Danan Teal** | `#E7FEFA` | `#C7FCF3` | `#82FAE9` | `#5FE9D7` | `#55D3C1` | `#4CBEAE` | `#3C9A8D` | `#2A7168` | `#1F5750` | `#184742` | `#0A2925` | Success indicators, brand teal |
-| **Amber / Gold** | `#FFF6EB` | `#FFECD2` | `#FFDCAB` | `#FFC66D` | `#FAAF07` | `#E9A306` | `#CA8A04` | `#A06602` | `#7F4C01` | `#693D01` | `#3D2200` | Warning & pending states |
-| **Mint / Emerald** | `#E6FFF2` | `#C5FFE2` | `#86FFC9` | `#0FF8AF` | `#0DE8A3` | `#0CDC9A` | `#1EC58B` | `#059669` | `#037351` | `#025C40` | `#013524` | Active indicators |
-| **Crimson / Ruby** | `#FEF5F4` | `#FEE9E6` | `#FCD5D0` | `#FBB6AE` | `#FF8E82` | `#F7554D` | `#DC2626` | `#B41D1B` | `#951612` | `#7E110D` | `#4D0705` | Error states, delete actions |
+| Scale                 | 50        | 100       | 200       | 300       | 400       | 500       | 600       | 700       | 800       | 900       | 950       | Usage                          |
+| --------------------- | --------- | --------- | --------- | --------- | --------- | --------- | --------- | --------- | --------- | --------- | --------- | ------------------------------ |
+| **Brown / Taupe**     | `#FCFBFB` | `#F6F5F4` | `#EAE7E4` | `#D9D3CD` | `#B7ADA4` | `#897F79` | `#69615C` | `#524B48` | `#393431` | `#292523` | `#141210` | Dark neutrals, deep canvas     |
+| **Terracotta / Clay** | `#FBF7F7` | `#F6EFED` | `#EEDEDB` | `#E2C7C2` | `#D6A198` | `#BF7266` | `#985B50` | `#7A493F` | `#5D372F` | `#4A2A24` | `#2A1612` | Primary brand accent           |
+| **Sand / Ochre**      | `#FBF8F3` | `#F7EFE4` | `#EFDEC7` | `#E4C79C` | `#C9AC7F` | `#A18762` | `#846C4E` | `#6A543D` | `#52402E` | `#423324` | `#251B12` | Warm surfaces & sidebars       |
+| **Danan Teal**        | `#E7FEFA` | `#C7FCF3` | `#82FAE9` | `#5FE9D7` | `#55D3C1` | `#4CBEAE` | `#3C9A8D` | `#2A7168` | `#1F5750` | `#184742` | `#0A2925` | Success indicators, brand teal |
+| **Amber / Gold**      | `#FFF6EB` | `#FFECD2` | `#FFDCAB` | `#FFC66D` | `#FAAF07` | `#E9A306` | `#CA8A04` | `#A06602` | `#7F4C01` | `#693D01` | `#3D2200` | Warning & pending states       |
+| **Mint / Emerald**    | `#E6FFF2` | `#C5FFE2` | `#86FFC9` | `#0FF8AF` | `#0DE8A3` | `#0CDC9A` | `#1EC58B` | `#059669` | `#037351` | `#025C40` | `#013524` | Active indicators              |
+| **Crimson / Ruby**    | `#FEF5F4` | `#FEE9E6` | `#FCD5D0` | `#FBB6AE` | `#FF8E82` | `#F7554D` | `#DC2626` | `#B41D1B` | `#951612` | `#7E110D` | `#4D0705` | Error states, delete actions   |
 | **Slate / Navy-Gray** | `#F8F9FA` | `#F1F2F4` | `#E1E4E8` | `#CCD2D9` | `#A5AFBD` | `#778699` | `#5D697A` | `#4B5563` | `#353D48` | `#272D35` | `#13161C` | Dark footer surfaces & borders |
 
 ---
@@ -58,33 +58,33 @@ Never hardcode HEX values in components. Always reference semantic utility class
 
 ```css
 /* Primary Action (Terracotta/Salmon) */
---color-ds-primary:            #B56B5D;
---color-ds-primary-hover:      #A05C50;
---color-ds-primary-foreground: #FFFFFF;
+--color-ds-primary: #b56b5d;
+--color-ds-primary-hover: #a05c50;
+--color-ds-primary-foreground: #ffffff;
 
 /* Secondary Action (Dark Brown) */
---color-ds-secondary:            #2D2321;
---color-ds-secondary-hover:      #1A1412;
---color-ds-secondary-foreground: #FFFFFF;
+--color-ds-secondary: #2d2321;
+--color-ds-secondary-hover: #1a1412;
+--color-ds-secondary-foreground: #ffffff;
 
 /* Accent (Teal) */
---color-ds-teal:            #4CBEAE;
---color-ds-teal-hover:      #3FA899;
+--color-ds-teal: #4cbeae;
+--color-ds-teal-hover: #3fa899;
 
 /* Surfaces */
---color-ds-background:      #FFFFFF;
---color-ds-surface:         #F5F5F5;
---color-ds-surface-warm:    #FBF8F3;
---color-ds-surface-rose:    #F6EFED;
+--color-ds-background: #ffffff;
+--color-ds-surface: #f5f5f5;
+--color-ds-surface-warm: #fbf8f3;
+--color-ds-surface-rose: #f6efed;
 
 /* Text */
---color-ds-text:            #1A1A1A;
---color-ds-text-secondary:  #555555;
---color-ds-text-muted:      #9CA3AF;
+--color-ds-text: #1a1a1a;
+--color-ds-text-secondary: #555555;
+--color-ds-text-muted: #9ca3af;
 
 /* Borders */
---color-ds-border:          #D4D4D4;
---color-ds-border-light:    #E8E4DC;
+--color-ds-border: #d4d4d4;
+--color-ds-border-light: #e8e4dc;
 ```
 
 ---
@@ -96,19 +96,21 @@ DADAN uses **EB Garamond** for luxury headings (`font-heading`) and **Manrope** 
 All headings and body classes feature calibrated tracking (`letter-spacing: -2%` / `-0.02em`).
 
 #### Headings (EB Garamond)
-| Level | Size | Regular (400) | Medium (500) | SemiBold (600) |
-|---|---|---|---|---|
-| **H1** | `48px` (`3.0rem`) | `.text-h1-regular` | `.text-h1-medium` | `.text-h1-semibold` |
+
+| Level  | Size               | Regular (400)      | Medium (500)      | SemiBold (600)      |
+| ------ | ------------------ | ------------------ | ----------------- | ------------------- |
+| **H1** | `48px` (`3.0rem`)  | `.text-h1-regular` | `.text-h1-medium` | `.text-h1-semibold` |
 | **H2** | `36px` (`2.25rem`) | `.text-h2-regular` | `.text-h2-medium` | `.text-h2-semibold` |
 | **H3** | `28px` (`1.75rem`) | `.text-h3-regular` | `.text-h3-medium` | `.text-h3-semibold` |
-| **H4** | `24px` (`1.5rem`) | `.text-h4-regular` | `.text-h4-medium` | `.text-h4-semibold` |
+| **H4** | `24px` (`1.5rem`)  | `.text-h4-regular` | `.text-h4-medium` | `.text-h4-semibold` |
 | **H5** | `20px` (`1.25rem`) | `.text-h5-regular` | `.text-h5-medium` | `.text-h5-semibold` |
-| **H6** | `16px` (`1.0rem`) | `.text-h6-regular` | `.text-h6-medium` | `.text-h6-semibold` |
+| **H6** | `16px` (`1.0rem`)  | `.text-h6-regular` | `.text-h6-medium` | `.text-h6-semibold` |
 
 #### Body (Manrope)
-| Level | Size | Regular (400) | Medium (500) | SemiBold (600) |
-|---|---|---|---|---|
-| **Body SM** | `12px` (`0.75rem`) | `.text-body-sm-regular` | `.text-body-sm-medium` | `.text-body-sm-semibold` |
+
+| Level       | Size                | Regular (400)           | Medium (500)           | SemiBold (600)           |
+| ----------- | ------------------- | ----------------------- | ---------------------- | ------------------------ |
+| **Body SM** | `12px` (`0.75rem`)  | `.text-body-sm-regular` | `.text-body-sm-medium` | `.text-body-sm-semibold` |
 | **Body MD** | `14px` (`0.875rem`) | `.text-body-md-regular` | `.text-body-md-medium` | `.text-body-md-semibold` |
 | **Body LG** | `18px` (`1.125rem`) | `.text-body-lg-regular` | `.text-body-lg-medium` | `.text-body-lg-semibold` |
 
@@ -138,6 +140,7 @@ Container widths are strictly controlled via [`<Container size="..." />`](file:/
 All primitives reside in [`apps/web/components/ui/`](file:///Users/mustafakhaled/Documents/my-projects/Danan-main/apps/web/components/ui/) and are exported via `index.ts`.
 
 ### Button
+
 ```tsx
 import { Button } from "@/components/ui";
 
@@ -145,10 +148,11 @@ import { Button } from "@/components/ui";
 // Sizes: sm | md | lg
 <Button variant="primary" size="md" arrow>
   Explore All Pieces
-</Button>
+</Button>;
 ```
 
 ### Input
+
 ```tsx
 import { Input } from "@/components/ui";
 
@@ -157,10 +161,11 @@ import { Input } from "@/components/ui";
   placeholder="Enter 6-character code"
   error={errors.recipientHouseId}
   fullWidth
-/>
+/>;
 ```
 
 ### PieceCard
+
 ```tsx
 import { PieceCard } from "@/components/ui";
 
@@ -171,7 +176,7 @@ import { PieceCard } from "@/components/ui";
     imageUrl: "/images/ring.png",
     ownedSince: "AUGUST 2024",
   }}
-/>
+/>;
 ```
 
 ---
