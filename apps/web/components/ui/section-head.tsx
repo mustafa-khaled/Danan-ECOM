@@ -39,7 +39,7 @@ export default function SectionHead({
         <ArrowLink
           href={href}
           variant="primary"
-          size="lg"
+          size="md"
           className="sm:w-auto w-full"
           fullWidth
         >

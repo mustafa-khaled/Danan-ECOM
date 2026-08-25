@@ -41,7 +41,7 @@ export default function AboutDadan() {
               href="/beta/our-story"
               variant="primary"
               size="md"
-              className="w-74 justify-between! text-h4! text-black"
+              className="w-74 justify-between! text-h4!"
             >
               {t("exploreTheHouse")}
             </ArrowLink>
