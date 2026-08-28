@@ -22,7 +22,8 @@
 #   - corepack:     pins pnpm to the exact version used in development
 # ---------------------------------------------------------------------------
 FROM node:22-alpine AS base
-RUN apk add --no-cache libc6-compat openssl
+RUN apk add --no-cache libc6-compat openssl && \
+    apk upgrade --no-cache openssl
 RUN corepack enable && corepack prepare pnpm@9.15.4 --activate
 WORKDIR /app
 
@@ -89,6 +90,7 @@ RUN --mount=type=cache,target=/root/.local/share/pnpm/store \
 # ---------------------------------------------------------------------------
 FROM node:22-alpine AS runner
 RUN apk add --no-cache openssl && \
+    apk upgrade --no-cache openssl && \
     rm -rf /usr/local/lib/node_modules/npm \
            /usr/local/lib/node_modules/corepack \
            /usr/local/bin/npm /usr/local/bin/npx /usr/local/bin/corepack
