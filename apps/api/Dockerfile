@@ -21,7 +21,7 @@
 #   - openssl:      required by Prisma for TLS database connections
 #   - corepack:     pins pnpm to the exact version used in development
 # ---------------------------------------------------------------------------
-FROM node:22-alpine AS base
+FROM node:25-alpine AS base
 RUN apk add --no-cache libc6-compat openssl && \
     apk upgrade --no-cache openssl
 RUN corepack enable && corepack prepare pnpm@9.15.4 --activate
@@ -88,7 +88,7 @@ RUN --mount=type=cache,target=/root/.local/share/pnpm/store \
 #
 #   HEALTHCHECK uses busybox wget (bundled with Alpine) — no extra packages.
 # ---------------------------------------------------------------------------
-FROM node:22-alpine AS runner
+FROM node:25-alpine AS runner
 RUN apk add --no-cache openssl && \
     apk upgrade --no-cache openssl && \
     rm -rf /usr/local/lib/node_modules/npm \
