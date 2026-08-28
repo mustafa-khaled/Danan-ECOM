@@ -95,10 +95,15 @@ RUN --mount=type=cache,target=/root/.local/share/pnpm/store \
 #   tree — which is what image scanners flag. Removing it takes those findings
 #   off the surface.
 #
+#   apk upgrade pulls the latest Alpine security patches (e.g. libcrypto3/
+#   libssl3) that the node:22-alpine base layer may predate. No new packages
+#   are added.
+#
 #   HEALTHCHECK uses busybox wget (bundled with Alpine) — no extra packages.
 # ---------------------------------------------------------------------------
 FROM node:22-alpine AS runner
-RUN rm -rf /usr/local/lib/node_modules/npm \
+RUN apk upgrade --no-cache && \
+    rm -rf /usr/local/lib/node_modules/npm \
            /usr/local/lib/node_modules/corepack \
            /usr/local/bin/npm /usr/local/bin/npx /usr/local/bin/corepack
 WORKDIR /app
