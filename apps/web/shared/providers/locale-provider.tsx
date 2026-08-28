@@ -58,15 +58,15 @@ export function LocaleSelect({
         size="sm"
         aria-label="Switch language"
         className={cn(
-          "h-auto min-h-0 cursor-pointer border-none! bg-transparent px-0 py-0 text-body-sm font-bold tracking-wide shadow-none focus-visible:shadow-none focus-visible:border-none! [&_svg]:text-white [&_svg]:opacity-100! [&_svg]:rtl:rotate-0!",
+          "h-auto min-h-0 cursor-pointer border-none! bg-transparent px-0 py-0 font-['Poppins',sans-serif] font-normal text-h5 leading-none text-center shadow-none focus-visible:shadow-none focus-visible:border-none! flex items-center gap-1 [&_svg]:text-inherit [&_svg]:opacity-100! [&_svg]:rtl:rotate-0! [&_svg]:w-[24.5px]! [&_svg]:h-6!",
           className,
         )}
       >
         <SelectValue />
       </SelectTrigger>
       <SelectContent align="end">
-        <SelectItem value="en">EN</SelectItem>
-        <SelectItem value="ar">AR</SelectItem>
+        <SelectItem value="en" className="font-['Poppins',sans-serif] font-normal leading-none text-center">EN</SelectItem>
+        <SelectItem value="ar" className="font-['Poppins',sans-serif] font-normal leading-none text-center">AR</SelectItem>
       </SelectContent>
     </Select>
   );

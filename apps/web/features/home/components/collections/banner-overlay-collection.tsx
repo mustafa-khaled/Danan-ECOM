@@ -8,7 +8,7 @@ export function BannerOverlayCollection({
   collection: CollectionSummary;
 }) {
   return (
-    <div className="relative min-h-95 sm:min-h-115 lg:min-h-140 xl:min-h-160 bg-ds-surface overflow-hidden group flex flex-col justify-end p-8 sm:p-12 lg:p-16">
+    <div className="relative h-109 lg:h-auto bg-ds-surface overflow-hidden group flex flex-col justify-end p-8 sm:p-12 lg:p-16">
       <Image
         src={collection.coverImageUrl || "/assets/dadan-model.avif"}
         alt={collection.name}
@@ -17,14 +17,23 @@ export function BannerOverlayCollection({
         className="object-cover transition-transform duration-700 group-hover:scale-105"
       />
 
-      {/* Dark linear gradient overlay */}
-      <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/30 to-transparent" />
-
-      {/* Monotone noise effect filter */}
+      {/* Linear Gradient Overlay */}
       <div
-        className="absolute inset-0 pointer-events-none mix-blend-overlay z-5 bg-white/20 opacity-20"
+        className="absolute inset-0 pointer-events-none"
         style={{
-          backgroundImage: `url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='monotoneNoise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='1.9' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23monotoneNoise)'/%3E%3C/svg%3E")`,
+          background:
+            "linear-gradient(279.62deg, rgba(104, 104, 104, 0) -6.31%, rgba(5, 27, 58, 0.72) 117.16%)",
+        }}
+      />
+
+      {/* Backdrop blur & subtle dark tint */}
+      <div className="absolute inset-0 backdrop-blur-xs bg-black/5 pointer-events-none" />
+
+      {/* Monotone noise overlay */}
+      <div
+        className="absolute inset-0 pointer-events-none mix-blend-overlay opacity-50"
+        style={{
+          backgroundImage: `url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E")`,
         }}
       />
 

@@ -8,6 +8,7 @@ interface SectionHeadProps {
   link?: string;
   subtitle?: string;
   className?: string;
+  buttonClassName?: string;
 }
 
 export default function SectionHead({
@@ -16,6 +17,7 @@ export default function SectionHead({
   link,
   subtitle,
   className,
+  buttonClassName,
 }: SectionHeadProps) {
   return (
     <div
@@ -40,7 +42,7 @@ export default function SectionHead({
           href={href}
           variant="primary"
           size="md"
-          className="sm:w-auto w-full"
+          className={cn("sm:w-auto w-full", buttonClassName)}
           fullWidth
         >
           {link}

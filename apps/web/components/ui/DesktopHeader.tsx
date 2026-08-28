@@ -25,32 +25,32 @@ export function DesktopHeader({
   const tNav = useTranslations("nav");
 
   return (
-    <header className="sticky top-0 z-50 w-full bg-ds-background border-b border-ds-border h-19.5 md:h-28.75 transition-all">
-      <Container className="h-full flex items-center justify-between relative py-2.5 md:py-4">
+    <header className="sticky top-0 z-50 w-full bg-ds-background border-b border-ds-border h-19.5 min-h-19.5 max-h-19.5 md:h-42.75 md:min-h-42.75 md:max-h-42.75 transition-all">
+      <Container className="h-full flex items-center justify-between relative py-2.5 md:py-0 md:pt-[40px] md:pr-[64px] md:pb-[32px] md:pl-[64px] md:gap-[32px]">
         {/* ── Left Section: Logo + Greeting (Stacked on Mobile, Row-space-between structure on Desktop) ── */}
-        <div className="flex flex-col justify-center gap-0.5 md:justify-between h-full w-full md:w-auto">
+        <div className="flex flex-col justify-center gap-3 md:gap-0 md:justify-between h-full w-full md:w-auto">
           {/* Logo Brand */}
           <div className="flex items-center justify-between w-full md:w-auto">
             <Link href="/beta/home" className="inline-flex items-center gap-2">
               <Image
                 src="/assets/dadan-logo.png"
                 alt="DADAN"
-                width={125}
-                height={20}
+                width={246}
+                height={40}
                 priority
-                className="invert object-contain h-5 md:h-6 w-auto"
+                className="invert object-contain w-30.75 h-5 md:w-61.5 md:h-[40px]"
               />
             </Link>
           </div>
 
           {/* Greeting text in SERIF font matching design */}
-          <p className="font-display text-xs md:text-sm lg:text-base font-normal text-ds-secondary tracking-normal">
+          <p className="font-heading font-semibold text-[14px] md:text-h6 leading-none tracking-[-0.02em] text-neutral-800">
             {greeting} {displayName}
           </p>
         </div>
 
         {/* ── Desktop Right Section (Utility Icons Top, Navigation Links Bottom) ── */}
-        <div className="hidden md:flex flex-col justify-between items-end h-full">
+        <div className="hidden lg:flex flex-col justify-between items-end h-full">
           {/* Top Utility Icons */}
           <div className="flex items-center gap-5 lg:gap-6">
             {/* Notification Bell Icon */}
@@ -60,8 +60,8 @@ export function DesktopHeader({
               aria-label={tNav("notifications")}
             >
               <svg
-                width="18"
-                height="18"
+                width="24"
+                height="24"
                 viewBox="0 0 24 24"
                 fill="currentColor"
               >
@@ -76,36 +76,41 @@ export function DesktopHeader({
               aria-label={tNav("profile")}
             >
               <svg
-                width="18"
-                height="18"
+                width="24"
+                height="24"
                 viewBox="0 0 24 24"
-                fill="currentColor"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="1.5"
+                strokeLinecap="round"
+                strokeLinejoin="round"
                 aria-hidden="true"
               >
-                <path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z" />
+                <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2Z" />
+                <circle cx="12" cy="7" r="4" />
               </svg>
             </Link>
 
             {/* Language Selector */}
             <LocaleSelect
               syncProfile
-              className="[&_svg]:text-ds-secondary font-body font-medium text-sm"
+              className="[&_svg]:text-ds-secondary font-['Poppins',sans-serif] font-normal text-h5 leading-none text-center tracking-normal"
             />
           </div>
 
           {/* Bottom Desktop Navigation Links */}
           <nav aria-label="Primary">
-            <ul className="flex items-center gap-6 lg:gap-8">
+            <ul className="flex items-center justify-between gap-2.25 w-172.5 h-6.75">
               {primaryNavItems.map((item) => {
                 const isActive = pathname.startsWith(item.href);
                 return (
                   <li key={item.href}>
                     <Link
                       href={item.href}
-                      className={`font-body font-medium text-sm lg:text-body transition-colors ${
+                      className={`font-body font-medium text-body-lg leading-none tracking-[-0.02em] text-right transition-colors ${
                         isActive
-                          ? "text-ds-text font-semibold"
-                          : "text-ds-text-secondary hover:text-ds-text"
+                          ? "text-neutral-800 font-semibold"
+                          : "text-neutral-700 hover:text-neutral-800"
                       }`}
                     >
                       {tNav(item.labelKey)}
@@ -120,18 +125,18 @@ export function DesktopHeader({
         {/* ── Mobile Burger Menu Button (Aligned 100% vertically centered in mobile header height) ── */}
         <button
           type="button"
-          className="flex md:hidden absolute inset-e-4 sm:inset-e-8 top-1/2 -translate-y-1/2 items-center justify-center p-1.5 text-ds-secondary transition-colors"
+          className="flex lg:hidden absolute inset-e-4 sm:inset-e-8 top-1/2 -translate-y-1/2 items-center justify-center p-1.5 text-ds-secondary transition-colors"
           onClick={onToggleMobileMenu}
           aria-label="Toggle navigation menu"
           aria-expanded={isMobileMenuOpen}
         >
           <svg
-            width="26"
-            height="26"
+            width="40"
+            height="40"
             viewBox="0 0 24 24"
             fill="none"
             stroke="currentColor"
-            strokeWidth="2"
+            strokeWidth="1"
             strokeLinecap="round"
           >
             <line x1="4" y1="7" x2="20" y2="7" />

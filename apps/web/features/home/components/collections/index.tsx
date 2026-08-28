@@ -1,5 +1,8 @@
 import { getSessionCookieHeader } from "@/features/auth/server/session";
-import { fetchCollections, type CollectionSummary } from "@/features/collections";
+import {
+  fetchCollections,
+  type CollectionSummary,
+} from "@/features/collections";
 import { HeroLeftCollection } from "./hero-left-collection";
 import { SpotlightLightCollection } from "./spotlight-light-collection";
 import { BannerOverlayCollection } from "./banner-overlay-collection";
@@ -33,12 +36,16 @@ export default async function ExploreCollections() {
       {collections[0] && <HeroLeftCollection collection={collections[0]} />}
 
       {(collections[1] || collections[2]) && (
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-0">
-          {collections[1] && <SpotlightLightCollection collection={collections[1]} />}
-          {collections[2] && <BannerOverlayCollection collection={collections[2]} />}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-0 lg:h-255">
+          {collections[1] && (
+            <SpotlightLightCollection collection={collections[1]} />
+          )}
+
+          {collections[2] && (
+            <BannerOverlayCollection collection={collections[2]} />
+          )}
         </div>
       )}
-
       {collections[3] && <HeroCenterCollection collection={collections[3]} />}
     </section>
   );

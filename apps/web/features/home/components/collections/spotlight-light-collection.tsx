@@ -1,6 +1,7 @@
 import Link from "next/link";
 import Image from "next/image";
 import type { CollectionSummary } from "@/features/collections";
+import { Container } from "@/components/ui";
 
 export function SpotlightLightCollection({
   collection,
@@ -10,22 +11,23 @@ export function SpotlightLightCollection({
   return (
     <Link
       href={`/beta/collections/${collection.slug}`}
-      className="group relative flex flex-col items-center justify-center bg-ds-surface-warm p-6 sm:p-10 lg:p-16 min-h-95 sm:min-h-115 lg:min-h-140 xl:min-h-160 text-center transition-colors hover:bg-ds-surface-warm-hover"
+      className="group relative flex h-full w-full items-center justify-center bg-ds-surface-warm text-left transition-colors hover:bg-ds-surface-warm-hover"
     >
-      {/* Product Image Box */}
-      <div className="relative w-88 h-90 lg:w-121 lg:h-158.5 max-w-full mb-6 lg:mb-8 overflow-hidden opacity-100 rotate-0">
-        <Image
-          src={collection.coverImageUrl || "/assets/mawaddah.avif"}
-          alt={collection.name}
-          fill
-          sizes="(max-width: 768px) 100vw, 50vw"
-          className="object-contain transition-transform duration-500 group-hover:scale-105"
-        />
-      </div>
-      <p className="max-w-xs lg:max-w-md xl:max-w-lg text-xs sm:text-sm lg:text-base xl:text-lg text-ds-text-secondary font-body font-normal leading-relaxed tracking-wide">
-        {collection.description ||
-          "about the inspiration, meaning, and heritage behind the collection"}
-      </p>
+      <Container className="flex h-full w-full flex-col items-center justify-center py-6 xl:py-16">
+        <div className="relative mb-6 aspect-352/360 w-full lg:max-w-88 max-w-77 overflow-hidden xl:mb-8 xl:aspect-484/634 xl:max-w-121">
+          <Image
+            src={collection.coverImageUrl || "/assets/mawaddah.avif"}
+            alt={collection.name}
+            fill
+            className="object-cover transition-transform duration-500 group-hover:scale-105"
+          />
+        </div>
+
+        <p className="w-full lg:max-w-88 max-w-77 text-base font-body font-semibold leading-snug text-ds-text-secondary xl:max-w-121 xl:text-lg">
+          {collection.description ||
+            "about the inspiration, meaning, and heritage behind the collection"}
+        </p>
+      </Container>
     </Link>
   );
 }

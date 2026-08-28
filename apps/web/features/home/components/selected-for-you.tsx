@@ -15,12 +15,13 @@ export default async function SelectedForYou() {
 
   return (
     <Container>
-      <section className="py-16">
+      <section className="sm:pt-[32px] sm:pb-[64px] pt-[16px] pb-5">
         <SectionHead
           title={t("selectedForYou")}
           href="/beta/pieces"
           link={t("exploreAllPieces")}
           subtitle={t("selectedForYouSubtitle")}
+          buttonClassName="sm:w-[250px]!"
         />
 
         {/* ── Grid: 2 cols, 3rd item spans full width ── */}

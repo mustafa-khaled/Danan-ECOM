@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useTranslations } from "next-intl";
+import Container from "./container";
 
 export function SiteFooter() {
   const t = useTranslations("footer");
@@ -37,7 +38,7 @@ export function SiteFooter() {
 
   return (
     <footer className="mt-auto bg-ds-dark-bg text-ds-dark-text w-full">
-      <div className="mx-auto max-w-7xl px-6 py-12 sm:px-12 lg:px-16 lg:py-16">
+      <Container className="py-12">
         {/* ── Brand Hero Section ── */}
         <div className="mb-16 sm:mb-24 lg:mb-32">
           <h2 className="font-display text-3xl font-bold tracking-tight text-white sm:text-4xl lg:text-5xl">
@@ -131,13 +132,16 @@ export function SiteFooter() {
           <p className="text-sm font-bold text-white">{t("copyright")}</p>
           <div className="mt-3 space-y-1">
             {taglineLines.map((line, i) => (
-              <p key={i} className="text-xs text-ds-dark-text-muted leading-relaxed">
+              <p
+                key={i}
+                className="text-xs text-ds-dark-text-muted leading-relaxed"
+              >
                 {line}
               </p>
             ))}
           </div>
         </div>
-      </div>
+      </Container>
     </footer>
   );
 }

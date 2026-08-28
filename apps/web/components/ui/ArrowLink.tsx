@@ -44,7 +44,7 @@ export function ArrowLink({
     <Link
       href={href}
       className={cn(
-        "inline-flex items-center gap-2 font-body font-medium tracking-[-0.02em] transition-colors duration-200",
+        "inline-flex items-center gap-2 font-body font-semibold tracking-[-0.02em] transition-colors duration-200",
         variantStyles[variant],
         sizeStyles[size],
         fullWidth ? "w-full justify-between" : "w-fit justify-center",

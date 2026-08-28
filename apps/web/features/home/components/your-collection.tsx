@@ -54,20 +54,18 @@ export default async function YourCollection() {
 
   return (
     <Container>
-      <section className="py-12 sm:py-16">
+      <section className="sm:pt-[32px] sm:pb-[64px] pt-[16px] pb-5">
         <SectionHead
           title={t("yourCollection")}
           href="/beta/profile/wardrobe"
           link={t("exploreAll")}
           subtitle={t("yourCollectionSubtitle")}
           className="[&_p]:text-h6 [&_p]:md:text-xl [&_p]:lg:text-h3"
+          buttonClassName="sm:w-[183px]!"
         />
 
         {/* ── Mobile Carousel ── */}
-        <CollectionCarousel
-          items={items}
-          ownedSinceLabel={t("ownedSince")}
-        />
+        <CollectionCarousel items={items} ownedSinceLabel={t("ownedSince")} />
 
         {/* ── Desktop Grid ── */}
         <div className="hidden md:grid grid-cols-3 gap-4 lg:gap-6">
@@ -89,4 +87,3 @@ export default async function YourCollection() {
     </Container>
   );
 }
-

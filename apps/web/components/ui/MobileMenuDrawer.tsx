@@ -19,7 +19,7 @@ export function MobileMenuDrawer({
   const tNav = useTranslations("nav");
 
   return (
-    <div className="md:hidden">
+    <div className="lg:hidden">
       {/* Backdrop overlay */}
       <div
         className={`fixed inset-0 z-50 bg-ds-overlay-heavy backdrop-blur-xs transition-opacity duration-300 ease-in-out ${
