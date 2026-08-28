@@ -21,7 +21,7 @@
 # ---------------------------------------------------------------------------
 #   corepack pins pnpm to the exact version used in development.
 # ---------------------------------------------------------------------------
-FROM node:22-alpine AS base
+FROM node:25-alpine AS base
 RUN corepack enable && corepack prepare pnpm@9.15.4 --activate
 WORKDIR /app
 
@@ -101,7 +101,7 @@ RUN --mount=type=cache,target=/root/.local/share/pnpm/store \
 #
 #   HEALTHCHECK uses busybox wget (bundled with Alpine) — no extra packages.
 # ---------------------------------------------------------------------------
-FROM node:22-alpine AS runner
+FROM node:25-alpine AS runner
 RUN apk upgrade --no-cache && \
     rm -rf /usr/local/lib/node_modules/npm \
            /usr/local/lib/node_modules/corepack \
