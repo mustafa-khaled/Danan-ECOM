@@ -28,7 +28,7 @@ export function PieceCard({
     <>
       <div
         className={cn(
-          "relative w-full aspect-square md:aspect-4/5 overflow-hidden bg-ds-surface",
+          "relative w-full lg:h-145.5 md:h-90  h-40.5 overflow-hidden bg-ds-surface",
           imageClassName,
         )}
       >
@@ -69,7 +69,7 @@ export function PieceCard({
   );
 
   const sharedClasses = cn(
-    "group flex flex-col h-full overflow-hidden border border-ds-border bg-ds-background transition-colors duration-200 hover:border-ds-secondary",
+    "group flex flex-col h-full md:max-h-[729px] max-h-[268px] overflow-hidden border border-ds-border bg-ds-background transition-colors duration-200 hover:border-ds-secondary",
     className,
   );
 

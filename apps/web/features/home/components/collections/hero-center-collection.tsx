@@ -8,7 +8,7 @@ export function HeroCenterCollection({
   collection: CollectionSummary;
 }) {
   return (
-    <div className="relative aspect-video sm:aspect-16/7 lg:aspect-16/6 min-h-105 sm:min-h-125 lg:min-h-150 xl:min-h-170 bg-(--color-surface) overflow-hidden group">
+    <div className="relative h-200.5 lg:h-255 bg-(--color-surface) overflow-hidden group">
       <Image
         src={collection.coverImageUrl || "/assets/mawaddah.avif"}
         alt={collection.name}
@@ -17,12 +17,12 @@ export function HeroCenterCollection({
         className="object-cover transition-transform duration-700 group-hover:scale-105"
       />
       <div className="absolute inset-0 bg-black/30 sm:bg-black/20" />
-      <div className="absolute inset-0 flex flex-col items-center justify-end p-6 sm:p-10 md:p-14 lg:p-20 xl:p-28 text-center">
-        <h2 className="font-english text-white font-bold text-3xl sm:text-4xl md:text-5xl lg:text-6xl xl:text-7xl drop-shadow-sm">
+      <div className="absolute md:bottom-25 bottom-19 left-[50%] translate-x-[-50%] flex flex-col sm:items-center justify-end w-full max-w-89.5 md:max-w-258.75 sm:text-center">
+        <h2 className="font-english text-white text-h4 lg:text-[56px] font-bold drop-shadow-sm">
           {collection.name}
         </h2>
         {collection.description && (
-          <p className="mt-3 max-w-xl lg:max-w-3xl xl:max-w-4xl text-white/95 font-medium text-base sm:text-xl md:text-2xl lg:text-3xl leading-relaxed text-center">
+          <p className="text-white/95 mt-3 mb-5 lg:mt-6 lg:mb-[32px] font-medium text-h6 lg:text-[32px] leading-[100%] sm:text-center">
             {collection.description}
           </p>
         )}
@@ -31,7 +31,7 @@ export function HeroCenterCollection({
           variant="teal"
           size="lg"
           fullWidth
-          className="mt-6 lg:mt-8 max-w-xs sm:max-w-md lg:max-w-lg"
+          className="lg:w-89.5 text-neutral-950 max-w-78"
         >
           Explore Your Experience
         </ArrowLink>

@@ -78,7 +78,6 @@ export default async function YourCollection() {
                   ownedSince: piece.ownedSince || undefined,
                   imageUrl: piece.imageUrl,
                 }}
-                className="md:h-[728.6666259765625px]"
               />
             </Link>
           ))}
