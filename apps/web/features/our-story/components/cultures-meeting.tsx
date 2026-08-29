@@ -1,8 +1,9 @@
+import { Container } from "@/components/ui";
 import Image from "next/image";
 
 export function CulturesMeeting() {
   return (
-    <section className="relative w-full h-151 md:h-228.25 overflow-hidden bg-ds-dark-bg flex flex-col justify-end md:justify-center">
+    <section className="relative w-full h-151 pb-12 lg:pb-0 lg:h-228.25 overflow-hidden bg-ds-dark-bg flex flex-col justify-end lg:justify-center">
       {/* Background Image */}
       <Image
         src="/assets/story/where-cultures-stories-and-treasures-met.avif"
@@ -34,11 +35,13 @@ export function CulturesMeeting() {
       />
 
       {/* Content Container */}
-      <div className="relative z-10 w-full max-w-7xl mx-auto px-6 pt-12 pb-35 md:py-16 lg:py-24 flex flex-col items-center justify-end md:justify-center text-center">
-        <h2 className="font-heading text-white font-bold text-2xl sm:text-3xl md:text-4xl lg:text-5xl xl:text-6xl leading-tight drop-shadow-sm md:whitespace-nowrap">
-          Where Cultures,<br className="block md:hidden" /> Stories, and Treasures<br className="block md:hidden" /> Met
+      <Container className="relative z-10 flex flex-col items-center justify-end lg:justify-center text-center">
+        <h2 className="font-heading text-white font-bold text-[32px] lg:text-[64px] leading-tight drop-shadow-sm xl:whitespace-nowrap">
+          Where Cultures,
+          <br className="block lg:hidden" /> Stories, and Treasures
+          <br className="block lg:hidden" /> Met
         </h2>
-      </div>
+      </Container>
     </section>
   );
 }

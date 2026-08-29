@@ -3,13 +3,13 @@ import Image from "next/image";
 
 export function PieceStory() {
   return (
-    <section className="bg-white py-12 md:py-20">
-      <Container className="flex flex-col">
-        <h2 className="font-english text-2xl sm:text-3xl md:text-4xl font-bold tracking-tight text-(--color-text)">
+    <section className="py-[32px] lg:py-12">
+      <Container className="flex flex-col text-neutral-900">
+        <h2 className="font-heading lg:text-[40px] text-h4 font-extrabold">
           Every Piece Begins With a Story
         </h2>
 
-        <p className="mt-3 md:mt-4 mb-6 md:mb-10 text-xs sm:text-sm md:text-base leading-relaxed text-(--color-text-muted)">
+        <p className="lg:text-[32px] text-[14px] mt-6.5 mb-6 lg:mt-14.5 font-semibold lg:font-bold leading-[130%]">
           Before a piece is designed, a story is discovered.
           <br />
           Every collection begins with meaning, not materials.
@@ -17,7 +17,7 @@ export function PieceStory() {
           Every owner becomes part of its continuation.
         </p>
 
-        <div className="relative w-full aspect-4/7 md:aspect-21/9 overflow-hidden">
+        <div className="relative w-full h-181.75 overflow-hidden">
           <Image
             src="/assets/story/product-story.avif"
             alt="Every Piece Begins With a Story"

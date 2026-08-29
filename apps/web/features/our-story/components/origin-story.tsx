@@ -1,8 +1,9 @@
+import { Container } from "@/components/ui";
 import Image from "next/image";
 
 export function OriginStory() {
   return (
-    <section className="relative w-full min-h-[calc(100dvh-78px)] md:min-h-[calc(100dvh-115px)] overflow-hidden bg-ds-dark-bg flex flex-col justify-end">
+    <section className="relative w-full md:h-215.5 h-192.25 overflow-hidden bg-ds-dark-bg flex items-end pb-38.75 md:pb-37.5">
       {/* Background Image */}
       <Image
         src="/assets/story/dadan-origin-story.avif"
@@ -34,18 +35,18 @@ export function OriginStory() {
       />
 
       {/* Content Container */}
-      <div className="relative z-10 w-full max-w-7xl mx-auto px-6 sm:px-10 md:px-14 lg:px-16 pt-12 pb-[18vh] sm:pb-[20vh] md:pb-[24vh] flex flex-col items-start justify-end flex-1">
-        <div className="max-w-4xl">
-          <h1 className="font-heading text-white font-bold text-lg sm:text-2xl md:text-4xl lg:text-5xl xl:text-6xl leading-[1.15] drop-shadow-sm whitespace-nowrap">
+      <Container className="relative text-[#FFFFFF]">
+        <div className="max-w-307.25">
+          <h1 className="text-h4 md:text-h1 lg:text-[64px] font-extrabold font-english">
             Every Great Story Has an Origin
           </h1>
-          <p className="mt-4 md:mt-6 text-white/90 text-sm sm:text-base md:text-lg leading-relaxed font-body font-normal">
-            Our story begins in Dadan—an ancient city where commerce was built on
-            trust, craftsmanship, and human connection. Those same values continue
-            to shape every collection we create today.
+          <p className="md:mt-5 mt-3 font-semibold text-h6 md:text-[30px] lg:text-[40px]">
+            Our story begins in Dadan—an ancient city where commerce was built
+            on trust, craftsmanship, and human connection. Those same values
+            continue to shape every collection we create today.
           </p>
         </div>
-      </div>
+      </Container>
     </section>
   );
 }

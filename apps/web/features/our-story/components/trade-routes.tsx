@@ -3,14 +3,25 @@ import Image from "next/image";
 
 export function TradeRoutes() {
   return (
-    <section className="bg-white pt-12 md:pt-20 pb-0 flex flex-col gap-10 sm:gap-14 md:gap-20">
-      <Container className="mx-auto max-w-4xl text-center flex flex-col gap-4 sm:gap-6 font-english text-sm sm:text-xl md:text-2xl lg:text-[1.75rem] leading-relaxed text-(--color-text)">
-        <p>
-          For centuries, Dadan stood along one of Arabia&apos;s most important trade
-          routes. Merchants traveled vast distances carrying precious goods,
-          ideas, and stories. Today, DADAN continues that legacy—not by trading
-          goods, but by creating pieces that carry meaning from one generation
-          to the next.
+    <section>
+      <Container className="xl:py-49.5 md:py-20 py-12 text-neutral-800 text-center">
+        <p className="font-semibold xl:text-h1 text-h2 lg:block hidden">
+          For centuries, Dadan stood along one of Arabia&apos;s most important
+          trade routes. Merchants traveled vast distances carrying precious
+          goods, ideas, and stories. Today, DADAN continues that legacy—not by
+          trading goods, but by creating pieces that carry meaning from one
+          generation to the next.
+        </p>
+
+        <p className="lg:hidden font-medium">
+          For centuries, Dadan stood along one of Arabia&apos;s most important
+          trade routes. Merchants traveled vast distances carrying precious
+          goods, ideas, and stories.
+        </p>
+
+        <p className="lg:hidden mt-5 font-medium">
+          Today, DADAN continues that legacy—not by trading goods, but by
+          creating pieces that carry meaning from one generation to the next.
         </p>
       </Container>
 
