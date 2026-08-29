@@ -5,6 +5,8 @@ import { DesignActions } from "./design-actions";
 import { WardrobeActions } from "./wardrobe-actions";
 import { formatPrice } from "@/shared/utils/format";
 import type { DesignDetail } from "@/features/pieces";
+import { Container } from "./ui";
+import { cn } from "@/lib/utils";
 
 interface WardrobeInfo {
   pieceId: string;
@@ -30,9 +32,9 @@ export default async function PieceDetails({
   const firstAvailable = design.availablePieces?.[0];
 
   return (
-    <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+    <div className="flex flex-col gap-[16px] xl:flex-row xl:h-225 h-258.5">
       {/* Left: Main Product Image */}
-      <div className="relative aspect-4/5 w-full overflow-hidden rounded-lg">
+      <div className="relative w-full xl:h-auto h-108 overflow-hidden">
         {design.imageUrls[0] ? (
           <Image
             src={design.imageUrls[0]}
@@ -50,34 +52,32 @@ export default async function PieceDetails({
       </div>
 
       {/* Right: Product Details */}
-      <div className="w-full bg-ds-background px-4 py-8 sm:px-8 lg:px-10 lg:py-10 flex flex-col justify-center rounded-lg border border-ds-border-light">
-        <section className="space-y-5">
+      <Container
+        className={cn(
+          "xl:pt-6 xl:px-[16px] xl:pb-10.5 py-5",
+          isWardrobe ? "px-0" : "",
+        )}
+      >
+        <section>
           {/* Title & Collection Subtitle */}
-          <div>
-            <h1 className="font-heading text-2xl sm:text-3xl lg:text-[32px] font-bold leading-tight text-ds-text">
+          <div className="xl:mb-[32px] xl:pb-0 pb-[16px]">
+            <h1 className="font-heading font-bold xl:text-h1 text-h4 text-neutral-900">
               {design.name}
             </h1>
-            <p className="mt-2.5 font-body text-sm sm:text-base font-medium text-ds-text-secondary">
+            <p className="xl:mt-6 xl:mb-[32px] mt-[16px] mb-5 xl:text-h3 text-h6 font-semibold text-neutral-800">
               {t("partOfCollection", { collection: design.collection.name })}
             </p>
-          </div>
 
-          {/* Story / Description */}
-          {design.story ? (
-            <div className="space-y-1">
-              <p className="text-xs sm:text-sm text-ds-text-muted font-body">
-                {t("partOfCollection", {
-                  collection: design.collection.name,
-                })}
-              </p>
-              <p className="text-xs sm:text-sm leading-relaxed text-ds-text-secondary font-body">
+            {/* Story / Description */}
+            {design.story ? (
+              <p className="xl:text-h5 text-[14px] text-neutral-800 font-medium">
                 {design.story}
               </p>
-            </div>
-          ) : null}
+            ) : null}
+          </div>
 
           {/* Specs Bullet List */}
-          <ul className="space-y-3 sm:space-y-3.5 text-sm sm:text-base font-body">
+          <ul className="xl:py-[32px] py-[16px] border-y border-neutral-200 xl:space-y-6 space-y-3">
             <SpecRow label={t("material")} value={design.material} />
             {design.specifications.map((spec) => (
               <SpecRow key={spec.key} label={spec.key} value={spec.value} />
@@ -86,21 +86,13 @@ export default async function PieceDetails({
             <SpecRow label={t("origin")} value="Crafted in Saudi Arabia" />
           </ul>
 
-          {/* Divider */}
-          <hr className="border-t border-ds-border" />
-
-          {/* Become Part of the Story + Price */}
-          <div>
-            <p className="font-body text-sm sm:text-base font-semibold text-ds-text">
-              {t("becomePartOfStory")}
-            </p>
-            <p className="mt-1.5 font-body text-lg sm:text-xl font-bold text-ds-text">
-              {formatPrice(design.basePrice, design.currency, locale)}
-            </p>
-          </div>
-
           {/* Action Buttons */}
-          <div>
+          <div className="xl:pt-12 pt-[16px]">
+            <div className="xl:text-h3 text-h6 font-bold text-neutral-800 xl:mb-[32px] mb-[16px]">
+              <p>{t("becomePartOfStory")}</p>
+              <p>{formatPrice(design.basePrice, design.currency, locale)}</p>
+            </div>
+
             {isWardrobe && wardrobeInfo ? (
               <WardrobeActions
                 pieceId={wardrobeInfo.pieceId}
@@ -121,17 +113,17 @@ export default async function PieceDetails({
             )}
           </div>
         </section>
-      </div>
+      </Container>
     </div>
   );
 }
 
 function SpecRow({ label, value }: { label: string; value: string }) {
   return (
-    <li className="flex items-baseline gap-2 text-ds-text">
-      <span className="text-ds-text-muted font-bold">•</span>
-      <span className="font-bold text-ds-text">{label}:</span>
-      <span className="font-normal text-ds-text-secondary">{value}</span>
+    <li className="flex items-baseline gap-2 text-ds-text xl:text-h3 text-h6">
+      <span className="text-neutral-800 font-bold">•</span>
+      <span className="font-bold text-neutral-800">{label}:</span>
+      <span className="font-medium text-ds-text-secondary">{value}</span>
     </li>
   );
 }

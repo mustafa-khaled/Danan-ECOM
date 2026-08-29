@@ -65,13 +65,14 @@ export function DesignActions({
           variant="teal"
           size="lg"
           fullWidth
+          className="font-heading lg:text-h4 font-bold text-h6 text-neutral-900"
           iconRight={
             <Image
               src="/shopping.png"
               alt="Shopping Bag"
-              width={18}
-              height={18}
-              className="size-4.5 object-contain"
+              width={28}
+              height={28}
+              className="lg:size-7 size-6 object-contain"
             />
           }
         >
@@ -86,13 +87,14 @@ export function DesignActions({
           variant="outline"
           size="lg"
           fullWidth
+          className="font-heading lg:text-h4 font-bold text-h6 text-neutral-900"
           iconRight={
             <Image
               src="/heart-fill.png"
               alt="Heart"
-              width={18}
-              height={18}
-              className={`size-4.5 object-contain ${isSaved ? "" : "opacity-90"}`}
+              width={28}
+              height={28}
+              className={`lg:size-7 size-6 object-contain ${isSaved ? "" : "opacity-90"}`}
             />
           }
         >

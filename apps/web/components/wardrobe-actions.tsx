@@ -48,7 +48,8 @@ export function WardrobeActions({
             variant="outline"
             size="lg"
             fullWidth
-            iconRight={<BadgeCheck className="size-4.5" />}
+            className="lg:px-8 px-3"
+            iconRight={<BadgeCheck className="size-[16px]" />}
           >
             {t("verifyAuthenticity")}
           </Button>

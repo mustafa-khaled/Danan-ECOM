@@ -36,9 +36,9 @@ export function TransferInitiate({
     event.preventDefault();
 
     const form = new FormData(event.currentTarget);
-    const recipientHouseId = String(
-      form.get("recipientHouseId") ?? "",
-    ).trim().toUpperCase();
+    const recipientHouseId = String(form.get("recipientHouseId") ?? "")
+      .trim()
+      .toUpperCase();
     const transferType = String(form.get("transferType") ?? "GIFT") as
       | "SALE"
       | "GIFT"
@@ -64,13 +64,14 @@ export function TransferInitiate({
         variant="teal"
         size="lg"
         fullWidth
+        className="font-heading lg:text-h4 font-bold text-h6 text-neutral-900"
         iconRight={
           <Image
             src="/shopping.png"
             alt="Transfer"
-            width={18}
-            height={18}
-            className="size-4.5 object-contain"
+            width={28}
+            height={28}
+            className="lg:size-7 size-6 object-contain"
           />
         }
       >

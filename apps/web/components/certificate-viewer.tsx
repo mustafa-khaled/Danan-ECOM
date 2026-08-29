@@ -22,8 +22,12 @@ export function CertificateViewer({
   const t = useTranslations("certificates");
   const wardrobeT = useTranslations("wardrobe");
   const [open, setOpen] = useState(false);
-  const { fetchCertificate, data: rawCertificate, isPending, error } =
-    usePieceCertificate();
+  const {
+    fetchCertificate,
+    data: rawCertificate,
+    isPending,
+    error,
+  } = usePieceCertificate();
 
   async function handleOpen() {
     try {
@@ -49,7 +53,8 @@ export function CertificateViewer({
         variant="outline"
         size="lg"
         fullWidth
-        iconRight={<FileBadge className="size-4.5" />}
+        className="lg:px-8 px-3"
+        iconRight={<FileBadge className="size-[16px]" />}
       >
         {wardrobeT("viewCertificate")}
       </Button>

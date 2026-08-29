@@ -1,10 +1,10 @@
-import { SectionHead } from "@/components/ui";
+import { Container, SectionHead } from "@/components/ui";
 import Image from "next/image";
 import React from "react";
 
 export default function LayoutHero() {
   return (
-    <section className="relative w-full h-123 md:h-149.25 -top-5 -mb-5 overflow-hidden opacity-100">
+    <section className="relative w-full h-123 lg:h-106.5 overflow-hidden flex lg:items-center items-end justify-center lg:pb-0 pb-25.5">
       {/* Background Image */}
       <Image
         src="/assets/wardrobe.avif"
@@ -26,14 +26,10 @@ export default function LayoutHero() {
         }}
       />
 
-      {/* Text positioned at bottom 40% */}
-      <div className="absolute inset-x-0 bottom-[40%] flex items-center justify-center pointer-events-none px-4 z-10">
-        <SectionHead
-          title="Your Wardrobe"
-          subtitle="A curated collection of the pieces that are part of your story"
-          className="[&_h2]:text-white [&_p]:text-white text-center"
-        />
-      </div>
+      <Container className="relative text-[#FFFFFF] z-10 text-center">
+        <h1 className="font-heading lg:text-[64px] font-extrabold text-h3">Your Wardrobe</h1>
+        <p className="lg:text-[32px] lg:font-semibold text-h5 font-medium lg:mt-[16px] mt-3">A curated collection of the pieces that are part of your story</p>
+      </Container>
     </section>
   );
 }
