@@ -1,6 +1,11 @@
 "use client";
 
-import { forwardRef, useId, type InputHTMLAttributes, type ReactNode } from "react";
+import {
+  forwardRef,
+  useId,
+  type InputHTMLAttributes,
+  type ReactNode,
+} from "react";
 import { cn } from "@/lib/utils";
 
 /* ═══════════════════════════════════════════════════════════════════════════
@@ -12,8 +17,10 @@ import { cn } from "@/lib/utils";
 
 type InputStatus = "default" | "error" | "success" | "warning";
 
-export interface InputProps
-  extends Omit<InputHTMLAttributes<HTMLInputElement>, "size"> {
+export interface InputProps extends Omit<
+  InputHTMLAttributes<HTMLInputElement>,
+  "size"
+> {
   /** Label displayed above the input */
   label?: string;
   /** Helper/informational text below the input */
@@ -51,102 +58,94 @@ const sizeStyles = {
   lg: "min-h-12 px-5 text-sm",
 };
 
-export const Input = forwardRef<HTMLInputElement, InputProps>(
-  function Input(
-    {
-      label,
-      helperText,
-      error,
-      success,
-      warning,
-      fullWidth = true,
-      size = "md",
-      className,
-      id: externalId,
-      trailingIcon,
-      disabled,
-      ...props
-    },
-    ref,
-  ) {
-    const generatedId = useId();
-    const inputId = externalId || generatedId;
-    const helperId = `${inputId}-helper`;
+export const Input = forwardRef<HTMLInputElement, InputProps>(function Input(
+  {
+    label,
+    helperText,
+    error,
+    success,
+    warning,
+    fullWidth = true,
+    size = "md",
+    className,
+    id: externalId,
+    trailingIcon,
+    disabled,
+    ...props
+  },
+  ref,
+) {
+  const generatedId = useId();
+  const inputId = externalId || generatedId;
+  const helperId = `${inputId}-helper`;
 
-    // Determine status from props
-    const status: InputStatus = error
-      ? "error"
-      : success
-        ? "success"
-        : warning
-          ? "warning"
-          : "default";
+  // Determine status from props
+  const status: InputStatus = error
+    ? "error"
+    : success
+      ? "success"
+      : warning
+        ? "warning"
+        : "default";
 
-    const statusMessage = error || success || warning;
+  const statusMessage = error || success || warning;
 
-    return (
-      <div className={cn("flex flex-col gap-1.5", fullWidth && "w-full")}>
-        {label && (
-          <label
-            htmlFor={inputId}
-            className="ds-label text-ds-text"
-          >
-            {label}
-          </label>
+  return (
+    <div className={cn("flex flex-col gap-1.5", fullWidth && "w-full")}>
+      {label && (
+        <label htmlFor={inputId} className="ds-label text-ds-text">
+          {label}
+        </label>
+      )}
+      <div
+        className={cn(
+          "relative flex items-center rounded-(--radius-sm) border bg-ds-background transition-colors duration-200",
+          statusStyles[status],
+          disabled && "opacity-50 cursor-not-allowed bg-ds-disabled-bg",
         )}
-        <div
+      >
+        <input
+          ref={ref}
+          id={inputId}
+          disabled={disabled}
+          aria-invalid={status === "error" ? true : undefined}
+          aria-describedby={statusMessage || helperText ? helperId : undefined}
           className={cn(
-            "relative flex items-center rounded-(--radius-sm) border bg-ds-background transition-colors duration-200",
-            statusStyles[status],
-            disabled && "opacity-50 cursor-not-allowed bg-ds-disabled-bg",
+            "w-full bg-transparent outline-none placeholder:text-ds-text-muted text-ds-text font-body",
+            "disabled:cursor-not-allowed",
+            sizeStyles[size],
+            className,
           )}
-        >
-          <input
-            ref={ref}
-            id={inputId}
-            disabled={disabled}
-            aria-invalid={status === "error" ? true : undefined}
-            aria-describedby={
-              statusMessage || helperText ? helperId : undefined
-            }
-            className={cn(
-              "w-full bg-transparent outline-none placeholder:text-ds-text-muted text-ds-text font-body",
-              "disabled:cursor-not-allowed",
-              sizeStyles[size],
-              className,
-            )}
-            {...props}
-          />
-          {trailingIcon && (
-            <span className="absolute inset-e-3 top-1/2 -translate-y-1/2 pointer-events-none text-ds-text-muted">
-              {trailingIcon}
-            </span>
-          )}
-        </div>
-        {(statusMessage || helperText) && (
-          <p
-            id={helperId}
-            role={status === "error" ? "alert" : undefined}
-            className={cn(
-              "flex items-center gap-1 text-xs",
-              status !== "default"
-                ? statusMessageStyles[status]
-                : "text-ds-text-muted",
-            )}
-          >
-            {status !== "default" && (
-              <StatusIcon status={status} />
-            )}
-            {statusMessage || helperText}
-          </p>
+          {...props}
+        />
+        {trailingIcon && (
+          <span className="absolute inset-e-3 top-1/2 -translate-y-1/2 pointer-events-none text-ds-text-muted">
+            {trailingIcon}
+          </span>
         )}
       </div>
-    );
-  },
-);
+      {(statusMessage || helperText) && (
+        <p
+          id={helperId}
+          role={status === "error" ? "alert" : undefined}
+          className={cn(
+            "flex items-center gap-1 text-xs",
+            status !== "default"
+              ? statusMessageStyles[status]
+              : "text-ds-text-muted",
+          )}
+        >
+          {status !== "default" && <StatusIcon status={status} />}
+          {statusMessage || helperText}
+        </p>
+      )}
+    </div>
+  );
+});
 
 /* ── Small status icon for helper messages ── */
 function StatusIcon({ status }: { status: Exclude<InputStatus, "default"> }) {
+  console.log(status);
   return (
     <svg
       className="size-3.5 shrink-0"

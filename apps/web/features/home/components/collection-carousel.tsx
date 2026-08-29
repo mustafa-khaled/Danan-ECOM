@@ -23,10 +23,7 @@ interface CollectionCarouselProps {
   ownedSinceLabel: string;
 }
 
-export function CollectionCarousel({
-  items,
-  ownedSinceLabel,
-}: CollectionCarouselProps) {
+export function CollectionCarousel({ items }: CollectionCarouselProps) {
   const [api, setApi] = useState<CarouselApi>();
   const [current, setCurrent] = useState(0);
   const [dir, setDir] = useState<"ltr" | "rtl" | null>(null);
@@ -89,9 +86,7 @@ export function CollectionCarousel({
               key={index}
               className={cn(
                 "h-1.5 rounded-full transition-all duration-300",
-                current === index
-                  ? "w-5 bg-warm-500"
-                  : "w-1.5 bg-ds-border",
+                current === index ? "w-5 bg-warm-500" : "w-1.5 bg-ds-border",
               )}
               onClick={() => api?.scrollTo(index)}
               aria-label={`Go to slide ${index + 1}`}
@@ -102,4 +97,3 @@ export function CollectionCarousel({
     </div>
   );
 }
-

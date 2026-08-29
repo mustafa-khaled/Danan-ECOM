@@ -60,7 +60,11 @@ export default function CollectionsGrid({
       {/* Main Content Area */}
       <main className="flex-1 w-full">
         <SectionHead
-          title={activeTab === "collection" ? t("collectionSummary") : t("wishListSummary")}
+          title={
+            activeTab === "collection"
+              ? t("collectionSummary")
+              : t("wishListSummary")
+          }
           subtitle={
             activeTab === "collection"
               ? t("ownedPieces", { count: ownedPieces.length })
@@ -71,7 +75,9 @@ export default function CollectionsGrid({
         {currentItems.length === 0 ? (
           <EmptyState
             title={
-              activeTab === "collection" ? t("noOwnedPieces") : t("noSavedPieces")
+              activeTab === "collection"
+                ? t("noOwnedPieces")
+                : t("noSavedPieces")
             }
             description={
               activeTab === "collection"
@@ -112,9 +118,6 @@ export default function CollectionsGrid({
                   const isLastOdd =
                     currentItems.length % 2 !== 0 &&
                     index === currentItems.length - 1;
-                  const formattedPrice = piece.price && piece.currency
-                    ? formatPrice(piece.price, piece.currency, locale)
-                    : piece.price;
                   return (
                     <Link
                       key={piece.id}
