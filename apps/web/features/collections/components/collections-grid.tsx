@@ -7,6 +7,7 @@ import { PieceCard } from "@/components/ui/PieceCard";
 import { EmptyState } from "@/shared/components/feedback/empty-state";
 import { SectionHead } from "@/components/ui";
 import { OwnedPieceItem, SavedPieceItem } from "../types";
+import Sidebar from "./sidebar";
 
 interface CollectionsGridProps {
   ownedPieces?: OwnedPieceItem[];
@@ -25,38 +26,24 @@ export default function CollectionsGrid({
   const currentItems = activeTab === "collection" ? ownedPieces : savedPieces;
 
   return (
-    <div className="flex flex-col gap-8 md:flex-row md:items-start md:gap-12 py-8">
+    <div className="flex flex-col gap-6 xl:flex-row lg:items-start lg:gap-12 lg:pt-12 lg:pb-[64px] py-6">
       {/* Left Sidebar Navigation */}
-      <aside className="w-full md:w-64 shrink-0">
-        <div className="grid grid-cols-2 md:grid-cols-1 gap-2">
-          <button
-            type="button"
-            onClick={() => setActiveTab("collection")}
-            className={`w-full text-left px-3 py-2.5 md:px-5 md:py-3.5 text-xs md:text-sm font-medium rounded-(--radius-sm) transition-colors duration-200 cursor-pointer ${
-              activeTab === "collection"
-                ? "bg-ds-primary text-ds-primary-foreground"
-                : "bg-ds-surface hover:bg-ds-surface-warm-hover text-ds-text"
-            }`}
-          >
-            {t("myCollection")}
-          </button>
-          <button
-            type="button"
-            onClick={() => setActiveTab("wishlist")}
-            className={`w-full text-left px-3 py-2.5 md:px-5 md:py-3.5 text-xs md:text-sm font-medium rounded-(--radius-sm) transition-colors duration-200 cursor-pointer ${
-              activeTab === "wishlist"
-                ? "bg-ds-primary text-ds-primary-foreground"
-                : "bg-ds-surface hover:bg-ds-surface-warm-hover text-ds-text"
-            }`}
-          >
-            {t("wishList")}
-          </button>
-        </div>
-      </aside>
+      <Sidebar activeTab={activeTab} setActiveTab={setActiveTab} t={t} />
 
       {/* Main Content Area */}
       <main className="flex-1 w-full">
-        <SectionHead
+        <h4 className="font-heading text-h4 lg:text-[32px] font-bold"> 
+          {activeTab === "collection"
+            ? t("collectionSummary")
+            : t("wishListSummary")}
+        </h4>
+        <p className="lg:mt-6 lg:mb-[32px] mb-[16px] mt-2 font-medium lg:text-h4 text-h6"> 
+          {activeTab === "collection"
+            ? t("ownedPieces", { count: ownedPieces.length })
+            : t("savedPieces", { count: savedPieces.length })}
+        </p>
+
+        {/* <SectionHead
           title={
             activeTab === "collection"
               ? t("collectionSummary")
@@ -67,7 +54,7 @@ export default function CollectionsGrid({
               ? t("ownedPieces", { count: ownedPieces.length })
               : t("savedPieces", { count: savedPieces.length })
           }
-        />
+        /> */}
 
         {currentItems.length === 0 ? (
           <EmptyState
@@ -106,6 +93,7 @@ export default function CollectionsGrid({
                             piece.acquiredAt || t("ownedSinceFallback"),
                           imageUrl: piece.imageUrl,
                         }}
+                        className="lg:max-h-139.75!"
                       />
                     </Link>
                   );
@@ -127,6 +115,7 @@ export default function CollectionsGrid({
                           name: piece.name,
                           imageUrl: piece.imageUrl,
                         }}
+                        className="lg:max-h-139.75!"
                       />
                     </Link>
                   );
