@@ -30,8 +30,8 @@ export default async function CollectionDetailPage({
 
   return (
     <>
-      <section className="mb-10 overflow-hidden">
-        <div className="relative h-[calc(100dvh-78px)] md:h-[calc(100dvh-115px)] w-full bg-(--color-surface)">
+      <section>
+        <div className="relative lg:h-215.5 h-155.5  w-full bg-(--color-surface)">
           {collection.coverImageUrl ? (
             <Image
               src={collection.coverImageUrl}
@@ -46,51 +46,47 @@ export default async function CollectionDetailPage({
             </div>
           )}
         </div>
-        <div className="py-6 sm:py-8 px-4 text-center">
-          <h1 className="font-english rtl:font-arabic text-3xl sm:text-4xl md:text-5xl font-bold text-(--color-text)">
-            {collection.name}
-          </h1>
-        </div>
       </section>
 
-      <Container className="pb-11">
-        {collection.description ? (
+      <section className="bg-brown-50">
+        <Container className="lg:py-[64px] py-[32px]">
           <article className="mb-10 sm:mb-14 mx-auto max-w-2xl text-center px-4">
-            <h2 className="font-english rtl:font-arabic text-xl sm:text-2xl font-bold text-(--color-text) mb-3">
-              {t("theStory")}
+            <h2 className="font-heading text-h4 font-bold text-neutral-900 lg:text-h1">
+              {collection.name}
             </h2>
-            <p className="font-manrope rtl:font-arabic text-sm sm:text-base md:text-lg leading-relaxed text-(--color-text-muted)">
-              {collection.description}
-            </p>
+
+            {collection.description && (
+              <p className="text-h6 font-medium text-neutral-700 lg:text-[32px] mt-[16px] lg:mt-[32px]">
+                {t("theStory")}
+                <br />
+                {collection.description}
+              </p>
+            )}
           </article>
-        ) : null}
 
-        <h2 className="mb-6 font-english rtl:font-arabic text-2xl sm:text-3xl text-(--color-text)">
-          {t("pieces")}
-        </h2>
-
-        {collection.designs.length === 0 ? (
-          <EmptyState
-            title={t("empty")}
-            description={t("emptyDescription")}
-            action={{ href: "/beta/collections", label: t("title") }}
-          />
-        ) : (
-          <section className="grid lg:gap-6 gap-2 grid-cols-2 lg:grid-cols-3">
-            {collection.designs.map((design) => (
-              <Link key={design.id} href={`/beta/pieces/${design.slug}`}>
-                <PieceCard
-                  piece={{
-                    id: design.id,
-                    name: design.name,
-                    imageUrl: design.imageUrls[0],
-                  }}
-                />
-              </Link>
-            ))}
-          </section>
-        )}
-      </Container>
+          {collection.designs.length === 0 ? (
+            <EmptyState
+              title={t("empty")}
+              description={t("emptyDescription")}
+              action={{ href: "/beta/collections", label: t("title") }}
+            />
+          ) : (
+            <section className="grid lg:gap-[16px] gap-2 grid-cols-2 lg:grid-cols-3">
+              {collection.designs.map((design) => (
+                <Link key={design.id} href={`/beta/pieces/${design.slug}`}>
+                  <PieceCard
+                    piece={{
+                      id: design.id,
+                      name: design.name,
+                      imageUrl: design.imageUrls[0],
+                    }}
+                  />
+                </Link>
+              ))}
+            </section>
+          )}
+        </Container>
+      </section>
     </>
   );
 }
