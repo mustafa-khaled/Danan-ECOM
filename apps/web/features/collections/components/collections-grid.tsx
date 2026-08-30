@@ -32,29 +32,16 @@ export default function CollectionsGrid({
 
       {/* Main Content Area */}
       <main className="flex-1 w-full">
-        <h4 className="font-heading text-h4 lg:text-[32px] font-bold"> 
+        <h4 className="font-heading text-h4 lg:text-[32px] font-bold">
           {activeTab === "collection"
             ? t("collectionSummary")
             : t("wishListSummary")}
         </h4>
-        <p className="lg:mt-6 lg:mb-[32px] mb-[16px] mt-2 font-medium lg:text-h4 text-h6"> 
+        <p className="lg:mt-6 lg:mb-[32px] mb-[16px] mt-2 font-medium lg:text-h4 text-h6">
           {activeTab === "collection"
             ? t("ownedPieces", { count: ownedPieces.length })
             : t("savedPieces", { count: savedPieces.length })}
         </p>
-
-        {/* <SectionHead
-          title={
-            activeTab === "collection"
-              ? t("collectionSummary")
-              : t("wishListSummary")
-          }
-          subtitle={
-            activeTab === "collection"
-              ? t("ownedPieces", { count: ownedPieces.length })
-              : t("savedPieces", { count: savedPieces.length })
-          }
-        /> */}
 
         {currentItems.length === 0 ? (
           <EmptyState

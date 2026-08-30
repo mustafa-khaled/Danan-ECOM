@@ -8,9 +8,9 @@ export default function ProfileSidebarLayout({
 }) {
   return (
     <section>
-      <Container className="grid my-8 md:my-12 grid-cols-1 lg:grid-cols-[240px_1fr] gap-8 xl:gap-12 items-start">
+      <Container className="flex flex-col gap-6 xl:flex-row lg:items-start lg:gap-12 lg:pt-12 lg:pb-[64px] py-6">
         <ProfileAside />
-        <div className="w-full min-w-0">{children}</div>
+        <div className="w-full">{children}</div>
       </Container>
     </section>
   );

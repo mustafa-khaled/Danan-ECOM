@@ -13,7 +13,10 @@ export default async function CertificatesPage() {
 
   return (
     <>
-      <SectionHead title="Certificates" />
+      <SectionHead
+        title="Certificates"
+        className="[&_h2]:leading-[100%]! lg:mb-[32px] mb-[16px] lg:[&_h2]:text-[32px] [&_h2]:text-h4"
+      />
 
       {wardrobe.length === 0 ? (
         <EmptyState title={t("empty")} description={t("emptyDescription")} />

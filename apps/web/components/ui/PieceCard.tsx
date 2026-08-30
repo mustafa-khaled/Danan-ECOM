@@ -60,7 +60,7 @@ export function PieceCard({
             </p>
           ) : null}
         </div>
-        <p className="font-body text-xs font-semibold flex items-center justify-between tracking-[-0.02em] text-teal-800 group-hover:text-ds-secondary mt-auto pt-1">
+        <p className="card-cta font-body text-xs font-semibold flex items-center justify-between tracking-[-0.02em] text-teal-800 group-hover:text-ds-secondary mt-auto pt-1">
           <span>Explore Piece</span>
           <span className="rtl:rotate-180 inline-block">→</span>
         </p>

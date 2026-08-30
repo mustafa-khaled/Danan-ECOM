@@ -38,12 +38,12 @@ export function BannerOverlayCollection({
       />
 
       {/* Text & action content */}
-      <div className="relative z-10 flex flex-col items-start">
-        <h3 className="font-heading text-white font-semibold text-2xl sm:text-3xl lg:text-4xl xl:text-5xl">
+      <div className="relative z-10 flex flex-col items-start text-white font-semibold">
+        <h3 className="font-heading lg:leading-22 leading-[100%] lg:text-h1 text-h4">
           {collection.name}
         </h3>
         {collection.description && (
-          <p className="mt-2 max-w-md lg:max-w-lg text-white/90 text-xs sm:text-sm lg:text-base xl:text-lg leading-relaxed font-body">
+          <p className="lg:text-[32px] text-h6 mt-[16px] mb-6">
             {collection.description}
           </p>
         )}
@@ -52,7 +52,7 @@ export function BannerOverlayCollection({
           variant="teal"
           size="lg"
           fullWidth
-          className="mt-5 lg:mt-7 max-w-xs lg:max-w-sm"
+          className="text-neutral-950! lg:text-h4 text-h5 lg:max-w-94.75 max-w-56.75 whitespace-nowrap p-3!"
         >
           Explore Collection
         </ArrowLink>

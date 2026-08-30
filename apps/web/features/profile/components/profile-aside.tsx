@@ -1,5 +1,6 @@
 "use client";
 
+import { cn } from "@/lib/utils";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 
@@ -16,41 +17,42 @@ const navItems: NavItem[] = [
   { label: "Profile Management", href: "/beta/profile" },
 ];
 
+const mainStyles =
+  "w-full lg:h-[54px] h-[43px] lg:text-left lg:px-[12px] lg:text-[16px] text-[14px] bg-ds-surface font-bold transition-colors duration-200 cursor-pointer";
+
 export default function ProfileAside() {
   const pathname = usePathname();
 
   return (
-    <aside className="w-full">
-      <nav aria-label="Profile Navigation">
-        <ul className="grid grid-cols-2 lg:grid-cols-1 gap-2.5 sm:gap-3 lg:gap-2">
-          {navItems.map((item, index) => {
-            const isActive =
-              item.href === "/beta/profile"
-                ? pathname === "/beta/profile"
-                : pathname === item.href || pathname.startsWith(item.href + "/");
+    <aside className="w-full xl:w-113.5 shrink-0">
+      <div className="grid grid-cols-2 lg:grid-cols-1 gap-2">
+        {navItems.map((item, index) => {
+          const isActive =
+            item.href === "/beta/profile"
+              ? pathname === "/beta/profile"
+              : pathname === item.href || pathname.startsWith(item.href + "/");
 
-            const isLastMobile = index === navItems.length - 1;
-
-            return (
-              <li
-                key={item.href}
-                className={isLastMobile ? "col-span-2 lg:col-span-1" : ""}
+          return (
+            <Link
+              key={item.href}
+              href={item.href}
+              className={
+                index === navItems.length - 1 ? "col-span-2 lg:col-span-1" : ""
+              }
+            >
+              <button
+                type="button"
+                className={cn(
+                  mainStyles,
+                  isActive ? "bg-ds-primary" : "bg-ds-surface",
+                )}
               >
-                <Link
-                  href={item.href}
-                  className={`block w-full px-4 py-3 text-center lg:text-start text-xs sm:text-sm font-medium rounded-[var(--radius-sm)] transition-colors duration-200 ${
-                    isActive
-                      ? "bg-ds-primary text-ds-primary-foreground font-semibold"
-                      : "bg-ds-surface-warm text-ds-text hover:bg-ds-surface-warm-hover"
-                  }`}
-                >
-                  {item.label}
-                </Link>
-              </li>
-            );
-          })}
-        </ul>
-      </nav>
+                {item.label}
+              </button>
+            </Link>
+          );
+        })}
+      </div>
     </aside>
   );
 }

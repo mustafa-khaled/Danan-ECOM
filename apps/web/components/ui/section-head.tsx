@@ -22,16 +22,16 @@ export default function SectionHead({
   return (
     <div
       className={cn(
-        "mb-6 md:mb-8 flex flex-col justify-between gap-5 sm:flex-row sm:items-end",
+        "flex flex-col justify-between gap-5 sm:flex-row sm:items-end",
         className,
       )}
     >
       <div className="flex flex-col">
-        <h2 className="font-heading rtl:font-arabic font-bold tracking-[-0.02em] text-2xl leading-tight md:text-3xl md:leading-tight lg:text-h2 lg:leading-22 text-ds-text">
+        <h2 className="font-heading rtl:font-arabic font-bold lg:text-h1 text-neutral-900 leading-[100%] text-h4">
           {title}
         </h2>
         {subtitle && (
-          <p className="font-body rtl:font-arabic font-semibold tracking-normal text-lg leading-snug md:text-xl lg:text-h3 text-ds-text-secondary">
+          <p className="font-body rtl:font-arabic text-neutral-700 lg:mt-[16px] mt-2 lg:text-h3 text-body-lg font-semibold">
             {subtitle}
           </p>
         )}
@@ -42,7 +42,7 @@ export default function SectionHead({
           href={href}
           variant="primary"
           size="md"
-          className={cn("sm:w-auto w-full", buttonClassName)}
+          className={cn("sm:w-auto w-full lg:text-h5 text-[14px]", buttonClassName)}
           fullWidth
         >
           {link}

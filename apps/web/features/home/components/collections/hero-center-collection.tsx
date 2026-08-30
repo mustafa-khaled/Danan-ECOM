@@ -31,7 +31,7 @@ export function HeroCenterCollection({
           variant="teal"
           size="lg"
           fullWidth
-          className="lg:w-89.5 text-neutral-950 max-w-78"
+          className="lg:max-w-89.5 text-neutral-950 max-w-78 lg:text-h4 text-h5 p-3!"
         >
           Explore Your Experience
         </ArrowLink>

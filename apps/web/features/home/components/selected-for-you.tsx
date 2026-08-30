@@ -21,6 +21,7 @@ export default async function SelectedForYou() {
           href="/beta/pieces"
           link={t("exploreAllPieces")}
           subtitle={t("selectedForYouSubtitle")}
+          className="lg:mb-12 mb-6"
           buttonClassName="sm:w-[250px]!"
         />
 
@@ -41,6 +42,7 @@ export default async function SelectedForYou() {
                 }}
                 imageClassName="aspect-auto h-[175px] md:h-[480px] lg:h-[578px]"
                 priority
+                className="lg:[&_.card-cta]:justify-start lg:[&_.card-cta]:gap-[32px]"
               />
             </Link>
           ))}

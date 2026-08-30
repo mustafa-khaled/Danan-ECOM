@@ -60,7 +60,7 @@ export default async function YourCollection() {
           href="/beta/profile/wardrobe"
           link={t("exploreAll")}
           subtitle={t("yourCollectionSubtitle")}
-          className="[&_p]:text-h6 [&_p]:md:text-xl [&_p]:lg:text-h3"
+          className="lg:mb-12 mb-6"
           buttonClassName="sm:w-[183px]!"
         />
 

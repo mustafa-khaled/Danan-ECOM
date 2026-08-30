@@ -62,7 +62,7 @@ export function CollectionCarousel({ items }: CollectionCarouselProps) {
       >
         <CarouselContent className="-ms-3">
           {items.map((piece) => (
-            <CarouselItem key={piece.id} className="basis-[70%] ps-3">
+            <CarouselItem key={piece.id} className="basis-1/1.5 ps-3">
               <Link href={piece.href} className="block">
                 <PieceCard
                   piece={{
@@ -71,6 +71,7 @@ export function CollectionCarousel({ items }: CollectionCarouselProps) {
                     ownedSince: piece.ownedSince || undefined,
                     imageUrl: piece.imageUrl,
                   }}
+                  className="max-w-45.5 max-h-67"
                 />
               </Link>
             </CarouselItem>
