@@ -61,10 +61,10 @@ export default async function PieceDetails({
         <section>
           {/* Title & Collection Subtitle */}
           <div className="xl:mb-[32px] xl:pb-0 pb-[16px]">
-            <h1 className="font-heading font-bold xl:text-h1 text-h4 text-neutral-900">
+            <h1 className="font-heading font-bold lg:leading-15.75 xl:text-h1 text-h4 text-neutral-900">
               {design.name}
             </h1>
-            <p className="xl:mt-6 xl:mb-[32px] mt-[16px] mb-5 xl:text-h3 text-h6 font-semibold text-neutral-800">
+            <p className="my-[16px] xl:text-h3 text-h6 font-semibold text-neutral-800">
               {t("partOfCollection", { collection: design.collection.name })}
             </p>
 
