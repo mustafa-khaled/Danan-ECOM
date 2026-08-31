@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { StatusPill, Button } from "@/components/ui";
-import { AdminPagination } from "@/components/admin-pagination";
+import { AdminPagination } from "@/components/admin/layout/admin-pagination";
 import { fetchAdminDesigns } from "@/features/admin/api/fetch-admin-collections";
 import { getAdminCookieHeader } from "@/features/auth/server/admin-session";
 import { ADMIN_PAGE_SIZE, parseAdminPage } from "@/shared/lib/parse-admin-page";
@@ -24,13 +24,17 @@ export default async function DesignsPage({
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="font-heading text-3xl font-bold tracking-tight text-ds-text">Designs</h1>
+          <h1 className="font-heading text-3xl font-bold tracking-tight text-ds-text">
+            Designs
+          </h1>
           <p className="mt-2 text-sm text-ds-text-secondary font-body">
             {total} design{total === 1 ? "" : "s"}
           </p>
         </div>
         <Link href="/admin/designs/new">
-          <Button size="sm" variant="primary">Create Design</Button>
+          <Button size="sm" variant="primary">
+            Create Design
+          </Button>
         </Link>
       </div>
 
@@ -48,12 +52,13 @@ export default async function DesignsPage({
           </thead>
           <tbody className="divide-y divide-ds-border">
             {items.map((design) => (
-              <tr key={design.id} className="hover:bg-ds-surface/50 transition-colors">
+              <tr
+                key={design.id}
+                className="hover:bg-ds-surface/50 transition-colors"
+              >
                 <td className="px-4 py-4">
                   <p className="font-semibold text-ds-text">{design.name}</p>
-                  <p className="text-xs text-ds-text-muted">
-                    {design.nameAr}
-                  </p>
+                  <p className="text-xs text-ds-text-muted">{design.nameAr}</p>
                 </td>
                 <td className="px-4 py-4 text-ds-text-secondary">
                   {design.collectionName ?? design.collectionId}
@@ -81,7 +86,10 @@ export default async function DesignsPage({
             ))}
             {items.length === 0 && (
               <tr>
-                <td colSpan={6} className="px-4 py-8 text-center text-ds-text-muted">
+                <td
+                  colSpan={6}
+                  className="px-4 py-8 text-center text-ds-text-muted"
+                >
                   No designs yet. Create your first design to get started.
                 </td>
               </tr>

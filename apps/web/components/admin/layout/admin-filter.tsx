@@ -34,7 +34,7 @@ export function AdminFilter({ paramName, label, options, includeAll = true }: Ad
     <div className="flex items-center gap-2">
       <label
         htmlFor={`filter-${paramName}`}
-        className="text-xs tracking-[0.1em] uppercase text-[var(--color-ivory-muted)]"
+        className="text-xs tracking-widest uppercase text-(--color-ivory-muted)"
       >
         {label}:
       </label>
@@ -43,7 +43,7 @@ export function AdminFilter({ paramName, label, options, includeAll = true }: Ad
         value={current}
         onChange={(e) => handleChange(e.target.value)}
         disabled={isPending}
-        className="rounded-[var(--radius-sm)] border border-[var(--color-border)] bg-[var(--color-surface)] px-3 py-1.5 text-xs text-[var(--color-text)] focus:border-[var(--color-accent)] focus:outline-none"
+        className="rounded-(--radius-sm) border border-(--color-border) bg-(--color-surface) px-3 py-1.5 text-xs text-(--color-text) focus:border-(--color-accent) focus:outline-none"
       >
         {includeAll && <option value="">All</option>}
         {options.map((opt) => (

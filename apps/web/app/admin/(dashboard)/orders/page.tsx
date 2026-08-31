@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { StatusPill } from "@/components/ui";
-import { AdminPagination } from "@/components/admin-pagination";
-import { AdminFilter } from "@/components/admin-filter";
+import { AdminPagination } from "@/components/admin/layout/admin-pagination";
+import { AdminFilter } from "@/components/admin/layout/admin-filter";
 import { fetchAdminOrders } from "@/features/admin";
 import { getAdminCookieHeader } from "@/features/auth/server/admin-session";
 import { ADMIN_PAGE_SIZE, parseAdminPage } from "@/shared/lib/parse-admin-page";
@@ -23,12 +23,19 @@ export default async function OrdersPage({
   const { page: pageParam, status: statusFilter } = await searchParams;
   const page = parseAdminPage(pageParam);
   const cookieHeader = await getAdminCookieHeader();
-  const { items, total } = await fetchAdminOrders(page, ADMIN_PAGE_SIZE, cookieHeader, statusFilter || undefined);
+  const { items, total } = await fetchAdminOrders(
+    page,
+    ADMIN_PAGE_SIZE,
+    cookieHeader,
+    statusFilter || undefined,
+  );
 
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="font-display text-3xl tracking-[0.06em] uppercase">Orders</h1>
+        <h1 className="font-display text-3xl tracking-[0.06em] uppercase">
+          Orders
+        </h1>
         <p className="mt-2 text-sm text-[var(--color-ivory-muted)]">
           {total} {total === 1 ? "order" : "orders"}
         </p>
@@ -64,10 +71,14 @@ export default async function OrdersPage({
               <tr key={order.id}>
                 <td className="px-4 py-4">
                   <p>{order.client.displayName}</p>
-                  <p className="text-xs text-[var(--color-ivory-muted)]">{order.client.email}</p>
+                  <p className="text-xs text-[var(--color-ivory-muted)]">
+                    {order.client.email}
+                  </p>
                 </td>
                 <td className="px-4 py-4">
-                  {order.items.map((item) => item.piece.serialNumber).join(", ")}
+                  {order.items
+                    .map((item) => item.piece.serialNumber)
+                    .join(", ")}
                 </td>
                 <td className="px-4 py-4">
                   {formatAmount(order.totalAmount, order.currency)}
@@ -90,7 +101,10 @@ export default async function OrdersPage({
             ))}
             {items.length === 0 && (
               <tr>
-                <td colSpan={6} className="px-4 py-8 text-center text-[var(--color-ivory-muted)]">
+                <td
+                  colSpan={6}
+                  className="px-4 py-8 text-center text-[var(--color-ivory-muted)]"
+                >
                   No orders found.
                 </td>
               </tr>

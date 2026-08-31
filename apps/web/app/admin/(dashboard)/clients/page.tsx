@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { StatusPill, Button } from "@/components/ui";
-import { AdminPagination } from "@/components/admin-pagination";
-import { AdminSearch } from "@/components/admin-search";
+import { AdminPagination } from "@/components/admin/layout/admin-pagination";
+import { AdminSearch } from "@/components/admin/layout/admin-search";
 import { fetchAdminClients } from "@/features/admin";
 import { getAdminCookieHeader } from "@/features/auth/server/admin-session";
 import { ADMIN_PAGE_SIZE, parseAdminPage } from "@/shared/lib/parse-admin-page";
@@ -14,19 +14,28 @@ export default async function ClientsPage({
   const { page: pageParam, q } = await searchParams;
   const page = parseAdminPage(pageParam);
   const cookieHeader = await getAdminCookieHeader();
-  const { items, total } = await fetchAdminClients(page, ADMIN_PAGE_SIZE, cookieHeader, q);
+  const { items, total } = await fetchAdminClients(
+    page,
+    ADMIN_PAGE_SIZE,
+    cookieHeader,
+    q,
+  );
 
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="font-heading text-3xl font-bold tracking-tight text-ds-text">Clients</h1>
+          <h1 className="font-heading text-3xl font-bold tracking-tight text-ds-text">
+            Clients
+          </h1>
           <p className="mt-2 text-sm text-ds-text-secondary font-body">
             {total} registered {total === 1 ? "client" : "clients"}
           </p>
         </div>
         <Link href="/admin/clients/new">
-          <Button size="sm" variant="primary">Create Client</Button>
+          <Button size="sm" variant="primary">
+            Create Client
+          </Button>
         </Link>
       </div>
 
@@ -47,13 +56,24 @@ export default async function ClientsPage({
           </thead>
           <tbody className="divide-y divide-ds-border">
             {items.map((client) => (
-              <tr key={client.id} className="hover:bg-ds-surface/50 transition-colors">
-                <td className="px-4 py-4 font-semibold text-ds-text">{client.displayName}</td>
-                <td className="px-4 py-4 text-ds-text-secondary">{client.email}</td>
-                <td className="px-4 py-4 font-mono text-xs text-ds-text">{client.houseKeyPrefix}</td>
+              <tr
+                key={client.id}
+                className="hover:bg-ds-surface/50 transition-colors"
+              >
+                <td className="px-4 py-4 font-semibold text-ds-text">
+                  {client.displayName}
+                </td>
+                <td className="px-4 py-4 text-ds-text-secondary">
+                  {client.email}
+                </td>
+                <td className="px-4 py-4 font-mono text-xs text-ds-text">
+                  {client.houseKeyPrefix}
+                </td>
                 <td className="px-4 py-4 text-ds-text">{client.pieceCount}</td>
                 <td className="px-4 py-4">
-                  <StatusPill status={client.isActive ? "ACTIVE" : "INACTIVE"} />
+                  <StatusPill
+                    status={client.isActive ? "ACTIVE" : "INACTIVE"}
+                  />
                 </td>
                 <td className="px-4 py-4">
                   <Link
@@ -67,8 +87,13 @@ export default async function ClientsPage({
             ))}
             {items.length === 0 && (
               <tr>
-                <td colSpan={6} className="px-4 py-8 text-center text-ds-text-muted">
-                  {q ? `No clients matching "${q}".` : "No clients registered yet. Create your first client to get started."}
+                <td
+                  colSpan={6}
+                  className="px-4 py-8 text-center text-ds-text-muted"
+                >
+                  {q
+                    ? `No clients matching "${q}".`
+                    : "No clients registered yet. Create your first client to get started."}
                 </td>
               </tr>
             )}

@@ -1,5 +1,5 @@
 import { StatusPill } from "@/components/ui";
-import { AdminPagination } from "@/components/admin-pagination";
+import { AdminPagination } from "@/components/admin/layout/admin-pagination";
 import { fetchAdminVerificationLogs } from "@/features/admin/api/fetch-admin-verification-logs";
 import { getAdminCookieHeader } from "@/features/auth/server/admin-session";
 import { ADMIN_PAGE_SIZE, parseAdminPage } from "@/shared/lib/parse-admin-page";
@@ -12,12 +12,18 @@ export default async function VerificationLogsPage({
   const { page: pageParam } = await searchParams;
   const page = parseAdminPage(pageParam);
   const cookieHeader = await getAdminCookieHeader();
-  const { items, total } = await fetchAdminVerificationLogs(page, ADMIN_PAGE_SIZE, cookieHeader);
+  const { items, total } = await fetchAdminVerificationLogs(
+    page,
+    ADMIN_PAGE_SIZE,
+    cookieHeader,
+  );
 
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="font-display text-3xl tracking-[0.06em] uppercase">Verification Logs</h1>
+        <h1 className="font-display text-3xl tracking-[0.06em] uppercase">
+          Verification Logs
+        </h1>
         <p className="mt-2 text-sm text-[var(--color-ivory-muted)]">
           {total} verification {total === 1 ? "attempt" : "attempts"} recorded
         </p>
@@ -37,7 +43,9 @@ export default async function VerificationLogsPage({
           <tbody className="divide-y divide-[var(--color-border)]">
             {items.map((log) => (
               <tr key={log.id}>
-                <td className="px-4 py-4 font-mono text-xs">{log.serialNumber}</td>
+                <td className="px-4 py-4 font-mono text-xs">
+                  {log.serialNumber}
+                </td>
                 <td className="px-4 py-4">
                   <StatusPill
                     status={log.result}
@@ -58,7 +66,10 @@ export default async function VerificationLogsPage({
             ))}
             {items.length === 0 && (
               <tr>
-                <td colSpan={4} className="px-4 py-8 text-center text-[var(--color-ivory-muted)]">
+                <td
+                  colSpan={4}
+                  className="px-4 py-8 text-center text-[var(--color-ivory-muted)]"
+                >
                   No verification attempts recorded yet.
                 </td>
               </tr>

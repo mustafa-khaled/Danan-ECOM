@@ -1,4 +1,4 @@
-import { AdminLayout } from "@/components/ui";
+import { AdminLayout } from "@/components/admin/layout";
 import { ConfirmProvider } from "@/components/confirm-dialog";
 import { requireAdminSession } from "@/features/auth/server/admin-session";
 
@@ -11,9 +11,7 @@ export default async function DashboardLayout({
 
   return (
     <AdminLayout admin={admin} title="Collections">
-      <ConfirmProvider>
-        {children}
-      </ConfirmProvider>
+      <ConfirmProvider>{children}</ConfirmProvider>
     </AdminLayout>
   );
 }

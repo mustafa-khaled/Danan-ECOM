@@ -19,8 +19,6 @@ export { default as Container } from "./container";
 export { default as SectionHead } from "./section-head";
 export { SplitHeroLayout } from "./SplitHeroLayout";
 export { AccountLayout } from "./AccountLayout";
-export { AdminLayout } from "./AdminLayout";
-export type { AdminLayoutProps } from "./AdminLayout";
 
 /* ── Navigation ── */
 export { SiteHeader } from "./SiteHeader";
@@ -31,7 +29,10 @@ export { PieceCard } from "./PieceCard";
 export type { PieceCardData, PieceCardProps } from "./PieceCard";
 
 export { CertificateModal } from "./CertificateModal";
-export type { CertificateData, CertificateModalProps } from "./CertificateModal";
+export type {
+  CertificateData,
+  CertificateModalProps,
+} from "./CertificateModal";
 
 export { StatusPill } from "./StatusPill";
 export type { StatusPillProps } from "./StatusPill";

@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { StatusPill } from "@/components/ui";
-import { AdminPagination } from "@/components/admin-pagination";
-import { AdminFilter } from "@/components/admin-filter";
+import { AdminPagination } from "@/components/admin/layout/admin-pagination";
+import { AdminFilter } from "@/components/admin/layout/admin-filter";
 import { fetchAdminTransfers } from "@/features/admin";
 import { getAdminCookieHeader } from "@/features/auth/server/admin-session";
 import { ADMIN_PAGE_SIZE, parseAdminPage } from "@/shared/lib/parse-admin-page";
@@ -28,9 +28,12 @@ export default async function TransfersPage({
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="font-display text-3xl tracking-[0.06em] uppercase">Transfers</h1>
+        <h1 className="font-display text-3xl tracking-[0.06em] uppercase">
+          Transfers
+        </h1>
         <p className="mt-2 text-sm text-[var(--color-ivory-muted)]">
-          {total} transfer {total === 1 ? "request" : "requests"} · DADAN review items highlighted
+          {total} transfer {total === 1 ? "request" : "requests"} · DADAN review
+          items highlighted
         </p>
       </div>
 
@@ -62,7 +65,8 @@ export default async function TransfersPage({
           </thead>
           <tbody className="divide-y divide-[var(--color-border)]">
             {items.map((transfer) => {
-              const isReview = transfer.status === "DADAN_REVIEW" || transfer.needsReview;
+              const isReview =
+                transfer.status === "DADAN_REVIEW" || transfer.needsReview;
 
               return (
                 <tr
@@ -78,7 +82,9 @@ export default async function TransfersPage({
                       href={`/admin/transfers/${transfer.id}`}
                       className="hover:text-[var(--color-accent)]"
                     >
-                      <p className="font-display tracking-[0.04em]">{transfer.piece.serialNumber}</p>
+                      <p className="font-display tracking-[0.04em]">
+                        {transfer.piece.serialNumber}
+                      </p>
                       <p className="text-xs text-[var(--color-ivory-muted)]">
                         {transfer.piece.design.name}
                       </p>
@@ -96,13 +102,19 @@ export default async function TransfersPage({
                       {transfer.toClient.email}
                     </p>
                   </td>
-                  <td className="px-4 py-4">{transfer.transferType.replace(/_/g, " ")}</td>
+                  <td className="px-4 py-4">
+                    {transfer.transferType.replace(/_/g, " ")}
+                  </td>
                   <td className="px-4 py-4 text-[var(--color-ivory-muted)]">
                     {new Date(transfer.initiatedAt).toLocaleDateString()}
                   </td>
                   <td className="px-4 py-4">
                     <StatusPill
-                      status={isReview ? "DADAN REVIEW" : formatStatus(transfer.status)}
+                      status={
+                        isReview
+                          ? "DADAN REVIEW"
+                          : formatStatus(transfer.status)
+                      }
                       className={
                         isReview
                           ? "border-[var(--color-warning)]/60 text-[var(--color-warning)]"
