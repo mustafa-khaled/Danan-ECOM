@@ -40,7 +40,7 @@ const navLinks: NavGroup[] = [
     main: "House",
     icon: Landmark,
     subItems: [
-      { label: "Overview", href: "/admin/dashboard", icon: Triangle },
+      { label: "Overview", href: "/admin/overview", icon: Triangle },
       { label: "Collections", href: "/admin/collections", icon: Gem },
       { label: "Stories", href: "/admin/designs", icon: BookOpen },
       { label: "Pieces", href: "/admin/pieces", icon: Boxes },

@@ -15,7 +15,7 @@ export function LoginForm() {
     event.preventDefault();
     try {
       await login({ email, password });
-      router.replace("/admin/dashboard");
+      router.replace("/admin/overview");
       router.refresh();
     } catch {
       /* error is rendered via the mutation's `error` state */

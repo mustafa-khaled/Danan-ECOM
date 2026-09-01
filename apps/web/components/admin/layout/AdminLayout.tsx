@@ -32,7 +32,13 @@ export function AdminLayout({
       <AdminSidebar />
       <div className="flex-1 flex flex-col min-w-0">
         <AdminTopbar title={title} admin={fallbackAdmin} />
-        <main className="flex-1 p-4 sm:p-8">{children}</main>
+
+        {/* How this will be manage across multiple routes with different data? */}
+        {/* <div className="bg-white h-15 px-7.5 flex items-center font-bold text-h5 text-neutral-800">
+            Curate the stories, pieces, and experiences that belong to the House
+          </div> */}
+
+        <main className="flex-1">{children}</main>
       </div>
     </div>
   );

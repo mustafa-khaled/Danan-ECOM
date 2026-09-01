@@ -8,7 +8,7 @@ export interface AdminNavItem {
 
 export const ADMIN_NAV_ITEMS: AdminNavItem[] = [
   {
-    href: "/admin/dashboard",
+    href: "/admin/overview",
     label: "Dashboard",
     roles: ["SUPER_ADMIN", "STAFF", "VIEWER"],
   },

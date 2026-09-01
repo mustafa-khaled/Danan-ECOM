@@ -23,7 +23,8 @@ export default function AdminError({
           Something went wrong
         </h1>
         <p className="mb-6 text-sm text-ds-text-secondary font-body">
-          An unexpected error occurred while loading this page. Please try again or return to the dashboard.
+          An unexpected error occurred while loading this page. Please try again
+          or return to the dashboard.
         </p>
         {error.digest && (
           <p className="mb-6 font-mono text-xs text-ds-text-muted">
@@ -34,10 +35,8 @@ export default function AdminError({
           <Button onClick={reset} variant="primary">
             Try Again
           </Button>
-          <Link href="/admin/dashboard">
-            <Button variant="outline">
-              Back to Dashboard
-            </Button>
+          <Link href="/admin/overview">
+            <Button variant="outline">Back to Dashboard</Button>
           </Link>
         </div>
       </div>

@@ -1,4 +1,4 @@
-import { Container, SectionHead } from "@/components/ui";
+import { Container } from "@/components/ui";
 import Image from "next/image";
 import React from "react";
 
@@ -27,8 +27,12 @@ export default function LayoutHero() {
       />
 
       <Container className="relative text-[#FFFFFF] z-10 text-center">
-        <h1 className="font-heading lg:text-[64px] font-extrabold text-h3">Your Wardrobe</h1>
-        <p className="lg:text-[32px] lg:font-semibold text-h5 font-medium lg:mt-[16px] mt-3">A curated collection of the pieces that are part of your story</p>
+        <h1 className="font-heading lg:text-[64px] font-extrabold text-h3">
+          Your Wardrobe
+        </h1>
+        <p className="lg:text-[32px] lg:font-semibold text-h5 font-medium lg:mt-[16px] mt-3">
+          A curated collection of the pieces that are part of your story
+        </p>
       </Container>
     </section>
   );

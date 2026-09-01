@@ -5,7 +5,6 @@ import { useState } from "react";
 import { useTranslations } from "next-intl";
 import { PieceCard } from "@/components/ui/PieceCard";
 import { EmptyState } from "@/shared/components/feedback/empty-state";
-import { SectionHead } from "@/components/ui";
 import { OwnedPieceItem, SavedPieceItem } from "../types";
 import Sidebar from "./sidebar";
 

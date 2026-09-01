@@ -22,7 +22,7 @@ describe("validateRedirectPath", () => {
   });
 
   it("blocks paths outside /beta", () => {
-    expect(validateRedirectPath("/admin/dashboard")).toBe("/beta/home");
+    expect(validateRedirectPath("/admin/overview")).toBe("/beta/home");
     expect(validateRedirectPath("/")).toBe("/beta/home");
   });
 

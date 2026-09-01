@@ -123,7 +123,7 @@ flowchart TD
 
   subgraph admin_routes [Admin routes]
     LOGIN[/admin/login]
-    DASH[/admin/dashboard]
+    DASH[/admin/overview]
     OPS[/admin/clients · pieces · orders · transfers]
   end
 

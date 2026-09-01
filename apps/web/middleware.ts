@@ -6,9 +6,7 @@ import {
   CLIENT_REFRESH_COOKIE,
   parseCookieHeader,
 } from "./shared/lib/auth-cookies";
-import {
-  isAccessTokenExpired,
-} from "./shared/lib/refresh-session";
+import { isAccessTokenExpired } from "./shared/lib/refresh-session";
 
 const PUBLIC_PATHS = ["/", "/beta"];
 
@@ -16,13 +14,15 @@ const API_URL = process.env.API_URL ?? "http://localhost:4000";
 
 function hasClientSession(request: NextRequest): boolean {
   return (
-    request.cookies.has(CLIENT_COOKIE) || request.cookies.has(CLIENT_REFRESH_COOKIE)
+    request.cookies.has(CLIENT_COOKIE) ||
+    request.cookies.has(CLIENT_REFRESH_COOKIE)
   );
 }
 
 function hasAdminSession(request: NextRequest): boolean {
   return (
-    request.cookies.has(ADMIN_COOKIE) || request.cookies.has(ADMIN_REFRESH_COOKIE)
+    request.cookies.has(ADMIN_COOKIE) ||
+    request.cookies.has(ADMIN_REFRESH_COOKIE)
   );
 }
 
@@ -43,7 +43,8 @@ function mergeSetCookiesIntoRequestCookie(
   audience: "client" | "admin",
 ): string {
   const accessName = audience === "admin" ? ADMIN_COOKIE : CLIENT_COOKIE;
-  const refreshName = audience === "admin" ? ADMIN_REFRESH_COOKIE : CLIENT_REFRESH_COOKIE;
+  const refreshName =
+    audience === "admin" ? ADMIN_REFRESH_COOKIE : CLIENT_REFRESH_COOKIE;
   const map = parseCookieHeader(requestCookieHeader);
 
   for (const setCookie of setCookies) {
@@ -126,7 +127,7 @@ async function handleAuth(request: NextRequest): Promise<NextResponse | null> {
 
     if (pathname === "/admin/login") {
       if (hasSession) {
-        return NextResponse.redirect(new URL("/admin/dashboard", request.url));
+        return NextResponse.redirect(new URL("/admin/overview", request.url));
       }
       return null;
     }
