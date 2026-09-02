@@ -3,15 +3,18 @@ import {
   Injectable,
   NotFoundException,
 } from "@nestjs/common";
+import { InjectQueue } from "@nestjs/bullmq";
+import { Queue } from "bullmq";
 import { AcquisitionType, ActorType, PieceStatus } from "@dadan/db";
 import type { Locale } from "@dadan/types";
 import { AuditService } from "../audit/audit.service";
-import { CertificatesService } from "../certificates/certificates.service";
+import { CERTIFICATE_QUEUE } from "../certificates/jobs/certificate-job.processor";
+import type { GenerateCertificateJobData } from "../certificates/jobs/certificate-job.processor";
 import { PrismaService } from "../prisma/prisma.service";
 import { StorageService } from "../storage/storage.service";
 import { VisibilityService } from "../visibility/visibility.service";
 import { SerialNumberService } from "./serial-number.service";
-import { paginationParams } from "../common/constants";
+import { MAX_CATALOG_ROWS, paginationParams } from "../common/constants";
 import {
   localizeDesign,
   localizeSpecifications,
@@ -30,15 +33,43 @@ export class PiecesService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly serialNumbers: SerialNumberService,
-    private readonly certificates: CertificatesService,
     private readonly audit: AuditService,
     private readonly storage: StorageService,
     private readonly visibility: VisibilityService,
+    @InjectQueue(CERTIFICATE_QUEUE)
+    private readonly certificateQueue: Queue<GenerateCertificateJobData>,
   ) {}
+
+  /**
+   * Certificate rendering is CPU- and memory-heavy, so admin actions that mint
+   * one hand it to the shared queue rather than blocking the request thread.
+   * `jobId` collapses retries of the same piece into a single render.
+   */
+  private enqueueCertificate(
+    pieceId: string,
+    clientId: string,
+    adminId: string,
+  ): Promise<unknown> {
+    return this.certificateQueue.add(
+      "generate-certificate",
+      { pieceId, clientId, adminId },
+      {
+        attempts: 5,
+        backoff: { type: "exponential", delay: 2000 },
+        removeOnComplete: true,
+        removeOnFail: 50,
+        jobId: `generate:${pieceId}:${clientId}`,
+      },
+    );
+  }
 
   async getWardrobe(clientId: string, locale: Locale = "ar", limit?: number) {
     const pieces = await this.prisma.db.piece.findMany({
       where: { currentOwnerId: clientId },
+      // The result is re-sorted by acquisition date below, so `limit` cannot
+      // be pushed down without changing which pieces are returned. This cap
+      // bounds the read instead of letting it grow with the wardrobe.
+      take: MAX_CATALOG_ROWS,
       include: {
         design: {
           include: {
@@ -283,7 +314,7 @@ export class PiecesService {
     });
 
     if (data.initialClientId) {
-      await this.certificates.generateCertificate(piece.id, data.initialClientId, adminId);
+      await this.enqueueCertificate(piece.id, data.initialClientId, adminId);
     }
 
     await this.audit.log({
@@ -430,7 +461,7 @@ export class PiecesService {
       });
     });
 
-    await this.certificates.generateCertificate(id, data.clientId, adminId);
+    await this.enqueueCertificate(id, data.clientId, adminId);
 
     await this.audit.log({
       actorType: ActorType.ADMIN,

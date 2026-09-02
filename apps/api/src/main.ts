@@ -9,6 +9,10 @@ import { AppModule } from "./app.module";
 import { JsonLogger } from "./common/logger/json-logger.service";
 import { requestIdMiddleware } from "./common/middleware/request-id.middleware";
 import { requestLoggerMiddleware } from "./common/middleware/request-logger.middleware";
+import {
+  DEFAULT_REQUEST_TIMEOUT_MS,
+  requestTimeoutMiddleware,
+} from "./common/middleware/request-timeout.middleware";
 
 async function bootstrap() {
   const app = await NestFactory.create<NestExpressApplication>(AppModule, {
@@ -24,6 +28,11 @@ async function bootstrap() {
   // Request ID (generates x-request-id if not present) + request logging
   app.use(requestIdMiddleware);
   app.use(requestLoggerMiddleware);
+  app.use(
+    requestTimeoutMiddleware(
+      Number(process.env.REQUEST_TIMEOUT_MS) || DEFAULT_REQUEST_TIMEOUT_MS,
+    ),
+  );
 
   app.use(helmet());
   app.use(compression());

@@ -91,12 +91,26 @@ services:
     image: redis:7-alpine
     restart: unless-stopped
 
+    # Redis holds rate-limit counters, the JWT deny-list, webhook replay
+    # markers and the BullMQ queues, so unbounded growth here is a DoS vector
+    # for the whole stack. maxmemory sits below mem_limit so Redis enforces the
+    # ceiling itself instead of being OOM-killed mid-write, and noeviction is
+    # deliberate: losing a revoked token or a queued job silently would be
+    # worse than failing the write loudly.
     command:
       - redis-server
       - --appendonly
       - "yes"
       - --requirepass
       - ${REDIS_PASSWORD}
+      - --maxmemory
+      - 384mb
+      - --maxmemory-policy
+      - noeviction
+
+    mem_limit: 512m
+    mem_reservation: 128m
+    cpus: "0.5"
 
     volumes:
       - /opt/dadan/data/redis:/data
@@ -160,6 +174,7 @@ services:
       DATABASE_STATEMENT_TIMEOUT_MS: ${DATABASE_STATEMENT_TIMEOUT_MS:-30000}
       REDIS_URL: redis://:${REDIS_PASSWORD}@redis:6379
       JWT_SECRET: ${JWT_SECRET:?JWT_SECRET is required}
+      ADMIN_JWT_SECRET: ${ADMIN_JWT_SECRET:?ADMIN_JWT_SECRET is required}
       CERT_SIGNING_SECRET: ${CERT_SIGNING_SECRET:?CERT_SIGNING_SECRET is required}
       HOUSE_KEY_SALT: ${HOUSE_KEY_SALT:-12}
       COOKIE_SECURE: ${COOKIE_SECURE:-true}

@@ -1,6 +1,7 @@
 import type { NextConfig } from "next";
 import createNextIntlPlugin from "next-intl/plugin";
 import { env } from "./env";
+import { buildCsp, sentryConnectSrc } from "./shared/lib/csp";
 
 const withNextIntl = createNextIntlPlugin("./i18n/request.ts");
 const apiUrl = env.API_URL;
@@ -41,37 +42,6 @@ if (webOrigin) {
   );
 }
 
-// Sentry DSNs are themselves valid URLs (https://<key>@<ingest-host>/<project>),
-// so we can derive the ingest origin for connect-src without extra config.
-function sentryConnectSrc(): string {
-  const dsn = process.env.NEXT_PUBLIC_SENTRY_DSN;
-  if (!dsn) {
-    return "";
-  }
-  try {
-    return ` ${new URL(dsn).origin}`;
-  } catch {
-    return "";
-  }
-}
-
-// Mirrors nginx/nginx.conf's Content-Security-Policy so the app is protected
-// even when accessed directly (dev, non-nginx deployments). Keep both in sync.
-function buildCsp(): string {
-  return [
-    "default-src 'self'",
-    "script-src 'self' 'unsafe-inline' 'unsafe-eval'",
-    "style-src 'self' 'unsafe-inline'",
-    "img-src 'self' data: blob:",
-    "font-src 'self'",
-    `connect-src 'self'${sentryConnectSrc()}`,
-    "frame-src 'self' https://sdk.tap.company",
-    "frame-ancestors 'none'",
-    "form-action 'self'",
-    "base-uri 'self'",
-  ].join("; ");
-}
-
 const nextConfig: NextConfig = {
   output: "standalone",
   transpilePackages: [],
@@ -92,7 +62,7 @@ const nextConfig: NextConfig = {
             key: "Permissions-Policy",
             value: "camera=(), microphone=(), geolocation=()",
           },
-          { key: "Content-Security-Policy", value: buildCsp() },
+          { key: "Content-Security-Policy", value: buildCsp(undefined, sentryConnectSrc()) },
         ],
       },
     ];

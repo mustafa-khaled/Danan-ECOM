@@ -3,7 +3,9 @@ import { access, mkdir, readFile, stat, unlink, writeFile } from "node:fs/promis
 import { join, normalize, resolve, sep } from "node:path";
 import type { Readable } from "node:stream";
 import { validateUpload, validateMagicBytes } from "../validation";
+import { requiresSignature, signStorageKey } from "../signing";
 import type { StorageProvider } from "../interfaces/storage-provider.interface";
+import { DEFAULT_SIGNED_URL_EXPIRY } from "../types";
 import type { UploadOptions, SignedUrlOptions } from "../types";
 
 const PUBLIC_URL_PREFIX = "/api/uploads";
@@ -64,9 +66,18 @@ export class LocalStorageProvider implements StorageProvider {
     return createReadStream(fullPath);
   }
 
-  async getSignedUrl(key: string, _options?: SignedUrlOptions): Promise<string> {
+  async getSignedUrl(key: string, options?: SignedUrlOptions): Promise<string> {
     const safeKey = normalize("/" + key).replace(/^[/\\]+/, "");
-    return `${this.publicUrlPrefix}/${safeKey}`;
+    const url = `${this.publicUrlPrefix}/${safeKey}`;
+    if (!requiresSignature(safeKey)) {
+      return url;
+    }
+
+    const { expiresAt, signature } = signStorageKey(
+      safeKey,
+      options?.expiresInSeconds ?? DEFAULT_SIGNED_URL_EXPIRY,
+    );
+    return `${url}?exp=${expiresAt}&sig=${signature}`;
   }
 
   async delete(key: string): Promise<void> {

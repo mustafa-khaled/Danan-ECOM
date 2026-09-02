@@ -13,7 +13,7 @@ import { PrismaService } from "../prisma/prisma.service";
 import { StorageService } from "../storage/storage.service";
 import { ImageProcessingService } from "../storage/image-processing.service";
 import { VisibilityService } from "../visibility/visibility.service";
-import { paginationParams } from "../common/constants";
+import { MAX_CATALOG_ROWS, paginationParams } from "../common/constants";
 import {
   localizeSpecifications,
   pickLocalized,
@@ -32,39 +32,60 @@ export class CollectionsService {
   ) {}
 
   async getVisibleCollections(clientGroups: string[], locale: Locale = "ar") {
+    const visibleToClient = this.visibility.prismaFilter(clientGroups);
+
+    // Visibility is applied in SQL so this cannot degrade into "load the whole
+    // catalog and filter in memory" as the catalog grows.
     const collections = await this.prisma.db.collection.findMany({
-      where: { isVisible: true },
+      where: { isVisible: true, ...visibleToClient },
       orderBy: { sortOrder: "asc" },
-      include: {
-        designs: {
-          where: { isActive: true },
-          include: { _count: { select: { pieces: true } } },
-        },
+      take: MAX_CATALOG_ROWS,
+      select: {
+        id: true,
+        name: true,
+        nameAr: true,
+        slug: true,
+        description: true,
+        descriptionAr: true,
+        coverImageUrl: true,
+        coverImageLqip: true,
+        sortOrder: true,
       },
     });
 
+    if (collections.length === 0) return [];
+
+    // Piece counts come from a single narrow aggregate rather than from
+    // hydrating every design row just to sum `_count.pieces`.
+    const designCounts = await this.prisma.db.design.findMany({
+      where: {
+        isActive: true,
+        collectionId: { in: collections.map((c) => c.id) },
+        ...visibleToClient,
+      },
+      take: MAX_CATALOG_ROWS,
+      select: { collectionId: true, _count: { select: { pieces: true } } },
+    });
+
+    const pieceCounts = new Map<string, number>();
+    for (const design of designCounts) {
+      pieceCounts.set(
+        design.collectionId,
+        (pieceCounts.get(design.collectionId) ?? 0) + design._count.pieces,
+      );
+    }
+
     return Promise.all(
-      collections
-        .filter((c) => this.visibility.canAccess(clientGroups, c.visibilityGroups))
-        .map(async (c) => {
-          const visibleDesigns = c.designs.filter((d) =>
-            this.visibility.canAccess(clientGroups, d.visibilityGroups),
-          );
-          const pieceCount = visibleDesigns.reduce(
-            (sum, d) => sum + d._count.pieces,
-            0,
-          );
-          return {
-            id: c.id,
-            name: pickLocalized(locale, c.name, c.nameAr),
-            slug: c.slug,
-            description: pickLocalized(locale, c.description, c.descriptionAr),
-            coverImageUrl: await this.storage.resolvePublicUrl(c.coverImageUrl),
-            coverImageLqip: c.coverImageLqip ?? null,
-            sortOrder: c.sortOrder,
-            pieceCount,
-          };
-        }),
+      collections.map(async (c) => ({
+        id: c.id,
+        name: pickLocalized(locale, c.name, c.nameAr),
+        slug: c.slug,
+        description: pickLocalized(locale, c.description, c.descriptionAr),
+        coverImageUrl: await this.storage.resolvePublicUrl(c.coverImageUrl),
+        coverImageLqip: c.coverImageLqip ?? null,
+        sortOrder: c.sortOrder,
+        pieceCount: pieceCounts.get(c.id) ?? 0,
+      })),
     );
   }
 
@@ -77,12 +98,6 @@ export class CollectionsService {
   ) {
     const collection = await this.prisma.db.collection.findUnique({
       where: { slug },
-      include: {
-        designs: {
-          where: { isActive: true },
-          orderBy: { name: "asc" },
-        },
-      },
     });
 
     if (
@@ -93,12 +108,37 @@ export class CollectionsService {
       throw new NotFoundException("errors.COLLECTION_NOT_FOUND");
     }
 
-    const visibleDesigns = collection.designs.filter((d) =>
-      this.visibility.canAccess(clientGroups, d.visibilityGroups),
-    );
-
     const { skip, take, page: p, limit: l } = paginationParams(page, limit);
-    const paginated = visibleDesigns.slice(skip, skip + take);
+
+    // Designs are filtered and paged in SQL. Slicing in memory here meant one
+    // request loaded every design in the collection regardless of page size.
+    const designWhere = {
+      collectionId: collection.id,
+      isActive: true,
+      ...this.visibility.prismaFilter(clientGroups),
+    };
+
+    const [paginated, total] = await Promise.all([
+      this.prisma.db.design.findMany({
+        where: designWhere,
+        orderBy: { name: "asc" },
+        skip,
+        take,
+        select: {
+          id: true,
+          name: true,
+          nameAr: true,
+          slug: true,
+          material: true,
+          materialAr: true,
+          basePrice: true,
+          currency: true,
+          imageUrls: true,
+          imageLqips: true,
+        },
+      }),
+      this.prisma.db.design.count({ where: designWhere }),
+    ]);
 
     return {
       id: collection.id,
@@ -123,7 +163,7 @@ export class CollectionsService {
           imageLqips: d.imageLqips ?? [],
         })),
       ),
-      total: visibleDesigns.length,
+      total,
       page: p,
       limit: l,
     };

@@ -65,8 +65,18 @@ export function LocaleSelect({
         <SelectValue />
       </SelectTrigger>
       <SelectContent align="end">
-        <SelectItem value="en" className="font-['Poppins',sans-serif] font-normal leading-none text-center">EN</SelectItem>
-        <SelectItem value="ar" className="font-['Poppins',sans-serif] font-normal leading-none text-center">AR</SelectItem>
+        <SelectItem
+          value="en"
+          className="font-['Poppins',sans-serif] font-normal leading-none text-center"
+        >
+          EN
+        </SelectItem>
+        <SelectItem
+          value="ar"
+          className="font-['Poppins',sans-serif] font-normal leading-none text-center"
+        >
+          AR
+        </SelectItem>
       </SelectContent>
     </Select>
   );

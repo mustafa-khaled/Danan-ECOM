@@ -6,6 +6,7 @@ import {
   CLIENT_REFRESH_COOKIE,
   parseCookieHeader,
 } from "./shared/lib/auth-cookies";
+import { buildCsp, createCspNonce, sentryConnectSrc } from "./shared/lib/csp";
 import { isAccessTokenExpired } from "./shared/lib/refresh-session";
 
 const PUBLIC_PATHS = ["/", "/beta"];
@@ -119,6 +120,19 @@ async function tryRefreshSession(
   return response;
 }
 
+/**
+ * Login redirect that preserves the original query string in `next`. The 3-D
+ * Secure return lands on /beta/checkout/return?tap_id=..., and dropping that
+ * parameter would leave the cardholder unable to confirm a charge they paid for.
+ */
+function clientLoginUrl(request: NextRequest, pathname: string): URL {
+  const loginUrl = request.nextUrl.clone();
+  loginUrl.pathname = "/beta";
+  loginUrl.search = "";
+  loginUrl.searchParams.set("next", `${pathname}${request.nextUrl.search}`);
+  return loginUrl;
+}
+
 async function handleAuth(request: NextRequest): Promise<NextResponse | null> {
   const { pathname } = request.nextUrl;
 
@@ -154,10 +168,7 @@ async function handleAuth(request: NextRequest): Promise<NextResponse | null> {
 
   if (pathname.startsWith("/beta")) {
     if (!hasClientSession(request)) {
-      const loginUrl = request.nextUrl.clone();
-      loginUrl.pathname = "/beta";
-      loginUrl.searchParams.set("next", pathname);
-      return NextResponse.redirect(loginUrl);
+      return NextResponse.redirect(clientLoginUrl(request, pathname));
     }
 
     const accessToken = request.cookies.get(CLIENT_COOKIE)?.value;
@@ -167,10 +178,7 @@ async function handleAuth(request: NextRequest): Promise<NextResponse | null> {
 
     const refreshed = await tryRefreshSession(request, "client");
     if (!refreshed) {
-      const loginUrl = request.nextUrl.clone();
-      loginUrl.pathname = "/beta";
-      loginUrl.searchParams.set("next", pathname);
-      return NextResponse.redirect(loginUrl);
+      return NextResponse.redirect(clientLoginUrl(request, pathname));
     }
     return refreshed;
   }
@@ -178,12 +186,24 @@ async function handleAuth(request: NextRequest): Promise<NextResponse | null> {
   return null;
 }
 
+function applyCsp(response: NextResponse, nonce: string): NextResponse {
+  response.headers.set("Content-Security-Policy", buildCsp(nonce, sentryConnectSrc()));
+  return response;
+}
+
 export function middleware(request: NextRequest) {
+  const nonce = createCspNonce();
+  const requestHeaders = new Headers(request.headers);
+  requestHeaders.set("x-nonce", nonce);
+
   return handleAuth(request).then((authResponse) => {
     if (authResponse) {
-      return authResponse;
+      return applyCsp(authResponse, nonce);
     }
-    return NextResponse.next();
+    return applyCsp(
+      NextResponse.next({ request: { headers: requestHeaders } }),
+      nonce,
+    );
   });
 }
 

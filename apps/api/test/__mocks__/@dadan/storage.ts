@@ -27,6 +27,16 @@ export function extFromMime(): string {
   return "png";
 }
 
+export function requiresSignature(key: string): boolean {
+  return key.startsWith("certificates/");
+}
+
+export const verifyStorageSignature = jest.fn().mockReturnValue(true);
+
+export function signStorageKey(): { expiresAt: number; signature: string } {
+  return { expiresAt: 4102444800, signature: "mock-signature" };
+}
+
 export const ALLOWED_IMAGE_MIMES = new Set([
   "image/jpeg",
   "image/png",

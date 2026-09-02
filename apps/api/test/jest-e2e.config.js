@@ -7,6 +7,7 @@ module.exports = {
   },
   testEnvironment: "node",
   testTimeout: 60000,
+  setupFiles: ["<rootDir>/e2e-setup.ts"],
   moduleNameMapper: {
     "^@dadan/db$": "<rootDir>/../../../packages/db/src/index.ts",
     "^@dadan/types$": "<rootDir>/../../../packages/types/src/index.ts",

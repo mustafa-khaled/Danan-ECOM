@@ -1,13 +1,16 @@
+import { getTranslations } from "next-intl/server";
 import { Container } from "@/components/ui";
 import Image from "next/image";
 
-export function OriginStory() {
+export async function OriginStory() {
+  const t = await getTranslations("ourStory");
+
   return (
     <section className="relative w-full md:h-215.5 h-192.25 overflow-hidden bg-ds-dark-bg flex items-end pb-38.75 md:pb-37.5">
       {/* Background Image */}
       <Image
         src="/assets/story/dadan-origin-story.avif"
-        alt="Every Great Story Has an Origin"
+        alt={t("originTitle")}
         fill
         priority
         sizes="100vw"
@@ -38,12 +41,10 @@ export function OriginStory() {
       <Container className="relative text-[#FFFFFF]">
         <div className="max-w-307.25">
           <h1 className="text-h4 md:text-h1 lg:text-[64px] font-extrabold font-english">
-            Every Great Story Has an Origin
+            {t("originTitle")}
           </h1>
           <p className="md:mt-5 mt-3 font-semibold text-h6 md:text-[30px] lg:text-[40px]">
-            Our story begins in Dadan—an ancient city where commerce was built
-            on trust, craftsmanship, and human connection. Those same values
-            continue to shape every collection we create today.
+            {t("originBody")}
           </p>
         </div>
       </Container>

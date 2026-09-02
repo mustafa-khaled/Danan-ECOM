@@ -1,15 +1,16 @@
 "use client";
 
 import dynamic from "next/dynamic";
-import { useLocale } from "next-intl";
+import { useLocale, useTranslations } from "next-intl";
 import { useRouter } from "next/navigation";
 import { FormEvent, Suspense, useRef, useState } from "react";
 import { Button, Input } from "@/components/ui";
 import { formatPrice } from "@/shared/utils/format";
 import { PAYMENT_MODE } from "@/shared/lib/constants";
-import { useCheckout, type TapCardElementHandle } from "@/features/checkout";
+import { useCheckout, useReserveForCheckout, type TapCardElementHandle } from "@/features/checkout";
 import type { ShippingAddress } from "@/features/checkout/types";
 import { parseShippingAddressFromFormData } from "@/features/checkout/schemas/shipping-address";
+import { isSafePaymentRedirectUrl } from "@/shared/lib/validate-payment-redirect";
 import type { CartSummary } from "@/features/cart";
 
 const TapCardElement = dynamic(
@@ -27,13 +28,17 @@ interface CheckoutFormProps {
 export function CheckoutForm({ summary }: CheckoutFormProps) {
   const router = useRouter();
   const locale = useLocale() as "ar" | "en";
+  const t = useTranslations("checkout");
+  const tCart = useTranslations("cart");
   const [step, setStep] = useState<1 | 2>(1);
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
   const [cardError, setCardError] = useState<string | null>(null);
+  const [reserveError, setReserveError] = useState<string | null>(null);
   const [isTokenizing, setIsTokenizing] = useState(false);
   const shippingAddressRef = useRef<ShippingAddress | null>(null);
   const tapCardRef = useRef<TapCardElementHandle>(null);
-  const { checkout, isPending, error } = useCheckout();
+  const { checkout, isPending, error: checkoutError } = useCheckout();
+  const { reserveForCheckout, isPending: isReserving } = useReserveForCheckout();
 
   const isLivePayment = PAYMENT_MODE === "live";
 
@@ -44,10 +49,24 @@ export function CheckoutForm({ summary }: CheckoutFormProps) {
         paymentMethod: "CARD",
         paymentToken,
       });
+
+      if (result.status === "requires_action") {
+        // Hand the cardholder to the bank's 3-D Secure page. A full navigation
+        // (not router.push) is required — the target is outside our origin.
+        // The spinner stays on deliberately until the browser leaves the page.
+        if (!isSafePaymentRedirectUrl(result.redirectUrl)) {
+          setCardError(t("checkoutFailed"));
+          setIsTokenizing(false);
+          return;
+        }
+        window.location.assign(result.redirectUrl);
+        return;
+      }
+
       router.push(`/beta/orders/${result.orderId}`);
+      setIsTokenizing(false);
     } catch {
       /* error is rendered via the mutation's `error` state */
-    } finally {
       setIsTokenizing(false);
     }
   }
@@ -70,9 +89,17 @@ export function CheckoutForm({ summary }: CheckoutFormProps) {
     event.preventDefault();
     setFieldErrors({});
     setCardError(null);
+    setReserveError(null);
 
     if (step === 1) {
-      setStep(2);
+      try {
+        await reserveForCheckout();
+        setStep(2);
+      } catch (err) {
+        setReserveError(
+          err instanceof Error ? err.message : t("reservationFailed"),
+        );
+      }
       return;
     }
 
@@ -94,28 +121,29 @@ export function CheckoutForm({ summary }: CheckoutFormProps) {
     await completeCheckout(parsed.data, "mock_token_success");
   }
 
-  const isSubmitting = isPending || isTokenizing;
+  const isSubmitting = isPending || isTokenizing || isReserving;
+  const error = checkoutError;
 
   return (
     <form onSubmit={handleSubmit} className="space-y-8" noValidate>
       {step === 1 ? (
         <section className="rounded-(--radius-md) border border-ds-border bg-ds-background p-6 shadow-sm">
-          <h2 className="font-heading text-xl text-ds-text">Order Review</h2>
+          <h2 className="font-heading text-xl text-ds-text">{t("orderReview")}</h2>
           <p className="mt-2 text-sm text-ds-text-secondary">
-            Confirm your selection before entering shipping details.
+            {t("orderReviewSubtitle")}
           </p>
           <div className="my-6 border-t border-ds-border" />
           <dl className="space-y-3 text-sm">
             <div className="flex justify-between">
-              <dt className="text-ds-text-secondary">Subtotal</dt>
+              <dt className="text-ds-text-secondary">{tCart("subtotal")}</dt>
               <dd className="font-medium text-ds-text">{formatPrice(summary.subtotal, summary.currency)}</dd>
             </div>
             <div className="flex justify-between">
-              <dt className="text-ds-text-secondary">VAT ({Math.round(summary.vatRate * 100)}%)</dt>
+              <dt className="text-ds-text-secondary">{t("vat", { rate: Math.round(summary.vatRate * 100) })}</dt>
               <dd className="font-medium text-ds-text">{formatPrice(summary.vatAmount, summary.currency)}</dd>
             </div>
             <div className="flex justify-between font-heading text-lg font-bold text-ds-text pt-2 border-t border-ds-border-light">
-              <dt>Total</dt>
+              <dt>{tCart("total")}</dt>
               <dd>{formatPrice(summary.total, summary.currency)}</dd>
             </div>
           </dl>
@@ -123,41 +151,41 @@ export function CheckoutForm({ summary }: CheckoutFormProps) {
       ) : (
         <>
           <section className="rounded-(--radius-md) border border-ds-border bg-ds-background p-6 shadow-sm">
-            <h2 className="font-heading text-xl text-ds-text">Shipping Address</h2>
+            <h2 className="font-heading text-xl text-ds-text">{t("shippingAddress")}</h2>
             <div className="mt-6 grid gap-4 sm:grid-cols-2">
               <Input
-                label="Full Name"
+                label={t("fullName")}
                 name="fullName"
                 required
                 className="sm:col-span-2"
                 error={fieldErrors.fullName}
               />
-              <Input label="Phone" name="phone" required error={fieldErrors.phone} />
+              <Input label={t("phone")} name="phone" required error={fieldErrors.phone} />
               <Input
-                label="Address Line 1"
+                label={t("addressLine1")}
                 name="line1"
                 required
                 className="sm:col-span-2"
                 error={fieldErrors.line1}
               />
               <Input
-                label="Address Line 2"
+                label={t("addressLine2")}
                 name="line2"
                 className="sm:col-span-2"
                 error={fieldErrors.line2}
               />
-              <Input label="City" name="city" required error={fieldErrors.city} />
-              <Input label="Region" name="region" required error={fieldErrors.region} />
-              <Input label="Postal Code" name="postalCode" required error={fieldErrors.postalCode} />
-              <Input label="Country" name="country" defaultValue="SA" required error={fieldErrors.country} />
+              <Input label={t("city")} name="city" required error={fieldErrors.city} />
+              <Input label={t("region")} name="region" required error={fieldErrors.region} />
+              <Input label={t("postalCode")} name="postalCode" required error={fieldErrors.postalCode} />
+              <Input label={t("country")} name="country" defaultValue="SA" required error={fieldErrors.country} />
             </div>
           </section>
 
           <section className="rounded-(--radius-md) border border-ds-border bg-ds-background p-6 shadow-sm">
-            <h2 className="font-heading text-xl text-ds-text">Payment</h2>
+            <h2 className="font-heading text-xl text-ds-text">{t("payment")}</h2>
             {isLivePayment ? (
               <div className="mt-6">
-                <Suspense fallback={<div className="text-sm text-ds-text-secondary">Loading payment form...</div>}>
+                <Suspense fallback={<div className="text-sm text-ds-text-secondary">{t("loadingPayment")}</div>}>
                   <TapCardElement
                     ref={tapCardRef}
                     amount={summary.total}
@@ -165,6 +193,7 @@ export function CheckoutForm({ summary }: CheckoutFormProps) {
                     locale={locale}
                     onSuccess={handleTokenSuccess}
                     onError={handleTokenError}
+                    configError={t("paymentNotConfigured")}
                   />
                 </Suspense>
                 {cardError ? (
@@ -175,16 +204,22 @@ export function CheckoutForm({ summary }: CheckoutFormProps) {
               </div>
             ) : (
               <p className="mt-6 text-xs text-ds-text-secondary">
-                Payment is processed securely via mock gateway for this preview.
+                {t("securePayment")}
               </p>
             )}
           </section>
         </>
       )}
 
+      {reserveError ? (
+        <p role="alert" className="text-sm text-ds-error">
+          {reserveError}
+        </p>
+      ) : null}
+
       {error ? (
         <p role="alert" className="text-sm text-ds-error">
-          {error instanceof Error ? error.message : "Checkout failed"}
+          {error instanceof Error ? error.message : t("checkoutFailed")}
         </p>
       ) : null}
 
@@ -196,11 +231,17 @@ export function CheckoutForm({ summary }: CheckoutFormProps) {
             onClick={() => setStep(1)}
             disabled={isSubmitting}
           >
-            Back
+            {t("back")}
           </Button>
         ) : null}
         <Button type="submit" loading={isSubmitting} variant="primary">
-          {step === 1 ? "Confirm and Continue" : isSubmitting ? "Processing…" : "Complete Purchase"}
+          {step === 1
+            ? isReserving
+              ? t("reserving")
+              : t("confirmAndContinue")
+            : isSubmitting
+              ? t("processing")
+              : t("completePurchase")}
         </Button>
       </div>
     </form>

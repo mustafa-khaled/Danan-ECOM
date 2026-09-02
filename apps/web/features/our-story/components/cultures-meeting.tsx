@@ -1,13 +1,16 @@
+import { getTranslations } from "next-intl/server";
 import { Container } from "@/components/ui";
 import Image from "next/image";
 
-export function CulturesMeeting() {
+export async function CulturesMeeting() {
+  const t = await getTranslations("ourStory");
+
   return (
     <section className="relative w-full h-151 pb-12 lg:pb-0 lg:h-228.25 overflow-hidden bg-ds-dark-bg flex flex-col justify-end lg:justify-center">
       {/* Background Image */}
       <Image
         src="/assets/story/where-cultures-stories-and-treasures-met.avif"
-        alt="Where Cultures, Stories, and Treasures Met"
+        alt={t("culturesTitle")}
         fill
         priority
         sizes="100vw"
@@ -37,9 +40,7 @@ export function CulturesMeeting() {
       {/* Content Container */}
       <Container className="relative z-10 flex flex-col items-center justify-end lg:justify-center text-center">
         <h2 className="font-heading text-white font-bold text-[32px] lg:text-[64px] leading-tight drop-shadow-sm xl:whitespace-nowrap">
-          Where Cultures,
-          <br className="block lg:hidden" /> Stories, and Treasures
-          <br className="block lg:hidden" /> Met
+          {t("culturesTitle")}
         </h2>
       </Container>
     </section>

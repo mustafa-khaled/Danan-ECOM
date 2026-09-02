@@ -1,12 +1,14 @@
 import Link from "next/link";
+import { getTranslations } from "next-intl/server";
 import type { Notification } from "../types";
 import { NOTIFICATION_ICON_MAP } from "./notification-icons";
 
-export function NotificationCard({
+export async function NotificationCard({
   notification,
 }: {
   notification: Notification;
 }) {
+  const t = await getTranslations("notifications");
   const IconComponent = NOTIFICATION_ICON_MAP[notification.icon];
 
   return (
@@ -28,7 +30,7 @@ export function NotificationCard({
           href={notification.href}
           className="mt-1.5 inline-flex items-center gap-1.5 font-body text-xs font-medium text-ds-primary transition-colors duration-150 hover:text-ds-primary-hover"
         >
-          <span>View</span>
+          <span>{t("view")}</span>
           <span className="rtl:rotate-180 inline-block" aria-hidden="true">
             →
           </span>

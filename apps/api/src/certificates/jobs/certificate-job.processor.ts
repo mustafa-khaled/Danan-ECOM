@@ -37,7 +37,9 @@ export class CertificateJobProcessor extends WorkerHost {
     if (regenerate && adminId) {
       await this.certificates.regenerateCertificate(pieceId, clientId, adminId);
     } else {
-      await this.certificates.generateCertificate(pieceId, clientId);
+      // Forwarding adminId keeps admin-initiated generation attributed to the
+      // admin in the audit trail rather than to "system".
+      await this.certificates.generateCertificate(pieceId, clientId, adminId);
     }
 
     const action = regenerate ? "CERTIFICATE_REGENERATED" : "CERTIFICATE_GENERATED";

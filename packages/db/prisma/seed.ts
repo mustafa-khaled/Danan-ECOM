@@ -22,18 +22,34 @@ const prisma = new PrismaClient();
 const envFlag = process.argv.find((a) => a.startsWith("--environment="));
 const targetEnv = envFlag?.split("=")[1] ?? process.env.NODE_ENV;
 
+// Fail closed: an unset NODE_ENV is not treated as "safe to wipe". The wipe
+// always needs an explicit opt-in, and production needs a second one.
+if (process.env.SEED_ALLOW_DESTRUCTIVE !== "true") {
+  console.error(
+    "Refusing to seed: this script wipes every table. Set SEED_ALLOW_DESTRUCTIVE=true to proceed.",
+  );
+  process.exit(1);
+}
+
 if (
-  targetEnv === "production" &&
+  targetEnv !== "development" &&
+  targetEnv !== "test" &&
   process.env.SEED_ALLOW_PRODUCTION !== "true"
 ) {
   console.error(
-    "Refusing to seed: environment=production. Set SEED_ALLOW_PRODUCTION=true to override.",
+    "Refusing to seed: environment is not development/test. Set SEED_ALLOW_PRODUCTION=true to override.",
   );
   process.exit(1);
 }
 
 const HOUSE_KEY_SALT_ROUNDS = parseInt(process.env.HOUSE_KEY_SALT ?? "12", 10);
-const ADMIN_PASSWORD = process.env.SEED_ADMIN_PASSWORD ?? "AdminPass123!";
+if (!process.env.SEED_ADMIN_PASSWORD) {
+  console.error(
+    "Refusing to seed: SEED_ADMIN_PASSWORD is required (no default password).",
+  );
+  process.exit(1);
+}
+const ADMIN_PASSWORD = process.env.SEED_ADMIN_PASSWORD;
 const CERT_SIGNING_SECRET =
   process.env.CERT_SIGNING_SECRET ?? "dev-cert-signing-secret-local-only";
 const BASE_URL = process.env.BASE_URL ?? "http://localhost:3000";
@@ -282,7 +298,6 @@ async function main() {
         data: {
           clientId: clients.get(c.clientKey)!.id,
           pieceId: pieces.get(c.serialNumber)!.id,
-          expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
         },
       });
     }

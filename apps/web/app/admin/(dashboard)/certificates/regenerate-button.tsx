@@ -21,7 +21,7 @@ export function RegenerateButton({ pieceId }: RegenerateButtonProps) {
 
     try {
       await regenerateCertificate(pieceId);
-      setFeedback({ type: "success", message: "Certificate regenerated" });
+      setFeedback({ type: "success", message: "Regeneration queued" });
       router.refresh();
     } catch (err) {
       setFeedback({ type: "error", message: err instanceof Error ? err.message : "Failed to regenerate" });

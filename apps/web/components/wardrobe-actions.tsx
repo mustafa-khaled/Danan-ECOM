@@ -59,12 +59,12 @@ export function WardrobeActions({
       {/* Active Transfer Notice */}
       {activeTransfer ? (
         <p className="text-sm text-ds-text-secondary font-body">
-          A transfer is in progress.{" "}
+          {t("transferInProgress")}{" "}
           <Link
             href={`/beta/profile/transfers/${activeTransfer.id}`}
             className="text-ds-teal-800 underline-offset-4 hover:underline font-medium"
           >
-            View transfer
+            {t("viewTransfer")}
           </Link>
         </p>
       ) : null}

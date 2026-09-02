@@ -13,8 +13,8 @@ export default async function WardrobePage() {
   return (
     <>
       <SectionHead
-        title="Owned Pieces"
-        subtitle="A curated collection of the pieces that are part of your story"
+        title={t("owned")}
+        subtitle={t("ownedSubtitle")}
         className="[&_h2]:leading-[100%]! lg:mb-[32px] mb-[16px] lg:[&_h2]:text-[32px] lg:[&_p]:text-h4 [&_p]:text-[14px] lg:[&_p]:mt-[16px] [&_p]:mt-2 [&_h2]:text-h4 "
       />
 

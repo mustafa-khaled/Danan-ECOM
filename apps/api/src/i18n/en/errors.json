@@ -18,5 +18,6 @@
   "PIECE_NOT_TRANSFERABLE": "This piece cannot be transferred in its current state",
   "TRANSFER_NOT_CANCELLABLE": "This transfer can no longer be cancelled",
   "ORDER_NOT_CANCELLABLE": "Only pending orders can be cancelled",
+  "REQUEST_TIMEOUT": "The request took too long. Please try again.",
   "INTERNAL_SERVER_ERROR": "Internal server error"
 }

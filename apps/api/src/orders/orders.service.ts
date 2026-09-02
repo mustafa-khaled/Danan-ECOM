@@ -26,6 +26,25 @@ import { PrismaService } from "../prisma/prisma.service";
 import { StorageService } from "../storage/storage.service";
 import { paginationParams } from "../common/constants";
 
+export interface CreateOrderParams {
+  clientId: string;
+  pieceIds: string[];
+  subtotalAmount: number;
+  taxAmount: number;
+  taxRate: number;
+  totalAmount: number;
+  currency: string;
+  paymentProvider: string;
+  paymentMethod?: string;
+  /** Gateway charge id. Unknown until the charge is created, so optional. */
+  paymentReference?: string;
+  shippingAddress: ShippingAddress;
+  idempotencyKey?: string;
+}
+
+/** PENDING orders past this age are assumed abandoned mid-3DS and released. */
+const PENDING_ORDER_TTL_MINUTES = 35;
+
 @Injectable()
 export class OrdersService {
   private readonly logger = new Logger(OrdersService.name);
@@ -38,20 +57,16 @@ export class OrdersService {
     private readonly storage: StorageService,
   ) {}
 
-  async createPaidOrder(params: {
-    clientId: string;
-    pieceIds: string[];
-    subtotalAmount: number;
-    taxAmount: number;
-    taxRate: number;
-    totalAmount: number;
-    currency: string;
-    paymentProvider: string;
-    paymentMethod?: string;
-    paymentReference: string;
-    shippingAddress: ShippingAddress;
-    idempotencyKey?: string;
-  }) {
+  /**
+   * Reserves the pieces and records the order before any money moves. The order
+   * stays PENDING until the payment is confirmed, which for 3-D Secure happens
+   * only after the cardholder returns from the bank's authentication page.
+   *
+   * Deliberately does not transfer ownership, clear the cart, issue
+   * certificates or email the client — all of that belongs to
+   * `confirmOrderPayment`, so an abandoned 3DS flow leaves no side effects.
+   */
+  async createPendingOrder(params: CreateOrderParams) {
     // Check idempotency: if this payment was already processed, return existing order
     if (params.idempotencyKey) {
       const existingOrder = await this.prisma.db.order.findUnique({
@@ -63,7 +78,7 @@ export class OrdersService {
       }
     }
 
-    const order = await this.prisma.db.$transaction(
+    return this.prisma.db.$transaction(
       async (tx) => {
         // CR-02: Lock piece rows with FOR UPDATE to prevent double-sale
         // This ensures no concurrent transaction can modify these pieces
@@ -99,11 +114,11 @@ export class OrdersService {
         });
         const designMap = new Map(designs.map((d) => [d.id, d]));
 
-        const created = await tx.order.create({
+        return tx.order.create({
           data: {
             clientId: params.clientId,
-            status: OrderStatus.PAID,
-            paymentStatus: PaymentStatus.PAID,
+            status: OrderStatus.PENDING,
+            paymentStatus: PaymentStatus.PENDING,
             fulfillmentStatus: FulfillmentStatus.UNFULFILLED,
             subtotalAmount: params.subtotalAmount,
             taxAmount: params.taxAmount,
@@ -137,29 +152,108 @@ export class OrdersService {
           },
           include: { items: true },
         });
+      },
+      {
+        // Use serializable isolation for maximum safety
+        isolationLevel: Prisma.TransactionIsolationLevel.Serializable,
+      },
+    );
+  }
 
-        // Update pieces and create ownership records
-        for (const piece of lockedPieces) {
-          await tx.piece.update({
-            where: { id: piece.id },
-            data: {
-              status: PieceStatus.OWNED,
-              currentOwnerId: params.clientId,
-            },
-          });
+  /** Records the gateway charge id so an inbound webhook can find this order. */
+  async attachPaymentReference(orderId: string, paymentReference: string) {
+    await this.prisma.db.order.update({
+      where: { id: orderId },
+      data: { paymentReference },
+    });
+  }
 
-          await tx.ownershipRecord.create({
-            data: {
-              pieceId: piece.id,
-              clientId: params.clientId,
-              acquisitionType: AcquisitionType.PURCHASE,
-            },
-          });
+  /**
+   * Promotes a PENDING order to PAID and runs every post-payment side effect.
+   *
+   * Idempotent by design: both the 3DS return call and Tap's webhook race to
+   * confirm the same charge, so a second call must be a no-op rather than
+   * transferring ownership or issuing certificates twice.
+   */
+  async confirmOrderPayment(
+    orderId: string,
+    options: { paymentReference?: string; paymentMethod?: string } = {},
+  ) {
+    const { order, alreadyConfirmed } = await this.prisma.db.$transaction(
+      async (tx) => {
+        const existing = await tx.order.findUnique({
+          where: { id: orderId },
+          include: { items: true },
+        });
+        if (!existing) throw new NotFoundException("errors.ORDER_NOT_FOUND");
+
+        if (existing.paymentStatus === PaymentStatus.PAID) {
+          return { order: existing, alreadyConfirmed: true };
+        }
+        if (existing.status === OrderStatus.CANCELLED) {
+          throw new BadRequestException("errors.ORDER_NOT_CANCELLABLE");
         }
 
-        await tx.cartItem.deleteMany({ where: { clientId: params.clientId } });
+        const pieceIds = existing.items.map((item) => item.pieceId);
+        const lockedPieces = await tx.$queryRaw<
+          Array<{ id: string; serialNumber: string; status: string; currentOwnerId: string | null }>
+        >`
+          SELECT id, "serialNumber", status, "currentOwnerId"
+          FROM "Piece"
+          WHERE id = ANY(${pieceIds}::text[])
+          FOR UPDATE
+        `;
 
-        return created;
+        for (const piece of lockedPieces) {
+          const ownedByThisClient =
+            piece.status === PieceStatus.OWNED &&
+            piece.currentOwnerId === existing.clientId;
+          if (piece.status !== PieceStatus.AVAILABLE && !ownedByThisClient) {
+            throw new ConflictException(
+              `Piece ${piece.serialNumber} is no longer available`,
+            );
+          }
+        }
+
+        for (const piece of lockedPieces) {
+          if (piece.status === PieceStatus.AVAILABLE) {
+            await tx.piece.update({
+              where: { id: piece.id },
+              data: {
+                status: PieceStatus.OWNED,
+                currentOwnerId: existing.clientId,
+              },
+            });
+
+            await tx.ownershipRecord.create({
+              data: {
+                pieceId: piece.id,
+                clientId: existing.clientId,
+                acquisitionType: AcquisitionType.PURCHASE,
+              },
+            });
+          }
+        }
+
+        const updated = await tx.order.update({
+          where: { id: orderId },
+          data: {
+            status: OrderStatus.PAID,
+            paymentStatus: PaymentStatus.PAID,
+            ...(options.paymentReference
+              ? { paymentReference: options.paymentReference }
+              : {}),
+            ...(options.paymentMethod ? { paymentMethod: options.paymentMethod } : {}),
+          },
+          include: { items: true },
+        });
+
+        await tx.cartItem.deleteMany({ where: { clientId: existing.clientId } });
+        await tx.checkoutReservation.deleteMany({
+          where: { clientId: existing.clientId },
+        });
+
+        return { order: updated, alreadyConfirmed: false };
       },
       {
         // Use serializable isolation for maximum safety
@@ -167,9 +261,13 @@ export class OrdersService {
       },
     );
 
+    if (alreadyConfirmed) {
+      return order;
+    }
+
     await this.audit.log({
       actorType: ActorType.CLIENT,
-      actorId: params.clientId,
+      actorId: order.clientId,
       action: "ORDER_PLACED",
       targetType: "Order",
       targetId: order.id,
@@ -182,14 +280,14 @@ export class OrdersService {
         action: "PIECE_OWNERSHIP_TRANSFERRED",
         targetType: "Piece",
         targetId: item.pieceId,
-        metadata: { orderId: order.id, clientId: params.clientId },
+        metadata: { orderId: order.id, clientId: order.clientId },
       });
 
-      this.generateCertificateWithRetry(item.pieceId, params.clientId, order.id);
+      this.generateCertificateWithRetry(item.pieceId, order.clientId, order.id);
     }
 
     const client = await this.prisma.db.client.findUnique({
-      where: { id: params.clientId },
+      where: { id: order.clientId },
     });
     if (client) {
       this.notifications.sendOrderPlacedEmail(client.email, {
@@ -199,6 +297,118 @@ export class OrdersService {
     }
 
     return order;
+  }
+
+  /**
+   * Marks a PENDING order as failed and releases the pieces it was holding.
+   * Safe to call repeatedly — an already-cancelled order is left untouched.
+   */
+  async failOrderPayment(orderId: string, reason: string) {
+    const existing = await this.prisma.db.order.findUnique({
+      where: { id: orderId },
+    });
+    if (!existing) throw new NotFoundException("errors.ORDER_NOT_FOUND");
+
+    if (existing.status === OrderStatus.CANCELLED) {
+      return existing;
+    }
+    if (existing.paymentStatus === PaymentStatus.PAID) {
+      // Never unwind a settled order automatically; flag it for a human.
+      this.logger.error(
+        `Refusing to fail order ${orderId}: payment already captured (${reason})`,
+      );
+      throw new BadRequestException("errors.ORDER_NOT_CANCELLABLE");
+    }
+
+    const order = await this.prisma.db.order.update({
+      where: { id: orderId },
+      data: {
+        status: OrderStatus.CANCELLED,
+        paymentStatus: PaymentStatus.FAILED,
+      },
+    });
+
+    await this.prisma.db.checkoutReservation.deleteMany({
+      where: { clientId: existing.clientId },
+    });
+
+    await this.audit.log({
+      actorType: ActorType.SYSTEM,
+      actorId: "system",
+      action: "ORDER_PAYMENT_FAILED",
+      targetType: "Order",
+      targetId: orderId,
+      metadata: { reason },
+    });
+
+    return order;
+  }
+
+  /**
+   * Creates and immediately settles an order. Used when the gateway captures
+   * synchronously (no 3DS challenge) and by the mock provider.
+   */
+  async createPaidOrder(params: CreateOrderParams) {
+    const pending = await this.createPendingOrder(params);
+
+    if (pending.paymentStatus === PaymentStatus.PAID) {
+      return pending;
+    }
+
+    return this.confirmOrderPayment(pending.id, {
+      paymentReference: params.paymentReference,
+      paymentMethod: params.paymentMethod,
+    });
+  }
+
+  /**
+   * Resolves the order behind a gateway charge. Prefers the stored reference,
+   * falling back to the order id we stamp into the charge metadata — a webhook
+   * can outrun `attachPaymentReference` when the charge settles instantly.
+   */
+  async findOrderForCharge(chargeId: string, metadataOrderId?: string) {
+    const byReference = await this.prisma.db.order.findFirst({
+      where: { paymentReference: chargeId },
+    });
+    if (byReference) return byReference;
+
+    if (!metadataOrderId) return null;
+
+    // Tap's webhook signature does not cover `metadata`, so this id is
+    // attacker-controllable on an otherwise valid charge. Only orders that are
+    // not yet bound to a different charge may be resolved this way; callers
+    // must still verify the amount before settling.
+    return this.prisma.db.order.findFirst({
+      where: {
+        id: metadataOrderId,
+        OR: [{ paymentReference: null }, { paymentReference: chargeId }],
+      },
+    });
+  }
+
+  /**
+   * Releases pieces held by orders whose cardholder never came back from 3DS.
+   * Without this an abandoned checkout would hold its pieces indefinitely.
+   */
+  async expireStalePendingOrders(): Promise<number> {
+    const cutoff = new Date(Date.now() - PENDING_ORDER_TTL_MINUTES * 60 * 1000);
+    const stale = await this.prisma.db.order.findMany({
+      where: { status: OrderStatus.PENDING, placedAt: { lt: cutoff } },
+      select: { id: true },
+    });
+
+    let expired = 0;
+    for (const order of stale) {
+      try {
+        await this.failOrderPayment(order.id, "PENDING_ORDER_EXPIRED");
+        expired += 1;
+      } catch (error) {
+        this.logger.error(
+          `Failed to expire stale order ${order.id}: ${error instanceof Error ? error.message : String(error)}`,
+        );
+      }
+    }
+    return expired;
   }
 
   private generateCertificateWithRetry(

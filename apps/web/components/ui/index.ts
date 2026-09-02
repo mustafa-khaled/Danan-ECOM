@@ -48,3 +48,22 @@ export type { ArrowLinkProps } from "./ArrowLink";
 
 /* ── Feedback ── */
 export { WelcomeModal, AccessGateHeader } from "./WelcomeModal";
+
+/* ── Data Display ── */
+export { DataTable, useDataTable } from "./data-table";
+export type {
+  ColumnDef,
+  DataTableProps,
+  DataTableContextValue,
+  DataTableToolbarProps,
+  DataTableContainerProps,
+  DataTableTableProps,
+  DataTableHeaderProps,
+  DataTableBodyProps,
+  DataTableBulkBarProps,
+  DataTableEmptyProps,
+  DataTableErrorProps,
+} from "./data-table";
+
+export { Pagination, PaginationSuspenseBoundary } from "./pagination";
+export type { PaginationProps } from "./pagination";

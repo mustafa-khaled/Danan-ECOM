@@ -5,6 +5,7 @@ import {
   Injectable,
   UnauthorizedException,
 } from "@nestjs/common";
+import { ConfigService } from "@nestjs/config";
 import { Reflector } from "@nestjs/core";
 import { JwtService } from "@nestjs/jwt";
 import type { AdminSession } from "@dadan/types";
@@ -30,6 +31,7 @@ export class AdminGuard implements CanActivate {
     private readonly reflector: Reflector,
     private readonly redis: RedisService,
     private readonly prisma: PrismaService,
+    private readonly config: ConfigService,
   ) {}
 
   async canActivate(context: ExecutionContext): Promise<boolean> {
@@ -40,6 +42,8 @@ export class AdminGuard implements CanActivate {
       throw new UnauthorizedException(AUTH_FAILURE_MESSAGE);
     }
 
+    const secret = this.config.getOrThrow<string>("ADMIN_JWT_SECRET");
+
     try {
       const payload = await this.jwt.verifyAsync<{
         sub: string;
@@ -48,7 +52,7 @@ export class AdminGuard implements CanActivate {
         displayName: string;
         aud?: string;
         jti?: string;
-      }>(token, { algorithms: ["HS256"] });
+      }>(token, { secret, algorithms: ["HS256"] });
 
       if (payload.aud !== JWT_AUDIENCE_ADMIN) {
         throw new UnauthorizedException(AUTH_FAILURE_MESSAGE);

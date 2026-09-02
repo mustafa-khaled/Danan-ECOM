@@ -9,7 +9,6 @@ import {
   UseGuards,
 } from "@nestjs/common";
 import type { Request } from "express";
-import { TransferStatus } from "@dadan/db";
 import { TransfersService } from "./transfers.service";
 import { ClientGuard } from "../auth/guards/client.guard";
 import { CurrentClient } from "../auth/decorators/current-client.decorator";
@@ -17,6 +16,7 @@ import { CurrentLocale } from "../common/i18n/locale";
 import type { ClientSession, Locale } from "@dadan/types";
 import { getClientIp } from "../common/constants";
 import { InitiateTransferDto } from "./dto/initiate-transfer.dto";
+import { ClientTransferQueryDto } from "./dto/client-transfer-query.dto";
 
 @Controller("client/transfers")
 @UseGuards(ClientGuard)
@@ -64,9 +64,13 @@ export class ClientTransfersController {
   list(
     @CurrentClient() client: ClientSession,
     @CurrentLocale() locale: Locale,
-    @Query("status") status?: TransferStatus,
+    @Query() query: ClientTransferQueryDto,
   ) {
-    return this.transfers.listClientTransfers(client.clientId, locale, status);
+    return this.transfers.listClientTransfers(
+      client.clientId,
+      locale,
+      query.status,
+    );
   }
 
   @Get(":transferId")

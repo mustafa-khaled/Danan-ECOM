@@ -9,7 +9,7 @@ metadata:
 
 # NestJS Best Practices
 
-Comprehensive guide for building production-ready NestJS applications. Contains 26 rules across 13 categories, covering security, architecture, performance, validation, database operations, authentication, and advanced patterns.
+Comprehensive guide for building production-ready NestJS applications. Contains 28 rules across 13 categories, covering security, architecture, performance, validation, database operations, authentication, and advanced patterns.
 
 ## When to Apply
 
@@ -76,6 +76,8 @@ Reference these guidelines when:
 ### 6. Database (CRITICAL)
 
 - `database-parameterized-queries` - Use parameterized queries to prevent SQL injection (Prisma v7)
+- `database-prisma-performance` - Prisma v7 query optimization: N+1, select, join strategy, keyset pagination
+- `database-pg-connection-pool` - PrismaPg driver adapter pool configuration + PgBouncer session pooling
 
 ### 7. Authentication (CRITICAL)
 
@@ -168,7 +170,7 @@ bun run dev        # Build and validate
 ## Statistics
 
 - **13 sections** covering all aspects of NestJS development
-- **26 rules** prioritized by impact (CRITICAL, HIGH, MEDIUM)
+- **28 rules** prioritized by impact (CRITICAL, HIGH, MEDIUM)
 - **Prisma v7** compatible database patterns
 - **Bun runtime** native features (Crypto.hashPassword, @nestjs/schedule)
 - **Agent-optimized** for automated code generation and review

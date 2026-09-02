@@ -1,6 +1,7 @@
 "use client";
 
 import { createContext, useCallback, useContext, useRef, useState } from "react";
+import { useTranslations } from "next-intl";
 import { Button } from "@/components/ui/Button";
 import { Modal } from "@/components/ui/Modal";
 
@@ -25,6 +26,7 @@ export function useConfirm() {
 }
 
 export function ConfirmProvider({ children }: { children: React.ReactNode }) {
+  const tCommon = useTranslations("common");
   const [state, setState] = useState<(ConfirmOptions & { open: boolean }) | null>(null);
   const resolveRef = useRef<((value: boolean) => void) | null>(null);
 
@@ -61,7 +63,7 @@ export function ConfirmProvider({ children }: { children: React.ReactNode }) {
                 size="sm"
                 onClick={handleCancel}
               >
-                {state.cancelLabel ?? "Cancel"}
+                {state.cancelLabel ?? tCommon("cancel")}
               </Button>
               <Button
                 size="sm"
@@ -74,7 +76,7 @@ export function ConfirmProvider({ children }: { children: React.ReactNode }) {
                 }
                 onClick={handleConfirm}
               >
-                {state.confirmLabel ?? "Confirm"}
+                {state.confirmLabel ?? tCommon("confirm")}
               </Button>
             </>
           }

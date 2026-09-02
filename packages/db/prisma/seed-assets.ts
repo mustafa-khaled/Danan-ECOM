@@ -28,7 +28,9 @@ const MIME_BY_EXT: Record<string, string> = {
 };
 
 export const SEED_ASSETS_DIR = path.resolve(
-  process.env.SEED_ASSETS_DIR ??
+  // `||` not `??`: .env ships SEED_ASSETS_DIR blank, and an empty string would
+  // otherwise resolve to the current working directory.
+  process.env.SEED_ASSETS_DIR ||
     path.join(__dirname, "../../../apps/web/public/seeder-assets"),
 );
 

@@ -1,7 +1,7 @@
-import { IsOptional, IsString, IsUUID } from "class-validator";
+import { IsOptional, IsString, IsUUID, MaxLength } from "class-validator";
 
 export class RegisterPieceDto {
   @IsUUID() designId!: string;
-  @IsOptional() @IsString() notes?: string;
+  @IsOptional() @IsString() @MaxLength(2000) notes?: string;
   @IsOptional() @IsUUID() initialClientId?: string;
 }

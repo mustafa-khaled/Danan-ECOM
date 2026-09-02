@@ -121,6 +121,7 @@ jobs:
       DATABASE_URL: postgresql://dadan:dadan@localhost:5432/dadan
       REDIS_URL: redis://localhost:6379
       JWT_SECRET: ci-test-jwt-secret-minimum-32-chars!!
+      ADMIN_JWT_SECRET: ci-test-admin-jwt-secret-min-32-chars!!
       CERT_SIGNING_SECRET: ci-cert-signing-secret
       BASE_URL: http://localhost:3000
       WEB_ORIGIN: http://localhost:3000

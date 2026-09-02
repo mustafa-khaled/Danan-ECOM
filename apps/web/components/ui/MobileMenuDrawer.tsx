@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useTranslations } from "next-intl";
 import { LocaleSelect } from "@/shared/providers/locale-provider";
 import { primaryNavItems } from "@/shared/lib/nav";
+import { ClientLogoutButton } from "@/components/client-logout-button";
 
 interface MobileMenuDrawerProps {
   isOpen: boolean;
@@ -33,7 +34,7 @@ export function MobileMenuDrawer({
 
       {/* Side menu content panel - Full Height & Solid Background */}
       <div
-        className={`fixed inset-y-0 right-0 z-50 flex h-dvh min-h-screen w-4/5 max-w-xs flex-col justify-between border-l border-ds-border bg-ds-background p-6 shadow-2xl transition-transform duration-300 ease-in-out ${
+        className={`fixed inset-y-0 right-0 z-50 flex h-screen w-4/5 max-w-xs flex-col justify-between border-l border-ds-border bg-ds-background p-6 shadow-2xl transition-transform duration-300 ease-in-out ${
           isOpen
             ? "translate-x-0 pointer-events-auto"
             : "translate-x-full pointer-events-none"
@@ -155,6 +156,9 @@ export function MobileMenuDrawer({
 
             {/* Language selector */}
             <LocaleSelect syncProfile className="[&_svg]:text-ds-secondary " />
+
+            {/* Logout */}
+            <ClientLogoutButton iconOnly />
           </div>
         </div>
       </div>

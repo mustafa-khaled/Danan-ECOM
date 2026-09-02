@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useTranslations } from "next-intl";
 import { LocaleSelect } from "@/shared/providers/locale-provider";
 import { primaryNavItems } from "@/shared/lib/nav";
+import { ClientLogoutButton } from "@/components/client-logout-button";
 import Container from "./container";
 
 interface DesktopHeaderProps {
@@ -96,6 +97,9 @@ export function DesktopHeader({
               syncProfile
               className="[&_svg]:text-ds-secondary font-['Poppins',sans-serif] font-normal text-h5 leading-none text-center tracking-normal"
             />
+
+            {/* Logout */}
+            <ClientLogoutButton />
           </div>
 
           {/* Bottom Desktop Navigation Links */}

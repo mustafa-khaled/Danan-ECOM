@@ -18,5 +18,6 @@
   "PIECE_NOT_TRANSFERABLE": "لا يمكن نقل هذه القطعة في حالتها الحالية",
   "TRANSFER_NOT_CANCELLABLE": "لم يعد بالإمكان إلغاء طلب النقل",
   "ORDER_NOT_CANCELLABLE": "يمكن إلغاء الطلبات قيد الانتظار فقط",
+  "REQUEST_TIMEOUT": "استغرق الطلب وقتًا طويلاً. يرجى المحاولة مرة أخرى.",
   "INTERNAL_SERVER_ERROR": "خطأ داخلي في الخادم"
 }

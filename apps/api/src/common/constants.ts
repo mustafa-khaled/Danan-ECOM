@@ -30,6 +30,16 @@ export function tokenDenyListKey(jti: string): string {
   return `auth:denylist:${jti}`;
 }
 
+/** Redis key marking a payment webhook delivery as already acted on. */
+export function webhookReplayKey(chargeId: string, status: string): string {
+  return `payments:webhook:${chargeId}:${status}`;
+}
+
+/** Redis key counting failed admin logins for a single email. */
+export function adminLoginEmailKey(email: string): string {
+  return `admin:login:email:${email.toLowerCase().trim()}`;
+}
+
 export function getClientIp(req: {
   ip?: string;
   headers?: Record<string, string | string[] | undefined>;
@@ -59,6 +69,14 @@ export function clearCookieOptions() {
   const { secure, sameSite, path } = cookieOptions(0);
   return { secure, sameSite, path };
 }
+
+/**
+ * Hard ceiling for list queries that are not user-paginated. These endpoints
+ * are bounded by catalog and ownership size rather than by a request
+ * parameter, so the cap exists to stop one request from loading an
+ * unbounded result set as the data grows.
+ */
+export const MAX_CATALOG_ROWS = 500;
 
 export function paginationParams(page?: number, limit?: number) {
   const p = Math.max(1, page ?? 1);

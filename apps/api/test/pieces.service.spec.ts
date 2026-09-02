@@ -1,9 +1,10 @@
 import { BadRequestException, NotFoundException } from "@nestjs/common";
 import { Test, TestingModule } from "@nestjs/testing";
+import { getQueueToken } from "@nestjs/bullmq";
 import { PieceStatus } from "@dadan/db";
 import { PiecesService } from "../src/pieces/pieces.service";
 import { AuditService } from "../src/audit/audit.service";
-import { CertificatesService } from "../src/certificates/certificates.service";
+import { CERTIFICATE_QUEUE } from "../src/certificates/jobs/certificate-job.processor";
 import { PrismaService } from "../src/prisma/prisma.service";
 import { StorageService } from "../src/storage/storage.service";
 import { VisibilityService } from "../src/visibility/visibility.service";
@@ -21,7 +22,7 @@ describe("PiecesService", () => {
     },
   };
   const auditMock = { log: jest.fn().mockResolvedValue(undefined) };
-  const certificatesMock = {};
+  const certificateQueueMock = { add: jest.fn().mockResolvedValue(undefined) };
   const storageMock = {
     resolvePublicUrls: jest.fn().mockResolvedValue([]),
   };
@@ -34,10 +35,10 @@ describe("PiecesService", () => {
         PiecesService,
         { provide: PrismaService, useValue: prismaMock },
         { provide: AuditService, useValue: auditMock },
-        { provide: CertificatesService, useValue: certificatesMock },
         { provide: StorageService, useValue: storageMock },
         { provide: VisibilityService, useValue: visibilityMock },
         { provide: SerialNumberService, useValue: serialNumbersMock },
+        { provide: getQueueToken(CERTIFICATE_QUEUE), useValue: certificateQueueMock },
       ],
     }).compile();
 

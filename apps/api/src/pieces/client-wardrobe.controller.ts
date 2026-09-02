@@ -9,6 +9,7 @@ import { PiecesService } from "./pieces.service";
 import { ClientGuard } from "../auth/guards/client.guard";
 import { CurrentClient } from "../auth/decorators/current-client.decorator";
 import { CurrentLocale } from "../common/i18n/locale";
+import { WardrobeQueryDto } from "./dto/wardrobe-query.dto";
 import type { ClientSession, Locale } from "@dadan/types";
 
 @Controller("client/wardrobe")
@@ -20,10 +21,9 @@ export class ClientWardrobeController {
   list(
     @CurrentClient() client: ClientSession,
     @CurrentLocale() locale: Locale,
-    @Query("limit") limit?: string,
+    @Query() query: WardrobeQueryDto,
   ) {
-    const limitNum = limit ? parseInt(limit, 10) : undefined;
-    return this.pieces.getWardrobe(client.clientId, locale, limitNum);
+    return this.pieces.getWardrobe(client.clientId, locale, query.limit);
   }
 
   @Get("my-collection")

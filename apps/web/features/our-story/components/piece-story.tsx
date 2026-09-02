@@ -1,26 +1,29 @@
+import { getTranslations } from "next-intl/server";
 import Container from "@/components/ui/container";
 import Image from "next/image";
 
-export function PieceStory() {
+export async function PieceStory() {
+  const t = await getTranslations("ourStory");
+
   return (
     <section className="py-[32px] lg:py-12">
       <Container className="flex flex-col text-neutral-900">
         <h2 className="font-heading lg:text-[40px] text-h4 font-extrabold">
-          Every Piece Begins With a Story
+          {t("pieceStoryTitle")}
         </h2>
 
         <p className="lg:text-[32px] text-[14px] mt-6.5 mb-6 lg:mt-14.5 font-semibold lg:font-bold leading-[130%]">
-          Before a piece is designed, a story is discovered.
+          {t("pieceStoryLine1")}
           <br />
-          Every collection begins with meaning, not materials.
+          {t("pieceStoryLine2")}
           <br />
-          Every owner becomes part of its continuation.
+          {t("pieceStoryLine3")}
         </p>
 
         <div className="relative w-full h-181.75 overflow-hidden">
           <Image
             src="/assets/story/product-story.avif"
-            alt="Every Piece Begins With a Story"
+            alt={t("pieceStoryTitle")}
             fill
             sizes="100vw"
             className="object-cover object-center"

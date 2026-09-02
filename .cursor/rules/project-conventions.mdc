@@ -1,0 +1,87 @@
+---
+description: Always-on project conventions for dadan-dijital monorepo
+globs:
+alwaysApply: true
+---
+
+# dadan-dijital Project Conventions
+
+Always follow these conventions when working in this monorepo.
+
+## Stack
+
+| Layer | Technology |
+|-------|-----------|
+| API | NestJS 11 · Bun runtime · Express adapter |
+| Database | PostgreSQL · Prisma v7 · PrismaPg driver adapter |
+| Auth | @nestjs/jwt + Guards |
+| Validation | class-validator + class-transformer |
+| Caching | Redis · BullMQ |
+| Frontend | Next.js App Router · TanStack Query v5 |
+| Monorepo | pnpm@9.15.4 · Turborepo |
+
+## Monorepo Layout
+
+```
+apps/api/    → @dadan/api   (NestJS backend)
+apps/web/    → @dadan/web   (Next.js frontend)
+packages/db/ → @dadan/db    (Prisma schema + DbContext)
+```
+
+## API Conventions (`apps/api/src/`)
+
+- **Feature modules**: each domain is a NestJS module at `src/<feature>/<feature>.module.ts`
+- **Thin controllers**: controllers only parse input and call one service — no business logic
+- **Services own business logic**: orchestrate repositories, own transactions
+- **Repository pattern**: all DB access through repository classes that inject `DbContext`
+- **Never** `new PrismaClient()` in a service — always inject `DbContext` from `@dadan/db`
+- **Guards** for auth (`@UseGuards(JwtAuthGuard)`) — not middleware
+- **DTOs** on every incoming request — `class-validator` + `ValidationPipe`
+- **Naming**: `<feature>.controller.ts`, `<feature>.service.ts`, `<feature>.repository.ts`, `<feature>.dto.ts`
+
+## Web Conventions (`apps/web/`)
+
+- **Feature structure**: `features/{domain}/api/ + hooks/ + types/ + index.ts`
+- Server components → `fetch*` functions for reads
+- Client components → `useMutation` for writes; invalidate queries (not `router.refresh`)
+- Shared code → `shared/lib/`, `shared/components/`, `shared/providers/`
+
+## Database Rules
+
+- Single `DbContext` instance — `@Global()` module in `packages/db`
+- Always `select` only needed fields in `findMany()` — never select `*`
+- Use keyset pagination (explicit `where` bounds) for large tables — not `cursor`+`skip`
+- Define `@@index` in Prisma schema for every `where`/`orderBy`/FK field
+- Aggregate with `.count()`, `.aggregate()`, `.groupBy()` — never fetch-all-then-count
+
+## Secrets & Environment
+
+- **Never hardcode** secrets, URLs, or credentials — use `@nestjs/config` + env vars
+- `DATABASE_URL` → PgBouncer (pooled connection)
+- `DIRECT_DATABASE_URL` → PostgreSQL direct (migrations only)
+- All secrets in `.env` (gitignored)
+
+## Forbidden Patterns
+
+- `new PrismaClient()` anywhere except `DbContext`
+- Editing `packages/db/src/generated/` (auto-generated)
+- `router.refresh()` after mutations in Next.js — use `invalidateQueries` instead
+- Business logic in NestJS controllers
+- Offset pagination (`skip`/`take`) on tables with >10k rows
+- Committing `.env` files
+
+## Build & Quality Gates
+
+```bash
+pnpm typecheck   # zero errors required
+pnpm lint        # zero errors required
+pnpm test        # all tests must pass
+```
+
+## Package Manager
+
+Use `pnpm` (not npm or yarn). Install in a specific workspace with:
+```bash
+pnpm --filter @dadan/api add <package>
+pnpm --filter @dadan/web add <package>
+```

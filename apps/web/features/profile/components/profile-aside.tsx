@@ -3,25 +3,22 @@
 import { cn } from "@/lib/utils";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-
-export interface NavItem {
-  label: string;
-  href: string;
-}
-
-const navItems: NavItem[] = [
-  { label: "Owned Pieces", href: "/beta/profile/wardrobe" },
-  { label: "Certificates", href: "/beta/profile/certificates" },
-  { label: "History", href: "/beta/profile/history" },
-  { label: "Transfers", href: "/beta/profile/transfers" },
-  { label: "Profile Management", href: "/beta/profile" },
-];
+import { useTranslations } from "next-intl";
 
 const mainStyles =
   "w-full lg:h-[54px] h-[43px] lg:text-left lg:px-[12px] lg:text-[16px] text-[14px] bg-ds-surface font-bold transition-colors duration-200 cursor-pointer";
 
 export default function ProfileAside() {
   const pathname = usePathname();
+  const t = useTranslations("profile");
+
+  const navItems = [
+    { labelKey: "ownedPiecesNav" as const, href: "/beta/profile/wardrobe" },
+    { labelKey: "certificatesNav" as const, href: "/beta/profile/certificates" },
+    { labelKey: "historyNav" as const, href: "/beta/profile/history" },
+    { labelKey: "transfersNav" as const, href: "/beta/profile/transfers" },
+    { labelKey: "management" as const, href: "/beta/profile" },
+  ];
 
   return (
     <aside className="w-full xl:w-113.5 shrink-0">
@@ -47,7 +44,7 @@ export default function ProfileAside() {
                   isActive ? "bg-ds-primary" : "bg-ds-surface",
                 )}
               >
-                {item.label}
+                {t(item.labelKey)}
               </button>
             </Link>
           );

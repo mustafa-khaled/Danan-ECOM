@@ -69,6 +69,7 @@ fi
 # pnpm links workspace package bins under packages/db/node_modules/.bin (not
 # the workspace root .bin), mirroring docker-entrypoint.sh's prisma invocation.
 $COMPOSE exec -T \
+  -e SEED_ALLOW_DESTRUCTIVE=true \
   -e SEED_ALLOW_PRODUCTION=true \
   -e SEED_ASSETS_DIR=/app/seeder-assets \
   -w /app/packages/db \

@@ -403,14 +403,24 @@ export class TransfersService {
     if (!transfer) throw new NotFoundException("errors.TRANSFER_NOT_FOUND");
 
     return {
-      ...transfer,
+      id: transfer.id,
+      status: transfer.status,
+      transferType: transfer.transferType,
+      initiatedAt: transfer.initiatedAt,
+      senderConfirmedAt: transfer.senderConfirmedAt,
+      recipientConfirmedAt: transfer.recipientConfirmedAt,
+      fromClientId: transfer.fromClientId,
+      toClientId: transfer.toClientId,
       piece: {
-        ...transfer.piece,
+        id: transfer.piece.id,
+        serialNumber: transfer.piece.serialNumber,
         design: {
           ...localizeDesign(transfer.piece.design, locale),
           imageUrls: await this.storage.resolvePublicUrls(transfer.piece.design.imageUrls),
         },
       },
+      fromClient: { displayName: transfer.fromClient.displayName },
+      toClient: { displayName: transfer.toClient.displayName },
     };
   }
 

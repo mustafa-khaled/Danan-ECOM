@@ -18,7 +18,7 @@ export default async function ProfilePage() {
   return (
     <div className="space-y-10">
       <SectionHead
-        title="Profile Management"
+        title={t("management")}
         className="[&_h2]:leading-[100%]! lg:mb-[32px] mb-[16px] lg:[&_h2]:text-[32px] [&_h2]:text-h4"
       />
 

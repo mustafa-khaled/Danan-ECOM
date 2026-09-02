@@ -14,7 +14,11 @@ import { getAccessTokenSeconds } from "../../common/constants";
       imports: [ConfigModule],
       inject: [ConfigService],
       useFactory: (config: ConfigService) => ({
-        secret: config.getOrThrow<string>("JWT_SECRET"),
+        // Distinct from the client signing key so a leaked client secret
+        // cannot mint admin sessions. The `aud` claim is still checked in
+        // AdminGuard; this makes the separation cryptographic rather than
+        // resting on that check alone.
+        secret: config.getOrThrow<string>("ADMIN_JWT_SECRET"),
         signOptions: { expiresIn: getAccessTokenSeconds() },
       }),
     }),

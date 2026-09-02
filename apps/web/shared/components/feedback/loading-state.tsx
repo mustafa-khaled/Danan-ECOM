@@ -1,3 +1,4 @@
+import Image from "next/image";
 import { cn } from "@/lib/utils";
 
 interface LoadingStateProps {
@@ -26,35 +27,21 @@ export function DadanSpinner({
         )}
       />
 
-      {/* Inner DADAN Geometric Triangle Emblem */}
+      {/* Inner DADAN Logo */}
       <div className="absolute inset-0 flex items-center justify-center">
-        <svg
+        <Image
+          src="/assets/dadan-logo.png"
+          alt="DADAN"
+          width={246}
+          height={40}
           className={cn(
-            "text-ds-secondary animate-pulse",
-            size === "sm" && "size-2.5",
-            size === "md" && "size-10 sm:size-12",
-            size === "lg" && "size-14 sm:size-16"
+            "invert object-contain",
+            size === "sm" && "w-8",
+            size === "md" && "w-14 sm:w-16",
+            size === "lg" && "w-20 sm:w-24"
           )}
-          viewBox="0 0 40 40"
-          fill="none"
-        >
-          <polygon
-            points="20,4 36,36 4,36"
-            stroke="currentColor"
-            strokeWidth="2.2"
-            strokeLinejoin="round"
-            fill="none"
-          />
-          <line x1="20" y1="4" x2="20" y2="27" stroke="currentColor" strokeWidth="1.8" />
-          <line x1="20" y1="27" x2="4" y2="36" stroke="currentColor" strokeWidth="1.8" />
-          <line x1="20" y1="27" x2="36" y2="36" stroke="currentColor" strokeWidth="1.8" />
-          <polygon
-            points="20,13 27,27 13,27"
-            stroke="currentColor"
-            strokeWidth="1.2"
-            fill="none"
-          />
-        </svg>
+          priority
+        />
       </div>
     </div>
   );
@@ -78,24 +65,14 @@ export function LoadingState({
     >
       <DadanSpinner size={size} />
 
-      {/* ── Brand Label ── */}
-      <div className="mt-6 flex flex-col items-center gap-1.5">
-        <span
-          className={cn(
-            "font-heading font-bold tracking-[0.3em] text-ds-secondary uppercase",
-            size === "sm" && "text-xs",
-            size === "md" && "text-base sm:text-lg",
-            size === "lg" && "text-xl sm:text-2xl"
-          )}
-        >
-          DADAN
-        </span>
-        {label ? (
+      {/* ── Optional Loading Label ── */}
+      {label ? (
+        <div className="mt-6 flex flex-col items-center gap-1.5">
           <span className="font-body text-xs tracking-widest text-ds-text-secondary uppercase">
             {label}
           </span>
-        ) : null}
-      </div>
+        </div>
+      ) : null}
     </div>
   );
 }

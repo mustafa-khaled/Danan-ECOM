@@ -4,6 +4,7 @@ import {
   Injectable,
   UnauthorizedException,
 } from "@nestjs/common";
+import { ConfigService } from "@nestjs/config";
 import { JwtService } from "@nestjs/jwt";
 import type { ClientSession } from "@dadan/types";
 import type { Request } from "express";
@@ -22,6 +23,7 @@ export class ClientGuard implements CanActivate {
     private readonly jwt: JwtService,
     private readonly redis: RedisService,
     private readonly prisma: PrismaService,
+    private readonly config: ConfigService,
   ) {}
 
   async canActivate(context: ExecutionContext): Promise<boolean> {
@@ -32,6 +34,8 @@ export class ClientGuard implements CanActivate {
       throw new UnauthorizedException(AUTH_FAILURE_MESSAGE);
     }
 
+    const secret = this.config.getOrThrow<string>("JWT_SECRET");
+
     try {
       const payload = await this.jwt.verifyAsync<{
         sub: string;
@@ -39,7 +43,7 @@ export class ClientGuard implements CanActivate {
         visibilityGroups: string[];
         aud?: string;
         jti?: string;
-      }>(token, { algorithms: ["HS256"] });
+      }>(token, { secret, algorithms: ["HS256"] });
 
       if (payload.aud !== JWT_AUDIENCE_CLIENT) {
         throw new UnauthorizedException(AUTH_FAILURE_MESSAGE);

@@ -1,6 +1,6 @@
 export interface CartItem {
   id: string;
-  expiresAt: string;
+  addedAt: string;
   piece?: {
     id: string;
     serialNumber: string;

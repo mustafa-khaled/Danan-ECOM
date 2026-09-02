@@ -5,20 +5,34 @@ const serverSchema = z.object({
   WEB_ORIGIN: z.string().url().optional(),
 });
 
-const clientSchema = z.object({
-  NEXT_PUBLIC_API_URL: z.string().min(1).default("/backend"),
-  NEXT_PUBLIC_PAYMENT_MODE: z.enum(["mock", "live"]).default("mock"),
-  NEXT_PUBLIC_VAT_RATE: z
-    .string()
-    .regex(/^\d+(\.\d+)?$/)
-    .default("0.15"),
-  // Tap's public key (pk_test_*/pk_live_*) — safe to expose to the browser,
-  // used by the Web Card SDK to tokenize card details. Required when
-  // NEXT_PUBLIC_PAYMENT_MODE=live; unused in mock mode.
-  NEXT_PUBLIC_TAP_PUBLIC_KEY: z.string().optional().default(""),
-  // Tap merchant ID, required by the Card SDK's `merchant.id` config field.
-  NEXT_PUBLIC_TAP_MERCHANT_ID: z.string().optional().default(""),
-});
+const clientSchema = z
+  .object({
+    NEXT_PUBLIC_API_URL: z.string().min(1).default("/backend"),
+    NEXT_PUBLIC_PAYMENT_MODE: z.enum(["mock", "live"]).default("mock"),
+    NEXT_PUBLIC_VAT_RATE: z
+      .string()
+      .regex(/^\d+(\.\d+)?$/)
+      .default("0.15"),
+    // Tap's public key (pk_test_*/pk_live_*) — safe to expose to the browser,
+    // used by the Web Card SDK to tokenize card details. Required when
+    // NEXT_PUBLIC_PAYMENT_MODE=live; unused in mock mode.
+    NEXT_PUBLIC_TAP_PUBLIC_KEY: z.string().optional().default(""),
+    // Tap merchant ID for the Card SDK's `merchant.id` field. Optional per
+    // Tap's SDK reference — omitted entirely when blank.
+    NEXT_PUBLIC_TAP_MERCHANT_ID: z.string().optional().default(""),
+  })
+  .superRefine((value, ctx) => {
+    // Without this the card iframe renders empty and tokenization fails with no
+    // visible error, which is very hard to diagnose from the browser alone.
+    if (value.NEXT_PUBLIC_PAYMENT_MODE === "live" && !value.NEXT_PUBLIC_TAP_PUBLIC_KEY) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ["NEXT_PUBLIC_TAP_PUBLIC_KEY"],
+        message:
+          "NEXT_PUBLIC_TAP_PUBLIC_KEY is required when NEXT_PUBLIC_PAYMENT_MODE=live",
+      });
+    }
+  });
 
 function parseEnv<T extends z.ZodTypeAny>(
   schema: T,

@@ -1,5 +1,6 @@
 import { randomUUID } from "node:crypto";
 import { HttpException, HttpStatus, Injectable, UnauthorizedException } from "@nestjs/common";
+import { ConfigService } from "@nestjs/config";
 import { JwtService } from "@nestjs/jwt";
 import * as bcrypt from "bcrypt";
 import { ActorType } from "@dadan/db";
@@ -12,6 +13,7 @@ import {
   JWT_AUDIENCE_ADMIN,
   RATE_LIMIT_MAX,
   RATE_LIMIT_WINDOW_SECONDS,
+  adminLoginEmailKey,
   getAccessTokenSeconds,
   getAdminRefreshSeconds,
   tokenDenyListKey,
@@ -36,6 +38,7 @@ export class AdminAuthService {
     private readonly audit: AuditService,
     private readonly redis: RedisService,
     private readonly refreshTokens: RefreshTokenService,
+    private readonly config: ConfigService,
   ) {}
 
   async login(email: string, password: string, ipAddress: string): Promise<AdminAuthTokens> {
@@ -49,16 +52,24 @@ export class AdminAuthService {
       throw new HttpException("Too many login attempts", HttpStatus.TOO_MANY_REQUESTS);
     }
 
+    const normalizedEmail = email.toLowerCase().trim();
+    const emailKey = adminLoginEmailKey(normalizedEmail);
+    if ((await this.redis.getCount(emailKey)) >= RATE_LIMIT_MAX) {
+      throw new HttpException("Too many login attempts", HttpStatus.TOO_MANY_REQUESTS);
+    }
+
     const admin = await this.prisma.db.adminUser.findUnique({
-      where: { email: email.toLowerCase().trim() },
+      where: { email: normalizedEmail },
     });
 
     if (!admin?.isActive) {
+      await this.redis.incrementWithExpiry(emailKey, RATE_LIMIT_WINDOW_SECONDS);
       throw new UnauthorizedException(AUTH_FAILURE_MESSAGE);
     }
 
     const valid = await bcrypt.compare(password, admin.passwordHash);
     if (!valid) {
+      await this.redis.incrementWithExpiry(emailKey, RATE_LIMIT_WINDOW_SECONDS);
       throw new UnauthorizedException(AUTH_FAILURE_MESSAGE);
     }
 
@@ -211,6 +222,7 @@ export class AdminAuthService {
     role: string;
     displayName: string;
   }): Promise<string> {
+    const secret = this.config.getOrThrow<string>("ADMIN_JWT_SECRET");
     return this.jwt.signAsync(
       {
         sub: admin.id,
@@ -220,7 +232,7 @@ export class AdminAuthService {
         aud: JWT_AUDIENCE_ADMIN,
         jti: randomUUID(),
       },
-      { expiresIn: getAccessTokenSeconds() },
+      { secret, expiresIn: getAccessTokenSeconds() },
     );
   }
 }

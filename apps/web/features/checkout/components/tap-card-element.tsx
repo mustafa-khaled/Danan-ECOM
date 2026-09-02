@@ -24,6 +24,8 @@ interface TapCardElementProps {
   onSuccess: (tokenId: string) => void;
   onError: (message: string) => void;
   onReady?: () => void;
+  /** Shown when no Tap public key is configured. */
+  configError: string;
 }
 
 const CURRENCY_MAP: Partial<Record<string, Currencies>> = {
@@ -45,15 +47,30 @@ const CURRENCY_MAP: Partial<Record<string, Currencies>> = {
  * touches our frontend or backend, only the resulting `tok_...` token does.
  */
 export const TapCardElement = forwardRef<TapCardElementHandle, TapCardElementProps>(
-  function TapCardElement({ amount, currency, locale, onSuccess, onError, onReady }, ref) {
+  function TapCardElement(
+    { amount, currency, locale, onSuccess, onError, onReady, configError },
+    ref,
+  ) {
     useImperativeHandle(ref, () => ({
       tokenize: () => tokenize(),
     }));
 
+    // Without a public key the SDK mounts an empty iframe and tokenization
+    // fails silently, so surface the misconfiguration instead.
+    if (!TAP_PUBLIC_KEY) {
+      return (
+        <p role="alert" className="text-sm text-ds-error">
+          {configError}
+        </p>
+      );
+    }
+
     return (
       <TapCard
         publicKey={TAP_PUBLIC_KEY}
-        merchant={{ id: TAP_MERCHANT_ID }}
+        // Optional per Tap's SDK reference — omitted entirely when unset,
+        // since passing an empty id makes the SDK reject the configuration.
+        {...(TAP_MERCHANT_ID ? { merchant: { id: TAP_MERCHANT_ID } } : {})}
         transaction={{
           amount,
           currency: CURRENCY_MAP[currency.toUpperCase()] ?? Currencies.SAR,

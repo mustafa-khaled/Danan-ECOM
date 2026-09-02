@@ -33,6 +33,7 @@ export interface ClientAuthTokens {
 @Injectable()
 export class AuthService {
   private readonly saltRounds: number;
+  private readonly jwtSecret: string;
 
   constructor(
     private readonly prisma: PrismaService,
@@ -43,6 +44,7 @@ export class AuthService {
     config: ConfigService,
   ) {
     this.saltRounds = parseInt(config.get<string>("HOUSE_KEY_SALT") ?? "12", 10);
+    this.jwtSecret = config.getOrThrow<string>("JWT_SECRET");
   }
 
   async validateKey(
@@ -278,6 +280,7 @@ export class AuthService {
     };
 
     return this.jwt.signAsync(payload, {
+      secret: this.jwtSecret,
       expiresIn: getAccessTokenSeconds(),
     });
   }

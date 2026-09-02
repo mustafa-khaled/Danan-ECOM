@@ -108,7 +108,8 @@ model Client {
   orders            Order[]
   ownershipRecords  OwnershipRecord[]
   certificates      Certificate[]
-  cartItems         CartItem[]
+  cartItems             CartItem[]
+  checkoutReservations  CheckoutReservation[]
 
   @@index([houseKeyPrefix, isActive])
 }
@@ -203,7 +204,8 @@ model Piece {
   verificationLogs VerificationLog[]
   orderItems       OrderItem[]
   savedByClients   SavedPiece[]
-  cartItem         CartItem?
+  cartItems             CartItem[]
+  checkoutReservation   CheckoutReservation?
 
   @@index([currentOwnerId])
   @@index([designId, status])
@@ -393,11 +395,24 @@ model AuditLog {
 }
 
 model CartItem {
+  id       String   @id @default(uuid())
+  clientId String
+  pieceId  String
+  addedAt  DateTime @default(now())
+
+  client Client @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  piece  Piece  @relation(fields: [pieceId], references: [id], onDelete: Cascade)
+
+  @@unique([clientId, pieceId])
+  @@index([clientId])
+}
+
+model CheckoutReservation {
   id        String   @id @default(uuid())
   clientId  String
   pieceId   String   @unique
-  addedAt   DateTime @default(now())
   expiresAt DateTime
+  createdAt DateTime @default(now())
 
   client Client @relation(fields: [clientId], references: [id], onDelete: Cascade)
   piece  Piece  @relation(fields: [pieceId], references: [id], onDelete: Cascade)

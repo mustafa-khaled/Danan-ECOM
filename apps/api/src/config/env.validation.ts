@@ -10,7 +10,18 @@ export const envSchema = z
     /** Statement timeout in milliseconds. Prevents runaway queries. Default: 30000 (30s). */
     DATABASE_STATEMENT_TIMEOUT_MS: z.coerce.number().int().min(1000).max(300_000).default(30_000),
     REDIS_URL: z.string().min(1),
+    /**
+     * Time-to-first-byte budget for a request. Kept under nginx's 30s
+     * proxy_read_timeout so the API reports the timeout itself.
+     */
+    REQUEST_TIMEOUT_MS: z.coerce.number().int().min(1000).max(120_000).default(25_000),
     JWT_SECRET: z.string().min(32),
+    /**
+     * Signs admin tokens. Separate from JWT_SECRET so a leak of the client
+     * signing key cannot be used to mint admin sessions; the `aud` claim check
+     * in the guards is then no longer the only thing separating the two.
+     */
+    ADMIN_JWT_SECRET: z.string().min(32),
     HOUSE_KEY_SALT: z.coerce.number().int().min(4).max(20).default(12),
     CLIENT_SESSION_DAYS: z.coerce.number().int().min(1).max(90).default(7),
     ACCESS_TOKEN_MINUTES: z.coerce.number().int().min(1).max(60).default(15),
@@ -37,6 +48,8 @@ export const envSchema = z
     PAYMENT_PROVIDER_KEY: z.string().optional(),
     PAYMENT_PROVIDER_SECRET: z.string().optional(),
     PAYMENT_WEBHOOK_URL: z.string().url().optional().or(z.literal("")),
+    /** Where Tap returns the cardholder after 3-D Secure. Falls back to WEB_ORIGIN. */
+    PAYMENT_REDIRECT_URL: z.string().url().optional().or(z.literal("")),
     ALLOW_MOCK_PAYMENTS: z.enum(["true", "false"]).optional(),
     VAT_RATE: z.coerce.number().min(0).max(1).default(0.15),
     ADMIN_EMAIL: z.string().email().optional().or(z.literal("")),
@@ -63,7 +76,12 @@ export const envSchema = z
         "PAYMENT_PROVIDER_KEY must be a valid Tap secret key (sk_live_* or sk_test_*) in production",
       path: ["PAYMENT_PROVIDER_KEY"],
     },
-  );
+  )
+  .refine((data) => data.ADMIN_JWT_SECRET !== data.JWT_SECRET, {
+    message:
+      "ADMIN_JWT_SECRET must differ from JWT_SECRET so a leaked client signing key cannot mint admin sessions",
+    path: ["ADMIN_JWT_SECRET"],
+  });
 
 export type EnvConfig = z.infer<typeof envSchema>;
 

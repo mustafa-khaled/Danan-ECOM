@@ -100,26 +100,34 @@ describe("Critical Path Tests (e2e)", () => {
     });
 
     it("only one concurrent checkout succeeds for the same piece", async () => {
-      // Both clients add the same piece to cart
+      // Both clients add the same piece to their carts freely — no blocking
       await request(http)
         .post("/client/cart")
         .set("Cookie", amiraCookie)
         .send({ pieceId })
         .expect(201);
 
-      // Wait for hold to allow the second client
-      // (second client gets PIECE_RESERVED since hold is active)
-      const secondAdd = await request(http)
+      await request(http)
         .post("/client/cart")
         .set("Cookie", laylaCookie)
-        .send({ pieceId });
+        .send({ pieceId })
+        .expect(201);
 
-      // If first hold is active, second gets rejected with PIECE_RESERVED
-      if (secondAdd.status === 400) {
-        expect(secondAdd.body.messageKey).toContain("PIECE_RESERVED");
-      }
+      // First client reserves at checkout step 1 — acquires the 7-min hold
+      await request(http)
+        .post("/client/checkout/reserve")
+        .set("Cookie", amiraCookie)
+        .expect(200);
 
-      // First client checks out
+      // Second client attempts to reserve — gets PIECE_RESERVED because Amira holds it
+      const secondReserve = await request(http)
+        .post("/client/checkout/reserve")
+        .set("Cookie", laylaCookie);
+
+      expect(secondReserve.status).toBe(400);
+      expect(secondReserve.body.message).toContain("PIECE_RESERVED");
+
+      // First client completes checkout
       const checkout1 = await request(http)
         .post("/client/checkout")
         .set("Cookie", amiraCookie)
@@ -347,6 +355,86 @@ describe("Critical Path Tests (e2e)", () => {
         .expect(200);
 
       expect(adminPiece.body.status).toBe("AVAILABLE");
+    });
+  });
+
+  describe("7b. 3-D Secure redirect flow", () => {
+    it("returns a redirect instead of an order, then settles on confirm", async () => {
+      const designs = await request(http)
+        .get("/admin/designs")
+        .set("Cookie", adminCookie)
+        .expect(200);
+      const designId = designs.body.items[0].id;
+
+      const piece = await request(http)
+        .post("/admin/pieces")
+        .set("Cookie", adminCookie)
+        .send({ designId })
+        .expect(201);
+
+      await request(http)
+        .post("/client/cart")
+        .set("Cookie", amiraCookie)
+        .send({ pieceId: piece.body.id })
+        .expect(201);
+
+      await request(http)
+        .post("/client/checkout/reserve")
+        .set("Cookie", amiraCookie)
+        .expect(200);
+
+      const shippingAddress = {
+        fullName: "Amira",
+        line1: "Street 1",
+        city: "Riyadh",
+        region: "Riyadh",
+        country: "SA",
+        postalCode: "11564",
+        phone: "+966500000001",
+      };
+
+      // The mock provider treats a '3ds' token as a charge needing authentication.
+      const checkout = await request(http)
+        .post("/client/checkout")
+        .set("Cookie", amiraCookie)
+        .send({ shippingAddress, paymentMethod: "CARD", paymentToken: "3ds" });
+
+      expect(checkout.status).toBe(201);
+      expect(checkout.body.status).toBe("requires_action");
+      expect(checkout.body.redirectUrl).toContain("tap_id=");
+      expect(checkout.body.orderId).toBeDefined();
+
+      // Pieces must not change hands until the cardholder authenticates.
+      const heldPiece = await request(http)
+        .get(`/admin/pieces/${piece.body.id}`)
+        .set("Cookie", adminCookie)
+        .expect(200);
+      expect(heldPiece.body.status).toBe("AVAILABLE");
+
+      const tapId = new URL(checkout.body.redirectUrl).searchParams.get("tap_id");
+
+      const confirm = await request(http)
+        .post("/client/checkout/confirm")
+        .set("Cookie", amiraCookie)
+        .send({ tapId })
+        .expect(200);
+
+      expect(confirm.body.status).toBe("paid");
+      expect(confirm.body.orderId).toBe(checkout.body.orderId);
+
+      const ownedPiece = await request(http)
+        .get(`/admin/pieces/${piece.body.id}`)
+        .set("Cookie", adminCookie)
+        .expect(200);
+      expect(ownedPiece.body.status).toBe("OWNED");
+
+      // Replaying the confirmation must not double-process the order.
+      const replay = await request(http)
+        .post("/client/checkout/confirm")
+        .set("Cookie", amiraCookie)
+        .send({ tapId })
+        .expect(200);
+      expect(replay.body.status).toBe("paid");
     });
   });
 

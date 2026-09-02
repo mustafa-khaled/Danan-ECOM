@@ -1,10 +1,29 @@
+import Link from "next/link";
+import { Plus } from "lucide-react";
 import {
   CollectionsStats,
   CollectionsTableFilter,
   CollectionTable,
 } from "@/features/admin";
+import { fetchAdminCollections } from "@/features/admin/api/fetch-admin-collections";
+import { getAdminCookieHeader } from "@/features/auth/server/admin-session";
+import { ADMIN_PAGE_SIZE, parseAdminPage } from "@/shared/lib/parse-admin-page";
 
-export default async function CollectionsPage() {
+export default async function CollectionsPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ page?: string }>;
+}) {
+  const { page: pageParam } = await searchParams;
+  const page = parseAdminPage(pageParam);
+  const cookieHeader = await getAdminCookieHeader();
+
+  const { items, total } = await fetchAdminCollections(
+    page,
+    ADMIN_PAGE_SIZE,
+    cookieHeader,
+  );
+
   return (
     <>
       <div className="bg-white h-15 px-7.5 flex items-center font-bold text-h5 text-neutral-800">
@@ -12,12 +31,21 @@ export default async function CollectionsPage() {
       </div>
 
       <div className="px-7.5 py-6.75">
-        <div className="bg-white h-190 rounded-3xl p-6 space-y-6">
-          <CollectionsStats />
+        <div className="bg-white rounded-3xl p-6 space-y-6">
+          <div className="flex items-center justify-between">
+            <CollectionsStats />
+            <Link
+              href="/admin/collections/new"
+              className="inline-flex items-center gap-2 h-12 px-5 text-sm font-semibold text-teal-900 bg-teal-400 hover:bg-teal-500 transition-colors"
+            >
+              <Plus className="h-4 w-4" />
+              Add New Collection
+            </Link>
+          </div>
 
-          <div className="space-y-[16px]">
+          <div className="space-y-4">
             <CollectionsTableFilter />
-            <CollectionTable />
+            <CollectionTable items={items} total={total} />
           </div>
         </div>
       </div>

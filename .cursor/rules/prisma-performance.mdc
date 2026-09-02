@@ -1,0 +1,107 @@
+---
+description: Prisma v7 + PostgreSQL query performance anti-patterns and correct patterns
+globs: apps/api/src/**/*.ts,packages/db/src/**/*.ts
+alwaysApply: false
+---
+
+# Prisma v7 Performance Rules
+
+## 1. Single PrismaClient — Never Instantiate in Services
+
+```typescript
+// ❌ BAD — creates a new connection pool per injection
+private prisma = new PrismaClient();
+
+// ✅ GOOD — inject the shared DbContext
+constructor(private readonly db: DbContext) {}
+```
+
+## 2. No N+1 Queries
+
+```typescript
+// ❌ BAD — 1 + N queries
+const orders = await this.db.order.findMany();
+for (const order of orders) {
+  const items = await this.db.orderItem.findMany({ where: { orderId: order.id } });
+}
+
+// ✅ GOOD — single query
+const orders = await this.db.order.findMany({ include: { items: true } });
+```
+
+## 3. Always `select` Specific Fields on findMany
+
+```typescript
+// ❌ BAD — returns all columns, including blobs and secrets
+const users = await this.db.user.findMany();
+
+// ✅ GOOD — only what the caller needs
+const users = await this.db.user.findMany({
+  select: { id: true, email: true, name: true },
+});
+```
+
+## 4. Keyset Pagination — Avoid Prisma's Built-in Cursor on Large Tables
+
+Prisma cursor + skip + take + orderBy has a known bug (issue #27094) that omits `LIMIT`, causing full table scans.
+
+```typescript
+// ❌ BAD — may OOM on large tables (no LIMIT generated)
+const page = await this.db.product.findMany({
+  cursor: { id: lastId },
+  skip: 1,
+  take: 20,
+  orderBy: [{ createdAt: 'desc' }, { id: 'desc' }],
+});
+
+// ✅ GOOD — explicit keyset bounds always produce a LIMIT
+const page = await this.db.product.findMany({
+  take: 20,
+  orderBy: [{ createdAt: 'desc' }, { id: 'desc' }],
+  where: {
+    OR: [
+      { createdAt: { lt: lastRow.createdAt } },
+      { createdAt: { equals: lastRow.createdAt }, id: { lt: lastRow.id } },
+    ],
+  },
+});
+```
+
+## 5. `relationLoadStrategy: 'join'` for Relation Queries
+
+Collapses related data into a single SQL query. Do **not** use with `cursor`.
+
+```typescript
+// ✅ Single SQL with LATERAL JOIN
+const posts = await this.db.post.findMany({
+  relationLoadStrategy: 'join',
+  include: { author: true, tags: true },
+  where: { published: true },
+  take: 20,
+});
+```
+
+## 6. Aggregate on the DB, Not in Memory
+
+```typescript
+// ❌ BAD
+const all = await this.db.order.findMany();
+const count = all.length;
+
+// ✅ GOOD
+const count = await this.db.order.count({ where: { status: 'PENDING' } });
+```
+
+## 7. Parallel Reads with Promise.all
+
+```typescript
+// ❌ BAD — sequential, wastes time
+const users = await this.db.user.findMany(...);
+const products = await this.db.product.findMany(...);
+
+// ✅ GOOD — concurrent
+const [users, products] = await Promise.all([
+  this.db.user.findMany({ select: { id: true, email: true } }),
+  this.db.product.findMany({ select: { id: true, price: true } }),
+]);
+```

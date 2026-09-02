@@ -8,7 +8,7 @@ import {
 import { ConfigService } from "@nestjs/config";
 import { Cron, CronExpression } from "@nestjs/schedule";
 import { createHash } from "node:crypto";
-import { ActorType, PieceStatus } from "@dadan/db";
+import { ActorType, OrderStatus, PaymentStatus, PieceStatus } from "@dadan/db";
 import type { Locale, ShippingAddress } from "@dadan/types";
 import { localizeDesign, pickLocalized } from "../common/i18n/localize";
 import { AuditService } from "../audit/audit.service";
@@ -18,7 +18,34 @@ import { PrismaService } from "../prisma/prisma.service";
 import { StorageService } from "../storage/storage.service";
 import { VisibilityService } from "../visibility/visibility.service";
 
-const CART_HOLD_MINUTES = 30;
+// Must outlive Tap's 3-D Secure window (30 minutes) so a cardholder who takes
+// their time on the bank's OTP page does not lose the pieces mid-authentication.
+const CHECKOUT_HOLD_MINUTES = 35;
+
+export interface CheckoutPaidResult {
+  status: "paid";
+  orderId: string;
+  orderStatus: OrderStatus;
+  subtotal: number;
+  vatAmount: number;
+  totalAmount: number;
+  pieceSerials: string[];
+}
+
+/** The cardholder must complete 3-D Secure at `redirectUrl` before we capture. */
+export interface CheckoutRedirectResult {
+  status: "requires_action";
+  orderId: string;
+  redirectUrl: string;
+}
+
+export type CheckoutResult = CheckoutPaidResult | CheckoutRedirectResult;
+
+export interface CheckoutConfirmation {
+  /** `pending` means Tap has not settled yet; the webhook will finish the job. */
+  status: "paid" | "pending" | "failed";
+  orderId: string;
+}
 
 @Injectable()
 export class CartService {
@@ -36,7 +63,7 @@ export class CartService {
 
   async getCart(clientId: string, locale: Locale = "ar") {
     const dbItems = await this.prisma.db.cartItem.findMany({
-      where: { clientId, expiresAt: { gt: new Date() } },
+      where: { clientId },
     });
 
     const pieceIds = dbItems.map((i) => i.pieceId);
@@ -55,7 +82,6 @@ export class CartService {
           return {
             id: item.id,
             addedAt: item.addedAt,
-            expiresAt: item.expiresAt,
             piece: null,
           };
         }
@@ -64,7 +90,6 @@ export class CartService {
         return {
           id: item.id,
           addedAt: item.addedAt,
-          expiresAt: item.expiresAt,
           piece: {
             ...piece,
             design: {
@@ -122,14 +147,7 @@ export class CartService {
     if (!piece) throw new NotFoundException("errors.PIECE_NOT_FOUND");
     // Respect catalog curation: a client must not be able to buy a piece
     // whose design/collection is hidden from them (same rules as getDesignBySlug).
-    if (
-      !piece.design.isActive ||
-      !piece.design.collection.isVisible ||
-      !this.visibility.canAccess(clientGroups, piece.design.visibilityGroups) ||
-      !this.visibility.canAccess(clientGroups, piece.design.collection.visibilityGroups)
-    ) {
-      throw new NotFoundException("errors.PIECE_NOT_FOUND");
-    }
+    this.assertPieceVisible(piece, clientGroups);
     if (piece.status !== PieceStatus.AVAILABLE) {
       throw new BadRequestException("errors.PIECE_NOT_AVAILABLE");
     }
@@ -137,22 +155,10 @@ export class CartService {
       throw new BadRequestException("errors.PIECE_ALREADY_OWNED");
     }
 
-    const existingCart = await this.prisma.db.cartItem.findUnique({
-      where: { pieceId },
-    });
-    if (existingCart && existingCart.clientId !== clientId) {
-      if (existingCart.expiresAt > new Date()) {
-        throw new BadRequestException("errors.PIECE_RESERVED");
-      }
-      await this.prisma.db.cartItem.delete({ where: { id: existingCart.id } });
-    }
-
-    const expiresAt = new Date(Date.now() + CART_HOLD_MINUTES * 60 * 1000);
-
     await this.prisma.db.cartItem.upsert({
-      where: { pieceId },
-      create: { clientId, pieceId, expiresAt },
-      update: { clientId, expiresAt, addedAt: new Date() },
+      where: { clientId_pieceId: { clientId, pieceId } },
+      create: { clientId, pieceId },
+      update: { addedAt: new Date() },
     });
 
     return this.getCart(clientId, locale);
@@ -165,20 +171,82 @@ export class CartService {
     return { success: true };
   }
 
+  async reserveForCheckout(clientId: string, clientGroups: string[]) {
+    const cartItems = await this.prisma.db.cartItem.findMany({
+      where: { clientId },
+    });
+
+    if (cartItems.length === 0) {
+      throw new BadRequestException("errors.CART_EMPTY");
+    }
+
+    const pieceIds = cartItems.map((i) => i.pieceId);
+
+    const pieces = await this.prisma.db.piece.findMany({
+      where: { id: { in: pieceIds } },
+      include: { design: { include: { collection: true } } },
+    });
+    const pieceMap = new Map(pieces.map((p) => [p.id, p]));
+
+    for (const item of cartItems) {
+      const piece = pieceMap.get(item.pieceId);
+      if (!piece || piece.status !== PieceStatus.AVAILABLE || piece.currentOwnerId) {
+        throw new BadRequestException("errors.PIECE_NOT_AVAILABLE");
+      }
+      this.assertPieceVisible(piece, clientGroups);
+    }
+
+    const existingReservations = await this.prisma.db.checkoutReservation.findMany({
+      where: { pieceId: { in: pieceIds } },
+    });
+
+    const now = new Date();
+    for (const reservation of existingReservations) {
+      if (reservation.clientId !== clientId && reservation.expiresAt > now) {
+        throw new BadRequestException("errors.PIECE_RESERVED");
+      }
+    }
+
+    const expiresAt = new Date(Date.now() + CHECKOUT_HOLD_MINUTES * 60 * 1000);
+
+    await Promise.all(
+      pieceIds.map((pieceId) =>
+        this.prisma.db.checkoutReservation.upsert({
+          where: { pieceId },
+          create: { clientId, pieceId, expiresAt },
+          update: { clientId, expiresAt, createdAt: now },
+        }),
+      ),
+    );
+
+    return { reserved: true, expiresAt };
+  }
+
   async checkout(
     clientId: string,
+    clientGroups: string[],
     data: {
       shippingAddress: ShippingAddress;
       paymentMethod: PaymentMethod;
       paymentToken: string;
     },
-  ) {
+  ): Promise<CheckoutResult> {
     const cartItems = await this.prisma.db.cartItem.findMany({
-      where: { clientId, expiresAt: { gt: new Date() } },
+      where: { clientId },
     });
 
     if (cartItems.length === 0) {
       throw new BadRequestException("errors.CART_EMPTY");
+    }
+
+    // Verify all pieces still have an active reservation for this client
+    const pieceIds = cartItems.map((i) => i.pieceId);
+    const now = new Date();
+    const reservations = await this.prisma.db.checkoutReservation.findMany({
+      where: { pieceId: { in: pieceIds }, clientId, expiresAt: { gt: now } },
+    });
+    if (reservations.length !== pieceIds.length) {
+      throw new BadRequestException("errors.RESERVATION_EXPIRED");
     }
 
     const client = await this.prisma.db.client.findUniqueOrThrow({
@@ -186,9 +254,15 @@ export class CartService {
       select: { displayName: true, email: true },
     });
 
+    // Anchor idempotency to the reservation rather than the wall clock: retries
+    // of the same checkout reuse the key, while a fresh reserve starts a new one.
+    const reservationEpoch = Math.min(
+      ...reservations.map((r) => r.createdAt.getTime()),
+    );
+
     const pieces = await this.prisma.db.piece.findMany({
-      where: { id: { in: cartItems.map((i) => i.pieceId) } },
-      include: { design: true },
+      where: { id: { in: pieceIds } },
+      include: { design: { include: { collection: true } } },
     });
     const pieceMap = new Map(pieces.map((p) => [p.id, p]));
 
@@ -197,6 +271,7 @@ export class CartService {
       if (!piece || piece.status !== PieceStatus.AVAILABLE) {
         throw new BadRequestException("errors.PIECE_NOT_AVAILABLE");
       }
+      this.assertPieceVisible(piece, clientGroups);
     }
 
     const vatRate = this.config.get<number>("VAT_RATE") ?? 0.15;
@@ -215,8 +290,42 @@ export class CartService {
     const totalAmount = Math.round((subtotal + vatAmount) * 100) / 100;
     const currency = pieces[0]!.design.currency;
 
-    const sortedPieceIds = cartItems.map((i) => i.pieceId).sort().join("|");
-    const idempotencyKey = `checkout_${clientId}_${Date.now()}_${createHash("sha256").update(sortedPieceIds).digest("hex").slice(0, 16)}`;
+    const sortedPieceIds = pieceIds.sort().join("|");
+    const idempotencyKey = `checkout_${clientId}_${reservationEpoch}_${createHash("sha256").update(sortedPieceIds).digest("hex").slice(0, 16)}`;
+
+    // The order exists before the charge so that a 3DS redirect (which returns
+    // out-of-band, possibly via webhook) always has a row to reconcile against.
+    const order = await this.orders.createPendingOrder({
+      clientId,
+      pieceIds,
+      subtotalAmount: subtotal,
+      taxAmount: vatAmount,
+      taxRate: vatRate,
+      totalAmount,
+      currency,
+      paymentProvider: this.payments.providerName,
+      paymentMethod: data.paymentMethod,
+      shippingAddress: data.shippingAddress,
+      idempotencyKey,
+    });
+
+    const paidResult = (): CheckoutPaidResult => ({
+      status: "paid",
+      orderId: order.id,
+      orderStatus: OrderStatus.PAID,
+      subtotal,
+      vatAmount,
+      totalAmount,
+      pieceSerials: pieces.map((p) => p.serialNumber),
+    });
+
+    // Idempotent replay: this reservation already produced an order.
+    if (order.paymentStatus === PaymentStatus.PAID) {
+      return paidResult();
+    }
+    if (order.paymentReference) {
+      return this.resumeExistingCharge(order.id, order.paymentReference, paidResult);
+    }
 
     const payment = await this.payments.charge({
       token: data.paymentToken,
@@ -225,54 +334,147 @@ export class CartService {
       paymentMethod: data.paymentMethod,
       idempotencyKey,
       customer: { name: client.displayName, email: client.email },
-      metadata: { clientId, pieceIds: cartItems.map((i) => i.pieceId).join(",") },
+      metadata: { clientId, orderId: order.id, pieceIds: pieceIds.join(",") },
     });
 
-    if (!payment.success) {
+    if (payment.providerReference) {
+      await this.orders.attachPaymentReference(order.id, payment.providerReference);
+    }
+
+    if (payment.status === "failed") {
+      await this.orders.failOrderPayment(
+        order.id,
+        payment.failureCode ?? "PAYMENT_FAILED",
+      );
       throw new BadRequestException(
         payment.failureMessage ?? "errors.PAYMENT_FAILED",
       );
     }
 
-    let order;
-    try {
-      order = await this.orders.createPaidOrder({
+    if (payment.status === "requires_action") {
+      return {
+        status: "requires_action",
+        orderId: order.id,
+        redirectUrl: payment.redirectUrl!,
+      };
+    }
+
+    await this.confirmOrCompensate(
+      order.id,
+      clientId,
+      payment.providerReference!,
+      totalAmount,
+      currency,
+    );
+
+    return paidResult();
+  }
+
+  /**
+   * Called when the cardholder returns from Tap's 3-D Secure page. The `tapId`
+   * comes from the return URL and is therefore untrusted — the real status is
+   * fetched from Tap, and the resulting order must belong to the caller.
+   */
+  async confirmCheckout(clientId: string, tapId: string): Promise<CheckoutConfirmation> {
+    const charge = await this.payments.retrieveCharge(tapId);
+    if (!charge) {
+      throw new BadRequestException("errors.PAYMENT_FAILED");
+    }
+
+    const order = await this.orders.findOrderForCharge(
+      charge.id,
+      charge.metadata?.orderId,
+    );
+    if (!order || order.clientId !== clientId) {
+      throw new NotFoundException("errors.ORDER_NOT_FOUND");
+    }
+
+    // Tap's webhook often lands before the cardholder's browser gets back here.
+    // Trust our own settled state over the charge's (briefly stale) status.
+    if (order.paymentStatus === PaymentStatus.PAID) {
+      return { status: "paid", orderId: order.id };
+    }
+
+    const status = this.payments.classifyChargeStatus(charge);
+
+    if (status === "captured") {
+      await this.confirmOrCompensate(
+        order.id,
         clientId,
-        pieceIds: cartItems.map((i) => i.pieceId),
-        subtotalAmount: subtotal,
-        taxAmount: vatAmount,
-        taxRate: vatRate,
-        totalAmount,
-        currency,
-        paymentProvider: this.payments.providerName,
-        paymentMethod: data.paymentMethod,
-        paymentReference: payment.providerReference!,
-        shippingAddress: data.shippingAddress,
-        idempotencyKey,
+        charge.id,
+        Number(order.totalAmount),
+        order.currency,
+      );
+      return { status: "paid", orderId: order.id };
+    }
+
+    if (status === "requires_action") {
+      // The bank has not finished authenticating yet; the webhook will settle it.
+      return { status: "pending", orderId: order.id };
+    }
+
+    await this.orders
+      .failOrderPayment(order.id, charge.status)
+      .catch(() => undefined);
+    return { status: "failed", orderId: order.id };
+  }
+
+  /**
+   * Settles an order whose charge already exists, refunding if the pieces were
+   * lost to a concurrent buyer between authorisation and confirmation.
+   */
+  private async confirmOrCompensate(
+    orderId: string,
+    clientId: string,
+    providerReference: string,
+    totalAmount: number,
+    currency: string,
+  ) {
+    try {
+      await this.orders.confirmOrderPayment(orderId, {
+        paymentReference: providerReference,
       });
     } catch (error) {
-      // The charge succeeded but the order could not be created (e.g. a piece
-      // was sold concurrently). Refund so the client is never charged for an
-      // order that does not exist.
       await this.refundFailedCheckout(
         clientId,
-        payment.providerReference!,
+        providerReference,
         totalAmount,
         currency,
         error,
       );
+      await this.orders
+        .failOrderPayment(orderId, "CONFIRMATION_FAILED")
+        .catch(() => undefined);
       if (error instanceof BadRequestException) throw error;
       throw new InternalServerErrorException("errors.CHECKOUT_REFUNDED");
     }
+  }
 
-    return {
-      orderId: order.id,
-      orderStatus: order.status,
-      subtotal,
-      vatAmount,
-      totalAmount,
-      pieceSerials: pieces.map((p) => p.serialNumber),
-    };
+  /**
+   * A retried checkout landed on an order that already has a charge. Ask Tap
+   * what actually happened rather than charging the customer a second time.
+   */
+  private async resumeExistingCharge(
+    orderId: string,
+    providerReference: string,
+    paidResult: () => CheckoutPaidResult,
+  ): Promise<CheckoutResult> {
+    const charge = await this.payments.retrieveCharge(providerReference);
+
+    if (charge?.status === "CAPTURED") {
+      await this.orders.confirmOrderPayment(orderId, { paymentReference: charge.id });
+      return paidResult();
+    }
+    if (charge?.transaction?.url) {
+      return {
+        status: "requires_action",
+        orderId,
+        redirectUrl: charge.transaction.url,
+      };
+    }
+
+    await this.orders.failOrderPayment(orderId, charge?.status ?? "CHARGE_UNKNOWN");
+    throw new BadRequestException("errors.PAYMENT_FAILED");
   }
 
   private async refundFailedCheckout(
@@ -335,18 +537,53 @@ export class CartService {
   }
 
   async cleanupExpiredItems() {
-    await this.prisma.db.cartItem.deleteMany({
+    await this.prisma.db.checkoutReservation.deleteMany({
       where: { expiresAt: { lte: new Date() } },
     });
+  }
+
+  /**
+   * Same catalog rules as add-to-cart. Re-checked at reserve/checkout so a
+   * visibility-group revocation after the item was added cannot still buy it.
+   */
+  private assertPieceVisible(
+    piece: {
+      design: {
+        isActive: boolean;
+        visibilityGroups: string[];
+        collection: { isVisible: boolean; visibilityGroups: string[] };
+      };
+    },
+    clientGroups: string[],
+  ): void {
+    if (
+      !piece.design.isActive ||
+      !piece.design.collection.isVisible ||
+      !this.visibility.canAccess(clientGroups, piece.design.visibilityGroups) ||
+      !this.visibility.canAccess(clientGroups, piece.design.collection.visibilityGroups)
+    ) {
+      throw new NotFoundException("errors.PIECE_NOT_FOUND");
+    }
   }
 }
 
 @Injectable()
 export class CartCleanupService {
-  constructor(private readonly cart: CartService) {}
+  private readonly logger = new Logger(CartCleanupService.name);
+
+  constructor(
+    private readonly cart: CartService,
+    private readonly orders: OrdersService,
+  ) {}
 
   @Cron(CronExpression.EVERY_5_MINUTES)
   handleCleanup() {
     void this.cart.cleanupExpiredItems();
+    // Releases pieces held by checkouts abandoned partway through 3-D Secure.
+    void this.orders.expireStalePendingOrders().catch((error: unknown) => {
+      this.logger.error(
+        `Failed to expire stale pending orders: ${error instanceof Error ? error.message : String(error)}`,
+      );
+    });
   }
 }

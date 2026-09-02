@@ -1,7 +1,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { getLocale } from "next-intl/server";
+import { getLocale, getTranslations } from "next-intl/server";
 import { SectionHead, SerialBadge, StatusPill } from "@/components/ui";
 import { ApiError } from "@/shared/lib/send-request";
 import { fetchOrder } from "@/features/orders";
@@ -21,6 +21,7 @@ export default async function OrderDetailPage({
   const { id } = await params;
   const cookie = await getSessionCookieHeader();
   const locale = (await getLocale()) as Locale;
+  const t = await getTranslations("orders");
 
   let order;
   try {
@@ -41,7 +42,7 @@ export default async function OrderDetailPage({
         <ol className="flex flex-wrap items-center gap-2 text-(--color-text-muted)">
           <li>
             <Link href="/beta/orders" className="hover:text-(--color-accent)">
-              Orders
+              {t("backToList")}
             </Link>
           </li>
           <li aria-hidden="true">/</li>
@@ -53,8 +54,8 @@ export default async function OrderDetailPage({
 
       <header className="mb-8 flex flex-wrap items-start justify-between gap-4">
         <SectionHead
-          title="Order Details"
-          subtitle={`Placed ${new Date(order.placedAt).toLocaleString()}`}
+          title={t("details")}
+          subtitle={t("placed", { date: new Date(order.placedAt).toLocaleString() })}
         />
         <div className="flex items-center gap-4">
           <StatusPill status={order.status} />
@@ -64,7 +65,7 @@ export default async function OrderDetailPage({
 
       <div className="grid gap-8 lg:grid-cols-2">
         <section className="border border-border bg-white p-6">
-          <h2 className="font-english text-xl text-(--color-text)">Items</h2>
+          <h2 className="font-english text-xl text-(--color-text)">{t("items")}</h2>
           <ul className="mt-4 space-y-4">
             {order.items.map((item) => (
               <li key={item.piece.id} className="flex gap-4">
@@ -94,14 +95,14 @@ export default async function OrderDetailPage({
             ))}
           </ul>
           <p className="mt-6 font-english text-xl text-(--color-text)">
-            Total: {formatPrice(order.totalAmount, order.currency, locale)}
+            {t("total")} {formatPrice(order.totalAmount, order.currency, locale)}
           </p>
         </section>
 
         <section className="space-y-6">
           <div className="border border-border bg-white p-6">
             <h2 className="font-english text-xl text-(--color-text)">
-              Shipping
+              {t("shipping")}
             </h2>
             <address className="mt-4 not-italic text-sm leading-relaxed text-(--color-text-muted)">
               {address.fullName}
@@ -124,15 +125,15 @@ export default async function OrderDetailPage({
 
           <div className="border border-border bg-white p-6">
             <h2 className="font-english text-xl text-(--color-text)">
-              Payment
+              {t("payment")}
             </h2>
             <dl className="mt-4 space-y-2 text-sm">
               <div className="flex justify-between">
-                <dt className="text-(--color-text-muted)">Provider</dt>
+                <dt className="text-(--color-text-muted)">{t("provider")}</dt>
                 <dd>{order.paymentProvider}</dd>
               </div>
               <div className="flex justify-between">
-                <dt className="text-(--color-text-muted)">Reference</dt>
+                <dt className="text-(--color-text-muted)">{t("reference")}</dt>
                 <dd className="font-mono text-xs">{order.paymentReference}</dd>
               </div>
             </dl>

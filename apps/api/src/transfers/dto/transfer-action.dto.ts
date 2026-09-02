@@ -1,9 +1,9 @@
-import { IsOptional, IsString } from "class-validator";
+import { IsOptional, IsString, MaxLength } from "class-validator";
 
 export class ApproveTransferDto {
-  @IsOptional() @IsString() notes?: string;
+  @IsOptional() @IsString() @MaxLength(2000) notes?: string;
 }
 
 export class RejectTransferDto {
-  @IsString() reason!: string;
+  @IsString() @MaxLength(2000) reason!: string;
 }

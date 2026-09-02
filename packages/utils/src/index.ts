@@ -1,5 +1,8 @@
 import { createHmac, randomUUID, timingSafeEqual } from "node:crypto";
 
+/** Marks catalog rows that no client may ever see, whatever their groups. */
+export const ADMIN_ONLY_VISIBILITY_GROUP = "admin-only";
+
 export function normalizeVisibilityGroup(group: string): string {
   return group.trim().toLowerCase().replace(/\s+/g, "-");
 }
@@ -8,7 +11,7 @@ export function hasVisibilityAccess(
   clientGroups: string[],
   itemGroups: string[],
 ): boolean {
-  if (itemGroups.includes("admin-only")) {
+  if (itemGroups.includes(ADMIN_ONLY_VISIBILITY_GROUP)) {
     return false;
   }
   if (itemGroups.length === 0) {

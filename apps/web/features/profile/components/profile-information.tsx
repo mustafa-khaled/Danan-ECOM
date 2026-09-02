@@ -1,5 +1,6 @@
 import Container from "@/components/ui/container";
 import Link from "next/link";
+import { getTranslations } from "next-intl/server";
 import { getSessionCookieHeader } from "@/features/auth/server/session";
 import { fetchProfileSummary } from "@/features/profile";
 
@@ -10,6 +11,8 @@ export default async function ProfileInformation() {
   if (!summary) {
     return null;
   }
+
+  const t = await getTranslations("profile");
 
   const displayName = summary.displayName;
   const memberSinceYear = new Date(summary.memberSince)
@@ -29,24 +32,22 @@ export default async function ProfileInformation() {
               {displayName}
             </h2>
             <p className="lg:text-h3 text-h6 font-semibold">
-              Member Since {memberSinceYear}
+              {t("memberSince", { date: memberSinceYear })}
             </p>
           </div>
 
-          {/* Mobile View */}
+          {/* Stats row */}
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 w-full mt-[32px]">
             <Link href="/beta/profile/wardrobe" className="lg:text-left md:text-[25px] xl:text-[32px] font-semibold text-neutral-800 text-h6">
-              {ownedCount} Owned {ownedCount === 1 ? "Piece" : "Pieces"}
+              {t("ownedPieces", { count: ownedCount })}
             </Link>
             <Link href="/beta/profile/certificates"
-            className="xl:text-[32px] md:text-[25px] font-semibold text-neutral-800 text-h6"
+              className="xl:text-[32px] md:text-[25px] font-semibold text-neutral-800 text-h6"
             >
-              {certificatesCount}{" "}
-              {certificatesCount === 1 ? "Certificate" : "Certificates"}
+              {t("certificatesCount", { count: certificatesCount })}
             </Link>
             <Link href="/beta/profile/transfers" className="lg:text-right md:text-[25px] xl:text-[32px] font-semibold text-neutral-800 text-h6">
-              {pendingTransfersCount} Pending{" "}
-              {pendingTransfersCount === 1 ? "Transfer" : "Transfers"}
+              {t("pendingTransfersCount", { count: pendingTransfersCount })}
             </Link>
           </div>
         </div>

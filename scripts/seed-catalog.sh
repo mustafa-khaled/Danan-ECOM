@@ -73,6 +73,8 @@ if [ "$ENVIRONMENT" = "production" ]; then
   export SEED_ALLOW_PRODUCTION=true
 fi
 
+export SEED_ALLOW_DESTRUCTIVE=true
+
 # --- Print status ---
 echo "=== DADAN Catalog Seeder ==="
 echo "  Environment: $ENVIRONMENT"

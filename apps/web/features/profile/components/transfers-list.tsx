@@ -3,6 +3,7 @@
 import { useState, useMemo } from "react";
 import Link from "next/link";
 import { ArrowRight } from "lucide-react";
+import { useTranslations } from "next-intl";
 import { EmptyState } from "@/shared/components/feedback/empty-state";
 import {
   Select,
@@ -26,6 +27,7 @@ export function TransfersList({
   emptyTitle,
   emptyDescription,
 }: TransfersListProps) {
+  const t = useTranslations("transfers");
   const [statusFilter, setStatusFilter] = useState<string>("all");
 
   const filteredTransfers = useMemo(() => {
@@ -71,7 +73,7 @@ export function TransfersList({
           className="flex w-full items-center justify-between sm:max-w-[50%] rounded-(--radius-md) bg-ds-surface px-4 py-3 sm:px-5 font-bold text-base text-ds-text shadow-none outline-none transition-colors hover:bg-ds-surface-warm cursor-pointer [&_svg]:size-5 [&_svg]:text-ds-text [&_svg]:opacity-100"
           aria-label="Filter transfers"
         >
-          <SelectValue placeholder="All Transfers" />
+          <SelectValue placeholder={t("all")} />
         </SelectTrigger>
 
         <SelectContent className="z-(--z-popover) w-(--radix-select-trigger-width) min-w-(--radix-select-trigger-width) overflow-hidden rounded-(--radius-md) border border-ds-border bg-ds-background p-1.5 shadow-lg">
@@ -79,25 +81,25 @@ export function TransfersList({
             value="all"
             className="cursor-pointer font-medium text-ds-text"
           >
-            All Transfers
+            {t("all")}
           </SelectItem>
           <SelectItem
             value="pending"
             className="cursor-pointer font-medium text-ds-text"
           >
-            Pending
+            {t("pending")}
           </SelectItem>
           <SelectItem
             value="completed"
             className="cursor-pointer font-medium text-ds-text"
           >
-            Completed
+            {t("completed")}
           </SelectItem>
           <SelectItem
             value="cancelled"
             className="cursor-pointer font-medium text-ds-text"
           >
-            Cancelled
+            {t("cancelled")}
           </SelectItem>
         </SelectContent>
       </Select>
@@ -106,7 +108,7 @@ export function TransfersList({
         <EmptyState
           title={emptyTitle}
           description={emptyDescription}
-          action={{ href: "/beta/profile/wardrobe", label: "View Wardrobe" }}
+          action={{ href: "/beta/profile/wardrobe", label: t("viewWardrobe") }}
         />
       ) : (
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 sm:gap-4">
@@ -139,7 +141,7 @@ export function TransfersList({
 
                 <div className="mt-4 sm:mt-5 flex items-center justify-between">
                   <span className="text-sm sm:text-base font-medium text-ds-primary">
-                    View Details
+                    {t("viewDetails")}
                   </span>
                   <ArrowRight
                     className="w-4 h-4 sm:w-5 sm:h-5 text-ds-primary transition-transform group-hover:translate-x-1"
