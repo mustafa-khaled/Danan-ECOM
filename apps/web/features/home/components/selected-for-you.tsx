@@ -1,15 +1,16 @@
 import Link from "next/link";
 import { PieceCard, SectionHead } from "@/components/ui";
 import { getTranslations } from "next-intl/server";
-import { getSessionCookieHeader } from "@/features/auth/server/session";
-import { fetchSelectedForYou } from "../api/fetch-selected-for-you";
+import type { SelectedPiece } from "../types";
 import Container from "@/components/ui/container";
 
-export default async function SelectedForYou() {
-  const cookie = await getSessionCookieHeader();
+export default async function SelectedForYou({
+  data,
+}: {
+  data: SelectedPiece[];
+}) {
   const t = await getTranslations("home");
-
-  const selectedPieces = await fetchSelectedForYou(cookie);
+  const selectedPieces = data;
 
   if (selectedPieces.length === 0) return null;
 

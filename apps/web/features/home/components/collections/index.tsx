@@ -1,8 +1,4 @@
-import { getSessionCookieHeader } from "@/features/auth/server/session";
-import {
-  fetchCollections,
-  type CollectionSummary,
-} from "@/features/collections";
+import type { CollectionSummary } from "@/features/collections";
 import { HeroLeftCollection } from "./hero-left-collection";
 import { SpotlightLightCollection } from "./spotlight-light-collection";
 import { BannerOverlayCollection } from "./banner-overlay-collection";
@@ -13,18 +9,12 @@ export * from "./spotlight-light-collection";
 export * from "./banner-overlay-collection";
 export * from "./hero-center-collection";
 
-export default async function ExploreCollections() {
-  const cookie = await getSessionCookieHeader();
-
-  let fetchedCollections: CollectionSummary[] = [];
-  try {
-    fetchedCollections = await fetchCollections(cookie);
-  } catch {
-    fetchedCollections = [];
-  }
-
-  // Strictly display only up to 4 collection components
-  const collections = fetchedCollections.slice(0, 4);
+export default async function ExploreCollections({
+  data,
+}: {
+  data: CollectionSummary[];
+}) {
+  const collections = data.slice(0, 4);
 
   // If no collections data, do not display the section
   if (collections.length === 0) {

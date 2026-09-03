@@ -46,7 +46,6 @@ export default function AccessGatePage() {
         await validateKey(houseKey);
         const next = validateRedirectPath(searchParams.get("next"));
         router.push(next);
-        router.refresh();
       } catch (err) {
         const nextAttempts = attempts + 1;
         setAttempts(nextAttempts);

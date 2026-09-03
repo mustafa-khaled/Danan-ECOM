@@ -120,7 +120,7 @@ async function parseResponse<T>(
   } catch {
     if (!response.ok) {
       if (response.status === 401) {
-        return handleUnauthorized(config) as Promise<T>;
+        return handleError(config, response) as Promise<T>;
       }
       throw new ApiError(`HTTP ${response.status}`, response.status);
     }
@@ -129,7 +129,7 @@ async function parseResponse<T>(
 
   if (!response.ok) {
     if (response.status === 401) {
-      return handleUnauthorized(config) as Promise<T>;
+      return handleError(config, response) as Promise<T>;
     }
     const errorBody = body as { message?: string; code?: string } | undefined;
     throw new ApiError(
@@ -140,6 +140,33 @@ async function parseResponse<T>(
   }
 
   return body as T;
+}
+
+/**
+ * Errors on login/validate-key must surface the API's message (e.g. wrong
+ * credentials) and NOT trigger the global unauthorized redirect — otherwise the
+ * page reloads before the form can render any feedback.
+ */
+async function handleError<T>(
+  config: SendRequestConfig,
+  response: Response,
+): Promise<T> {
+  const { url } = config;
+  if (isLoginPath(url)) {
+    const errorBody = (await response
+      .json()
+      .catch(() => null)) as { message?: string; code?: string } | null;
+    throw new ApiError(
+      errorBody?.message ?? "Sign in failed",
+      401,
+      errorBody?.code,
+    );
+  }
+  return handleUnauthorized(config);
+}
+
+function isLoginPath(url: string): boolean {
+  return url.includes("/auth/validate-key") || url.includes("/admin/auth/login");
 }
 
 const SAFE_RETRY_METHODS = new Set<SendRequestConfig["method"]>(["GET"]);

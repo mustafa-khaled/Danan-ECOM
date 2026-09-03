@@ -16,7 +16,6 @@ export function LoginForm() {
     try {
       await login({ email, password });
       router.replace("/admin/overview");
-      router.refresh();
     } catch {
       /* error is rendered via the mutation's `error` state */
     }

@@ -1,0 +1,15 @@
+<svg width="24" height="17" viewBox="0 0 24 17" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <g clip-path="url(#clip_sa_flag)">
+    <rect width="24" height="17" rx="3" fill="#006C35"/>
+    <!-- Inscription representation -->
+    <path d="M4.5 5h15v1H4.5zM6 6.8h12v1H6zM5 8.6h14v0.8H5z" fill="#FFFFFF" opacity="0.95"/>
+    <path d="M7 4h1.5v3H7zM10.5 4h1.2v3h-1.2zM13.5 4h1.2v3h-1.2zM16.5 4h1.2v3h-1.2z" fill="#FFFFFF" opacity="0.95"/>
+    <!-- Sword -->
+    <path d="M5.5 11.5h11.5l1.5-0.5v1L17 11.5H5.5zM17.5 10.5h0.8v2h-0.8zM18.8 11h0.8v1h-0.8z" fill="#FFFFFF"/>
+  </g>
+  <defs>
+    <clipPath id="clip_sa_flag">
+      <rect width="24" height="17" rx="3" fill="white"/>
+    </clipPath>
+  </defs>
+</svg>

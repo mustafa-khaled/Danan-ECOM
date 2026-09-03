@@ -7,6 +7,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { MoveDown, Plus, Search } from "lucide-react";
+import Link from "next/link";
 
 export default function CollectionsTableFilter() {
   return (
@@ -93,10 +94,12 @@ export default function CollectionsTableFilter() {
             Download
             <MoveDown className="size-5" />
           </button>
-          <button className="w-58 h-12.25 text-body-lg font-semibold flex items-center justify-center gap-[16px] px-3 text-teal-900 bg-[#4CBEAE]">
-            Add New Collection
-            <Plus className="size-5" />
-          </button>
+          <Link href="/admin/collections/new">
+            <button className="w-58 h-12.25 text-body-lg font-semibold flex items-center justify-center gap-[16px] px-3 text-teal-900 bg-[#4CBEAE]">
+              Add New Collection
+              <Plus className="size-5" />
+            </button>
+          </Link>
         </div>
       </div>
     </div>

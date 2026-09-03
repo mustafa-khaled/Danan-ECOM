@@ -2,8 +2,7 @@ import Link from "next/link";
 import Container from "@/components/ui/container";
 import { PieceCard } from "@/components/ui/PieceCard";
 import { getTranslations } from "next-intl/server";
-import { fetchWardrobe, type WardrobePiece } from "@/features/wardrobe";
-import { getSessionCookieHeader } from "@/features/auth/server/session";
+import type { WardrobePiece } from "@/features/wardrobe";
 import { SectionHead } from "@/components/ui";
 import { CollectionCarousel } from "./collection-carousel";
 
@@ -29,16 +28,13 @@ function formatAcquiredDate(dateStr: string): string {
   return "";
 }
 
-export default async function YourCollection() {
-  const cookie = await getSessionCookieHeader();
+export default async function YourCollection({
+  data,
+}: {
+  data: WardrobePiece[];
+}) {
   const t = await getTranslations("home");
-
-  let wardrobe: WardrobePiece[] = [];
-  try {
-    wardrobe = await fetchWardrobe(cookie, { limit: 3 });
-  } catch {
-    wardrobe = [];
-  }
+  const wardrobe = data;
 
   if (!wardrobe || wardrobe.length === 0) {
     return null;
