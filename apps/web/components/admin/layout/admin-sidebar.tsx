@@ -28,10 +28,10 @@ export function AdminSidebar({
       {/* Sidebar Container */}
       <aside
         className={cn(
-          "fixed top-0 inset-s-0 bottom-0 pb-[40px] z-50 w-75 bg-ds-background border-e border-ds-border-light flex flex-col justify-between transition-transform duration-300 lg:translate-x-0 lg:static lg:z-auto shrink-0",
+          "fixed top-0 start-0 bottom-0 pb-[40px] z-50 w-75 bg-ds-background border-e border-ds-border-light flex flex-col justify-between transition-transform duration-300 lg:static lg:translate-x-0 lg:z-auto shrink-0",
           mobileOpen
             ? "translate-x-0"
-            : "-translate-x-full rtl:translate-x-full",
+            : "max-lg:-translate-x-full max-lg:rtl:translate-x-full",
         )}
       >
         <SidebarLogo onClose={onMobileClose} />

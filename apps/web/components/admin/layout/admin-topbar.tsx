@@ -45,7 +45,7 @@ export function AdminTopbar({
             aria-label="Notifications"
           >
             <Bell className="size-6 sm:size-7.5" fill="" />
-            <span className="absolute top-1 right-1.5 w-4 h-4 bg-ds-error text-white text-[10px] font-bold rounded-full flex items-center justify-center shadow-xs">
+            <span className="absolute top-1 end-1.5 w-4 h-4 bg-ds-error text-white text-[10px] font-bold rounded-full flex items-center justify-center shadow-xs">
               2
             </span>
           </button>

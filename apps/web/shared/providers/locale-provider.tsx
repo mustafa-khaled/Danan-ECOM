@@ -38,6 +38,12 @@ export function LocaleSelect({
     if (nextLocale === locale) return;
 
     setLocaleCookie(nextLocale);
+    if (typeof document !== "undefined") {
+      document.documentElement.dir = nextLocale === "ar" ? "rtl" : "ltr";
+      document.documentElement.lang = nextLocale;
+      document.body.className =
+        nextLocale === "ar" ? "font-arabic" : "font-manrope";
+    }
 
     if (syncProfile) {
       updateProfile({ locale: nextLocale });

@@ -143,7 +143,7 @@ export default function NavigationArea({ setMobileOpen }: NavigationAreaProps) {
               )}
             >
               <div className="overflow-hidden">
-                <div className="mt-3 ml-2 space-y-3">
+                <div className="mt-3 ms-2 space-y-3">
                   {group.subItems.map((sub) => {
                     const SubIcon = sub.icon;
                     const active = pathname === sub.href;

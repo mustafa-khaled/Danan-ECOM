@@ -80,14 +80,14 @@ export function DataTableToolbar({
       {/* Search */}
       {onSearchChange && (
         <div className="relative flex-1 max-w-sm">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-ds-text-secondary pointer-events-none" />
+          <Search className="absolute start-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-ds-text-secondary pointer-events-none" />
           <input
             type="text"
             value={search}
             onChange={(e) => handleSearch(e.target.value)}
             placeholder={searchPlaceholder}
             className={cn(
-              "w-full h-9 pl-9 pr-8 rounded-(--radius-item) border border-ds-border bg-ds-background",
+              "w-full h-9 ps-9 pe-8 rounded-(--radius-item) border border-ds-border bg-ds-background",
               "text-sm font-body text-ds-text placeholder:text-ds-text-muted",
               "outline-none focus:border-(--color-gold) transition-colors",
             )}
@@ -96,7 +96,7 @@ export function DataTableToolbar({
             <button
               type="button"
               onClick={clearSearch}
-              className="absolute right-2 top-1/2 -translate-y-1/2 p-0.5 rounded text-ds-text-secondary hover:text-ds-text"
+              className="absolute end-2 top-1/2 -translate-y-1/2 p-0.5 rounded text-ds-text-secondary hover:text-ds-text"
               aria-label="Clear search"
             >
               <X className="h-3.5 w-3.5" />
@@ -106,7 +106,7 @@ export function DataTableToolbar({
       )}
 
       {/* Right side: actions + column toggle */}
-      <div className="flex items-center gap-2 sm:ml-auto">
+      <div className="flex items-center gap-2 sm:ms-auto">
         {actions}
 
         {showColumnToggle && hideableColumns.length > 0 && (
@@ -132,7 +132,7 @@ export function DataTableToolbar({
             {open && (
               <div
                 className={cn(
-                  "absolute right-0 top-full mt-1 z-50 min-w-44",
+                  "absolute end-0 top-full mt-1 z-50 min-w-44",
                   "rounded-(--radius-md) border border-ds-border bg-ds-background shadow-lg py-1",
                 )}
               >

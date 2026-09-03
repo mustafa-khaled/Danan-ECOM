@@ -167,6 +167,10 @@ jobs:
 
       - name: Seed database
         working-directory: packages/db
+        env:
+          NODE_ENV: test
+          SEED_ALLOW_DESTRUCTIVE: "true"
+          SEED_ADMIN_PASSWORD: ci-test-admin-password
         run: pnpm exec tsx prisma/seed.ts
 
       - name: Build api and web for e2e production servers

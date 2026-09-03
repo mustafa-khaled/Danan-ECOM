@@ -47,6 +47,12 @@ export default function LanguageToggle({ className }: LanguageToggleProps) {
     if (nextLocale === locale) return;
 
     setLocaleCookie(nextLocale);
+    if (typeof document !== "undefined") {
+      document.documentElement.dir = nextLocale === "ar" ? "rtl" : "ltr";
+      document.documentElement.lang = nextLocale;
+      document.body.className =
+        nextLocale === "ar" ? "font-arabic" : "font-manrope";
+    }
 
     startTransition(() => {
       router.refresh();

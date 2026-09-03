@@ -15,7 +15,7 @@ export default function CollectionsTableFilter() {
       <div className="relative w-150.5 bg-white flex items-center">
         <label
           htmlFor="collections-search"
-          className="absolute left-3 top-1/2 z-10 -translate-y-1/2 cursor-text"
+          className="absolute start-3 top-1/2 z-10 -translate-y-1/2 cursor-text"
         >
           <Search className="size-4 text-neutral-500" />
         </label>
@@ -23,7 +23,7 @@ export default function CollectionsTableFilter() {
         <Input
           id="collections-search"
           placeholder="Search collections"
-          className="pl-10"
+          className="ps-10"
         />
       </div>
 
