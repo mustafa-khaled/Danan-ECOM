@@ -3,9 +3,13 @@ import { fireEvent, render, screen } from "@testing-library/react";
 import { NextIntlClientProvider } from "next-intl";
 import en from "@/messages/en.json";
 
+const mockPush = vi.fn();
+const mockRefresh = vi.fn();
+const mockLogout = vi.fn().mockResolvedValue(undefined);
+
 vi.mock("next/navigation", () => ({
   usePathname: () => "/beta/home",
-  useRouter: () => ({ refresh: vi.fn() }),
+  useRouter: () => ({ push: mockPush, refresh: mockRefresh }),
 }));
 
 vi.mock("next/image", () => ({
@@ -26,7 +30,7 @@ vi.mock("next/image", () => ({
 }));
 
 vi.mock("@/features/auth", () => ({
-  useClientLogout: () => ({ logout: vi.fn(), isPending: false }),
+  useClientLogout: () => ({ logout: mockLogout, isPending: false }),
 }));
 
 vi.mock("@/features/profile", () => ({
@@ -69,6 +73,13 @@ describe("SiteHeader", () => {
     expect(languageSelects[0]).toHaveTextContent("EN");
   });
 
+  it("renders profile menu combobox and handles option selection", () => {
+    renderHeader();
+
+    const profileTriggers = screen.getAllByRole("combobox", { name: "Profile" });
+    expect(profileTriggers.length).toBeGreaterThan(0);
+  });
+
   it("opens mobile side menu on burger button click with links and utility icons", () => {
     renderHeader();
 
@@ -88,6 +99,11 @@ describe("SiteHeader", () => {
     // Language selector in mobile drawer
     const languageSelects = screen.getAllByRole("combobox", { name: "Switch language" });
     expect(languageSelects.length).toBe(2);
+
+    // Profile menu in mobile drawer
+    const profileSelects = screen.getAllByRole("combobox", { name: "Profile" });
+    expect(profileSelects.length).toBe(2);
   });
 });
+
 

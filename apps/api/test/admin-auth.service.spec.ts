@@ -1,6 +1,7 @@
 import { HttpException, UnauthorizedException } from "@nestjs/common";
 import { Test, TestingModule } from "@nestjs/testing";
 import { JwtService } from "@nestjs/jwt";
+import { ConfigService } from "@nestjs/config";
 import { AdminAuthService } from "../src/admin/auth/admin-auth.service";
 import { AuditService } from "../src/audit/audit.service";
 import { PrismaService } from "../src/prisma/prisma.service";
@@ -38,6 +39,13 @@ describe("AdminAuthService login lockout", () => {
         { provide: AuditService, useValue: { log: jest.fn() } },
         { provide: RedisService, useValue: redisMock },
         { provide: RefreshTokenService, useValue: {} },
+        {
+          provide: ConfigService,
+          useValue: {
+            get: jest.fn().mockReturnValue("12"),
+            getOrThrow: jest.fn().mockReturnValue("test-admin-secret"),
+          },
+        },
       ],
     }).compile();
 

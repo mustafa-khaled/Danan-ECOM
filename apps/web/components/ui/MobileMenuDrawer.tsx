@@ -4,7 +4,7 @@ import Link from "next/link";
 import { useTranslations } from "next-intl";
 import { LocaleSelect } from "@/shared/providers/locale-provider";
 import { primaryNavItems } from "@/shared/lib/nav";
-import { ClientLogoutButton } from "@/components/client-logout-button";
+import { ProfileMenu } from "@/components/profile-menu";
 
 interface MobileMenuDrawerProps {
   isOpen: boolean;
@@ -124,41 +124,16 @@ export function MobileMenuDrawer({
                 </svg>
               </Link>
 
-              {/* User profile */}
-              <Link
-                href="/beta/profile/wardrobe"
-                onClick={onClose}
-                className="flex size-9 items-center justify-center text-ds-text transition-colors hover:text-ds-secondary"
-                aria-label={tNav("profile")}
-              >
-                <svg
-                  width="20"
-                  height="20"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  aria-hidden="true"
-                >
-                  <circle
-                    cx="12"
-                    cy="8"
-                    r="4"
-                    stroke="currentColor"
-                    strokeWidth="1.5"
-                  />
-                  <path
-                    d="M4 21C4 16.5817 7.58172 13 12 13C16.4183 13 20 16.5817 20 21"
-                    stroke="currentColor"
-                    strokeWidth="1.5"
-                  />
-                </svg>
-              </Link>
+              {/* User profile menu */}
+              <ProfileMenu
+                iconSize={20}
+                onNavigate={onClose}
+                triggerClassName="flex size-9 items-center justify-center text-ds-text transition-colors hover:text-ds-secondary"
+              />
             </div>
 
             {/* Language selector */}
             <LocaleSelect syncProfile className="[&_svg]:text-ds-secondary " />
-
-            {/* Logout */}
-            <ClientLogoutButton iconOnly />
           </div>
         </div>
       </div>

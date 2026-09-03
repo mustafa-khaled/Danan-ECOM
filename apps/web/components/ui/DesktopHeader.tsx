@@ -5,7 +5,7 @@ import Link from "next/link";
 import { useTranslations } from "next-intl";
 import { LocaleSelect } from "@/shared/providers/locale-provider";
 import { primaryNavItems } from "@/shared/lib/nav";
-import { ClientLogoutButton } from "@/components/client-logout-button";
+import { ProfileMenu } from "@/components/profile-menu";
 import Container from "./container";
 
 interface DesktopHeaderProps {
@@ -70,36 +70,14 @@ export function DesktopHeader({
               </svg>
             </Link>
 
-            {/* Profile Icon */}
-            <Link
-              href="/beta/profile/wardrobe"
-              className="flex items-center justify-center text-ds-secondary transition-colors hover:text-ds-text"
-              aria-label={tNav("profile")}
-            >
-              <svg
-                width="24"
-                height="24"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="1.5"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                aria-hidden="true"
-              >
-                <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2Z" />
-                <circle cx="12" cy="7" r="4" />
-              </svg>
-            </Link>
+            {/* Profile Menu Dropdown */}
+            <ProfileMenu iconSize={24} />
 
             {/* Language Selector */}
             <LocaleSelect
               syncProfile
               className="[&_svg]:text-ds-secondary font-['Poppins',sans-serif] font-normal text-h5 leading-none text-center tracking-normal"
             />
-
-            {/* Logout */}
-            <ClientLogoutButton />
           </div>
 
           {/* Bottom Desktop Navigation Links */}

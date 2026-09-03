@@ -345,7 +345,10 @@
     "pieceStoryLine3": "Every owner becomes part of its continuation."
   },
   "auth": {
-    "logout": "Log out"
+    "logout": "Log out",
+    "confirmLogoutTitle": "Confirm Logout",
+    "confirmLogoutMessage": "Are you sure you want to log out?",
+    "cancel": "Cancel"
   },
   "errors": {
     "notFound": "Page not found",

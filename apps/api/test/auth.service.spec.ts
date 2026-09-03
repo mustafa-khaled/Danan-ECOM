@@ -30,7 +30,10 @@ describe("AuthService", () => {
   };
   const redisMock = { isRateLimited: jest.fn().mockResolvedValue(false) };
   const auditMock = { log: jest.fn().mockResolvedValue(undefined) };
-  const configMock = { get: jest.fn().mockReturnValue("12") };
+  const configMock = {
+    get: jest.fn().mockReturnValue("12"),
+    getOrThrow: jest.fn().mockReturnValue("test-jwt-secret"),
+  };
   const refreshTokensMock = {
     issueRefreshToken: jest.fn().mockResolvedValue({
       token: "refresh-token",

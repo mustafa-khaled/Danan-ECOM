@@ -345,7 +345,10 @@
     "pieceStoryLine3": "كل مالك يصبح جزءاً من استمرارها."
   },
   "auth": {
-    "logout": "تسجيل الخروج"
+    "logout": "تسجيل الخروج",
+    "confirmLogoutTitle": "تأكيد تسجيل الخروج",
+    "confirmLogoutMessage": "هل أنت متأكد من رغبتك في تسجيل الخروج؟",
+    "cancel": "إلغاء"
   },
   "errors": {
     "notFound": "الصفحة غير موجودة",
