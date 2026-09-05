@@ -67,3 +67,10 @@ export type {
 
 export { Pagination, PaginationSuspenseBoundary } from "./pagination";
 export type { PaginationProps } from "./pagination";
+
+/* ── Form Controls ── */
+export { Switch } from "./switch";
+export type { SwitchProps, SwitchVariant, SwitchSize } from "./switch";
+export { default as SwitchBasic } from "./switch-1";
+export { default as SwitchWithDualLabels } from "./demo";
+

@@ -46,24 +46,12 @@ const navLinks: NavGroup[] = [
       { label: "Pieces", href: "/admin/pieces", icon: Boxes },
     ],
   },
-  {
-    key: "members",
-    main: "Members",
-    icon: Users,
-    subItems: [{ label: "Clients", href: "/admin/clients", icon: Users }],
-  },
-  {
-    key: "ownership",
-    main: "Ownership",
-    icon: Crown,
-    subItems: [
-      { label: "Certificates", href: "/admin/certificates", icon: Crown },
-    ],
-  },
 ];
 
 // Links that are single destinations, not accordions.
 const directLinks: SubItem[] = [
+  { label: "Members", href: "/admin/members", icon: Users },
+  { label: "Ownership", href: "/admin/ownership", icon: Crown },
   { label: "Operations", href: "/admin/orders", icon: LayoutGrid },
   { label: "Payments", href: "/admin/transfers", icon: CreditCard },
   { label: "Analytics", href: "/admin/verification-logs", icon: LineChart },

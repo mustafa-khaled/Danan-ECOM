@@ -29,3 +29,5 @@ export type {
 
 export * from "./overview";
 export * from "./collections";
+export * from "./members";
+
