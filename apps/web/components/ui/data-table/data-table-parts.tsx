@@ -27,7 +27,7 @@ export function DataTableContainer({
   return (
     <div
       className={cn(
-        "w-full rounded-(--radius-md) border border-ds-border bg-ds-background overflow-hidden",
+        "w-full rounded-xl bg-ds-background overflow-hidden",
         stickyHeader && "overflow-y-auto",
         className,
       )}
@@ -41,12 +41,10 @@ export function DataTableContainer({
 /* ── Table — <table> element ────────────────────────────────────────────── */
 
 export function DataTableTable({ children, className }: DataTableTableProps) {
-  const { bordered } = useDataTable();
   return (
     <table
       className={cn(
-        "min-w-full text-left text-sm font-body",
-        bordered && "border-collapse",
+        "w-full text-left text-sm font-body border-collapse",
         className,
       )}
     >

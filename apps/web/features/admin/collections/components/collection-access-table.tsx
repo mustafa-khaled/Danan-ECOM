@@ -2,21 +2,24 @@
 
 import { DataTable } from "@/components/ui/data-table";
 import { Pagination, PaginationSuspenseBoundary } from "@/components/ui/pagination";
-import type { AdminCollectionListItem } from "@/features/admin/types";
+import type { AdminClientListItem } from "@/features/admin/types";
 import { ADMIN_PAGE_SIZE } from "@/shared/lib/parse-admin-page";
-import { collectionColumns } from "./collection-columns";
+import { collectionAccessColumns } from "./collection-access-columns";
 
-interface CollectionTableProps {
-  items: AdminCollectionListItem[];
+interface CollectionAccessTableProps {
+  items: AdminClientListItem[];
   total: number;
 }
 
-export default function CollectionTable({ items, total }: CollectionTableProps) {
+export default function CollectionAccessTable({
+  items,
+  total,
+}: CollectionAccessTableProps) {
   return (
     <div className="space-y-4">
       <DataTable
         data={items}
-        columns={collectionColumns}
+        columns={collectionAccessColumns}
         keyExtractor={(row) => row.id}
         showRowNumbers
         hoverable
@@ -25,8 +28,8 @@ export default function CollectionTable({ items, total }: CollectionTableProps) 
           <DataTable.Table>
             <DataTable.Header />
             <DataTable.Body
-              emptyTitle="No collections yet"
-              emptyMessage="Create your first collection to get started."
+              emptyTitle="No members found"
+              emptyMessage="There are no members assigned to this collection access list yet."
             />
           </DataTable.Table>
         </DataTable.Container>
@@ -34,7 +37,7 @@ export default function CollectionTable({ items, total }: CollectionTableProps) 
         <DataTable.BulkBar>
           {(selected: Set<string>) => (
             <span className="text-xs font-body text-ds-text-secondary">
-              {selected.size} collection{selected.size !== 1 ? "s" : ""} selected
+              {selected.size} member{selected.size !== 1 ? "s" : ""} selected
             </span>
           )}
         </DataTable.BulkBar>

@@ -27,7 +27,7 @@ const inputClassName = "w-full rounded-[var(--radius-sm)] border border-[var(--c
 const labelClassName = "mb-1 block text-xs uppercase tracking-[0.1em] text-[var(--color-ivory-muted)]";
 const errorClassName = "mt-1 text-xs text-red-500";
 
-export function CollectionForm({ collection, mode }: CollectionFormProps) {
+export default function CollectionForm({ collection, mode }: CollectionFormProps) {
   const router = useRouter();
   const confirm = useConfirm();
   const [isDeleting, setIsDeleting] = useState(false);

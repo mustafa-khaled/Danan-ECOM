@@ -6,15 +6,29 @@ export interface AdminClientListItem {
   isActive: boolean;
   visibilityGroups: string[];
   pieceCount: number;
+  memberClass?: string;
+  accessStatus?: string;
+  joinedAt?: string;
+  createdAt?: string;
+  updatedAt?: string;
 }
 
 export interface AdminPieceListItem {
   id: string;
   serialNumber: string;
+  pieceName?: string;
   designName: string;
   collection: string;
+  collectionId?: string;
+  type?: string;
+  material?: string;
   currentOwner: string | null;
   status: string;
+  ownership?: string;
+  access?: string;
+  visibilityGroups?: string[];
+  updatedAt?: string;
+  createdAt?: string;
 }
 
 export interface AdminOrderListItem {
@@ -58,6 +72,10 @@ export interface AdminCollectionListItem {
   sortOrder: number;
   visibilityGroups: string[];
   designCount: number;
+  pieceCount?: number;
+  ownerCount?: number;
+  createdAt?: string;
+  updatedAt?: string;
 }
 
 export interface AdminCollectionDetail extends AdminCollectionListItem {

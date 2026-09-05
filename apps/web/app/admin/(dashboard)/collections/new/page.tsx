@@ -1,4 +1,4 @@
-import { CollectionForm } from "../collection-form";
+import { CollectionForm } from "@/features/admin";
 
 export default function NewCollectionPage() {
   return (
@@ -6,7 +6,7 @@ export default function NewCollectionPage() {
       <h1 className="font-display text-3xl tracking-[0.06em] uppercase">
         Create Collection
       </h1>
-      <div className="rounded-[var(--radius-panel)] border border-[var(--color-border)] bg-[var(--color-surface)] p-6">
+      <div className="rounded-(--radius-panel) border border-(--color-border) bg-(--color-surface) p-6">
         <CollectionForm mode="create" />
       </div>
     </div>

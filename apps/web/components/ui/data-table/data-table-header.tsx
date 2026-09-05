@@ -1,16 +1,14 @@
 "use client";
 
 import { useRef } from "react";
-import { ArrowUp, ArrowDown, ArrowUpDown } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useDataTable } from "./context";
 import type { DataTableHeaderProps } from "./types";
 
 /* ═══════════════════════════════════════════════════════════════════════════
    DATA TABLE HEADER — <thead>
-   Renders column headers from context. Handles sort arrows and
-   optional sticky positioning. Prepends select-all and row-number
-   columns when the table is configured for them.
+   Renders column headers from context.
+   Prepends select-all and row-number columns when configured.
    ═══════════════════════════════════════════════════════════════════════════ */
 
 export function DataTableHeader({
@@ -22,7 +20,6 @@ export function DataTableHeader({
   const {
     columns,
     visibleColumns,
-    compact,
     selectable,
     showRowNumbers,
     toggleAll,
@@ -38,7 +35,6 @@ export function DataTableHeader({
   }
 
   const visibleCols = columns.filter((c) => visibleColumns.includes(c.key));
-  const pad = compact ? "px-3 py-2" : "px-4 py-3";
 
   const handleSort = (key: string) => {
     if (!onSort) return;
@@ -52,16 +48,18 @@ export function DataTableHeader({
   return (
     <thead
       className={cn(
-        "border-b border-ds-border text-xs tracking-widest uppercase",
-        "text-ds-text-secondary bg-ds-surface",
-        sticky && "sticky top-0 z-10 backdrop-blur-sm",
+        "bg-[#F1F2F3] text-sm font-semibold text-ds-text",
+        sticky && "sticky top-0 z-10",
         className,
       )}
     >
-      <tr>
+      <tr className="h-15">
         {/* Select-all checkbox column */}
         {selectable && (
-          <th className={cn(pad, "w-10")} aria-label="Select all">
+          <th
+            className="h-15 min-w-15 w-15 px-4 text-left align-middle font-semibold"
+            aria-label="Select all"
+          >
             <input
               ref={checkboxRef}
               type="checkbox"
@@ -74,15 +72,16 @@ export function DataTableHeader({
 
         {/* Row number column */}
         {showRowNumbers && (
-          <th className={cn(pad, "w-12 text-ds-text-secondary")} aria-label="#">
-            #
+          <th
+            className="h-15 min-w-15 w-15 px-4 text-left align-middle font-semibold text-ds-text-secondary"
+            aria-label="#"
+          >
+            No.
           </th>
         )}
 
         {/* Data columns */}
         {visibleCols.map((col) => {
-          const isSorted = currentSort?.column === col.key;
-          const dir = isSorted ? currentSort!.direction : null;
           const alignClass =
             col.align === "right"
               ? "text-right"
@@ -94,35 +93,18 @@ export function DataTableHeader({
             <th
               key={col.key}
               className={cn(
-                pad,
-                "font-semibold",
+                "h-15 min-w-15 px-4 align-middle font-semibold",
                 alignClass,
                 col.sortable && "cursor-pointer select-none",
                 col.headerClassName,
               )}
-              style={{ width: col.width }}
+              style={{
+                width: col.width,
+                minWidth: col.minWidth ?? "60px",
+              }}
               onClick={() => col.sortable && handleSort(col.key)}
             >
-              <div
-                className={cn(
-                  "inline-flex items-center gap-1.5",
-                  col.align === "right" && "flex-row-reverse",
-                  col.align === "center" && "justify-center",
-                )}
-              >
-                <span>{col.label}</span>
-                {col.sortable && (
-                  <span className="shrink-0 text-ds-text-secondary">
-                    {!isSorted && <ArrowUpDown className="h-3 w-3 opacity-40" />}
-                    {isSorted && dir === "asc" && (
-                      <ArrowUp className="h-3 w-3 text-(--color-gold)" />
-                    )}
-                    {isSorted && dir === "desc" && (
-                      <ArrowDown className="h-3 w-3 text-(--color-gold)" />
-                    )}
-                  </span>
-                )}
-              </div>
+              <span>{col.label}</span>
             </th>
           );
         })}

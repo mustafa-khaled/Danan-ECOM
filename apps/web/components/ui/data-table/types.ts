@@ -15,6 +15,8 @@ export interface ColumnDef<T = unknown> {
   sortable?: boolean;
   /** CSS width (e.g. "120px", "15%") */
   width?: string;
+  /** Minimum CSS width (defaults to "60px") */
+  minWidth?: string;
   /** Horizontal alignment of both header and cell */
   align?: "left" | "center" | "right";
   /** Extra className applied to the <th> */

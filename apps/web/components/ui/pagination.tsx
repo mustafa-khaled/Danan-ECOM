@@ -51,12 +51,13 @@ export interface PaginationProps {
 /* ── Shared style tokens ────────────────────────────────────────────────── */
 
 const base =
-  "inline-flex min-h-9 min-w-9 items-center justify-center rounded-(--radius-item) " +
-  "border border-ds-border text-xs font-body font-medium tracking-widest " +
+  "inline-flex min-h-[35px] min-w-[39px] items-center justify-center rounded-[8px] " +
+  "border border-[#F4F4F4] text-xs font-body font-medium tracking-widest " +
   "uppercase transition-colors select-none";
 
-const active  = "border-(--color-gold) bg-(--color-gold) text-white";
-const enabled = "text-ds-text-secondary hover:border-(--color-gold) hover:text-(--color-gold)";
+const active = "border-(--color-gold) bg-(--color-gold) text-white";
+const enabled =
+  "text-ds-text-secondary hover:border-(--color-gold) hover:text-(--color-gold)";
 const disabled = "pointer-events-none opacity-35 text-ds-text-muted";
 
 /* ── Inner component (requires Suspense ancestor) ───────────────────────── */
@@ -113,17 +114,14 @@ function PaginationInner({
     <nav
       aria-label="Pagination"
       className={cn(
-        "flex flex-col sm:flex-row flex-wrap items-center justify-between gap-3",
-        "border-t border-ds-border pt-4",
+        "flex flex-col sm:flex-row pt-4 flex-wrap items-center justify-between gap-3",
         className,
       )}
     >
       {/* Summary */}
       {showSummary && (
-        <p className="text-xs tracking-widest uppercase text-ds-text-secondary order-2 sm:order-1">
-          {total === 0
-            ? "No results"
-            : `Showing ${from}–${to} of ${total}`}
+        <p className="text-xs text-[14px] order-2 sm:order-1">
+          {total === 0 ? "No results" : `Showing ${from}–${to} of ${total}`}
           {totalPages > 1 && ` · Page ${current} of ${totalPages}`}
         </p>
       )}
@@ -137,7 +135,9 @@ function PaginationInner({
             </span>
             <select
               value={params.per_page}
-              onChange={(e: React.ChangeEvent<HTMLSelectElement>) => setPerPage(Number(e.target.value))}
+              onChange={(e: React.ChangeEvent<HTMLSelectElement>) =>
+                setPerPage(Number(e.target.value))
+              }
               disabled={isPending}
               className={cn(
                 "h-9 px-2 rounded-(--radius-item) border border-ds-border bg-ds-background",
@@ -158,10 +158,20 @@ function PaginationInner({
         {totalPages > 1 && (
           <div className="flex items-center gap-1">
             {/* « First */}
-            {navLink(1, "First page", <ChevronsLeft className="h-3.5 w-3.5" />, !hasPrevPage)}
+            {navLink(
+              1,
+              "First page",
+              <ChevronsLeft className="h-3.5 w-3.5" />,
+              !hasPrevPage,
+            )}
 
             {/* ‹ Previous */}
-            {navLink(current - 1, "Previous page", <ChevronLeft className="h-3.5 w-3.5" />, !hasPrevPage)}
+            {navLink(
+              current - 1,
+              "Previous page",
+              <ChevronLeft className="h-3.5 w-3.5" />,
+              !hasPrevPage,
+            )}
 
             {/* Page number buttons */}
             {!compact && (
@@ -170,12 +180,37 @@ function PaginationInner({
                 {pageNumbers.length > 0 && pageNumbers[0]! > 1 && (
                   <>
                     {current === 1 ? (
-                      <span className={cn(base, active, "px-2.5")} aria-current="page">1</span>
+                      <span
+                        className={cn(base, active, "px-2.5")}
+                        aria-current="page"
+                      >
+                        1
+                      </span>
                     ) : (
-                      <Link href={buildPageUrl(1)} className={cn(base, enabled, "px-2.5", isPending && "opacity-50 pointer-events-none")} aria-label="Page 1">1</Link>
+                      <Link
+                        href={buildPageUrl(1)}
+                        className={cn(
+                          base,
+                          enabled,
+                          "px-2.5",
+                          isPending && "opacity-50 pointer-events-none",
+                        )}
+                        aria-label="Page 1"
+                      >
+                        1
+                      </Link>
                     )}
                     {pageNumbers[0]! > 2 && (
-                      <span className={cn(base, disabled, "px-2 border-transparent")} aria-hidden="true">…</span>
+                      <span
+                        className={cn(
+                          base,
+                          disabled,
+                          "px-2 border-transparent",
+                        )}
+                        aria-hidden="true"
+                      >
+                        …
+                      </span>
                     )}
                   </>
                 )}
@@ -183,12 +218,23 @@ function PaginationInner({
                 {/* Sibling window */}
                 {pageNumbers.map((p) =>
                   p === current ? (
-                    <span key={p} className={cn(base, active, "px-2.5")} aria-current="page">{p}</span>
+                    <span
+                      key={p}
+                      className={cn(base, active, "px-2.5")}
+                      aria-current="page"
+                    >
+                      {p}
+                    </span>
                   ) : (
                     <Link
                       key={p}
                       href={buildPageUrl(p)}
-                      className={cn(base, enabled, "px-2.5", isPending && "opacity-50 pointer-events-none")}
+                      className={cn(
+                        base,
+                        enabled,
+                        "px-2.5",
+                        isPending && "opacity-50 pointer-events-none",
+                      )}
                       aria-label={`Page ${p}`}
                     >
                       {p}
@@ -200,20 +246,51 @@ function PaginationInner({
                 {pageNumbers.length > 0 &&
                   pageNumbers[pageNumbers.length - 1]! < totalPages && (
                     <>
-                      {pageNumbers[pageNumbers.length - 1]! < totalPages - 1 && (
-                        <span className={cn(base, disabled, "px-2 border-transparent")} aria-hidden="true">…</span>
+                      {pageNumbers[pageNumbers.length - 1]! <
+                        totalPages - 1 && (
+                        <span
+                          className={cn(
+                            base,
+                            disabled,
+                            "px-2 border-transparent",
+                          )}
+                          aria-hidden="true"
+                        >
+                          …
+                        </span>
                       )}
                       {current === totalPages ? (
-                        <span className={cn(base, active, "px-2.5")} aria-current="page">{totalPages}</span>
+                        <span
+                          className={cn(base, active, "px-2.5")}
+                          aria-current="page"
+                        >
+                          {totalPages}
+                        </span>
                       ) : (
-                        <Link href={buildPageUrl(totalPages)} className={cn(base, enabled, "px-2.5", isPending && "opacity-50 pointer-events-none")} aria-label={`Page ${totalPages}`}>{totalPages}</Link>
+                        <Link
+                          href={buildPageUrl(totalPages)}
+                          className={cn(
+                            base,
+                            enabled,
+                            "px-2.5",
+                            isPending && "opacity-50 pointer-events-none",
+                          )}
+                          aria-label={`Page ${totalPages}`}
+                        >
+                          {totalPages}
+                        </Link>
                       )}
                     </>
                   )}
 
                 {/* Edge case: only 1 page in total */}
                 {pageNumbers.length === 0 && (
-                  <span className={cn(base, active, "px-2.5")} aria-current="page">{current}</span>
+                  <span
+                    className={cn(base, active, "px-2.5")}
+                    aria-current="page"
+                  >
+                    {current}
+                  </span>
                 )}
               </div>
             )}
@@ -226,10 +303,20 @@ function PaginationInner({
             )}
 
             {/* › Next */}
-            {navLink(current + 1, "Next page", <ChevronRight className="h-3.5 w-3.5" />, !hasNextPage)}
+            {navLink(
+              current + 1,
+              "Next page",
+              <ChevronRight className="h-3.5 w-3.5" />,
+              !hasNextPage,
+            )}
 
             {/* » Last */}
-            {navLink(totalPages, "Last page", <ChevronsRight className="h-3.5 w-3.5" />, !hasNextPage)}
+            {navLink(
+              totalPages,
+              "Last page",
+              <ChevronsRight className="h-3.5 w-3.5" />,
+              !hasNextPage,
+            )}
           </div>
         )}
       </div>
@@ -239,7 +326,10 @@ function PaginationInner({
 
 /* ── Public export ──────────────────────────────────────────────────────── */
 
-export function Pagination({ withSuspense = false, ...props }: PaginationProps) {
+export function Pagination({
+  withSuspense = false,
+  ...props
+}: PaginationProps) {
   const inner = <PaginationInner {...props} />;
   return withSuspense ? (
     <Suspense fallback={<PaginationSkeleton />}>{inner}</Suspense>
@@ -262,7 +352,10 @@ function PaginationSkeleton() {
       <div className="h-3 w-40 rounded bg-ds-surface" />
       <div className="flex gap-1">
         {Array.from({ length: 7 }).map((_, i) => (
-          <div key={i} className="h-9 w-9 rounded-(--radius-item) bg-ds-surface" />
+          <div
+            key={i}
+            className="h-9 w-9 rounded-(--radius-item) bg-ds-surface"
+          />
         ))}
       </div>
     </div>

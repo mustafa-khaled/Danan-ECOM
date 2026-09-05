@@ -35,9 +35,7 @@ export function DataTableBody({
     error,
     onRowClick,
     rowClassName,
-    striped,
     hoverable,
-    compact,
     selectable,
     selectedIds,
     toggleRow,
@@ -52,16 +50,20 @@ export function DataTableBody({
     (selectable ? 1 : 0) +
     (showRowNumbers ? 1 : 0);
 
-  const cellPad = compact ? "px-3 py-2" : "px-4 py-4";
-
   /* ── Loading — skeleton rows ─────────────────────────────────────────── */
   if (isLoading) {
     return (
-      <tbody className={cn("divide-y divide-ds-border", className)}>
+      <tbody className={className}>
         {Array.from({ length: loadingRows }).map((_, ri) => (
-          <tr key={`skeleton-${ri}`}>
+          <tr
+            key={`skeleton-${ri}`}
+            className={cn(
+              "h-15",
+              ri % 2 === 1 && "bg-[#FBFBFB] border-y border-[#F0F0F3]",
+            )}
+          >
             {Array.from({ length: totalCols }).map((__, ci) => (
-              <td key={ci} className={cn(cellPad)}>
+              <td key={ci} className="h-15 min-w-15 px-4 align-middle">
                 <div className="h-4 w-full rounded bg-ds-surface animate-pulse" />
               </td>
             ))}
@@ -76,7 +78,7 @@ export function DataTableBody({
     return (
       <tbody className={className}>
         <tr>
-          <td colSpan={totalCols} className="px-4 py-12">
+          <td colSpan={totalCols} className="px-4 py-12 text-center">
             <div className="flex flex-col items-center gap-3 text-center">
               <AlertCircle className="h-8 w-8 text-ds-error opacity-70" />
               <p className="text-sm font-body font-semibold text-ds-text">
@@ -110,7 +112,7 @@ export function DataTableBody({
     return (
       <tbody className={className}>
         <tr>
-          <td colSpan={totalCols} className="px-4 py-12">
+          <td colSpan={totalCols} className="px-4 py-12 text-center">
             <div className="flex flex-col items-center gap-3 text-center">
               {emptyIcon ?? (
                 <Inbox className="h-8 w-8 text-ds-text-muted opacity-60" />
@@ -131,7 +133,7 @@ export function DataTableBody({
 
   /* ── Data rows ───────────────────────────────────────────────────────── */
   return (
-    <tbody className={cn("divide-y divide-ds-border", className)}>
+    <tbody className={className}>
       {data.map((row, rowIndex) => {
         const key = keyExtractor(row, rowIndex);
         const isSelected = selectable && selectedIds.has(key);
@@ -147,8 +149,8 @@ export function DataTableBody({
             key={key}
             onClick={isClickable ? () => onRowClick(row, rowIndex) : undefined}
             className={cn(
-              "transition-colors",
-              striped && rowIndex % 2 === 1 && "bg-ds-surface/40",
+              "h-15 transition-colors",
+              "even:bg-[#FBFBFB] even:border-y even:border-[#F0F0F3] odd:bg-transparent",
               hoverable && !isSelected && "hover:bg-ds-surface/50",
               isSelected && "bg-(--color-gold)/8",
               isClickable && "cursor-pointer",
@@ -157,7 +159,7 @@ export function DataTableBody({
           >
             {/* Select checkbox */}
             {selectable && (
-              <td className={cn(cellPad, "w-10")}>
+              <td className="h-15 min-w-15 w-15 px-4 text-left align-middle">
                 <input
                   type="checkbox"
                   checked={isSelected}
@@ -171,12 +173,7 @@ export function DataTableBody({
 
             {/* Row number */}
             {showRowNumbers && (
-              <td
-                className={cn(
-                  cellPad,
-                  "w-12 text-xs text-ds-text-secondary tabular-nums select-none",
-                )}
-              >
+              <td className="h-15 min-w-15 w-15 px-4 text-left align-middle text-xs text-ds-text-secondary tabular-nums select-none">
                 {rowIndex + 1}
               </td>
             )}
@@ -212,11 +209,14 @@ export function DataTableBody({
                 <td
                   key={col.key}
                   className={cn(
-                    cellPad,
-                    "text-ds-text align-middle",
+                    "h-15 min-w-15 px-4 text-ds-text align-middle",
                     alignClass,
                     col.cellClassName,
                   )}
+                  style={{
+                    width: col.width,
+                    minWidth: col.minWidth ?? "60px",
+                  }}
                 >
                   {cellContent}
                 </td>
