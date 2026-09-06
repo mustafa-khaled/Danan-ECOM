@@ -8,7 +8,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Download, MoveDown, Plus, Search } from "lucide-react";
+import { MoveDown, Plus, Search } from "lucide-react";
 import Link from "next/link";
 
 interface MembersTableFilterProps {

@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { type ColumnDef } from "@/components/ui/data-table";
 import { StatusPill } from "@/components/ui/StatusPill";
-import { Eye, Pencil } from "lucide-react";
+import { MemberRowActions } from "./member-row-actions";
 import type { MemberListItem, MembershipClass } from "../types";
 
 const classBadgeVariant: Record<
@@ -147,28 +147,9 @@ export const membersColumns: ColumnDef<MemberListItem>[] = [
   {
     key: "actions",
     label: "Actions",
-    width: "110px",
+    width: "107px",
     align: "right",
     hideable: false,
-    render: (_, row) => (
-      <div className="flex items-center justify-end gap-1">
-        <Link
-          href={`/admin/members/${row.id}`}
-          className="p-1.5 text-neutral-500 hover:text-neutral-900 hover:bg-neutral-100 rounded-lg transition-colors"
-          title="View member details"
-          aria-label={`View details for ${row.name}`}
-        >
-          <Eye className="size-4" />
-        </Link>
-        <Link
-          href={`/admin/members/${row.id}/edit`}
-          className="p-1.5 text-neutral-500 hover:text-warm-600 hover:bg-warm-50 rounded-lg transition-colors"
-          title="Edit member"
-          aria-label={`Edit ${row.name}`}
-        >
-          <Pencil className="size-4" />
-        </Link>
-      </div>
-    ),
+    render: (_, row) => <MemberRowActions member={row} />,
   },
 ];

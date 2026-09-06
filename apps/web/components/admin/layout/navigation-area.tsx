@@ -52,9 +52,9 @@ const navLinks: NavGroup[] = [
 const directLinks: SubItem[] = [
   { label: "Members", href: "/admin/members", icon: Users },
   { label: "Ownership", href: "/admin/ownership", icon: Crown },
-  { label: "Operations", href: "/admin/orders", icon: LayoutGrid },
-  { label: "Payments", href: "/admin/transfers", icon: CreditCard },
-  { label: "Analytics", href: "/admin/verification-logs", icon: LineChart },
+  { label: "Operations", href: "/admin/operations", icon: LayoutGrid },
+  { label: "Payments", href: "/admin/payments", icon: CreditCard },
+  { label: "Analytics", href: "/admin/analytics", icon: LineChart },
 ];
 
 // --- shared styling ---------------------------------------------------
@@ -93,7 +93,9 @@ export default function NavigationArea({ setMobileOpen }: NavigationAreaProps) {
       {navLinks.map((group) => {
         const GroupIcon = group.icon;
         const isOpen = !!openGroups[group.key];
-        const isPrimary = group.key === "house";
+        const isGroupActive = group.subItems.some((item) =>
+          pathname.startsWith(item.href),
+        );
 
         return (
           <div key={group.key}>
@@ -102,12 +104,12 @@ export default function NavigationArea({ setMobileOpen }: NavigationAreaProps) {
               className={cn(
                 NAV_ROW_BASE,
                 "justify-between",
-                isPrimary && PRIMARY_GROUP_STYLES,
+                isGroupActive && PRIMARY_GROUP_STYLES,
               )}
             >
               <div className="flex items-center gap-3">
                 <GroupIcon
-                  className={cn("size-5", !isPrimary && "text-neutral-400")}
+                  className={cn("size-5", !isGroupActive && "text-neutral-400")}
                 />
                 <span>{group.main}</span>
               </div>
@@ -115,7 +117,7 @@ export default function NavigationArea({ setMobileOpen }: NavigationAreaProps) {
                 className={cn(
                   "size-4 transition-transform duration-300 ease-in-out",
                   isOpen && "rotate-180",
-                  !isPrimary && "text-ds-text-muted",
+                  !isGroupActive && "text-ds-text-muted",
                 )}
               />
             </button>
@@ -134,7 +136,9 @@ export default function NavigationArea({ setMobileOpen }: NavigationAreaProps) {
                 <div className="mt-3 ms-2 space-y-3">
                   {group.subItems.map((sub) => {
                     const SubIcon = sub.icon;
-                    const active = pathname === sub.href;
+                    const active =
+                      pathname === sub.href ||
+                      pathname.startsWith(sub.href + "/");
                     return (
                       <Link
                         key={sub.href}
@@ -142,10 +146,16 @@ export default function NavigationArea({ setMobileOpen }: NavigationAreaProps) {
                         onClick={() => setMobileOpen(false)}
                         className={cn(
                           "flex items-center gap-2 text-neutral-400 h-[32px] px-[32px] rounded-lg font-medium text-[12px] hover:bg-neutral-50 transition-all",
-                          active && "bg-neutral-50",
+                          active &&
+                            "bg-neutral-50 text-neutral-800 font-semibold",
                         )}
                       >
-                        <SubIcon className="size-[16px] text-neutral-400" />
+                        <SubIcon
+                          className={cn(
+                            "size-[16px]",
+                            active ? "text-[#3C9A8D]" : "text-neutral-400",
+                          )}
+                        />
                         <span>{sub.label}</span>
                       </Link>
                     );
@@ -164,28 +174,52 @@ export default function NavigationArea({ setMobileOpen }: NavigationAreaProps) {
       {directLinks.map((link) => {
         const Icon = link.icon;
         const active = pathname.startsWith(link.href);
+        const showDivider =
+          link.href === "/admin/members" || link.href === "/admin/ownership";
+
         return (
-          <Link
-            key={link.href}
-            href={link.href}
-            onClick={() => setMobileOpen(false)}
-          >
-            <button className={cn(NAV_ROW_BASE, "gap-3")}>
-              <Icon className={cn("size-5", !active && "text-neutral-400")} />
-              <span>{link.label}</span>
-            </button>
-          </Link>
+          <div key={link.href}>
+            <Link href={link.href} onClick={() => setMobileOpen(false)}>
+              <button
+                className={cn(
+                  NAV_ROW_BASE,
+                  "gap-3",
+                  active && PRIMARY_GROUP_STYLES,
+                )}
+              >
+                <Icon className={cn("size-5", !active && "text-neutral-400")} />
+                <span>{link.label}</span>
+              </button>
+            </Link>
+            {showDivider && <hr className="mt-2 border-t border-neutral-200" />}
+          </div>
         );
       })}
 
       <hr className="mt-2 border-t border-neutral-200" />
 
-      <Link href="/admin/settings" onClick={() => setMobileOpen(false)}>
-        <button className={cn(NAV_ROW_BASE, "gap-3")}>
-          <Settings className="size-5 text-neutral-400" />
-          <span>Settings</span>
-        </button>
-      </Link>
+      {(() => {
+        const isSettingsActive = pathname.startsWith("/admin/settings");
+        return (
+          <Link href="/admin/settings" onClick={() => setMobileOpen(false)}>
+            <button
+              className={cn(
+                NAV_ROW_BASE,
+                "gap-3",
+                isSettingsActive && PRIMARY_GROUP_STYLES,
+              )}
+            >
+              <Settings
+                className={cn(
+                  "size-5",
+                  !isSettingsActive && "text-neutral-400",
+                )}
+              />
+              <span>Settings</span>
+            </button>
+          </Link>
+        );
+      })()}
     </div>
   );
 }

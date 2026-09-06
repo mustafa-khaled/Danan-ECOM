@@ -17,7 +17,7 @@ export interface AdminLayoutProps {
 
 export function AdminLayout({
   children,
-  title = "Collections",
+  title,
   admin,
 }: AdminLayoutProps) {
   const [sidebarOpen, setSidebarOpen] = useState(false);

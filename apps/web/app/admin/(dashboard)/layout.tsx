@@ -10,7 +10,7 @@ export default async function DashboardLayout({
   const admin = await requireAdminSession();
 
   return (
-    <AdminLayout admin={admin} title="Collections">
+    <AdminLayout admin={admin}>
       <ConfirmProvider>{children}</ConfirmProvider>
     </AdminLayout>
   );
