@@ -34,13 +34,13 @@ export function MobileMenuDrawer({
 
       {/* Side menu content panel - Full Height & Solid Background */}
       <div
-        className={`fixed inset-y-0 right-0 z-50 flex h-screen w-4/5 max-w-xs flex-col justify-between border-l border-ds-border bg-ds-background p-6 shadow-2xl transition-transform duration-300 ease-in-out ${
+        className={`fixed inset-y-0 right-0 z-50 flex h-dvh max-h-dvh w-4/5 max-w-xs flex-col overflow-hidden border-l border-ds-border bg-ds-background p-6 shadow-2xl transition-transform duration-300 ease-in-out ${
           isOpen
             ? "translate-x-0 pointer-events-auto"
             : "translate-x-full pointer-events-none"
         }`}
       >
-        <div className="flex flex-col gap-6">
+        <div className="flex min-h-0 flex-1 flex-col gap-6 overflow-y-auto">
           {/* Top row in drawer: Close button */}
           <div className="flex items-center justify-between border-b border-ds-border pb-4">
             <span className="font-heading text-lg font-medium text-ds-text">
@@ -94,7 +94,7 @@ export function MobileMenuDrawer({
         </div>
 
         {/* Bottom utilities section: profile, notification & language icons */}
-        <div className="border-t border-ds-border pt-4 bg-ds-background">
+        <div className="shrink-0 border-t border-ds-border bg-ds-background pt-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-4">
               {/* Notification bell */}

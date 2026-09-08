@@ -26,8 +26,8 @@ export function DesktopHeader({
   const tNav = useTranslations("nav");
 
   return (
-    <header className="sticky top-0 z-50 w-full bg-ds-background border-b border-ds-border h-19.5 min-h-19.5 max-h-19.5 md:h-42.75 md:min-h-42.75 md:max-h-42.75 transition-all">
-      <Container className="h-full flex items-center justify-between relative py-2.5 md:py-0 md:pt-[40px] md:pr-[64px] md:pb-[32px] md:pl-[64px] md:gap-[32px]">
+    <header className="sticky top-0 z-50 w-full overflow-visible bg-ds-background border-b border-ds-border h-19.5 md:h-auto md:min-h-42.75 transition-all">
+      <Container className="h-full flex items-center md:items-stretch justify-between relative py-2.5 md:py-0 md:pt-[40px] md:pr-[64px] md:pb-[32px] md:pl-[64px] md:gap-[32px]">
         {/* ── Left Section: Logo + Greeting (Stacked on Mobile, Row-space-between structure on Desktop) ── */}
         <div className="flex flex-col justify-center gap-3 md:gap-0 md:justify-between h-full w-full md:w-auto">
           {/* Logo Brand */}
