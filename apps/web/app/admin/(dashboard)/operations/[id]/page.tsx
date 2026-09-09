@@ -1,6 +1,7 @@
-import { ArrowLeft, Check, Link } from "lucide-react";
+import { ArrowLeft, Check } from "lucide-react";
 import Image from "next/image";
 import React from "react";
+import Link from "next/link";
 
 export default async function OperationsDePage({
   params,

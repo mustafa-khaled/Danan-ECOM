@@ -296,6 +296,26 @@
   --animate-kenburns-mobile: kenburns-mobile 28s ease-in-out infinite;
   --animate-slide-up: slideUp 1.6s cubic-bezier(0.16, 1, 0.3, 1) forwards;
   --animate-fade-in: fadeIn 2s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+
+  /* ── Chart / shadcn aliases ──────────────────────────────────────────── */
+  --color-card: var(--chart-card);
+  --color-background: var(--chart-background);
+  --color-foreground: var(--chart-heading);
+  --color-border: var(--chart-grid);
+  --color-muted-foreground: var(--chart-text);
+}
+
+/* Chart palette (used by ChartContainer configs via var(--chart-*)) */
+:root {
+  --chart-purple: #625bff;
+  --chart-pink: #ff5c83;
+  --chart-teal: #12b8c4;
+
+  --chart-grid: #edf0f5;
+  --chart-text: #8b98a9;
+  --chart-heading: #28323d;
+  --chart-card: #ffffff;
+  --chart-background: #fafbfc;
 }
 
 /* ═══════════════════════════════════════════════════════════════════════════

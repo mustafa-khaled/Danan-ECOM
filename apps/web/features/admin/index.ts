@@ -32,4 +32,5 @@ export * from "./collections";
 export * from "./members";
 export * from "./operations";
 export * from "./ownership";
-
+export * from "./payments";
+export * from "./analytics";
