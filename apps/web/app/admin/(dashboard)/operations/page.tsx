@@ -190,7 +190,7 @@ export default function OperationsPage() {
           </div>
 
           <div className="mt-[32px]">
-            <h4 className="font-heading text-h4 font-bold uppercase text-[#272D35] mb-[24px]">
+            <h4 className="font-heading text-h4 font-bold uppercase text-[#272D35] mb-6">
               Operations
             </h4>
             <OperationsTableFilter
