@@ -1,4 +1,9 @@
-import { MembersChart, OwnershipChart } from "@/features/admin";
+import {
+  CollectionPerformance,
+  MembersChart,
+  MembershipDistribution,
+  OwnershipChart,
+} from "@/features/admin";
 import { ArrowUpLeft } from "lucide-react";
 import Link from "next/link";
 
@@ -84,6 +89,10 @@ export default function AnalyticsPage() {
               <MembersChart />
               <OwnershipChart />
             </div>
+
+            <CollectionPerformance />
+
+            <MembershipDistribution />
           </div>
         </div>
       </div>
