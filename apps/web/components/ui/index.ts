@@ -14,6 +14,13 @@ export type { BadgeProps, BadgeVariant, BadgeSize } from "./Badge";
 export { Modal } from "./Modal";
 export type { ModalProps, ModalSize } from "./Modal";
 
+export {
+  Accordion,
+  AccordionContent,
+  AccordionItem,
+  AccordionTrigger,
+} from "./accordion";
+
 /* ── Layout ── */
 export { default as Container } from "./container";
 export { default as SectionHead } from "./section-head";

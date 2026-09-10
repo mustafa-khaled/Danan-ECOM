@@ -296,6 +296,8 @@
   --animate-kenburns-mobile: kenburns-mobile 28s ease-in-out infinite;
   --animate-slide-up: slideUp 1.6s cubic-bezier(0.16, 1, 0.3, 1) forwards;
   --animate-fade-in: fadeIn 2s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  --animate-accordion-down: accordion-down 0.2s ease-out;
+  --animate-accordion-up: accordion-up 0.2s ease-out;
 
   /* ── Chart / shadcn aliases ──────────────────────────────────────────── */
   --color-card: var(--chart-card);
@@ -854,6 +856,24 @@ body {
   }
   to {
     opacity: 1;
+  }
+}
+
+@keyframes accordion-down {
+  from {
+    height: 0;
+  }
+  to {
+    height: var(--radix-accordion-content-height);
+  }
+}
+
+@keyframes accordion-up {
+  from {
+    height: var(--radix-accordion-content-height);
+  }
+  to {
+    height: 0;
   }
 }
 

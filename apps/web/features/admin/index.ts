@@ -27,10 +27,4 @@ export type {
   AdminOrderDetail,
 } from "./types";
 
-export * from "./overview";
-export * from "./collections";
-export * from "./members";
-export * from "./operations";
-export * from "./ownership";
-export * from "./payments";
-export * from "./analytics";
+export * from "./components";

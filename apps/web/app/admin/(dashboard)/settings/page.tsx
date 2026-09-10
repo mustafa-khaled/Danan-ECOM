@@ -1,3 +1,10 @@
+import {
+  General,
+  HouseAccess,
+  MembershipClasses,
+  RolesAndPermissions,
+  SystemNotifications,
+} from "@/features/admin";
 import React from "react";
 
 export default function SettingsPage() {
@@ -9,7 +16,13 @@ export default function SettingsPage() {
 
       <div className="px-7.5 py-6.75">
         <div className="bg-white rounded-3xl p-6 space-y-6">
-          <div className="space-y-4">ssss</div>
+          <div className="space-y-4">
+            <General />
+            <HouseAccess />
+            <MembershipClasses />
+            <RolesAndPermissions />
+            <SystemNotifications />
+          </div>
         </div>
       </div>
     </>

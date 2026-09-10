@@ -4,7 +4,7 @@ import { Switch } from "@/components/ui";
 import {
   MembershipPermissionsTable,
   RolesPermissionsTable,
-} from "@/features/admin/collections";
+} from "@/features/admin/components/collections";
 
 export default function CollectionSettings() {
   return (
@@ -143,4 +143,3 @@ export default function CollectionSettings() {
     </div>
   );
 }
-

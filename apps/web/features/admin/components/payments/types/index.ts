@@ -1,4 +1,4 @@
-import type { AdminOrderListItem } from "../../types";
+import type { AdminOrderListItem } from "../../../types";
 
 export interface AdminPaymentListItem extends AdminOrderListItem {
   paymentMethod: string;
