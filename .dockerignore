@@ -1,0 +1,38 @@
+# Dependencies
+node_modules/
+**/node_modules/
+
+# Environment
+.env
+.env.*
+!.env.example
+
+# Build outputs / caches
+.next/
+**/.next/
+.turbo/
+**/.turbo/
+dist/
+**/dist/
+out/
+build/
+packages/db/generated/
+
+# Git / CI
+.git/
+.github/
+
+# Logs
+*.log
+pnpm-debug.log*
+
+# OS / docs / misc
+.DS_Store
+Thumbs.db
+backup.sh
+restore.sh
+.agents/
+.cursor/
+docs/
+uploads/
+*.tsbuildinfo
