@@ -12,7 +12,6 @@ import {
   ChevronDown,
   Triangle,
   Gem,
-  BookOpen,
   Boxes,
   Users,
   Crown,
@@ -42,7 +41,6 @@ const navLinks: NavGroup[] = [
     subItems: [
       { label: "Overview", href: "/admin/overview", icon: Triangle },
       { label: "Collections", href: "/admin/collections", icon: Gem },
-      { label: "Stories", href: "/admin/designs", icon: BookOpen },
       { label: "Pieces", href: "/admin/pieces", icon: Boxes },
     ],
   },

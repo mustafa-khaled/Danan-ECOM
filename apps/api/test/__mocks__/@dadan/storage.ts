@@ -19,6 +19,14 @@ export function designImageKey(
   return `designs/${designId}/${fileId}.${ext}`;
 }
 
+export function pieceImageKey(
+  pieceId: string,
+  fileId: string,
+  ext: string,
+): string {
+  return `pieces/${pieceId}/${fileId}.${ext}`;
+}
+
 export function collectionCoverKey(collectionId: string, ext: string): string {
   return `collections/${collectionId}/cover.${ext}`;
 }

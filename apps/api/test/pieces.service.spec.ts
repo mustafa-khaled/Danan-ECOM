@@ -9,6 +9,7 @@ import { PrismaService } from "../src/prisma/prisma.service";
 import { StorageService } from "../src/storage/storage.service";
 import { VisibilityService } from "../src/visibility/visibility.service";
 import { SerialNumberService } from "../src/pieces/serial-number.service";
+import { ImageProcessingService } from "../src/storage/image-processing.service";
 
 describe("PiecesService", () => {
   let service: PiecesService;
@@ -38,6 +39,7 @@ describe("PiecesService", () => {
         { provide: StorageService, useValue: storageMock },
         { provide: VisibilityService, useValue: visibilityMock },
         { provide: SerialNumberService, useValue: serialNumbersMock },
+        { provide: ImageProcessingService, useValue: {} },
         { provide: getQueueToken(CERTIFICATE_QUEUE), useValue: certificateQueueMock },
       ],
     }).compile();

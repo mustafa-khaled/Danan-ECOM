@@ -1,17 +1,18 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useForm, type Resolver } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Button } from "@/components/ui";
 import { useConfirm } from "@/components/confirm-dialog";
-import type { AdminCollectionDetail } from "@/features/admin/types";
+import type { AdminClass, AdminCollectionDetail } from "@/features/admin/types";
 import {
   createCollection,
   updateCollection,
   deleteCollection,
 } from "@/features/admin/api/fetch-admin-collections";
+import { fetchAdminClasses } from "@/features/admin/api/fetch-admin-classes";
 import {
   createCollectionSchema,
   updateCollectionSchema,
@@ -32,6 +33,13 @@ export default function CollectionForm({ collection, mode }: CollectionFormProps
   const confirm = useConfirm();
   const [isDeleting, setIsDeleting] = useState(false);
   const [apiError, setApiError] = useState<string | null>(null);
+  const [classes, setClasses] = useState<AdminClass[]>([]);
+
+  useEffect(() => {
+    fetchAdminClasses()
+      .then(setClasses)
+      .catch(() => setClasses([]));
+  }, []);
 
   const defaultValues: CollectionFormValues = {
     name: collection?.name ?? "",
@@ -41,7 +49,7 @@ export default function CollectionForm({ collection, mode }: CollectionFormProps
     descriptionAr: collection?.descriptionAr ?? "",
     isVisible: collection?.isVisible ?? true,
     sortOrder: collection?.sortOrder ?? 0,
-    visibilityGroups: collection?.visibilityGroups?.join(", ") ?? "",
+    classIds: collection?.classes?.map((cls) => cls.id) ?? [],
   };
 
   const {
@@ -59,14 +67,11 @@ export default function CollectionForm({ collection, mode }: CollectionFormProps
     setApiError(null);
 
     try {
-      const { visibilityGroups, ...rest } = data;
       const payload = {
-        ...rest,
-        description: rest.description || undefined,
-        descriptionAr: rest.descriptionAr || undefined,
-        visibilityGroups: typeof visibilityGroups === "string"
-          ? visibilityGroups.split(",").map((g) => g.trim()).filter(Boolean)
-          : visibilityGroups,
+        ...data,
+        description: data.description || undefined,
+        descriptionAr: data.descriptionAr || undefined,
+        classIds: data.classIds ?? [],
       };
 
       if (mode === "create") {
@@ -189,15 +194,25 @@ export default function CollectionForm({ collection, mode }: CollectionFormProps
           />
         </div>
 
-        <div>
-          <label htmlFor="col-visibilityGroups" className={labelClassName}>Visibility Groups</label>
-          <input
-            id="col-visibilityGroups"
-            type="text"
-            {...register("visibilityGroups")}
-            placeholder="vip, premium (comma separated)"
-            className={inputClassName}
-          />
+        <div className="lg:col-span-2">
+          <p className={labelClassName}>Visible to classes</p>
+          <div className="mt-2 flex flex-wrap gap-4">
+            {classes.map((cls) => (
+              <label key={cls.id} className="flex cursor-pointer items-center gap-2 text-sm">
+                <input
+                  type="checkbox"
+                  value={cls.id}
+                  {...register("classIds")}
+                  className="h-4 w-4 accent-[var(--color-accent)]"
+                />
+                {cls.name}
+                {cls.isDefault ? " (default)" : ""}
+              </label>
+            ))}
+          </div>
+          <p className="mt-1 text-xs text-[var(--color-ivory-muted)]">
+            Empty assignment hides this collection from all clients.
+          </p>
         </div>
 
         <div className="flex items-end">

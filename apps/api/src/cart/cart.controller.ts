@@ -35,7 +35,7 @@ export class CartController {
   ) {
     return this.cart.addToCart(
       client.clientId,
-      client.visibilityGroups,
+      client.classId,
       dto.pieceId,
       locale,
     );

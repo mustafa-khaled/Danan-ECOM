@@ -1,7 +1,12 @@
 import { PieceCard, Switch } from "@/components/ui";
+import { MemberClassSelect, MemberOverviewForm } from "@/features/admin";
+import { fetchAdminClientDetail } from "@/features/admin/api/fetch-admin-clients";
+import { getAdminCookieHeader } from "@/features/auth/server/admin-session";
+import { ApiError } from "@/shared/lib/send-request";
 import { ArrowLeft, MoveRight } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
+import { notFound } from "next/navigation";
 
 interface MemberDetailsPageProps {
   params: Promise<{ id: string }>;
@@ -11,6 +16,30 @@ export default async function MemberDetailsPage({
   params,
 }: MemberDetailsPageProps) {
   const { id } = await params;
+  const cookieHeader = await getAdminCookieHeader();
+  let member;
+  try {
+    member = await fetchAdminClientDetail(id, cookieHeader);
+  } catch (err) {
+    if (err instanceof ApiError && err.status === 404) notFound();
+    throw err;
+  }
+
+  const joined = member.createdAt
+    ? new Date(member.createdAt).toLocaleDateString("en-GB", {
+        day: "2-digit",
+        month: "short",
+        year: "numeric",
+      })
+    : "";
+  const lastActive = member.lastSeenAt
+    ? new Date(member.lastSeenAt).toLocaleDateString("en-GB", {
+        day: "2-digit",
+        month: "short",
+        year: "numeric",
+      })
+    : "";
+  const ownedPieces = member.ownedPieces ?? [];
 
   return (
     <>
@@ -49,82 +78,13 @@ export default async function MemberDetailsPage({
               Member Overview
             </h4>
 
-            <form>
-              <div className="grid grid-cols-2 gap-x-[32px] gap-y-3">
-                <div className="flex flex-col gap-2">
-                  <label
-                    htmlFor="memberId"
-                    className="text-[#272D35] text-h6 font-medium"
-                  >
-                    Member ID
-                  </label>
-                  <input
-                    type="text"
-                    name="memberId"
-                    placeholder="Enter Member ID"
-                    id="memberId"
-                    className="border-none bg-[#F8FAFC] h-17.5 p-[16px]"
-                  />
-                </div>
-
-                <div className="flex flex-col gap-2">
-                  <label
-                    htmlFor="email"
-                    className="text-[#272D35] text-h6 font-medium"
-                  >
-                    Email
-                  </label>
-                  <input
-                    type="text"
-                    name="email"
-                    placeholder="Enter Email"
-                    id="email"
-                    className="border-none bg-[#F8FAFC] h-17.5 p-[16px]"
-                  />
-                </div>
-
-                <div className="flex flex-col gap-2">
-                  <label
-                    htmlFor="joinedDate"
-                    className="text-[#272D35] text-h6 font-medium"
-                  >
-                    Joined
-                  </label>
-                  <input
-                    type="text"
-                    name="joinedDate"
-                    placeholder="Enter joined date"
-                    id="joinedDate"
-                    className="border-none bg-[#F8FAFC] h-17.5 p-[16px]"
-                  />
-                </div>
-
-                <div className="flex flex-col gap-2">
-                  <label
-                    htmlFor="lastActive"
-                    className="text-[#272D35] text-h6 font-medium"
-                  >
-                    Last Active
-                  </label>
-                  <input
-                    type="text"
-                    name="lastActive"
-                    placeholder="Enter last active"
-                    id="lastActive"
-                    className="border-none bg-[#F8FAFC] h-17.5 p-[16px]"
-                  />
-                </div>
-              </div>
-
-              <div className="flex items-center justify-end gap-3 w-full mt-[16px]">
-                <button className="w-24 h-11 border border-[#EAE7E4] rounded-lg text-[14px] font-medium text-[#141210]">
-                  Edit
-                </button>
-                <button className="w-24 h-11 bg-[#BF7266] rounded-lg text-[14px] font-medium text-white">
-                  Save
-                </button>
-              </div>
-            </form>
+            <MemberOverviewForm
+              memberId={id}
+              houseId={member.houseId ?? member.id}
+              email={member.email}
+              joined={joined}
+              lastActive={lastActive}
+            />
           </div>
 
           <div className="pt-5 pb-[32px] border-b border-[#E1E4E8]">
@@ -132,51 +92,33 @@ export default async function MemberDetailsPage({
               <div>
                 <h4 className="font-heading text-h4 font-bold">Owned Pieces</h4>
                 <p className="text-h6 font-semibold text-[#4B5563]">
-                  8 pieces currently owned by this member
+                  {member.pieceCount} pieces currently owned by this member
                 </p>
               </div>
 
-              <button className="h-14 w-51.75 p-[16px] flex items-center justify-between font-medium text-h6 border border-[#E1E4E8]">
+              <Link
+                href="/admin/ownership"
+                className="h-14 w-51.75 p-[16px] flex items-center justify-between font-medium text-h6 border border-[#E1E4E8]"
+              >
                 View All
                 <MoveRight className="size-6" />
-              </button>
+              </Link>
             </div>
 
             <div className="grid grid-cols-3 gap-[16px] mt-5">
-              <Link href={`/admin/members/${id}`}>
-                <PieceCard
-                  piece={{
-                    id: "1",
-                    name: "Heritage Pendant",
-                    ownedSince: "June 2022",
-                    imageUrl: "/assets/wardrobe.avif",
-                  }}
-                  className="lg:h-160! border-none"
-                />
-              </Link>
-              <Link href={`/admin/members/${id}`}>
-                <PieceCard
-                  piece={{
-                    id: "1",
-                    name: "Heritage Pendant",
-                    ownedSince: "June 2022",
-                    imageUrl: "/assets/wardrobe.avif",
-                  }}
-                  className="lg:h-160! border-none"
-                />
-              </Link>
-
-              <Link href={`/admin/members/${id}`}>
-                <PieceCard
-                  piece={{
-                    id: "1",
-                    name: "Heritage Pendant",
-                    ownedSince: "June 2022",
-                    imageUrl: "/assets/wardrobe.avif",
-                  }}
-                  className="lg:h-160! border-none"
-                />
-              </Link>
+              {ownedPieces.slice(0, 3).map((piece) => (
+                <Link key={piece.id} href={`/admin/ownership/${piece.id}`}>
+                  <PieceCard
+                    piece={{
+                      id: piece.id,
+                      name: piece.name,
+                      ownedSince: piece.serialNumber,
+                      imageUrl: piece.imageUrls[0] ?? "/assets/wardrobe.avif",
+                    }}
+                    className="lg:h-160! border-none"
+                  />
+                </Link>
+              ))}
             </div>
           </div>
 
@@ -184,6 +126,9 @@ export default async function MemberDetailsPage({
             <h4 className="font-heading mb-5 text-h4 font-bold">
               House Access
             </h4>
+            <div className="mb-5">
+              <MemberClassSelect memberId={id} />
+            </div>
 
             <div className="grid grid-cols-2 gap-x-[32px] gap-y-3">
               <div className="flex items-center justify-between p-[16px] bg-[#F8FAFC] h-17.5">

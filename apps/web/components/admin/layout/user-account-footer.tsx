@@ -4,7 +4,11 @@ import { useLogout } from "@/features/auth";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
 
-export default function UserAccountFooter() {
+export default function UserAccountFooter({
+  admin,
+}: {
+  admin?: { displayName: string; email?: string };
+}) {
   const router = useRouter();
 
   const { logout, isPending } = useLogout();
@@ -32,7 +36,7 @@ export default function UserAccountFooter() {
 
           <div className="text-[12px]">
             <h6 className="font-semibold text-[#212630] flex gap-1 items-center">
-              Account Manger
+              {admin?.displayName || "Account Manager"}
               <Image
                 src="/admin/verified-fill.svg"
                 alt="verified icon"
@@ -40,7 +44,7 @@ export default function UserAccountFooter() {
                 height={20}
               />
             </h6>
-            <span className="text-[#9096A1]">ahmedgad@gmail.com</span>
+            <span className="text-[#9096A1]">{admin?.email || ""}</span>
           </div>
         </div>
 

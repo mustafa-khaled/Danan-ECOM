@@ -1,2 +1,2 @@
-export { fetchDesign } from "./api/fetch-design";
-export type { DesignDetail } from "./types";
+export { fetchPiece } from "./api/fetch-piece";
+export type { PieceDetail } from "./types";

@@ -43,12 +43,8 @@ export class VerifyService {
     const piece = await this.prisma.db.piece.findUnique({
       where: { serialNumber: serial },
       include: {
-        design: {
-          include: {
-            collection: true,
-            specifications: { orderBy: { sortOrder: "asc" } },
-          },
-        },
+        collection: true,
+        specifications: { orderBy: { sortOrder: "asc" } },
         certificates: { where: { isActive: true }, take: 1 },
       },
     });
@@ -74,25 +70,25 @@ export class VerifyService {
     await this.logVerification(serial, piece.id, VerificationResult.FOUND, ipAddress, clientId);
 
     return {
-      pieceName: pickLocalized(locale, piece.design.name, piece.design.nameAr),
+      pieceName: pickLocalized(locale, piece.name, piece.nameAr),
       collection: pickLocalized(
         locale,
-        piece.design.collection.name,
-        piece.design.collection.nameAr,
+        piece.collection.name,
+        piece.collection.nameAr,
       ),
       serialNumber: piece.serialNumber,
       material: pickLocalized(
         locale,
-        piece.design.material,
-        piece.design.materialAr,
+        piece.material,
+        piece.materialAr,
       ),
-      weight: piece.design.weight,
+      weight: piece.weight,
       dimensions: pickLocalized(
         locale,
-        piece.design.dimensions,
-        piece.design.dimensionsAr,
+        piece.dimensions,
+        piece.dimensionsAr,
       ),
-      specifications: localizeSpecifications(piece.design.specifications, locale),
+      specifications: localizeSpecifications(piece.specifications, locale),
       issuedAt: certificate.issuedAt,
     };
   }

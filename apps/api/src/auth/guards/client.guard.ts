@@ -40,7 +40,7 @@ export class ClientGuard implements CanActivate {
       const payload = await this.jwt.verifyAsync<{
         sub: string;
         displayName: string;
-        visibilityGroups: string[];
+        classId?: string;
         aud?: string;
         jti?: string;
       }>(token, { secret, algorithms: ["HS256"] });
@@ -53,15 +53,16 @@ export class ClientGuard implements CanActivate {
         throw new UnauthorizedException(AUTH_FAILURE_MESSAGE);
       }
 
-      // Re-check the client in the DB so deactivation and visibility-group
+      // Re-check the client in the DB so deactivation and class
       // changes take effect immediately instead of when the JWT expires.
       const client = await this.prisma.db.client.findUnique({
         where: { id: payload.sub },
         select: {
           isActive: true,
           displayName: true,
-          visibilityGroups: true,
           locale: true,
+          classId: true,
+          class: { select: { id: true, slug: true, name: true } },
         },
       });
       if (!client || !client.isActive) {
@@ -71,7 +72,8 @@ export class ClientGuard implements CanActivate {
       request.client = {
         clientId: payload.sub,
         displayName: client.displayName,
-        visibilityGroups: client.visibilityGroups,
+        classId: client.classId,
+        class: client.class,
         locale: client.locale === "en" ? "en" : "ar",
       };
       return true;

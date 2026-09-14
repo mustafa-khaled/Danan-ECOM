@@ -10,12 +10,12 @@ interface CollectionPerformanceItem {
   acquisitions: number;
 }
 
-const collectionPerformanceData: CollectionPerformanceItem[] = [
-  { name: "Heritage Gold", views: 1240, saves: 320, acquisitions: 48 },
-  { name: "Midnight Silver", views: 980, saves: 210, acquisitions: 35 },
-  { name: "Desert Rose", views: 860, saves: 185, acquisitions: 28 },
-  { name: "Royal Sapphire", views: 720, saves: 150, acquisitions: 22 },
-];
+export default function CollectionPerformance({
+  data = [],
+}: {
+  data?: CollectionPerformanceItem[];
+}) {
+  const collectionPerformanceData = data;
 
 const columns: ColumnDef<CollectionPerformanceItem>[] = [
   {
@@ -56,7 +56,6 @@ const columns: ColumnDef<CollectionPerformanceItem>[] = [
   },
 ];
 
-export default function CollectionPerformance() {
   const [sort, setSort] = useState<
     | {
         column: string;

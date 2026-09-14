@@ -1,22 +1,22 @@
 import { notFound } from "next/navigation";
 import { ApiError } from "@/shared/lib/send-request";
-import { fetchDesign } from "@/features/pieces";
+import { fetchPiece } from "@/features/pieces";
 import { getSessionCookieHeader } from "@/features/auth/server/session";
 import PieceDetails from "@/components/piece-details";
 
-interface DesignDetailPageProps {
+interface PieceDetailPageProps {
   params: Promise<{ slug: string }>;
 }
 
-export default async function DesignDetailPage({
+export default async function PieceDetailPage({
   params,
-}: DesignDetailPageProps) {
+}: PieceDetailPageProps) {
   const { slug } = await params;
   const cookie = await getSessionCookieHeader();
 
-  let design;
+  let piece;
   try {
-    design = await fetchDesign(slug, cookie);
+    piece = await fetchPiece(slug, cookie);
   } catch (err) {
     if (err instanceof ApiError && err.status === 404) notFound();
     throw err;
@@ -24,7 +24,7 @@ export default async function DesignDetailPage({
 
   return (
     <div className="w-full">
-      <PieceDetails design={design} />
+      <PieceDetails piece={piece} />
 
       {/* ── Section 2: Secondary images + Extended Story (if present) ── */}
       {/* {(design.imageUrls.length > 1 || design.story) && (

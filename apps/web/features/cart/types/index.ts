@@ -4,14 +4,12 @@ export interface CartItem {
   piece?: {
     id: string;
     serialNumber: string;
-    design: {
+    name: string;
+    price: string;
+    currency: string;
+    imageUrls: string[];
+    collection: {
       name: string;
-      basePrice: string;
-      currency: string;
-      imageUrls: string[];
-      collection: {
-        name: string;
-      };
     };
   };
 }

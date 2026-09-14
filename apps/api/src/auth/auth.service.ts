@@ -85,6 +85,7 @@ export class AuthService {
     }
 
     const tokens = await this.issueClientTokens(matched);
+    await this.touchLastSeen(matched.id);
 
     await this.audit.log({
       actorType: ActorType.CLIENT,
@@ -109,6 +110,7 @@ export class AuthService {
 
     const matched = await this.prisma.db.client.findFirst({
       where: { id: resolved.sub, isActive: true },
+      include: { class: { select: { id: true, slug: true, name: true } } },
     });
 
     if (!matched) {
@@ -122,11 +124,17 @@ export class AuthService {
     );
 
     const accessToken = await this.signClientAccessToken(matched);
+    await this.touchLastSeen(matched.id);
 
     return {
       accessToken,
       refreshToken: newRefreshToken,
-      client: this.toClientProfile(matched),
+      client: this.toClientProfile({
+        id: matched.id,
+        displayName: matched.displayName,
+        locale: matched.locale,
+        class: matched.class,
+      }),
     };
   }
 
@@ -205,8 +213,8 @@ export class AuthService {
         email: true,
         phone: true,
         locale: true,
-        visibilityGroups: true,
         createdAt: true,
+        class: { select: { id: true, slug: true, name: true } },
       },
     });
 
@@ -215,6 +223,13 @@ export class AuthService {
     }
 
     return client;
+  }
+
+  private touchLastSeen(clientId: string) {
+    return this.prisma.db.client.update({
+      where: { id: clientId },
+      data: { lastSeenAt: new Date() },
+    });
   }
 
   hashHouseKey(plain: string): Promise<string> {
@@ -248,11 +263,22 @@ export class AuthService {
     matched: {
       id: string;
       displayName: string;
-      visibilityGroups: string[];
       locale: string;
+      classId: string;
+      class?: { id: string; slug: string; name: string };
     },
   ): Promise<ClientAuthTokens> {
-    const accessToken = await this.signClientAccessToken(matched);
+    const membershipClass =
+      matched.class ??
+      (await this.prisma.db.class.findUniqueOrThrow({
+        where: { id: matched.classId },
+        select: { id: true, slug: true, name: true },
+      }));
+    const accessToken = await this.signClientAccessToken({
+      id: matched.id,
+      displayName: matched.displayName,
+      classId: matched.classId,
+    });
     const { token: refreshToken } = await this.refreshTokens.issueRefreshToken(
       JWT_AUDIENCE_CLIENT,
       matched.id,
@@ -262,19 +288,24 @@ export class AuthService {
     return {
       accessToken,
       refreshToken,
-      client: this.toClientProfile(matched),
+      client: this.toClientProfile({
+        id: matched.id,
+        displayName: matched.displayName,
+        locale: matched.locale,
+        class: membershipClass,
+      }),
     };
   }
 
   private async signClientAccessToken(matched: {
     id: string;
     displayName: string;
-    visibilityGroups: string[];
+    classId: string;
   }): Promise<string> {
     const payload = {
       sub: matched.id,
       displayName: matched.displayName,
-      visibilityGroups: matched.visibilityGroups,
+      classId: matched.classId,
       aud: JWT_AUDIENCE_CLIENT,
       jti: randomUUID(),
     };
@@ -288,13 +319,13 @@ export class AuthService {
   private toClientProfile(matched: {
     id: string;
     displayName: string;
-    visibilityGroups: string[];
     locale: string;
+    class: { id: string; slug: string; name: string };
   }): ValidateKeyResponse {
     return {
       clientId: matched.id,
       displayName: matched.displayName,
-      visibilityGroups: matched.visibilityGroups,
+      class: matched.class,
       locale: matched.locale === "en" ? ("en" as const) : ("ar" as const),
     };
   }

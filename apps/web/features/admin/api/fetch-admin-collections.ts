@@ -1,16 +1,17 @@
 import { sendRequest } from "@/shared/lib/send-request";
 import type { Paginated } from "@/shared/types/common";
-import type { AdminCollectionListItem, AdminCollectionDetail, AdminDesignListItem } from "../types";
+import type { AdminCollectionListItem, AdminCollectionDetail } from "../types";
 
 export function fetchAdminCollections(
   page = 1,
   limit = 20,
   cookieHeader?: string,
+  filters?: { q?: string; isVisible?: boolean; classId?: string; sortBy?: string },
 ) {
   return sendRequest<Paginated<AdminCollectionListItem>>({
     method: "GET",
     url: "/admin/collections",
-    params: { page, limit },
+    params: { page, limit, ...filters },
     cookieHeader,
   });
 }
@@ -34,7 +35,7 @@ export interface CreateCollectionInput {
   descriptionAr?: string;
   isVisible?: boolean;
   sortOrder?: number;
-  visibilityGroups?: string[];
+  classIds?: string[];
 }
 
 export function createCollection(
@@ -57,7 +58,7 @@ export interface UpdateCollectionInput {
   descriptionAr?: string;
   isVisible?: boolean;
   sortOrder?: number;
-  visibilityGroups?: string[];
+  classIds?: string[];
 }
 
 export function updateCollection(
@@ -80,102 +81,6 @@ export function deleteCollection(
   return sendRequest<void>({
     method: "DELETE",
     url: `/admin/collections/${id}`,
-    cookieHeader,
-  });
-}
-
-export function fetchAdminDesigns(
-  page = 1,
-  limit = 20,
-  collectionId?: string,
-  cookieHeader?: string,
-) {
-  return sendRequest<Paginated<AdminDesignListItem>>({
-    method: "GET",
-    url: "/admin/designs",
-    params: { page, limit, collectionId },
-    cookieHeader,
-  });
-}
-
-export interface CreateDesignInput {
-  name: string;
-  nameAr: string;
-  slug: string;
-  collectionId: string;
-  story: string;
-  storyAr: string;
-  material: string;
-  materialAr?: string;
-  weight: number;
-  dimensions: string;
-  dimensionsAr?: string;
-  basePrice: number;
-  currency?: string;
-  visibilityGroups?: string[];
-}
-
-export function createDesign(
-  data: CreateDesignInput,
-  cookieHeader?: string,
-) {
-  return sendRequest<AdminDesignListItem>({
-    method: "POST",
-    url: "/admin/designs",
-    body: data,
-    cookieHeader,
-  });
-}
-
-export interface UpdateDesignInput {
-  name?: string;
-  nameAr?: string;
-  slug?: string;
-  collectionId?: string;
-  story?: string;
-  storyAr?: string;
-  material?: string;
-  materialAr?: string;
-  weight?: number;
-  dimensions?: string;
-  dimensionsAr?: string;
-  basePrice?: number;
-  currency?: string;
-  isActive?: boolean;
-  visibilityGroups?: string[];
-}
-
-export function updateDesign(
-  id: string,
-  data: UpdateDesignInput,
-  cookieHeader?: string,
-) {
-  return sendRequest<AdminDesignListItem>({
-    method: "PATCH",
-    url: `/admin/designs/${id}`,
-    body: data,
-    cookieHeader,
-  });
-}
-
-export function deleteDesign(
-  id: string,
-  cookieHeader?: string,
-) {
-  return sendRequest<void>({
-    method: "DELETE",
-    url: `/admin/designs/${id}`,
-    cookieHeader,
-  });
-}
-
-export function fetchAdminDesignDetail(
-  id: string,
-  cookieHeader?: string,
-) {
-  return sendRequest<AdminDesignListItem>({
-    method: "GET",
-    url: `/admin/designs/${id}`,
     cookieHeader,
   });
 }

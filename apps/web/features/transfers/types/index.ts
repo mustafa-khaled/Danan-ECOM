@@ -19,7 +19,8 @@ export interface TransferDetail {
   piece: {
     id: string;
     serialNumber: string;
-    design: { name: string; imageUrls: string[] };
+    name: string;
+    imageUrls: string[];
   };
   fromClient: { displayName: string };
   toClient: { displayName: string };

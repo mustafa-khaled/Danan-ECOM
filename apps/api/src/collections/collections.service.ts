@@ -1,25 +1,29 @@
-import {
-  Injectable,
-  Logger,
-  NotFoundException,
-} from "@nestjs/common";
+import { Injectable, Logger, NotFoundException } from "@nestjs/common";
 import { Cron, CronExpression } from "@nestjs/schedule";
-import { ActorType } from "@dadan/db";
-import type { Locale } from "@dadan/types";
 import { randomUUID } from "node:crypto";
-import { designImageKey, extFromMime } from "@dadan/storage";
+import { ActorType, PieceStatus, Prisma } from "@dadan/db";
+import {
+  collectionCoverKey,
+  collectionStoryImageKey,
+  extFromMime,
+} from "@dadan/storage";
+import type { Locale } from "@dadan/types";
 import { AuditService } from "../audit/audit.service";
 import { PrismaService } from "../prisma/prisma.service";
 import { StorageService } from "../storage/storage.service";
 import { ImageProcessingService } from "../storage/image-processing.service";
 import { VisibilityService } from "../visibility/visibility.service";
 import { MAX_CATALOG_ROWS, paginationParams } from "../common/constants";
-import {
-  localizeSpecifications,
-  pickLocalized,
-} from "../common/i18n/localize";
+import { localizeSpecifications, pickLocalized } from "../common/i18n/localize";
 
-const DESIGN_FILE_RETENTION_DAYS = 30;
+const PIECE_FILE_RETENTION_DAYS = 30;
+
+const CLASS_SELECT = {
+  id: true,
+  name: true,
+  nameAr: true,
+  slug: true,
+} as const;
 
 @Injectable()
 export class CollectionsService {
@@ -31,13 +35,9 @@ export class CollectionsService {
     private readonly imageProcessing: ImageProcessingService,
   ) {}
 
-  async getVisibleCollections(clientGroups: string[], locale: Locale = "ar") {
-    const visibleToClient = this.visibility.prismaFilter(clientGroups);
-
-    // Visibility is applied in SQL so this cannot degrade into "load the whole
-    // catalog and filter in memory" as the catalog grows.
+  async getVisibleCollections(classId: string, locale: Locale = "ar") {
     const collections = await this.prisma.db.collection.findMany({
-      where: { isVisible: true, ...visibleToClient },
+      where: this.visibility.prismaFilter(classId),
       orderBy: { sortOrder: "asc" },
       take: MAX_CATALOG_ROWS,
       select: {
@@ -50,30 +50,19 @@ export class CollectionsService {
         coverImageUrl: true,
         coverImageLqip: true,
         sortOrder: true,
+        _count: {
+          select: {
+            pieces: {
+              where: {
+                isActive: true,
+                status: PieceStatus.AVAILABLE,
+                currentOwnerId: null,
+              },
+            },
+          },
+        },
       },
     });
-
-    if (collections.length === 0) return [];
-
-    // Piece counts come from a single narrow aggregate rather than from
-    // hydrating every design row just to sum `_count.pieces`.
-    const designCounts = await this.prisma.db.design.findMany({
-      where: {
-        isActive: true,
-        collectionId: { in: collections.map((c) => c.id) },
-        ...visibleToClient,
-      },
-      take: MAX_CATALOG_ROWS,
-      select: { collectionId: true, _count: { select: { pieces: true } } },
-    });
-
-    const pieceCounts = new Map<string, number>();
-    for (const design of designCounts) {
-      pieceCounts.set(
-        design.collectionId,
-        (pieceCounts.get(design.collectionId) ?? 0) + design._count.pieces,
-      );
-    }
 
     return Promise.all(
       collections.map(async (c) => ({
@@ -84,43 +73,42 @@ export class CollectionsService {
         coverImageUrl: await this.storage.resolvePublicUrl(c.coverImageUrl),
         coverImageLqip: c.coverImageLqip ?? null,
         sortOrder: c.sortOrder,
-        pieceCount: pieceCounts.get(c.id) ?? 0,
+        pieceCount: c._count.pieces,
       })),
     );
   }
 
   async getCollectionBySlug(
     slug: string,
-    clientGroups: string[],
+    classId: string,
     page?: number,
     limit?: number,
     locale: Locale = "ar",
   ) {
     const collection = await this.prisma.db.collection.findUnique({
       where: { slug },
+      include: { classes: { select: { classId: true } } },
     });
 
-    if (
-      !collection ||
-      !collection.isVisible ||
-      !this.visibility.canAccess(clientGroups, collection.visibilityGroups)
-    ) {
+    if (!collection || !this.visibility.canAccessCollection(classId, collection)) {
       throw new NotFoundException("errors.COLLECTION_NOT_FOUND");
     }
 
     const { skip, take, page: p, limit: l } = paginationParams(page, limit);
-
-    // Designs are filtered and paged in SQL. Slicing in memory here meant one
-    // request loaded every design in the collection regardless of page size.
-    const designWhere = {
+    const pieceWhere = {
       collectionId: collection.id,
       isActive: true,
-      ...this.visibility.prismaFilter(clientGroups),
+      status: PieceStatus.AVAILABLE,
+      currentOwnerId: null,
     };
+    void this.prisma.db.collection.update({
+      where: { id: collection.id },
+      data: { viewCount: { increment: 1 } },
+    });
 
     const [paginated, total] = await Promise.all([
-      this.prisma.db.design.findMany({
-        where: designWhere,
+      this.prisma.db.piece.findMany({
+        where: pieceWhere,
         orderBy: { name: "asc" },
         skip,
         take,
@@ -129,16 +117,22 @@ export class CollectionsService {
           name: true,
           nameAr: true,
           slug: true,
+          serialNumber: true,
+          status: true,
           material: true,
           materialAr: true,
-          basePrice: true,
+          price: true,
           currency: true,
           imageUrls: true,
           imageLqips: true,
         },
       }),
-      this.prisma.db.design.count({ where: designWhere }),
+      this.prisma.db.piece.count({ where: pieceWhere }),
     ]);
+
+    const urlMap = await this.storage.resolvePublicUrlsBatch(
+      paginated.flatMap((piece) => piece.imageUrls),
+    );
 
     return {
       id: collection.id,
@@ -151,193 +145,243 @@ export class CollectionsService {
       ),
       coverImageUrl: await this.storage.resolvePublicUrl(collection.coverImageUrl),
       coverImageLqip: collection.coverImageLqip ?? null,
-      designs: await Promise.all(
-        paginated.map(async (d) => ({
-          id: d.id,
-          name: pickLocalized(locale, d.name, d.nameAr),
-          slug: d.slug,
-          material: pickLocalized(locale, d.material, d.materialAr),
-          basePrice: d.basePrice,
-          currency: d.currency,
-          imageUrls: await this.storage.resolvePublicUrls(d.imageUrls),
-          imageLqips: d.imageLqips ?? [],
-        })),
-      ),
+      pieces: paginated.map((piece) => ({
+        id: piece.id,
+        name: pickLocalized(locale, piece.name, piece.nameAr),
+        slug: piece.slug,
+        serialNumber: piece.serialNumber,
+        status: piece.status,
+        material: pickLocalized(locale, piece.material, piece.materialAr),
+        price: piece.price,
+        currency: piece.currency,
+        imageUrls: piece.imageUrls
+          .map((key) => urlMap.get(key))
+          .filter((url): url is string => !!url),
+        imageLqips: piece.imageLqips ?? [],
+      })),
       total,
       page: p,
       limit: l,
     };
   }
 
-  async getDesignBySlug(
+  async getPieceBySlug(
     slug: string,
-    clientGroups: string[],
+    classId: string,
     locale: Locale = "ar",
     clientId?: string,
   ) {
-    const design = await this.prisma.db.design.findUnique({
+    const piece = await this.prisma.db.piece.findUnique({
       where: { slug },
       include: {
-        collection: true,
+        collection: { include: { classes: { select: { classId: true } } } },
         specifications: { orderBy: { sortOrder: "asc" } },
-        pieces: { where: { status: "AVAILABLE" } },
       },
     });
 
-    if (
-      !design ||
-      !design.isActive ||
-      !design.collection.isVisible ||
-      !this.visibility.canAccess(clientGroups, design.visibilityGroups) ||
-      !this.visibility.canAccess(clientGroups, design.collection.visibilityGroups)
-    ) {
-      throw new NotFoundException("errors.DESIGN_NOT_FOUND");
+    if (!piece || !this.visibility.canAccessPiece(classId, piece)) {
+      throw new NotFoundException("errors.PIECE_NOT_FOUND");
     }
 
-    // Get saved piece IDs for this client (if authenticated)
-    let savedPieceIds: Set<string> = new Set();
+    let isSaved = false;
     if (clientId) {
-      const savedPieces = await this.prisma.db.savedPiece.findMany({
-        where: {
-          clientId,
-          pieceId: { in: design.pieces.map((p) => p.id) },
-        },
+      const saved = await this.prisma.db.savedPiece.findUnique({
+        where: { clientId_pieceId: { clientId, pieceId: piece.id } },
         select: { pieceId: true },
       });
-      savedPieceIds = new Set(savedPieces.map((s) => s.pieceId));
+      isSaved = Boolean(saved);
     }
 
     return {
-      id: design.id,
-      name: pickLocalized(locale, design.name, design.nameAr),
-      slug: design.slug,
-      story: pickLocalized(locale, design.story, design.storyAr),
-      material: pickLocalized(locale, design.material, design.materialAr),
-      weight: design.weight,
-      dimensions: pickLocalized(locale, design.dimensions, design.dimensionsAr),
-      imageUrls: await this.storage.resolvePublicUrls(design.imageUrls),
-      imageLqips: design.imageLqips ?? [],
-      basePrice: design.basePrice,
-      currency: design.currency,
+      id: piece.id,
+      name: pickLocalized(locale, piece.name, piece.nameAr),
+      slug: piece.slug,
+      serialNumber: piece.serialNumber,
+      status: piece.status,
+      story: pickLocalized(locale, piece.story, piece.storyAr),
+      material: pickLocalized(locale, piece.material, piece.materialAr),
+      weight: piece.weight,
+      dimensions: pickLocalized(locale, piece.dimensions, piece.dimensionsAr),
+      imageUrls: await this.storage.resolvePublicUrls(piece.imageUrls),
+      imageLqips: piece.imageLqips ?? [],
+      price: piece.price,
+      currency: piece.currency,
+      isSaved,
       collection: {
-        id: design.collection.id,
+        id: piece.collection.id,
         name: pickLocalized(
           locale,
-          design.collection.name,
-          design.collection.nameAr,
+          piece.collection.name,
+          piece.collection.nameAr,
         ),
-        slug: design.collection.slug,
+        slug: piece.collection.slug,
       },
-      specifications: localizeSpecifications(design.specifications, locale),
-      availablePieces: design.pieces.map((p) => ({
-        id: p.id,
-        serialNumber: p.serialNumber,
-        status: p.status,
-        isSaved: savedPieceIds.has(p.id),
-      })),
+      specifications: localizeSpecifications(piece.specifications, locale),
     };
   }
 
-  async listCollectionsAdmin(page?: number, limit?: number) {
+  async listCollectionsAdmin(
+    page?: number,
+    limit?: number,
+    filters?: {
+      q?: string;
+      isVisible?: boolean;
+      classId?: string;
+      sortBy?: "updatedAt" | "sortOrder" | "name";
+      sortOrder?: "asc" | "desc";
+    },
+  ) {
     const { skip, take, page: p, limit: l } = paginationParams(page, limit);
+    const q = filters?.q?.trim();
+    const where = {
+      ...(filters?.isVisible !== undefined ? { isVisible: filters.isVisible } : {}),
+      ...(filters?.classId ? { classes: { some: { classId: filters.classId } } } : {}),
+      ...(q
+        ? {
+            OR: [
+              { name: { contains: q, mode: "insensitive" as const } },
+              { nameAr: { contains: q, mode: "insensitive" as const } },
+              { slug: { contains: q, mode: "insensitive" as const } },
+            ],
+          }
+        : {}),
+    };
+    const sortBy = filters?.sortBy ?? "sortOrder";
+    const sortOrder = filters?.sortOrder ?? (sortBy === "sortOrder" ? "asc" : "desc");
+
     const [items, total] = await Promise.all([
       this.prisma.db.collection.findMany({
         skip,
         take,
-        orderBy: { sortOrder: "asc" },
-        include: { _count: { select: { designs: true } } },
+        where,
+        orderBy: { [sortBy]: sortOrder },
+        select: {
+          id: true,
+          name: true,
+          nameAr: true,
+          slug: true,
+          description: true,
+          descriptionAr: true,
+          coverImageUrl: true,
+          isVisible: true,
+          sortOrder: true,
+          viewCount: true,
+          createdAt: true,
+          updatedAt: true,
+          classes: { select: { class: { select: CLASS_SELECT } } },
+          _count: { select: { pieces: true } },
+        },
       }),
-      this.prisma.db.collection.count(),
+      this.prisma.db.collection.count({ where }),
     ]);
+
+    const ownerCounts = await this.ownerCountsByCollection(items.map((c) => c.id));
 
     return {
       items: await Promise.all(
-        items.map(async ({ _count, ...c }) => ({
+        items.map(async ({ _count, classes, ...c }) => ({
           ...c,
           coverImageUrl: await this.storage.resolvePublicUrl(c.coverImageUrl),
-          designCount: _count.designs,
+          pieceCount: _count.pieces,
+          ownerCount: ownerCounts.get(c.id) ?? 0,
+          classes: classes.map((row) => row.class),
         })),
       ),
       total,
       page: p,
       limit: l,
     };
+  }
+
+  async getCollectionStats() {
+    const [members, collections, hidden, pieces, pendingTransfers] = await Promise.all([
+      this.prisma.db.client.count(),
+      this.prisma.db.collection.count(),
+      this.prisma.db.collection.count({ where: { isVisible: false } }),
+      this.prisma.db.piece.count(),
+      this.prisma.db.transferRequest.count({ where: { status: "DADAN_REVIEW" } }),
+    ]);
+    return { members, collections, hidden, pieces, pendingTransfers };
   }
 
   async getCollectionAdmin(id: string) {
     const collection = await this.prisma.db.collection.findUnique({
       where: { id },
-      include: {
-        designs: {
-          orderBy: { name: "asc" },
-          include: { _count: { select: { pieces: true } } },
-        },
+      select: {
+        id: true,
+        name: true,
+        nameAr: true,
+        slug: true,
+        description: true,
+        descriptionAr: true,
+        coverImageUrl: true,
+        isVisible: true,
+        sortOrder: true,
+        viewCount: true,
+        origin: true,
+        originAr: true,
+        meaning: true,
+        meaningAr: true,
+        inspiration: true,
+        inspirationAr: true,
+        storyContent: true,
+        storyContentAr: true,
+        storyImageUrls: true,
+        createdAt: true,
+        updatedAt: true,
+        classes: { select: { class: { select: CLASS_SELECT } } },
       },
     });
     if (!collection) throw new NotFoundException("errors.COLLECTION_NOT_FOUND");
 
-    return {
-      ...collection,
-      coverImageUrl: await this.storage.resolvePublicUrl(collection.coverImageUrl),
-      designs: await Promise.all(
-        collection.designs.map(async ({ _count, ...d }) => ({
-          ...d,
-          imageUrls: await this.storage.resolvePublicUrls(d.imageUrls),
-          pieceCount: _count.pieces,
-        })),
-      ),
-    };
-  }
-
-  async listDesignsAdmin(page?: number, limit?: number, collectionId?: string) {
-    const { skip, take, page: p, limit: l } = paginationParams(page, limit);
-    const where = collectionId ? { collectionId } : {};
-    const [items, total] = await Promise.all([
-      this.prisma.db.design.findMany({
-        where,
-        skip,
-        take,
-        orderBy: { name: "asc" },
-        include: {
-          collection: { select: { id: true, name: true, nameAr: true, slug: true } },
-          _count: { select: { pieces: true } },
-        },
+    const [pieceCount, ownerCounts, transferCount] = await Promise.all([
+      this.prisma.db.piece.count({ where: { collectionId: id } }),
+      this.ownerCountsByCollection([id]),
+      this.prisma.db.transferRequest.count({
+        where: { piece: { collectionId: id } },
       }),
-      this.prisma.db.design.count({ where }),
     ]);
 
+    const { classes, storyImageUrls, ...rest } = collection;
+    const hasStory = Boolean(
+      collection.origin || collection.meaning || collection.inspiration || collection.storyContent,
+    );
+
     return {
-      items: await Promise.all(
-        items.map(async ({ _count, ...d }) => ({
-          ...d,
-          imageUrls: await this.storage.resolvePublicUrls(d.imageUrls),
-          pieceCount: _count.pieces,
-        })),
-      ),
-      total,
-      page: p,
-      limit: l,
+      ...rest,
+      coverImageUrl: await this.storage.resolvePublicUrl(collection.coverImageUrl),
+      storyImageUrls: await this.storage.resolvePublicUrls(storyImageUrls),
+      classes: classes.map((row) => row.class),
+      stats: {
+        pieceCount,
+        ownerCount: ownerCounts.get(id) ?? 0,
+        transferCount,
+      },
+      health: {
+        hasStory,
+        hasCover: Boolean(collection.coverImageUrl),
+        hasPieces: pieceCount > 0,
+        hasAccessRules: classes.length > 0,
+      },
     };
   }
 
-  async getDesignAdmin(id: string) {
-    const design = await this.prisma.db.design.findUnique({
-      where: { id },
-      include: {
-        collection: true,
-        specifications: { orderBy: { sortOrder: "asc" } },
-        pieces: {
-          orderBy: { createdAt: "desc" },
-          include: { currentOwner: { select: { id: true, displayName: true } } },
-        },
-      },
-    });
-    if (!design) throw new NotFoundException("errors.DESIGN_NOT_FOUND");
-
-    return {
-      ...design,
-      imageUrls: await this.storage.resolvePublicUrls(design.imageUrls),
-    };
+  private async ownerCountsByCollection(collectionIds: string[]) {
+    const counts = new Map<string, number>();
+    if (collectionIds.length === 0) return counts;
+    const rows = await this.prisma.db.$queryRaw<
+      Array<{ collectionId: string; ownerCount: number }>
+    >`
+      SELECT "collectionId", COUNT(DISTINCT "currentOwnerId")::int AS "ownerCount"
+      FROM "Piece"
+      WHERE "collectionId" IN (${Prisma.join(collectionIds)})
+        AND "currentOwnerId" IS NOT NULL
+      GROUP BY "collectionId"
+    `;
+    for (const row of rows) {
+      counts.set(row.collectionId, row.ownerCount);
+    }
+    return counts;
   }
 
   async createCollection(
@@ -351,17 +395,22 @@ export class CollectionsService {
       coverImageUrl?: string;
       isVisible?: boolean;
       sortOrder?: number;
-      visibilityGroups?: string[];
+      classIds?: string[];
     },
     ipAddress?: string,
   ) {
-    const collection = await this.prisma.db.collection.create({
-      data: {
-        ...data,
-        visibilityGroups: data.visibilityGroups
-          ? this.visibility.normalizeGroups(data.visibilityGroups)
-          : [],
-      },
+    const { classIds, ...fields } = data;
+    const collection = await this.prisma.db.$transaction(async (tx) => {
+      await this.assertClassIds(tx, classIds);
+      return tx.collection.create({
+        data: {
+          ...fields,
+          classes: classIds?.length
+            ? { create: classIds.map((classId) => ({ classId })) }
+            : undefined,
+        },
+        include: { classes: { include: { class: { select: CLASS_SELECT } } } },
+      });
     });
 
     await this.audit.log({
@@ -373,25 +422,59 @@ export class CollectionsService {
       ipAddress,
     });
 
-    return collection;
+    return {
+      ...collection,
+      classes: collection.classes.map((row) => row.class),
+    };
   }
 
   async updateCollection(
     adminId: string,
     id: string,
-    data: Record<string, unknown>,
+    data: {
+      name?: string;
+      nameAr?: string;
+      slug?: string;
+      description?: string;
+      descriptionAr?: string;
+      coverImageUrl?: string;
+      isVisible?: boolean;
+      sortOrder?: number;
+      origin?: string;
+      originAr?: string;
+      meaning?: string;
+      meaningAr?: string;
+      inspiration?: string;
+      inspirationAr?: string;
+      storyContent?: string;
+      storyContentAr?: string;
+      classIds?: string[];
+    },
     ipAddress?: string,
   ) {
-    const updateData = {
-      ...data,
-      ...(Array.isArray(data.visibilityGroups)
-        ? { visibilityGroups: this.visibility.normalizeGroups(data.visibilityGroups as string[]) }
-        : {}),
-    };
-
-    const collection = await this.prisma.db.collection.update({
+    const existing = await this.prisma.db.collection.findUnique({
       where: { id },
-      data: updateData,
+      select: { id: true },
+    });
+    if (!existing) throw new NotFoundException("errors.COLLECTION_NOT_FOUND");
+
+    const { classIds, ...fields } = data;
+    const collection = await this.prisma.db.$transaction(async (tx) => {
+      if (classIds) {
+        await this.assertClassIds(tx, classIds);
+        await tx.collectionClass.deleteMany({ where: { collectionId: id } });
+        if (classIds.length) {
+          await tx.collectionClass.createMany({
+            data: classIds.map((classId) => ({ collectionId: id, classId })),
+          });
+        }
+      }
+
+      return tx.collection.update({
+        where: { id },
+        data: fields,
+        include: { classes: { include: { class: { select: CLASS_SELECT } } } },
+      });
     });
 
     await this.audit.log({
@@ -403,7 +486,92 @@ export class CollectionsService {
       ipAddress,
     });
 
-    return collection;
+    return {
+      ...collection,
+      classes: collection.classes.map((row) => row.class),
+    };
+  }
+
+  async uploadCover(
+    adminId: string,
+    id: string,
+    buffer: Buffer,
+    contentType: string,
+    ipAddress?: string,
+  ) {
+    const collection = await this.prisma.db.collection.findUnique({
+      where: { id },
+      select: { id: true },
+    });
+    if (!collection) throw new NotFoundException("errors.COLLECTION_NOT_FOUND");
+
+    const ext = extFromMime(contentType);
+    const key = collectionCoverKey(id, ext);
+    const variants = await this.imageProcessing.processAndUpload(buffer, key, contentType);
+
+    const updated = await this.prisma.db.collection.update({
+      where: { id },
+      data: {
+        coverImageUrl: variants.webp,
+        coverImageLqip: variants.lqipDataUrl,
+      },
+      select: { id: true, coverImageUrl: true },
+    });
+
+    await this.audit.log({
+      actorType: ActorType.ADMIN,
+      actorId: adminId,
+      action: "COLLECTION_UPDATED",
+      targetType: "Collection",
+      targetId: id,
+      metadata: { cover: variants.webp },
+      ipAddress,
+    });
+
+    return {
+      ...updated,
+      coverImageUrl: await this.storage.resolvePublicUrl(updated.coverImageUrl),
+    };
+  }
+
+  async uploadStoryImage(
+    adminId: string,
+    id: string,
+    buffer: Buffer,
+    contentType: string,
+    ipAddress?: string,
+  ) {
+    const collection = await this.prisma.db.collection.findUnique({
+      where: { id },
+      select: { id: true, storyImageUrls: true },
+    });
+    if (!collection) throw new NotFoundException("errors.COLLECTION_NOT_FOUND");
+
+    const fileId = randomUUID();
+    const ext = extFromMime(contentType);
+    const key = collectionStoryImageKey(id, fileId, ext);
+    const variants = await this.imageProcessing.processAndUpload(buffer, key, contentType);
+
+    const updated = await this.prisma.db.collection.update({
+      where: { id },
+      data: { storyImageUrls: { push: variants.webp } },
+      select: { id: true, storyImageUrls: true },
+    });
+
+    await this.audit.log({
+      actorType: ActorType.ADMIN,
+      actorId: adminId,
+      action: "COLLECTION_UPDATED",
+      targetType: "Collection",
+      targetId: id,
+      metadata: { storyImage: variants.webp },
+      ipAddress,
+    });
+
+    return {
+      id: updated.id,
+      storyImageUrls: await this.storage.resolvePublicUrls(updated.storyImageUrls),
+    };
   }
 
   async deleteCollection(adminId: string, id: string, ipAddress?: string) {
@@ -424,207 +592,20 @@ export class CollectionsService {
     return collection;
   }
 
-  async createDesign(
-    adminId: string,
-    data: {
-      name: string;
-      nameAr: string;
-      slug: string;
-      collectionId: string;
-      story: string;
-      storyAr: string;
-      material: string;
-      materialAr?: string;
-      weight: number;
-      dimensions: string;
-      dimensionsAr?: string;
-      basePrice: number;
-      currency?: string;
-      visibilityGroups?: string[];
-    },
-    ipAddress?: string,
-  ) {
-    const design = await this.prisma.db.design.create({
-      data: {
-        ...data,
-        weight: data.weight,
-        basePrice: data.basePrice,
-        currency: data.currency ?? "SAR",
-        imageUrls: [],
-        visibilityGroups: data.visibilityGroups
-          ? this.visibility.normalizeGroups(data.visibilityGroups)
-          : [],
-      },
-    });
-
-    await this.audit.log({
-      actorType: ActorType.ADMIN,
-      actorId: adminId,
-      action: "DESIGN_CREATED",
-      targetType: "Design",
-      targetId: design.id,
-      ipAddress,
-    });
-
-    return design;
-  }
-
-  async updateDesign(
-    adminId: string,
-    id: string,
-    data: Record<string, unknown>,
-    ipAddress?: string,
-  ) {
-    const updateData = {
-      ...data,
-      ...(Array.isArray(data.visibilityGroups)
-        ? { visibilityGroups: this.visibility.normalizeGroups(data.visibilityGroups as string[]) }
-        : {}),
-    };
-
-    const design = await this.prisma.db.design.update({
-      where: { id },
-      data: updateData,
-    });
-
-    await this.audit.log({
-      actorType: ActorType.ADMIN,
-      actorId: adminId,
-      action: "DESIGN_UPDATED",
-      targetType: "Design",
-      targetId: id,
-      ipAddress,
-    });
-
-    return design;
-  }
-
-  async deleteDesign(adminId: string, id: string, ipAddress?: string) {
-    const design = await this.prisma.db.design.update({
-      where: { id },
-      data: { isActive: false },
-    });
-
-    await this.audit.log({
-      actorType: ActorType.ADMIN,
-      actorId: adminId,
-      action: "DESIGN_SOFT_DELETED",
-      targetType: "Design",
-      targetId: id,
-      ipAddress,
-    });
-
-    return design;
-  }
-
-  async uploadDesignImage(
-    adminId: string,
-    designId: string,
-    buffer: Buffer,
-    contentType: string,
-    ipAddress?: string,
-  ) {
-    const design = await this.prisma.db.design.findUnique({ where: { id: designId } });
-    if (!design) throw new NotFoundException("errors.DESIGN_NOT_FOUND");
-
-    const fileId = randomUUID();
-    const ext = extFromMime(contentType);
-    const key = designImageKey(designId, fileId, ext);
-
-    const variants = await this.imageProcessing.processAndUpload(buffer, key, contentType);
-
-    const updated = await this.prisma.db.design.update({
-      where: { id: designId },
-      data: {
-        imageUrls: { push: variants.webp },
-        imageLqips: { push: variants.lqipDataUrl },
-      },
-    });
-
-    await this.audit.log({
-      actorType: ActorType.ADMIN,
-      actorId: adminId,
-      action: "DESIGN_IMAGE_UPLOADED",
-      targetType: "Design",
-      targetId: designId,
-      metadata: { key: variants.webp, lqip: variants.lqip },
-      ipAddress,
-    });
-
-    return updated;
-  }
-
-  async upsertSpecifications(
-    adminId: string,
-    designId: string,
-    specs: {
-      key: string;
-      keyAr?: string;
-      value: string;
-      valueAr?: string;
-      sortOrder?: number;
-    }[],
-    ipAddress?: string,
-  ) {
-    await this.prisma.db.$transaction(async (tx) => {
-      for (const spec of specs) {
-        const existing = await tx.designSpecification.findFirst({
-          where: { designId, key: spec.key },
-        });
-        if (existing) {
-          await tx.designSpecification.update({
-            where: { id: existing.id },
-            data: {
-              value: spec.value,
-              keyAr: spec.keyAr ?? existing.keyAr,
-              valueAr: spec.valueAr ?? existing.valueAr,
-              sortOrder: spec.sortOrder ?? existing.sortOrder,
-            },
-          });
-        } else {
-          await tx.designSpecification.create({
-            data: {
-              designId,
-              key: spec.key,
-              keyAr: spec.keyAr,
-              value: spec.value,
-              valueAr: spec.valueAr,
-              sortOrder: spec.sortOrder ?? 0,
-            },
-          });
-        }
-      }
-    });
-
-    await this.audit.log({
-      actorType: ActorType.ADMIN,
-      actorId: adminId,
-      action: "DESIGN_SPECS_UPDATED",
-      targetType: "Design",
-      targetId: designId,
-      ipAddress,
-    });
-
-    return this.prisma.db.designSpecification.findMany({
-      where: { designId },
-      orderBy: { sortOrder: "asc" },
-    });
-  }
-
-  async deleteDesignFiles(designId: string): Promise<{ deleted: number; errors: number }> {
-    const design = await this.prisma.db.design.findUnique({
-      where: { id: designId },
+  async deletePieceFiles(pieceId: string): Promise<{ deleted: number; errors: number }> {
+    const piece = await this.prisma.db.piece.findUnique({
+      where: { id: pieceId },
       select: { imageUrls: true },
     });
 
-    if (!design?.imageUrls?.length) {
+    if (!piece?.imageUrls?.length) {
       return { deleted: 0, errors: 0 };
     }
 
     let deleted = 0;
     let errors = 0;
 
-    for (const key of design.imageUrls) {
+    for (const key of piece.imageUrls) {
       try {
         const exists = await this.storage.exists(key);
         if (exists) {
@@ -639,33 +620,22 @@ export class CollectionsService {
     return { deleted, errors };
   }
 
-  async deleteCollectionCoverFile(collectionId: string): Promise<boolean> {
-    const collection = await this.prisma.db.collection.findUnique({
-      where: { id: collectionId },
-      select: { coverImageUrl: true },
-    });
-
-    if (!collection?.coverImageUrl) {
-      return false;
+  private async assertClassIds(
+    tx: { class: { count: (args: { where: { id: { in: string[] } } }) => Promise<number> } },
+    classIds?: string[],
+  ) {
+    if (!classIds?.length) return;
+    const unique = [...new Set(classIds)];
+    const count = await tx.class.count({ where: { id: { in: unique } } });
+    if (count !== unique.length) {
+      throw new NotFoundException("errors.CLASS_NOT_FOUND");
     }
-
-    try {
-      const exists = await this.storage.exists(collection.coverImageUrl);
-      if (exists) {
-        await this.storage.delete(collection.coverImageUrl);
-        return true;
-      }
-    } catch {
-      return false;
-    }
-
-    return false;
   }
 }
 
 @Injectable()
-export class DesignCleanupService {
-  private readonly logger = new Logger(DesignCleanupService.name);
+export class PieceCleanupService {
+  private readonly logger = new Logger(PieceCleanupService.name);
 
   constructor(
     private readonly prisma: PrismaService,
@@ -674,38 +644,38 @@ export class DesignCleanupService {
   ) {}
 
   @Cron(CronExpression.EVERY_DAY_AT_3AM)
-  async cleanupOrphanedDesignFiles() {
+  async cleanupOrphanedPieceFiles() {
     const retentionDate = new Date();
-    retentionDate.setDate(retentionDate.getDate() - DESIGN_FILE_RETENTION_DAYS);
+    retentionDate.setDate(retentionDate.getDate() - PIECE_FILE_RETENTION_DAYS);
 
-    const softDeletedDesigns = await this.prisma.db.design.findMany({
+    const inactivePieces = await this.prisma.db.piece.findMany({
       where: {
         isActive: false,
         updatedAt: { lte: retentionDate },
         imageUrls: { isEmpty: false },
       },
-      select: { id: true, imageUrls: true },
+      select: { id: true },
     });
 
-    if (softDeletedDesigns.length === 0) {
+    if (inactivePieces.length === 0) {
       return;
     }
 
     this.logger.log(
-      `Starting cleanup of ${softDeletedDesigns.length} soft-deleted designs older than ${DESIGN_FILE_RETENTION_DAYS} days`,
+      `Starting cleanup of ${inactivePieces.length} inactive pieces older than ${PIECE_FILE_RETENTION_DAYS} days`,
     );
 
     let totalDeleted = 0;
     let totalErrors = 0;
 
-    for (const design of softDeletedDesigns) {
-      const { deleted, errors } = await this.collections.deleteDesignFiles(design.id);
+    for (const piece of inactivePieces) {
+      const { deleted, errors } = await this.collections.deletePieceFiles(piece.id);
       totalDeleted += deleted;
       totalErrors += errors;
 
       if (deleted > 0) {
-        await this.prisma.db.design.update({
-          where: { id: design.id },
+        await this.prisma.db.piece.update({
+          where: { id: piece.id },
           data: { imageUrls: [], imageLqips: [] },
         });
       }
@@ -714,9 +684,9 @@ export class DesignCleanupService {
     await this.audit.log({
       actorType: ActorType.SYSTEM,
       actorId: "system",
-      action: "DESIGN_FILES_CLEANUP",
+      action: "PIECE_FILES_CLEANUP",
       metadata: {
-        designsProcessed: softDeletedDesigns.length,
+        piecesProcessed: inactivePieces.length,
         filesDeleted: totalDeleted,
         errors: totalErrors,
       },

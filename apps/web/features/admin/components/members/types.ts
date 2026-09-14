@@ -1,4 +1,4 @@
-export type MembershipClass = "Class A" | "Class B" | "Class C";
+export type MembershipClass = string;
 export type MemberStatus = "ACTIVE" | "INACTIVE" | "PENDING" | "SUSPENDED";
 
 export interface MemberListItem {

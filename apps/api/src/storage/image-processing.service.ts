@@ -1,5 +1,6 @@
 import { Injectable } from "@nestjs/common";
 import sharp from "sharp";
+import { validateMagicBytes } from "@dadan/storage";
 import { StorageService } from "./storage.service";
 
 export interface ImageVariants {
@@ -40,6 +41,7 @@ export class ImageProcessingService {
     baseKey: string,
     contentType: string,
   ): Promise<ImageVariants> {
+    await validateMagicBytes(buffer, contentType);
     await this.validateDimensions(buffer);
 
     const image = sharp(buffer);

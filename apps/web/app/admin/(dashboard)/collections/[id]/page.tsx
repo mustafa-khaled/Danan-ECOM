@@ -4,22 +4,10 @@ import { getAdminCookieHeader } from "@/features/auth/server/admin-session";
 import { ApiError } from "@/shared/lib/send-request";
 import { Check } from "lucide-react";
 
-const status = [
-  {
-    id: 1,
-    title: "Pieces",
-    count: 42,
-  },
-  {
-    id: 2,
-    title: "Owners",
-    count: 324,
-  },
-  {
-    id: 3,
-    title: "Transfers",
-    count: 18,
-  },
+const fallbackStatus = [
+  { id: 1, title: "Pieces", count: 0 },
+  { id: 2, title: "Owners", count: 0 },
+  { id: 3, title: "Transfers", count: 0 },
 ] as const;
 
 interface EditCollectionPageProps {
@@ -57,6 +45,21 @@ export default async function EditCollectionPage({
         year: "numeric",
       })
     : "02 Aug 2026";
+
+  const status = collection.stats
+    ? [
+        { id: 1, title: "Pieces", count: collection.stats.pieceCount },
+        { id: 2, title: "Owners", count: collection.stats.ownerCount },
+        { id: 3, title: "Transfers", count: collection.stats.transferCount },
+      ]
+    : fallbackStatus;
+
+  const health = collection.health ?? {
+    hasStory: false,
+    hasCover: Boolean(collection.coverImageUrl),
+    hasPieces: (collection.stats?.pieceCount ?? 0) > 0,
+    hasAccessRules: (collection.classes?.length ?? 0) > 0,
+  };
 
   return (
     <div>
@@ -113,30 +116,21 @@ export default async function EditCollectionPage({
         </h4>
 
         <ul className="bg-[#FBF7F7] p-6 rounded-xl space-y-3 [&>li]:flex [&>li]:gap-3 [&>li]:items-center [&>li]:text-[#353D48] [&>li]:font-semibold [&>li]:text-h6">
-          <li>
-            <span className="w-[16px] h-[16px] rounded-full flex items-center justify-center text-white bg-[#1EC58B]">
-              <Check className="size-3" />
-            </span>
-            Collection Story
-          </li>
-          <li>
-            <span className="w-[16px] h-[16px] rounded-full flex items-center justify-center text-white bg-[#1EC58B]">
-              <Check className="size-3" />
-            </span>
-            Hero Image
-          </li>
-          <li>
-            <span className="w-[16px] h-[16px] rounded-full flex items-center justify-center text-white bg-[#1EC58B]">
-              <Check className="size-3" />
-            </span>
-            Pieces Added
-          </li>
-          <li>
-            <span className="w-[16px] h-[16px] rounded-full flex items-center justify-center text-white bg-[#1EC58B]">
-              <Check className="size-3" />
-            </span>
-            Access Rules Configured
-          </li>
+          {[
+            ["Collection Story", health.hasStory],
+            ["Hero Image", health.hasCover],
+            ["Pieces Added", health.hasPieces],
+            ["Access Rules Configured", health.hasAccessRules],
+          ].map(([label, ok]) => (
+            <li key={String(label)}>
+              <span
+                className={`w-[16px] h-[16px] rounded-full flex items-center justify-center text-white ${ok ? "bg-[#1EC58B]" : "bg-gray-300"}`}
+              >
+                <Check className="size-3" />
+              </span>
+              {label}
+            </li>
+          ))}
         </ul>
       </div>
 
@@ -146,7 +140,9 @@ export default async function EditCollectionPage({
         </h4>
 
         <p className="bg-[#FBF7F7] p-6 rounded-xl font-semibold text-[#4B5563] text-h6">
-          Collection Story Stories of family, protection and belonging...
+          {collection.storyContent ||
+            collection.description ||
+            "No collection story yet."}
         </p>
       </div>
 
@@ -156,24 +152,14 @@ export default async function EditCollectionPage({
         </h4>
 
         <ul className="bg-[#FBF7F7] p-6 rounded-xl space-y-3 [&>li]:flex [&>li]:gap-3 [&>li]:items-center [&>li]:text-[#353D48] [&>li]:font-semibold [&>li]:text-h6">
-          <li>
-            <span className="w-[16px] h-[16px] rounded-full flex items-center justify-center text-white bg-[#1EC58B]">
-              <Check className="size-3" />
-            </span>
-            Class A
-          </li>
-          <li>
-            <span className="w-[16px] h-[16px] rounded-full flex items-center justify-center text-white bg-[#1EC58B]">
-              <Check className="size-3" />
-            </span>
-            Class B
-          </li>
-          <li>
-            <span className="w-[16px] h-[16px] rounded-full flex items-center justify-center text-white bg-gray-300">
-              <Check className="size-3" />
-            </span>
-            Class C
-          </li>
+          {(collection.classes ?? []).map((cls) => (
+            <li key={cls.id}>
+              <span className="w-[16px] h-[16px] rounded-full flex items-center justify-center text-white bg-[#1EC58B]">
+                <Check className="size-3" />
+              </span>
+              {cls.name}
+            </li>
+          ))}
         </ul>
       </div>
     </div>

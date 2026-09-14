@@ -27,7 +27,7 @@ interface CollectionI18nFields {
   descriptionAr: string | null;
 }
 
-interface DesignI18nFields {
+interface PieceI18nFields {
   name: string;
   nameAr: string | null;
   story: string;
@@ -62,20 +62,20 @@ export function localizeCollection<T extends CollectionI18nFields>(
 }
 
 /**
- * Collapses bilingual design fields to the requested locale and strips
+ * Collapses bilingual piece catalog fields to the requested locale and strips
  * the raw *Ar columns from the response.
  */
-export function localizeDesign<T extends DesignI18nFields>(
-  design: T,
+export function localizePiece<T extends PieceI18nFields>(
+  piece: T,
   locale: Locale,
 ): Omit<T, "nameAr" | "storyAr" | "materialAr" | "dimensionsAr"> {
-  const { nameAr, storyAr, materialAr, dimensionsAr, ...rest } = design;
+  const { nameAr, storyAr, materialAr, dimensionsAr, ...rest } = piece;
   return {
     ...rest,
-    name: pickLocalized(locale, design.name, nameAr),
-    story: pickLocalized(locale, design.story, storyAr),
-    material: pickLocalized(locale, design.material, materialAr),
-    dimensions: pickLocalized(locale, design.dimensions, dimensionsAr),
+    name: pickLocalized(locale, piece.name, nameAr),
+    story: pickLocalized(locale, piece.story, storyAr),
+    material: pickLocalized(locale, piece.material, materialAr),
+    dimensions: pickLocalized(locale, piece.dimensions, dimensionsAr),
   };
 }
 

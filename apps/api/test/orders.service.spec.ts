@@ -18,6 +18,7 @@ describe("OrdersService", () => {
     ownershipRecord: { create: jest.fn() },
     cartItem: { deleteMany: jest.fn() },
     checkoutReservation: { deleteMany: jest.fn() },
+    savedPiece: { deleteMany: jest.fn() },
     $queryRaw: jest.fn(),
   };
 

@@ -24,7 +24,18 @@ export class AdminOrdersController {
 
   @Get()
   list(@Query() query: AdminOrderQueryDto) {
-    return this.orders.listAdminOrders(query.page, query.limit, query.status, query.clientId);
+    return this.orders.listAdminOrders(query.page, query.limit, {
+      status: query.status,
+      paymentStatus: query.paymentStatus,
+      paymentMethod: query.paymentMethod,
+      clientId: query.clientId,
+      q: query.q,
+    });
+  }
+
+  @Get("stats")
+  stats() {
+    return this.orders.getOrderStats();
   }
 
   @Get(":id")

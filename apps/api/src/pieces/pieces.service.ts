@@ -7,16 +7,19 @@ import { InjectQueue } from "@nestjs/bullmq";
 import { Queue } from "bullmq";
 import { AcquisitionType, ActorType, PieceStatus } from "@dadan/db";
 import type { Locale } from "@dadan/types";
+import { randomUUID } from "node:crypto";
+import { extFromMime, pieceImageKey } from "@dadan/storage";
 import { AuditService } from "../audit/audit.service";
 import { CERTIFICATE_QUEUE } from "../certificates/jobs/certificate-job.processor";
 import type { GenerateCertificateJobData } from "../certificates/jobs/certificate-job.processor";
 import { PrismaService } from "../prisma/prisma.service";
 import { StorageService } from "../storage/storage.service";
+import { ImageProcessingService } from "../storage/image-processing.service";
 import { VisibilityService } from "../visibility/visibility.service";
 import { SerialNumberService } from "./serial-number.service";
 import { MAX_CATALOG_ROWS, paginationParams } from "../common/constants";
 import {
-  localizeDesign,
+  localizePiece,
   localizeSpecifications,
   pickLocalized,
 } from "../common/i18n/localize";
@@ -35,16 +38,12 @@ export class PiecesService {
     private readonly serialNumbers: SerialNumberService,
     private readonly audit: AuditService,
     private readonly storage: StorageService,
+    private readonly imageProcessing: ImageProcessingService,
     private readonly visibility: VisibilityService,
     @InjectQueue(CERTIFICATE_QUEUE)
     private readonly certificateQueue: Queue<GenerateCertificateJobData>,
   ) {}
 
-  /**
-   * Certificate rendering is CPU- and memory-heavy, so admin actions that mint
-   * one hand it to the shared queue rather than blocking the request thread.
-   * `jobId` collapses retries of the same piece into a single render.
-   */
   private enqueueCertificate(
     pieceId: string,
     clientId: string,
@@ -64,19 +63,26 @@ export class PiecesService {
   }
 
   async getWardrobe(clientId: string, locale: Locale = "ar", limit?: number) {
+    const take =
+      limit && limit > 0 ? Math.min(limit, MAX_CATALOG_ROWS) : MAX_CATALOG_ROWS;
+
+    const records = await this.prisma.db.ownershipRecord.findMany({
+      where: { clientId, transferredAt: null },
+      orderBy: { acquiredAt: "desc" },
+      take,
+      select: { pieceId: true, acquiredAt: true },
+    });
+    if (records.length === 0) return [];
+
+    const order = new Map(records.map((row, index) => [row.pieceId, index]));
     const pieces = await this.prisma.db.piece.findMany({
-      where: { currentOwnerId: clientId },
-      // The result is re-sorted by acquisition date below, so `limit` cannot
-      // be pushed down without changing which pieces are returned. This cap
-      // bounds the read instead of letting it grow with the wardrobe.
-      take: MAX_CATALOG_ROWS,
+      where: {
+        id: { in: records.map((row) => row.pieceId) },
+        currentOwnerId: clientId,
+      },
       include: {
-        design: {
-          include: {
-            specifications: { orderBy: { sortOrder: "asc" } },
-            collection: true,
-          },
-        },
+        collection: true,
+        specifications: { orderBy: { sortOrder: "asc" } },
         certificates: { where: { isActive: true }, take: 1 },
         ownershipRecords: {
           where: { clientId },
@@ -84,49 +90,51 @@ export class PiecesService {
           take: 1,
         },
       },
-      orderBy: { updatedAt: "desc" },
+    });
+    pieces.sort(
+      (a, b) => (order.get(a.id) ?? 0) - (order.get(b.id) ?? 0),
+    );
+
+    const urlMap = await this.storage.resolvePublicUrlsBatch(
+      pieces.flatMap((piece) => piece.imageUrls),
+    );
+
+    return pieces.map((p) => ({
+      id: p.id,
+      serialNumber: p.serialNumber,
+      status: p.status,
+      name: pickLocalized(locale, p.name, p.nameAr),
+      slug: p.slug,
+      images: p.imageUrls
+        .map((key) => urlMap.get(key))
+        .filter((url): url is string => !!url),
+      specifications: localizeSpecifications(p.specifications, locale),
+      collection: pickLocalized(locale, p.collection.name, p.collection.nameAr),
+      certificate: p.certificates[0] ?? null,
+      acquiredAt: p.ownershipRecords[0]?.acquiredAt ?? p.registeredAt,
+    }));
+  }
+
+  async getOwnershipHistory(clientId: string, locale: Locale = "ar") {
+    const records = await this.prisma.db.ownershipRecord.findMany({
+      where: { clientId },
+      orderBy: { acquiredAt: "desc" },
+      take: 100,
+      select: {
+        id: true,
+        acquiredAt: true,
+        acquisitionType: true,
+        piece: { select: { id: true, name: true, nameAr: true } },
+      },
     });
 
-    let sortedPieces = pieces
-      .map((p) => ({
-        id: p.id,
-        serialNumber: p.serialNumber,
-        status: p.status,
-        design: {
-          name: pickLocalized(locale, p.design.name, p.design.nameAr),
-          slug: p.design.slug,
-          images: p.design.imageUrls,
-          specifications: localizeSpecifications(
-            p.design.specifications,
-            locale,
-          ),
-          collection: pickLocalized(
-            locale,
-            p.design.collection.name,
-            p.design.collection.nameAr,
-          ),
-        },
-        certificate: p.certificates[0] ?? null,
-        acquiredAt: p.ownershipRecords[0]?.acquiredAt ?? p.registeredAt,
-      }))
-      .sort(
-        (a, b) =>
-          new Date(b.acquiredAt).getTime() - new Date(a.acquiredAt).getTime(),
-      );
-
-    if (limit && limit > 0) {
-      sortedPieces = sortedPieces.slice(0, limit);
-    }
-
-    return Promise.all(
-      sortedPieces.map(async (entry) => ({
-        ...entry,
-        design: {
-          ...entry.design,
-          images: await this.storage.resolvePublicUrls(entry.design.images),
-        },
-      })),
-    );
+    return records.map((record) => ({
+      id: record.id,
+      pieceId: record.piece.id,
+      pieceName: pickLocalized(locale, record.piece.name, record.piece.nameAr),
+      date: record.acquiredAt.toISOString(),
+      type: record.acquisitionType,
+    }));
   }
 
   async getWardrobePiece(
@@ -137,12 +145,8 @@ export class PiecesService {
     const piece = await this.prisma.db.piece.findFirst({
       where: { id: pieceId, currentOwnerId: clientId },
       include: {
-        design: {
-          include: {
-            specifications: { orderBy: { sortOrder: "asc" } },
-            collection: true,
-          },
-        },
+        collection: true,
+        specifications: { orderBy: { sortOrder: "asc" } },
         ownershipRecords: { orderBy: { acquiredAt: "asc" } },
         certificates: { where: { isActive: true }, take: 1 },
         transferRequests: {
@@ -158,17 +162,17 @@ export class PiecesService {
 
     if (!piece) throw new NotFoundException("errors.PIECE_NOT_FOUND");
 
-    const signedImageUrls = await this.storage.resolvePublicUrls(piece.design.imageUrls);
-    const { specifications, ...designFields } = piece.design;
+    const { specifications, collection, ...pieceFields } = piece;
+    const signedImageUrls = await this.storage.resolvePublicUrls(piece.imageUrls);
 
     return {
-      id: piece.id,
-      serialNumber: piece.serialNumber,
-      status: piece.status,
-      design: {
-        ...localizeDesign(designFields, locale),
-        specifications: localizeSpecifications(specifications, locale),
-        imageUrls: signedImageUrls,
+      ...localizePiece(pieceFields, locale),
+      specifications: localizeSpecifications(specifications, locale),
+      imageUrls: signedImageUrls,
+      collection: {
+        id: collection.id,
+        name: pickLocalized(locale, collection.name, collection.nameAr),
+        slug: collection.slug,
       },
       ownershipHistory: piece.ownershipRecords.map((r) => ({
         acquiredAt: r.acquiredAt,
@@ -184,43 +188,34 @@ export class PiecesService {
     const saved = await this.prisma.db.savedPiece.findMany({
       where: { clientId },
       include: {
-        piece: {
-          include: {
-            design: { include: { collection: true } },
-          },
-        },
+        piece: { include: { collection: true } },
       },
       orderBy: { savedAt: "desc" },
     });
 
-    return Promise.all(
-      saved.map(async (s) => {
-        const { collection, ...designFields } = s.piece.design;
-        return {
-          savedAt: s.savedAt,
-          piece: {
-            id: s.piece.id,
-            serialNumber: s.piece.serialNumber,
-            status: s.piece.status,
-            design: {
-              ...localizeDesign(designFields, locale),
-              collection: {
-                id: collection.id,
-                name: pickLocalized(locale, collection.name, collection.nameAr),
-                slug: collection.slug,
-              },
-              imageUrls: await this.storage.resolvePublicUrls(s.piece.design.imageUrls),
-            },
-          },
-        };
-      }),
+    const urlMap = await this.storage.resolvePublicUrlsBatch(
+      saved.flatMap((s) => s.piece.imageUrls),
     );
+
+    return saved.map((s) => {
+      const { collection, ...pieceFields } = s.piece;
+      return {
+        savedAt: s.savedAt,
+        piece: {
+          ...localizePiece(pieceFields, locale),
+          collection: {
+            id: collection.id,
+            name: pickLocalized(locale, collection.name, collection.nameAr),
+            slug: collection.slug,
+          },
+          imageUrls: s.piece.imageUrls
+            .map((key) => urlMap.get(key))
+            .filter((url): url is string => !!url),
+        },
+      };
+    });
   }
 
-  /**
-   * Get combined collection data for a client in a single request.
-   * Returns both owned pieces and saved pieces with UI-ready format.
-   */
   async getMyCollection(clientId: string, locale: Locale = "ar") {
     const [owned, saved] = await Promise.all([
       this.getWardrobe(clientId, locale),
@@ -231,39 +226,32 @@ export class PiecesService {
       owned: owned.map((p) => ({
         id: p.id,
         serialNumber: p.serialNumber,
-        name: p.design.name,
-        slug: p.design.slug,
-        imageUrl: p.design.images[0] ?? null,
+        name: p.name,
+        slug: p.slug,
+        imageUrl: p.images[0] ?? null,
         acquiredAt: p.acquiredAt,
-        collection: p.design.collection,
+        collection: p.collection,
       })),
       saved: saved.map((s) => ({
         id: s.piece.id,
         serialNumber: s.piece.serialNumber,
-        name: s.piece.design.name,
-        slug: s.piece.design.slug,
-        imageUrl: s.piece.design.imageUrls[0] ?? null,
+        name: s.piece.name,
+        slug: s.piece.slug,
+        imageUrl: s.piece.imageUrls[0] ?? null,
         savedAt: s.savedAt,
-        collection: s.piece.design.collection.name,
-        price: s.piece.design.basePrice,
-        currency: s.piece.design.currency,
+        collection: s.piece.collection.name,
+        price: s.piece.price,
+        currency: s.piece.currency,
       })),
     };
   }
 
-  async savePiece(clientId: string, clientGroups: string[], pieceId: string) {
+  async savePiece(clientId: string, classId: string, pieceId: string) {
     const piece = await this.prisma.db.piece.findUnique({
       where: { id: pieceId },
-      include: { design: { include: { collection: true } } },
+      include: { collection: { include: { classes: { select: { classId: true } } } } },
     });
-    // Only allow saving pieces the client can actually see in the catalog.
-    if (
-      !piece ||
-      !piece.design.isActive ||
-      !piece.design.collection.isVisible ||
-      !this.visibility.canAccess(clientGroups, piece.design.visibilityGroups) ||
-      !this.visibility.canAccess(clientGroups, piece.design.collection.visibilityGroups)
-    ) {
+    if (!piece || !this.visibility.canAccessPiece(classId, piece)) {
       throw new NotFoundException("errors.PIECE_NOT_FOUND");
     }
 
@@ -284,16 +272,48 @@ export class PiecesService {
 
   async registerPiece(
     adminId: string,
-    data: { designId: string; notes?: string; initialClientId?: string },
+    data: {
+      collectionId: string;
+      name: string;
+      nameAr: string;
+      slug: string;
+      story: string;
+      storyAr: string;
+      material: string;
+      materialAr?: string;
+      weight: number;
+      dimensions: string;
+      dimensionsAr?: string;
+      price: number;
+      currency?: string;
+      notes?: string;
+      initialClientId?: string;
+    },
     ipAddress?: string,
   ) {
-    const serialNumber = await this.serialNumbers.generateForDesign(data.designId);
+    const serialNumber = await this.serialNumbers.generateForCollection(
+      data.collectionId,
+    );
 
     const piece = await this.prisma.db.$transaction(async (tx) => {
       const created = await tx.piece.create({
         data: {
           serialNumber,
-          designId: data.designId,
+          collectionId: data.collectionId,
+          name: data.name,
+          nameAr: data.nameAr,
+          slug: data.slug,
+          story: data.story,
+          storyAr: data.storyAr,
+          material: data.material,
+          materialAr: data.materialAr,
+          weight: data.weight,
+          dimensions: data.dimensions,
+          dimensionsAr: data.dimensionsAr,
+          price: data.price,
+          currency: data.currency ?? "SAR",
+          notes: data.notes,
+          imageUrls: [],
           status: data.initialClientId ? PieceStatus.OWNED : PieceStatus.AVAILABLE,
           currentOwnerId: data.initialClientId ?? null,
         },
@@ -329,29 +349,70 @@ export class PiecesService {
     return piece;
   }
 
-  async listPieces(page?: number, limit?: number) {
+  async listPieces(
+    page?: number,
+    limit?: number,
+    filters?: {
+      collectionId?: string;
+      status?: PieceStatus;
+      isActive?: boolean;
+      q?: string;
+    },
+  ) {
     const { skip, take, page: p, limit: l } = paginationParams(page, limit);
+    const q = filters?.q?.trim();
+    const where = {
+      ...(filters?.collectionId ? { collectionId: filters.collectionId } : {}),
+      ...(filters?.status ? { status: filters.status } : {}),
+      ...(filters?.isActive !== undefined ? { isActive: filters.isActive } : {}),
+      ...(q
+        ? {
+            OR: [
+              { name: { contains: q, mode: "insensitive" as const } },
+              { serialNumber: { contains: q.toUpperCase() } },
+            ],
+          }
+        : {}),
+    };
     const [items, total] = await Promise.all([
       this.prisma.db.piece.findMany({
         skip,
         take,
+        where,
         orderBy: { createdAt: "desc" },
-        include: {
-          design: { include: { collection: true } },
+        select: {
+          id: true,
+          serialNumber: true,
+          name: true,
+          slug: true,
+          material: true,
+          status: true,
+          isActive: true,
+          price: true,
+          updatedAt: true,
+          createdAt: true,
+          collection: { select: { id: true, name: true, slug: true } },
           currentOwner: { select: { displayName: true } },
         },
       }),
-      this.prisma.db.piece.count(),
+      this.prisma.db.piece.count({ where }),
     ]);
 
     return {
-      items: items.map((p) => ({
-        id: p.id,
-        serialNumber: p.serialNumber,
-        designName: p.design.name,
-        collection: p.design.collection.name,
-        currentOwner: p.currentOwner?.displayName ?? null,
-        status: p.status,
+      items: items.map((row) => ({
+        id: row.id,
+        serialNumber: row.serialNumber,
+        name: row.name,
+        slug: row.slug,
+        material: row.material,
+        collection: row.collection.name,
+        collectionId: row.collection.id,
+        currentOwner: row.currentOwner?.displayName ?? null,
+        status: row.status,
+        isActive: row.isActive,
+        price: row.price,
+        updatedAt: row.updatedAt,
+        createdAt: row.createdAt,
       })),
       total,
       page: p,
@@ -359,16 +420,27 @@ export class PiecesService {
     };
   }
 
+  async getPieceStats(collectionId?: string) {
+    const where = collectionId ? { collectionId } : {};
+    const [published, drafts, archived, total] = await Promise.all([
+      this.prisma.db.piece.count({
+        where: { ...where, isActive: true, status: { not: PieceStatus.RETIRED } },
+      }),
+      this.prisma.db.piece.count({ where: { ...where, isActive: false } }),
+      this.prisma.db.piece.count({
+        where: { ...where, status: PieceStatus.RETIRED },
+      }),
+      this.prisma.db.piece.count({ where }),
+    ]);
+    return { total, published, drafts, archived };
+  }
+
   async getPieceById(id: string) {
     const piece = await this.prisma.db.piece.findUnique({
       where: { id },
       include: {
-        design: {
-          include: {
-            specifications: { orderBy: { sortOrder: "asc" } },
-            collection: true,
-          },
-        },
+        collection: true,
+        specifications: { orderBy: { sortOrder: "asc" } },
         currentOwner: {
           select: {
             id: true,
@@ -387,13 +459,33 @@ export class PiecesService {
       },
     });
     if (!piece) throw new NotFoundException("errors.PIECE_NOT_FOUND");
-    return piece;
+    return {
+      ...piece,
+      imageUrls: await this.storage.resolvePublicUrls(piece.imageUrls),
+    };
   }
 
   async updatePiece(
     adminId: string,
     id: string,
-    data: { status?: PieceStatus; notes?: string },
+    data: {
+      status?: PieceStatus;
+      isActive?: boolean;
+      name?: string;
+      nameAr?: string;
+      slug?: string;
+      collectionId?: string;
+      story?: string;
+      storyAr?: string;
+      material?: string;
+      materialAr?: string;
+      weight?: number;
+      dimensions?: string;
+      dimensionsAr?: string;
+      price?: number;
+      currency?: string;
+      notes?: string;
+    },
     ipAddress?: string,
   ) {
     const piece = await this.prisma.db.piece.findUnique({ where: { id } });
@@ -414,7 +506,7 @@ export class PiecesService {
 
     const updated = await this.prisma.db.piece.update({
       where: { id },
-      data: { status: data.status },
+      data,
     });
 
     await this.audit.log({
@@ -459,6 +551,8 @@ export class PiecesService {
           notes: data.notes,
         },
       });
+
+      await tx.savedPiece.deleteMany({ where: { pieceId: id } });
     });
 
     await this.enqueueCertificate(id, data.clientId, adminId);
@@ -474,5 +568,104 @@ export class PiecesService {
     });
 
     return this.getPieceById(id);
+  }
+
+  async uploadPieceImage(
+    adminId: string,
+    pieceId: string,
+    buffer: Buffer,
+    contentType: string,
+    ipAddress?: string,
+  ) {
+    const piece = await this.prisma.db.piece.findUnique({ where: { id: pieceId } });
+    if (!piece) throw new NotFoundException("errors.PIECE_NOT_FOUND");
+
+    const fileId = randomUUID();
+    const ext = extFromMime(contentType);
+    const key = pieceImageKey(pieceId, fileId, ext);
+    const variants = await this.imageProcessing.processAndUpload(buffer, key, contentType);
+
+    const updated = await this.prisma.db.piece.update({
+      where: { id: pieceId },
+      data: {
+        imageUrls: { push: variants.webp },
+        imageLqips: { push: variants.lqipDataUrl },
+      },
+    });
+
+    await this.audit.log({
+      actorType: ActorType.ADMIN,
+      actorId: adminId,
+      action: "PIECE_IMAGE_UPLOADED",
+      targetType: "Piece",
+      targetId: pieceId,
+      metadata: { key: variants.webp, lqip: variants.lqip },
+      ipAddress,
+    });
+
+    return updated;
+  }
+
+  async upsertSpecifications(
+    adminId: string,
+    pieceId: string,
+    specs: {
+      key: string;
+      keyAr?: string;
+      value: string;
+      valueAr?: string;
+      sortOrder?: number;
+    }[],
+    ipAddress?: string,
+  ) {
+    const piece = await this.prisma.db.piece.findUnique({
+      where: { id: pieceId },
+      select: { id: true },
+    });
+    if (!piece) throw new NotFoundException("errors.PIECE_NOT_FOUND");
+
+    await this.prisma.db.$transaction(async (tx) => {
+      for (const spec of specs) {
+        const existing = await tx.pieceSpecification.findFirst({
+          where: { pieceId, key: spec.key },
+        });
+        if (existing) {
+          await tx.pieceSpecification.update({
+            where: { id: existing.id },
+            data: {
+              value: spec.value,
+              keyAr: spec.keyAr ?? existing.keyAr,
+              valueAr: spec.valueAr ?? existing.valueAr,
+              sortOrder: spec.sortOrder ?? existing.sortOrder,
+            },
+          });
+        } else {
+          await tx.pieceSpecification.create({
+            data: {
+              pieceId,
+              key: spec.key,
+              keyAr: spec.keyAr,
+              value: spec.value,
+              valueAr: spec.valueAr,
+              sortOrder: spec.sortOrder ?? 0,
+            },
+          });
+        }
+      }
+    });
+
+    await this.audit.log({
+      actorType: ActorType.ADMIN,
+      actorId: adminId,
+      action: "PIECE_SPECS_UPDATED",
+      targetType: "Piece",
+      targetId: pieceId,
+      ipAddress,
+    });
+
+    return this.prisma.db.pieceSpecification.findMany({
+      where: { pieceId },
+      orderBy: { sortOrder: "asc" },
+    });
   }
 }

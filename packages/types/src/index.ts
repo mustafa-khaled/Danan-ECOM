@@ -1,9 +1,16 @@
 export type Locale = "ar" | "en";
 
+export interface MembershipClass {
+  id: string;
+  slug: string;
+  name: string;
+}
+
 export interface ClientSession {
   clientId: string;
   displayName: string;
-  visibilityGroups: string[];
+  classId: string;
+  class: MembershipClass;
   locale: Locale;
 }
 
@@ -15,14 +22,14 @@ export interface ClientProfile {
   email: string;
   phone: string | null;
   locale: Locale;
-  visibilityGroups: string[];
+  class: MembershipClass;
   createdAt: string;
 }
 
 export interface AdminSession {
   adminId: string;
   email: string;
-  role: "SUPER_ADMIN" | "STAFF" | "VIEWER";
+  role: "SUPER_ADMIN" | "STAFF" | "CURATOR" | "OPERATIONS" | "VIEWER";
   displayName: string;
 }
 
@@ -40,7 +47,7 @@ export interface ShippingAddress {
 export interface ValidateKeyResponse {
   clientId: string;
   displayName: string;
-  visibilityGroups: string[];
+  class: MembershipClass;
   locale: Locale;
 }
 

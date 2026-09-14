@@ -10,7 +10,7 @@ import { Cron, CronExpression } from "@nestjs/schedule";
 import { createHash } from "node:crypto";
 import { ActorType, OrderStatus, PaymentStatus, PieceStatus } from "@dadan/db";
 import type { Locale, ShippingAddress } from "@dadan/types";
-import { localizeDesign, pickLocalized } from "../common/i18n/localize";
+import { localizePiece, pickLocalized } from "../common/i18n/localize";
 import { AuditService } from "../audit/audit.service";
 import { OrdersService } from "../orders/orders.service";
 import { PaymentsService, PaymentMethod } from "../payments/payments.service";
@@ -70,48 +70,48 @@ export class CartService {
     const pieces = pieceIds.length
       ? await this.prisma.db.piece.findMany({
           where: { id: { in: pieceIds } },
-          include: { design: { include: { collection: true } } },
+          include: { collection: { include: { classes: { select: { classId: true } } } } },
         })
       : [];
     const pieceMap = new Map(pieces.map((p) => [p.id, p]));
+    const urlMap = await this.storage.resolvePublicUrlsBatch(
+      pieces.flatMap((p) => p.imageUrls),
+    );
 
-    const items = await Promise.all(
-      dbItems.map(async (item) => {
-        const piece = pieceMap.get(item.pieceId);
-        if (!piece) {
-          return {
-            id: item.id,
-            addedAt: item.addedAt,
-            piece: null,
-          };
-        }
-
-        const { collection, ...designFields } = piece.design;
+    const items = dbItems.map((item) => {
+      const piece = pieceMap.get(item.pieceId);
+      if (!piece) {
         return {
           id: item.id,
           addedAt: item.addedAt,
-          piece: {
-            ...piece,
-            design: {
-              ...localizeDesign(designFields, locale),
-              collection: {
-                id: collection.id,
-                name: pickLocalized(locale, collection.name, collection.nameAr),
-                slug: collection.slug,
-              },
-              imageUrls: await this.storage.resolvePublicUrls(piece.design.imageUrls),
-            },
-          },
+          piece: null,
         };
-      }),
-    );
+      }
+
+      const { collection, ...pieceFields } = piece;
+      return {
+        id: item.id,
+        addedAt: item.addedAt,
+        piece: {
+          ...localizePiece(pieceFields, locale),
+          collection: {
+            id: collection.id,
+            name: pickLocalized(locale, collection.name, collection.nameAr),
+            slug: collection.slug,
+          },
+          imageUrls: piece.imageUrls
+            .map((key) => urlMap.get(key))
+            .filter((url): url is string => !!url),
+        },
+      };
+    });
 
     const validPieces = pieces.filter((p) => pieceMap.has(p.id));
     const vatRate = this.config.get<number>("VAT_RATE") ?? 0.15;
     let subtotal = 0;
     let vatAmount = 0;
     for (const piece of validPieces) {
-      const price = Number(piece.design.basePrice);
+      const price = Number(piece.price);
       const itemTax = Math.round(price * vatRate * 100) / 100;
       subtotal += price;
       vatAmount += itemTax;
@@ -119,7 +119,7 @@ export class CartService {
     subtotal = Math.round(subtotal * 100) / 100;
     vatAmount = Math.round(vatAmount * 100) / 100;
     const total = Math.round((subtotal + vatAmount) * 100) / 100;
-    const currency = validPieces[0]?.design.currency ?? "SAR";
+    const currency = validPieces[0]?.currency ?? "SAR";
 
     return {
       items,
@@ -136,23 +136,34 @@ export class CartService {
 
   async addToCart(
     clientId: string,
-    clientGroups: string[],
+    classId: string,
     pieceId: string,
     locale: Locale = "ar",
   ) {
     const piece = await this.prisma.db.piece.findUnique({
       where: { id: pieceId },
-      include: { design: { include: { collection: true } } },
+      include: { collection: { include: { classes: { select: { classId: true } } } } },
     });
     if (!piece) throw new NotFoundException("errors.PIECE_NOT_FOUND");
     // Respect catalog curation: a client must not be able to buy a piece
     // whose design/collection is hidden from them (same rules as getDesignBySlug).
-    this.assertPieceVisible(piece, clientGroups);
+    this.assertPieceVisible(piece, classId);
     if (piece.status !== PieceStatus.AVAILABLE) {
       throw new BadRequestException("errors.PIECE_NOT_AVAILABLE");
     }
     if (piece.currentOwnerId) {
       throw new BadRequestException("errors.PIECE_ALREADY_OWNED");
+    }
+
+    const reservation = await this.prisma.db.checkoutReservation.findUnique({
+      where: { pieceId },
+    });
+    if (
+      reservation &&
+      reservation.expiresAt > new Date() &&
+      reservation.clientId !== clientId
+    ) {
+      throw new BadRequestException("errors.PIECE_RESERVED");
     }
 
     await this.prisma.db.cartItem.upsert({
@@ -171,7 +182,7 @@ export class CartService {
     return { success: true };
   }
 
-  async reserveForCheckout(clientId: string, clientGroups: string[]) {
+  async reserveForCheckout(clientId: string, classId: string) {
     const cartItems = await this.prisma.db.cartItem.findMany({
       where: { clientId },
     });
@@ -184,7 +195,7 @@ export class CartService {
 
     const pieces = await this.prisma.db.piece.findMany({
       where: { id: { in: pieceIds } },
-      include: { design: { include: { collection: true } } },
+      include: { collection: { include: { classes: { select: { classId: true } } } } },
     });
     const pieceMap = new Map(pieces.map((p) => [p.id, p]));
 
@@ -193,7 +204,7 @@ export class CartService {
       if (!piece || piece.status !== PieceStatus.AVAILABLE || piece.currentOwnerId) {
         throw new BadRequestException("errors.PIECE_NOT_AVAILABLE");
       }
-      this.assertPieceVisible(piece, clientGroups);
+      this.assertPieceVisible(piece, classId);
     }
 
     const existingReservations = await this.prisma.db.checkoutReservation.findMany({
@@ -224,7 +235,7 @@ export class CartService {
 
   async checkout(
     clientId: string,
-    clientGroups: string[],
+    classId: string,
     data: {
       shippingAddress: ShippingAddress;
       paymentMethod: PaymentMethod;
@@ -262,7 +273,7 @@ export class CartService {
 
     const pieces = await this.prisma.db.piece.findMany({
       where: { id: { in: pieceIds } },
-      include: { design: { include: { collection: true } } },
+      include: { collection: { include: { classes: { select: { classId: true } } } } },
     });
     const pieceMap = new Map(pieces.map((p) => [p.id, p]));
 
@@ -271,7 +282,7 @@ export class CartService {
       if (!piece || piece.status !== PieceStatus.AVAILABLE) {
         throw new BadRequestException("errors.PIECE_NOT_AVAILABLE");
       }
-      this.assertPieceVisible(piece, clientGroups);
+      this.assertPieceVisible(piece, classId);
     }
 
     const vatRate = this.config.get<number>("VAT_RATE") ?? 0.15;
@@ -280,7 +291,7 @@ export class CartService {
     let subtotal = 0;
     let vatAmount = 0;
     for (const piece of pieces) {
-      const price = Number(piece.design.basePrice);
+      const price = Number(piece.price);
       const itemTax = Math.round(price * vatRate * 100) / 100;
       subtotal += price;
       vatAmount += itemTax;
@@ -288,7 +299,7 @@ export class CartService {
     subtotal = Math.round(subtotal * 100) / 100;
     vatAmount = Math.round(vatAmount * 100) / 100;
     const totalAmount = Math.round((subtotal + vatAmount) * 100) / 100;
-    const currency = pieces[0]!.design.currency;
+    const currency = pieces[0]!.currency;
 
     const sortedPieceIds = pieceIds.sort().join("|");
     const idempotencyKey = `checkout_${clientId}_${reservationEpoch}_${createHash("sha256").update(sortedPieceIds).digest("hex").slice(0, 16)}`;
@@ -548,20 +559,12 @@ export class CartService {
    */
   private assertPieceVisible(
     piece: {
-      design: {
-        isActive: boolean;
-        visibilityGroups: string[];
-        collection: { isVisible: boolean; visibilityGroups: string[] };
-      };
+      isActive: boolean;
+      collection: { isVisible: boolean; classes: { classId: string }[] };
     },
-    clientGroups: string[],
+    classId: string,
   ): void {
-    if (
-      !piece.design.isActive ||
-      !piece.design.collection.isVisible ||
-      !this.visibility.canAccess(clientGroups, piece.design.visibilityGroups) ||
-      !this.visibility.canAccess(clientGroups, piece.design.collection.visibilityGroups)
-    ) {
+    if (!this.visibility.canAccessPiece(classId, piece)) {
       throw new NotFoundException("errors.PIECE_NOT_FOUND");
     }
   }

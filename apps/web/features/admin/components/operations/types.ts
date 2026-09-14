@@ -14,6 +14,7 @@ export type OperationType =
 
 export interface OperationItem {
   id: string;
+  kind: "transfer" | "staff";
   requestNumber: string;
   title: string;
   type: OperationType;

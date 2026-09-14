@@ -1,146 +1,96 @@
 "use client";
 
-import { useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { DataTable, type ColumnDef } from "@/components/ui";
-import { Pencil, Trash2, Check } from "lucide-react";
+import { Check } from "lucide-react";
+import { fetchAdminClasses } from "@/features/admin/api/fetch-admin-classes";
+import {
+  fetchAdminCollections,
+  updateCollection,
+} from "@/features/admin/api/fetch-admin-collections";
+import type { AdminClass, AdminCollectionListItem } from "@/features/admin/types";
 
 export interface MembershipPermissionRow {
   id: string;
   name: string;
-  classA: boolean;
-  classB: boolean;
-  classC: boolean;
+  classIds: string[];
 }
 
-const defaultMembershipPermissions: MembershipPermissionRow[] = [
-  {
-    id: "collection-x-1",
-    name: "Collection X",
-    classA: true,
-    classB: true,
-    classC: true,
-  },
-  {
-    id: "collection-y-1",
-    name: "Collection y",
-    classA: true,
-    classB: true,
-    classC: false,
-  },
-  {
-    id: "collection-x-2",
-    name: "Collection X",
-    classA: true,
-    classB: false,
-    classC: false,
-  },
-  {
-    id: "collection-y-2",
-    name: "Collection y",
-    classA: true,
-    classB: true,
-    classC: false,
-  },
-  {
-    id: "collection-x-3",
-    name: "Collection X",
-    classA: true,
-    classB: false,
-    classC: false,
-  },
-];
+export default function MembershipPermissionsTable() {
+  const [classes, setClasses] = useState<AdminClass[]>([]);
+  const [collections, setCollections] = useState<AdminCollectionListItem[]>([]);
+  const [error, setError] = useState<string | null>(null);
 
-const columns: ColumnDef<MembershipPermissionRow>[] = [
-  {
-    key: "name",
-    label: "Permission",
-    accessor: "name",
-    cellClassName: "font-medium text-[#272D35] text-[15px] w-[352px]",
-  },
-  {
-    key: "classA",
-    label: "Class A",
-    align: "center",
-    render: (_, row) => (
-      <div className="flex justify-center">
-        <span
-          className={`w-[16px] h-[16px] rounded-full flex items-center justify-center text-white ${
-            row.classA ? "bg-[#1EC58B]" : "bg-[#D1D5DB]"
-          }`}
-        >
-          <Check className="size-3" />
-        </span>
-      </div>
-    ),
-  },
-  {
-    key: "classB",
-    label: "Class B",
-    align: "center",
-    render: (_, row) => (
-      <div className="flex justify-center">
-        <span
-          className={`w-[16px] h-[16px] rounded-full flex items-center justify-center text-white ${
-            row.classB ? "bg-[#1EC58B]" : "bg-[#D1D5DB]"
-          }`}
-        >
-          <Check className="size-3" />
-        </span>
-      </div>
-    ),
-  },
-  {
-    key: "classC",
-    label: "Class C",
-    align: "center",
-    render: (_, row) => (
-      <div className="flex justify-center">
-        <span
-          className={`w-[16px] h-[16px] rounded-full flex items-center justify-center text-white ${
-            row.classC ? "bg-[#1EC58B]" : "bg-[#D1D5DB]"
-          }`}
-        >
-          <Check className="size-3" />
-        </span>
-      </div>
-    ),
-  },
-  {
-    key: "actions",
-    label: "Actions",
-    align: "right",
-    hideable: false,
-    render: (_, row) => (
-      <div className="flex items-center justify-end gap-2">
-        <button
-          type="button"
-          className="p-2 text-[#5D697A] hover:text-[#BF7266] hover:bg-[#F8FAFC] rounded-lg transition-colors"
-          title="Edit permission"
-          aria-label={`Edit ${row.name}`}
-        >
-          <Pencil className="w-4 h-4" />
-        </button>
-        <button
-          type="button"
-          className="p-2 text-[#5D697A] hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
-          title="Delete permission"
-          aria-label={`Delete ${row.name}`}
-        >
-          <Trash2 className="w-4 h-4" />
-        </button>
-      </div>
-    ),
-  },
-];
+  const load = useCallback(async () => {
+    try {
+      const [cls, cols] = await Promise.all([
+        fetchAdminClasses(),
+        fetchAdminCollections(1, 100),
+      ]);
+      setClasses(cls.filter((item) => item.isActive));
+      setCollections(cols.items);
+      setError(null);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed to load access matrix");
+    }
+  }, []);
 
-interface MembershipPermissionsTableProps {
-  initialData?: MembershipPermissionRow[];
-}
+  useEffect(() => {
+    void load();
+  }, [load]);
 
-export default function MembershipPermissionsTable({
-  initialData = defaultMembershipPermissions,
-}: MembershipPermissionsTableProps) {
-  const [permissions] = useState<MembershipPermissionRow[]>(initialData);
+  const rows: MembershipPermissionRow[] = collections.map((col) => ({
+    id: col.id,
+    name: col.name,
+    classIds: col.classes?.map((cls) => cls.id) ?? [],
+  }));
+
+  const toggle = useCallback(async (collectionId: string, classId: string) => {
+    const collection = collections.find((c) => c.id === collectionId);
+    if (!collection) return;
+    const current = collection.classes?.map((cls) => cls.id) ?? [];
+    const classIds = current.includes(classId)
+      ? current.filter((id) => id !== classId)
+      : [...current, classId];
+    try {
+      await updateCollection(collectionId, { classIds });
+      await load();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed to update access");
+    }
+  }, [collections, load]);
+
+  const columns = useMemo<ColumnDef<MembershipPermissionRow>[]>(() => {
+    return [
+      {
+        key: "name",
+        label: "Collection",
+        accessor: "name",
+        cellClassName: "font-medium text-[#272D35] text-[15px] w-[352px]",
+      },
+      ...classes.map((cls) => ({
+        key: cls.id,
+        label: cls.name,
+        align: "center" as const,
+        render: (_: unknown, row: MembershipPermissionRow) => (
+          <button
+            type="button"
+            className="flex justify-center w-full"
+            onClick={() => void toggle(row.id, cls.id)}
+            aria-label={`${row.name} ${cls.name}`}
+          >
+            <span
+              className={`w-[16px] h-[16px] rounded-full flex items-center justify-center text-white ${
+                row.classIds.includes(cls.id) ? "bg-[#1EC58B]" : "bg-[#D1D5DB]"
+              }`}
+            >
+              <Check className="size-3" />
+            </span>
+          </button>
+        ),
+      })),
+    ];
+  }, [classes, toggle]);
 
   return (
     <div className="py-[32px] border-b border-[#E1E4E8]">
@@ -148,12 +98,13 @@ export default function MembershipPermissionsTable({
         Membership Classes
       </h4>
       <p className="font-medium text-[#5D697A] text-h5 my-[16px]">
-        Define what each member class can access and do inside the DADAN House.
+        A collection is visible only to the classes checked here. Empty means no clients.
       </p>
+      {error && <p className="mb-4 text-sm text-red-500">{error}</p>}
 
       <div className="mt-6">
         <DataTable
-          data={permissions}
+          data={rows}
           columns={columns}
           keyExtractor={(row) => row.id}
           hoverable
@@ -162,8 +113,8 @@ export default function MembershipPermissionsTable({
             <DataTable.Table>
               <DataTable.Header />
               <DataTable.Body
-                emptyTitle="No permissions defined"
-                emptyMessage="Define what each member class can access."
+                emptyTitle="No collections"
+                emptyMessage="Create a collection to assign class access."
               />
             </DataTable.Table>
           </DataTable.Container>

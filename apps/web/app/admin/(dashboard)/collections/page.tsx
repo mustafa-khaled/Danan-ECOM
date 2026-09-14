@@ -4,23 +4,23 @@ import {
   CollectionTable,
 } from "@/features/admin";
 import { fetchAdminCollections } from "@/features/admin/api/fetch-admin-collections";
+import { fetchAdminCollectionStats } from "@/features/admin/api/fetch-admin-stats";
 import { getAdminCookieHeader } from "@/features/auth/server/admin-session";
 import { ADMIN_PAGE_SIZE, parseAdminPage } from "@/shared/lib/parse-admin-page";
 
 export default async function CollectionsPage({
   searchParams,
 }: {
-  searchParams: Promise<{ page?: string }>;
+  searchParams: Promise<{ page?: string; q?: string }>;
 }) {
-  const { page: pageParam } = await searchParams;
+  const { page: pageParam, q } = await searchParams;
   const page = parseAdminPage(pageParam);
   const cookieHeader = await getAdminCookieHeader();
 
-  const { items, total } = await fetchAdminCollections(
-    page,
-    ADMIN_PAGE_SIZE,
-    cookieHeader,
-  );
+  const [{ items, total }, stats] = await Promise.all([
+    fetchAdminCollections(page, ADMIN_PAGE_SIZE, cookieHeader, { q }),
+    fetchAdminCollectionStats(cookieHeader),
+  ]);
 
   return (
     <>
@@ -30,7 +30,7 @@ export default async function CollectionsPage({
 
       <div className="px-7.5 py-6.75">
         <div className="bg-white rounded-3xl p-6 space-y-6">
-          <CollectionsStats />
+          <CollectionsStats stats={stats} />
 
           <div className="space-y-4">
             <CollectionsTableFilter />

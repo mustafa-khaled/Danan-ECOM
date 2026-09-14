@@ -1,7 +1,7 @@
 // ---------------------------------------------------------------------------
 // DADAN seed dataset — the single source of truth for all application data.
 //
-// Every collection, product (design), client, and piece below is deterministic:
+// Every collection, catalog template, client, and piece below is deterministic:
 // re-running the seeder always produces the exact same dataset.
 //
 // All images come exclusively from the `seeder-assets/` directory.
@@ -25,10 +25,10 @@ export interface SeedCollection {
   descriptionAr: string;
   cover: string;
   sortOrder: number;
-  visibilityGroups: string[];
+  classSlugs: string[];
 }
 
-export interface SeedDesign {
+export interface SeedCatalogTemplate {
   slug: string;
   name: string;
   nameAr: string;
@@ -41,8 +41,7 @@ export interface SeedDesign {
   dimensions: string;
   dimensionsAr: string;
   images: string[];
-  basePrice: number;
-  visibilityGroups: string[];
+  price: number;
   specifications: SeedSpec[];
 }
 
@@ -53,14 +52,23 @@ export interface SeedClient {
   displayName: string;
   email: string;
   locale: "ar" | "en";
-  visibilityGroups: string[];
+  classSlug: string;
 }
 
 export interface SeedPiece {
   serialNumber: string;
-  designSlug: string;
+  templateSlug: string;
   ownerKey?: ClientKey;
   status?: "AVAILABLE" | "OWNED" | "TRANSFER_PENDING" | "RETIRED";
+}
+
+export interface SeedClass {
+  slug: string;
+  name: string;
+  nameAr: string;
+  description: string;
+  sortOrder: number;
+  isDefault?: boolean;
 }
 
 export interface SeedCertificate {
@@ -111,7 +119,7 @@ export const COLLECTIONS: SeedCollection[] = [
     descriptionAr: "أناقة منتصف الليل — ذهب أسود وعقيق يماني.",
     cover: "collection-1.avif",
     sortOrder: 1,
-    visibilityGroups: ["vip", "collection-noir"],
+    classSlugs: ["class-a"],
   },
   {
     slug: "gold-heritage",
@@ -121,7 +129,7 @@ export const COLLECTIONS: SeedCollection[] = [
     descriptionAr: "حِرفية سعودية أصيلة بذهب دافئ.",
     cover: "collection-2.avif",
     sortOrder: 2,
-    visibilityGroups: ["vip", "collection-heritage", "standard"],
+    classSlugs: ["class-a", "class-b", "class-c"],
   },
   {
     slug: "oasis",
@@ -131,7 +139,7 @@ export const COLLECTIONS: SeedCollection[] = [
     descriptionAr: "ضوء وماء وحجر — حلم صحراوي معاصر.",
     cover: "collection-3.avif",
     sortOrder: 3,
-    visibilityGroups: ["vip", "collection-oasis"],
+    classSlugs: ["class-a", "class-b"],
   },
   {
     slug: "mawaddah",
@@ -141,11 +149,36 @@ export const COLLECTIONS: SeedCollection[] = [
     descriptionAr: "قطع تحتفي بالروابط — الهدايا والإخلاص والحب.",
     cover: "collection-4.avif",
     sortOrder: 4,
-    visibilityGroups: ["vip", "collection-mawaddah"],
+    classSlugs: ["class-a"],
   },
 ];
 
-export const DESIGNS: SeedDesign[] = [
+export const CLASSES: SeedClass[] = [
+  {
+    slug: "class-a",
+    name: "Class A",
+    nameAr: "الفئة أ",
+    description: "Full House Access",
+    sortOrder: 1,
+  },
+  {
+    slug: "class-b",
+    name: "Class B",
+    nameAr: "الفئة ب",
+    description: "Curated House Access",
+    sortOrder: 2,
+  },
+  {
+    slug: "class-c",
+    name: "Class C",
+    nameAr: "الفئة ج",
+    description: "Standard House Access",
+    sortOrder: 3,
+    isDefault: true,
+  },
+];
+
+export const CATALOG_TEMPLATES: SeedCatalogTemplate[] = [
   // --- Noir (2 designs) ---
   {
     slug: "noir-solitaire-ring",
@@ -160,8 +193,7 @@ export const DESIGNS: SeedDesign[] = [
     dimensions: "Ring size 54",
     dimensionsAr: "مقاس الخاتم ٥٤",
     images: ["product-1.avif", "product-2.avif", "product-3.avif"],
-    basePrice: 45000,
-    visibilityGroups: ["vip", "collection-noir"],
+    price: 45000,
     specifications: [
       { key: "Stone", keyAr: "الحجر", value: "Black Diamond", valueAr: "ماس أسود", sortOrder: 1 },
       { key: "Carat", keyAr: "القيراط", value: "1.2 ct", valueAr: "١٫٢ قيراط", sortOrder: 2 },
@@ -180,8 +212,7 @@ export const DESIGNS: SeedDesign[] = [
     dimensions: "45 cm chain",
     dimensionsAr: "سلسلة ٤٥ سم",
     images: ["product-4.avif", "product-5.avif", "product-23.avif"],
-    basePrice: 62000,
-    visibilityGroups: ["vip", "collection-noir"],
+    price: 62000,
     specifications: [
       { key: "Stone", keyAr: "الحجر", value: "Onyx", valueAr: "عقيق يماني", sortOrder: 1 },
       { key: "Clasp", keyAr: "المشبك", value: "18K Gold", valueAr: "ذهب ١٨ قيراط", sortOrder: 2 },
@@ -201,8 +232,7 @@ export const DESIGNS: SeedDesign[] = [
     dimensions: "6.5 cm diameter",
     dimensionsAr: "قطر ٦٫٥ سم",
     images: ["product-6.avif", "product-7.avif", "product-8.avif"],
-    basePrice: 78000,
-    visibilityGroups: ["vip", "collection-heritage", "standard"],
+    price: 78000,
     specifications: [
       { key: "Engraving", keyAr: "النقش", value: "Hand-engraved calligraphy", valueAr: "خط عربي محفور يدويًا", sortOrder: 1 },
     ],
@@ -220,8 +250,7 @@ export const DESIGNS: SeedDesign[] = [
     dimensions: "3.2 cm drop",
     dimensionsAr: "تدلٍّ ٣٫٢ سم",
     images: ["product-9.avif", "product-10.avif"],
-    basePrice: 55000,
-    visibilityGroups: ["collection-heritage", "standard"],
+    price: 55000,
     specifications: [
       { key: "Stone", keyAr: "الحجر", value: "Emerald", valueAr: "زمرد", sortOrder: 1 },
       { key: "Cut", keyAr: "القطع", value: "Pear", valueAr: "كمثرى", sortOrder: 2 },
@@ -241,8 +270,7 @@ export const DESIGNS: SeedDesign[] = [
     dimensions: "Ring size 52",
     dimensionsAr: "مقاس الخاتم ٥٢",
     images: ["product-11.avif", "product-12.avif", "product-13.avif"],
-    basePrice: 41000,
-    visibilityGroups: ["vip", "collection-oasis"],
+    price: 41000,
     specifications: [
       { key: "Setting", keyAr: "الترصيع", value: "Bezel", valueAr: "إطار كامل", sortOrder: 1 },
     ],
@@ -260,8 +288,7 @@ export const DESIGNS: SeedDesign[] = [
     dimensions: "36 cm",
     dimensionsAr: "٣٦ سم",
     images: ["product-14.avif", "product-15.avif", "product-16.avif"],
-    basePrice: 145000,
-    visibilityGroups: ["vip", "collection-oasis"],
+    price: 145000,
     specifications: [
       { key: "Pearls", keyAr: "اللؤلؤ", value: "South Sea", valueAr: "بحار الجنوب", sortOrder: 1 },
     ],
@@ -280,8 +307,7 @@ export const DESIGNS: SeedDesign[] = [
     dimensions: "Ring size 50",
     dimensionsAr: "مقاس الخاتم ٥٠",
     images: ["product-17.avif", "product-18.avif", "product-19.avif"],
-    basePrice: 36000,
-    visibilityGroups: ["vip", "collection-mawaddah"],
+    price: 36000,
     specifications: [
       { key: "Setting", keyAr: "الترصيع", value: "Channel", valueAr: "قناة", sortOrder: 1 },
       { key: "Stones", keyAr: "الأحجار", value: "24 round diamonds", valueAr: "٢٤ ماسة مستديرة", sortOrder: 2 },
@@ -300,8 +326,7 @@ export const DESIGNS: SeedDesign[] = [
     dimensions: "42 cm chain, 1.8 cm pendant",
     dimensionsAr: "سلسلة ٤٢ سم، قلادة ١٫٨ سم",
     images: ["product-20.avif", "product-21.avif", "product-22.avif"],
-    basePrice: 28000,
-    visibilityGroups: ["vip", "collection-mawaddah"],
+    price: 28000,
     specifications: [
       { key: "Motif", keyAr: "الرمز", value: "Heart", valueAr: "قلب", sortOrder: 1 },
     ],
@@ -313,7 +338,7 @@ export const DESIGNS: SeedDesign[] = [
 export const ALL_REFERENCED_ASSETS: string[] = [
   ...new Set([
     ...COLLECTIONS.map((c) => c.cover),
-    ...DESIGNS.flatMap((d) => d.images),
+    ...CATALOG_TEMPLATES.flatMap((d) => d.images),
   ]),
 ];
 
@@ -325,7 +350,7 @@ export const CLIENTS: SeedClient[] = [
     displayName: "أميرة الراشد",
     email: "amira@example.com",
     locale: "ar",
-    visibilityGroups: ["vip", "collection-noir", "collection-oasis", "collection-mawaddah", "riyadh"],
+    classSlug: "class-a",
   },
   {
     key: "khalid",
@@ -334,7 +359,7 @@ export const CLIENTS: SeedClient[] = [
     displayName: "خالد الفارسي",
     email: "khalid@example.com",
     locale: "ar",
-    visibilityGroups: ["standard", "collection-heritage", "riyadh"],
+    classSlug: "class-c",
   },
   {
     key: "layla",
@@ -343,31 +368,31 @@ export const CLIENTS: SeedClient[] = [
     displayName: "Layla Al-Mutairi",
     email: "layla@example.com",
     locale: "en",
-    visibilityGroups: ["vip", "collection-heritage", "collection-oasis"],
+    classSlug: "class-b",
   },
 ];
 
 export const PIECES: SeedPiece[] = [
   // Noir
-  { serialNumber: "DADAN-2026-NC-000001", designSlug: "noir-solitaire-ring", ownerKey: "amira" },
-  { serialNumber: "DADAN-2026-NC-000002", designSlug: "noir-solitaire-ring" },
-  { serialNumber: "DADAN-2026-NC-000003", designSlug: "noir-cascade-necklace" },
-  { serialNumber: "DADAN-2026-NC-000004", designSlug: "noir-cascade-necklace" },
+  { serialNumber: "DADAN-2026-NC-000001", templateSlug: "noir-solitaire-ring", ownerKey: "amira" },
+  { serialNumber: "DADAN-2026-NC-000002", templateSlug: "noir-solitaire-ring" },
+  { serialNumber: "DADAN-2026-NC-000003", templateSlug: "noir-cascade-necklace" },
+  { serialNumber: "DADAN-2026-NC-000004", templateSlug: "noir-cascade-necklace" },
   // Heritage
-  { serialNumber: "DADAN-2026-GH-000001", designSlug: "heritage-cuff-bracelet", ownerKey: "khalid" },
-  { serialNumber: "DADAN-2026-GH-000002", designSlug: "heritage-cuff-bracelet" },
-  { serialNumber: "DADAN-2026-GH-000003", designSlug: "heritage-drop-earrings" },
-  { serialNumber: "DADAN-2026-GH-000004", designSlug: "heritage-drop-earrings" },
+  { serialNumber: "DADAN-2026-GH-000001", templateSlug: "heritage-cuff-bracelet", ownerKey: "khalid" },
+  { serialNumber: "DADAN-2026-GH-000002", templateSlug: "heritage-cuff-bracelet" },
+  { serialNumber: "DADAN-2026-GH-000003", templateSlug: "heritage-drop-earrings" },
+  { serialNumber: "DADAN-2026-GH-000004", templateSlug: "heritage-drop-earrings" },
   // Oasis
-  { serialNumber: "DADAN-2026-OA-000001", designSlug: "oasis-duet-ring", ownerKey: "layla" },
-  { serialNumber: "DADAN-2026-OA-000002", designSlug: "oasis-duet-ring" },
-  { serialNumber: "DADAN-2026-OA-000003", designSlug: "oasis-pearl-choker" },
-  { serialNumber: "DADAN-2026-OA-000004", designSlug: "oasis-pearl-choker" },
+  { serialNumber: "DADAN-2026-OA-000001", templateSlug: "oasis-duet-ring", ownerKey: "layla" },
+  { serialNumber: "DADAN-2026-OA-000002", templateSlug: "oasis-duet-ring" },
+  { serialNumber: "DADAN-2026-OA-000003", templateSlug: "oasis-pearl-choker" },
+  { serialNumber: "DADAN-2026-OA-000004", templateSlug: "oasis-pearl-choker" },
   // Mawaddah
-  { serialNumber: "DADAN-2026-MA-000001", designSlug: "mawaddah-eternity-band", ownerKey: "amira" },
-  { serialNumber: "DADAN-2026-MA-000002", designSlug: "mawaddah-eternity-band" },
-  { serialNumber: "DADAN-2026-MA-000003", designSlug: "mawaddah-pendant-heart" },
-  { serialNumber: "DADAN-2026-MA-000004", designSlug: "mawaddah-pendant-heart" },
+  { serialNumber: "DADAN-2026-MA-000001", templateSlug: "mawaddah-eternity-band", ownerKey: "amira" },
+  { serialNumber: "DADAN-2026-MA-000002", templateSlug: "mawaddah-eternity-band" },
+  { serialNumber: "DADAN-2026-MA-000003", templateSlug: "mawaddah-pendant-heart" },
+  { serialNumber: "DADAN-2026-MA-000004", templateSlug: "mawaddah-pendant-heart" },
 ];
 
 export const CERTIFICATES: SeedCertificate[] = [

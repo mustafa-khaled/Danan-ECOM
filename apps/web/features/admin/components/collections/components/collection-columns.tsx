@@ -88,16 +88,14 @@ export const collectionColumns: ColumnDef<AdminCollectionListItem>[] = [
   {
     key: "access",
     label: "Access",
-    accessor: "visibilityGroups",
+    accessor: (row) =>
+      row.classes?.length ? row.classes.map((cls) => cls.name).join(", ") : "",
     width: "195px",
-    render: (v) => {
-      const groups = Array.isArray(v) ? v : [];
-      return (
-        <span className="text-sm text-ds-text truncate block">
-          {groups.length > 0 ? groups.join(", ") : "All Clients"}
-        </span>
-      );
-    },
+    render: (v) => (
+      <span className="text-sm text-ds-text truncate block">
+        {String(v) || "No classes"}
+      </span>
+    ),
   },
   {
     key: "updatedAt",

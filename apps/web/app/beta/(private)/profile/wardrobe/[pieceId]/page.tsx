@@ -2,7 +2,7 @@ import { notFound } from "next/navigation";
 import { ApiError } from "@/shared/lib/send-request";
 import { fetchWardrobePiece } from "@/features/wardrobe";
 import { getSessionCookieHeader } from "@/features/auth/server/session";
-import type { DesignDetail } from "@/features/pieces";
+import type { PieceDetail } from "@/features/pieces";
 import PieceDetails from "@/components/piece-details";
 import Container from "@/components/ui/container";
 
@@ -24,13 +24,25 @@ export default async function WardrobePiecePage({
     throw err;
   }
 
-  const design = piece.design as DesignDetail;
+  const catalog = piece as unknown as PieceDetail;
 
   return (
     <div className="w-full pb-5">
       <Container>
         <PieceDetails
-          design={design}
+          piece={{
+            ...catalog,
+            imageUrls: catalog.imageUrls?.length
+              ? catalog.imageUrls
+              : ((piece.images as string[] | undefined) ?? []),
+            collection:
+              typeof catalog.collection === "string"
+                ? { name: catalog.collection, slug: "" }
+                : catalog.collection,
+            specifications: catalog.specifications ?? [],
+            price: catalog.price ?? "0",
+            currency: catalog.currency ?? "SAR",
+          }}
           isWardrobe
           wardrobeInfo={{
             pieceId,

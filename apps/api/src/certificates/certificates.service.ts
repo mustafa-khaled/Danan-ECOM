@@ -52,12 +52,8 @@ export class CertificatesService {
     const piece = await this.prisma.db.piece.findUnique({
       where: { id: pieceId },
       include: {
-        design: {
-          include: {
-            collection: true,
-            specifications: { orderBy: { sortOrder: "asc" } },
-          },
-        },
+        collection: true,
+        specifications: { orderBy: { sortOrder: "asc" } },
         currentOwner: true,
       },
     });
@@ -81,7 +77,7 @@ export class CertificatesService {
     const qrPng = await QRCode.toBuffer(verifyUrl, { type: "png", width: 200 });
 
     let imageBytes: Buffer | null = null;
-    const primaryImage = piece.design.imageUrls[0];
+    const primaryImage = piece.imageUrls[0];
     if (primaryImage) {
       try {
         imageBytes = await this.storage.download(primaryImage);
@@ -91,17 +87,17 @@ export class CertificatesService {
     }
 
     const pdfBuffer = await this.renderPdf({
-      pieceName: piece.design.name,
-      pieceNameAr: piece.design.nameAr,
-      collectionName: piece.design.collection.name,
-      collectionNameAr: piece.design.collection.nameAr,
+      pieceName: piece.name,
+      pieceNameAr: piece.nameAr,
+      collectionName: piece.collection.name,
+      collectionNameAr: piece.collection.nameAr,
       serialNumber: piece.serialNumber,
-      material: piece.design.material,
-      materialAr: piece.design.materialAr,
-      weight: piece.design.weight.toString(),
-      dimensions: piece.design.dimensions,
-      dimensionsAr: piece.design.dimensionsAr,
-      specifications: piece.design.specifications,
+      material: piece.material,
+      materialAr: piece.materialAr,
+      weight: piece.weight.toString(),
+      dimensions: piece.dimensions,
+      dimensionsAr: piece.dimensionsAr,
+      specifications: piece.specifications,
       ownerName: owner.displayName,
       certificateNumber,
       issuedAt: new Date(),
@@ -129,6 +125,11 @@ export class CertificatesService {
           isActive: true,
         },
       });
+    });
+
+    await this.prisma.db.ownershipRecord.updateMany({
+      where: { pieceId, clientId: ownerId, transferredAt: null },
+      data: { certificateId: certificate.id },
     });
 
     await this.audit.log({
@@ -184,19 +185,42 @@ export class CertificatesService {
     return this.storage.getSignedUrl(certificate.pdfUrl, { expiresInSeconds: 3600 });
   }
 
-  async listCertificates(page?: number, limit?: number) {
+  async listCertificates(
+    page?: number,
+    limit?: number,
+    filters?: { q?: string; isActive?: boolean },
+  ) {
     const { skip, take, page: p, limit: l } = paginationParams(page, limit);
+    const q = filters?.q?.trim();
+    const where = {
+      ...(filters?.isActive !== undefined ? { isActive: filters.isActive } : {}),
+      ...(q
+        ? {
+            OR: [
+              { certificateNumber: { contains: q, mode: "insensitive" as const } },
+              { piece: { serialNumber: { contains: q.toUpperCase() } } },
+              { piece: { name: { contains: q, mode: "insensitive" as const } } },
+            ],
+          }
+        : {}),
+    };
     const [items, total] = await Promise.all([
       this.prisma.db.certificate.findMany({
         skip,
         take,
+        where,
         orderBy: { issuedAt: "desc" },
-        include: {
-          piece: { select: { serialNumber: true, design: { select: { name: true } } } },
+        select: {
+          id: true,
+          certificateNumber: true,
+          isActive: true,
+          issuedAt: true,
+          pdfUrl: true,
+          piece: { select: { serialNumber: true, name: true } },
           owner: { select: { displayName: true } },
         },
       }),
-      this.prisma.db.certificate.count(),
+      this.prisma.db.certificate.count({ where }),
     ]);
 
     return { items, total, page: p, limit: l };

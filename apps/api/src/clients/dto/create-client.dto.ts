@@ -1,9 +1,8 @@
 import {
-  ArrayMaxSize,
-  IsArray,
   IsEmail,
   IsOptional,
   IsString,
+  IsUUID,
   MaxLength,
   MinLength,
 } from "class-validator";
@@ -29,9 +28,6 @@ export class CreateClientDto {
   locale?: string;
 
   @IsOptional()
-  @IsArray()
-  @ArrayMaxSize(20)
-  @IsString({ each: true })
-  @MaxLength(64, { each: true })
-  visibilityGroups?: string[];
+  @IsUUID()
+  classId?: string;
 }

@@ -43,7 +43,8 @@ import { ClientProvider } from "@/shared/providers/client-context";
 const contextValue = {
   clientId: "client-1",
   displayName: "Ahmed",
-  visibilityGroups: ["DEFAULT"],
+  classId: "class-c",
+  classSlug: "class-c",
 };
 
 function renderHeader() {

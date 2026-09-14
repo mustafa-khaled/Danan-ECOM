@@ -5,12 +5,7 @@ export const createClientSchema = z.object({
   email: z.string().email("Valid email is required"),
   phone: z.string().optional(),
   locale: z.enum(["ar", "en"]).default("ar"),
-  visibilityGroups: z
-    .string()
-    .transform((val) =>
-      val ? val.split(",").map((g) => g.trim()).filter(Boolean) : []
-    )
-    .default(""),
+  classId: z.string().optional(),
 });
 
 export const updateClientSchema = z.object({
@@ -19,12 +14,7 @@ export const updateClientSchema = z.object({
   phone: z.string().optional(),
   locale: z.enum(["ar", "en"]).optional(),
   isActive: z.boolean().optional(),
-  visibilityGroups: z
-    .string()
-    .transform((val) =>
-      val ? val.split(",").map((g) => g.trim()).filter(Boolean) : []
-    )
-    .default(""),
+  classId: z.string().optional(),
 });
 
 export type CreateClientFormValues = z.input<typeof createClientSchema>;

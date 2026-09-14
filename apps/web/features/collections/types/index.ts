@@ -9,13 +9,15 @@ export interface CollectionSummary {
 }
 
 export interface CollectionDetail extends CollectionSummary {
-  designs: Array<{
+  pieces: Array<{
     id: string;
     name: string;
     slug: string;
+    serialNumber?: string;
+    status?: string;
     imageUrls: string[];
     imageLqips?: string[];
-    basePrice: string;
+    price: string;
     currency: string;
   }>;
 }

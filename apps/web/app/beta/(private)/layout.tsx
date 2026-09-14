@@ -15,7 +15,8 @@ export default async function PrivateLayout({
         value={{
           clientId: profile.id,
           displayName: profile.displayName,
-          visibilityGroups: profile.visibilityGroups,
+          classId: profile.class.id,
+          classSlug: profile.class.slug,
         }}
       >
         <div className="flex min-h-dvh w-full flex-col bg-white text-(--color-text)">

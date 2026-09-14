@@ -42,7 +42,7 @@ export default async function CertificatesPage() {
                   {item.serialNumber}
                 </h3>
                 <p className="mt-2.5 text-xs sm:text-sm font-medium uppercase tracking-[-0.02em] text-ds-text-secondary">
-                  {item.design.name}
+                  {item.name}
                 </p>
                 {issueDate && (
                   <p className="mt-2 text-caption sm:text-xs uppercase text-ds-text-muted">

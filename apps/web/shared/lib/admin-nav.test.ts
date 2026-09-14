@@ -3,8 +3,11 @@ import { getAdminNavItems } from "./admin-nav";
 
 describe("getAdminNavItems", () => {
   it("shows all sections for SUPER_ADMIN and STAFF", () => {
-    expect(getAdminNavItems("SUPER_ADMIN")).toHaveLength(9);
-    expect(getAdminNavItems("STAFF")).toHaveLength(9);
+    expect(getAdminNavItems("SUPER_ADMIN")).toHaveLength(8);
+    expect(getAdminNavItems("STAFF")).toHaveLength(8);
+    expect(getAdminNavItems("SUPER_ADMIN").some((item) => item.href === "/admin/designs")).toBe(
+      false,
+    );
   });
 
   it("hides transfers and verification logs from VIEWER", () => {

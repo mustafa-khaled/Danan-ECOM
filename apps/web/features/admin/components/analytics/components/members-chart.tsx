@@ -7,25 +7,15 @@ import {
   ChartTooltipContent,
 } from "@/components/ui/chart";
 
-const memberData = [
-  { month: "Jan", members: 18 },
-  { month: "", members: 18 },
-  { month: "", members: 34 },
-  { month: "", members: 34 },
-  { month: "Feb", members: 26 },
-  { month: "", members: 26 },
-  { month: "", members: 26 },
-  { month: "Mar", members: 18 },
-  { month: "", members: 18 },
-  { month: "", members: 26 },
-  { month: "Apr", members: 26 },
-  { month: "", members: 48 },
-  { month: "", members: 48 },
-  { month: "May", members: 20 },
-  { month: "", members: 20 },
-  { month: "", members: 54 },
-  { month: "", members: 54 },
-];
+export default function MembersChart({
+  data = [],
+}: {
+  data?: Array<{ period: string; count: number }>;
+}) {
+  const memberData = data.map((row) => ({
+    month: row.period.slice(5),
+    members: row.count,
+  }));
 
 const memberConfig = {
   members: {
@@ -34,7 +24,15 @@ const memberConfig = {
   },
 };
 
-export default function MembersChart() {
+  if (memberData.length === 0) {
+    return (
+      <article className="rounded-xl bg-card p-7 shadow-sm ring-1 ring-border/40">
+        <p className="text-[13px] font-medium uppercase text-foreground/80">Members</p>
+        <p className="mt-4 text-sm text-muted-foreground">No member activity yet.</p>
+      </article>
+    );
+  }
+
   return (
     <article className="rounded-xl bg-card p-7 shadow-sm ring-1 ring-border/40">
       <header className="mb-7">

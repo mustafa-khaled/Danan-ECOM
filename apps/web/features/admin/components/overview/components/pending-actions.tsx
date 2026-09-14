@@ -1,44 +1,36 @@
 import { MoveRight } from "lucide-react";
 import Image from "next/image";
+import Link from "next/link";
+import type { AdminOverview } from "@/features/admin/api/fetch-admin-overview";
 
-const pendingActionsMockData = [
-  {
-    id: 1,
-    title: "12 Transfer Requests",
-    icon: "/admin/sms-tracking.svg",
-  },
-  {
-    id: 2,
-    title: "7 Membership Requests",
-    icon: "/admin/profile-2user.svg",
-  },
+export default function PendingActions({
+  pending,
+  membership,
+}: {
+  pending: AdminOverview["pendingActions"];
+  membership: AdminOverview["membership"];
+}) {
+  const pendingActions = [
+    {
+      id: 1,
+      title: `${pending.transferRequests} Transfer Requests`,
+      icon: "/admin/sms-tracking.svg",
+      href: "/admin/operations",
+    },
+    {
+      id: 2,
+      title: `${pending.membershipRequests} Membership Requests`,
+      icon: "/admin/profile-2user.svg",
+      href: "/admin/operations",
+    },
+    {
+      id: 3,
+      title: `${pending.certificatesReady} Certificates Ready`,
+      icon: "/admin/archive-tick.svg",
+      href: "/admin/operations",
+    },
+  ];
 
-  {
-    id: 3,
-    title: "4 Certificates Ready",
-    icon: "/admin/archive-tick.svg",
-  },
-] as const;
-
-const membershipMockData = [
-  {
-    id: 1,
-    title: "Class A",
-    description: "124 Members",
-  },
-  {
-    id: 2,
-    title: "Class B",
-    description: "542 Members",
-  },
-  {
-    id: 3,
-    title: "Class C",
-    description: "882 Members",
-  },
-];
-
-export default function PendingActions() {
   return (
     <div className="grid grid-cols-2 gap-[16px]">
       <div className="px-[32px] py-6 h-87.25 rounded-2xl border-2 border-[#F3F3F3]">
@@ -47,7 +39,7 @@ export default function PendingActions() {
         </h3>
 
         <div className="space-y-5 [&>div:last-child]:border-none">
-          {pendingActionsMockData.map((item) => {
+          {pendingActions.map((item) => {
             return (
               <div
                 key={item.id}
@@ -67,10 +59,10 @@ export default function PendingActions() {
                   </h6>
                 </div>
 
-                <p className="flex items-center justify-between">
+                <Link href={item.href} className="flex items-center justify-between">
                   <span className="mt-3 font-bold text-[12px]">Review</span>
                   <MoveRight className="size-[16px]" />
-                </p>
+                </Link>
               </div>
             );
           })}
@@ -81,18 +73,18 @@ export default function PendingActions() {
           Membership
         </h3>
         <div className="space-y-5 [&>div:last-child]:border-none">
-          {membershipMockData.map((item) => {
+          {membership.map((item) => {
             return (
               <div
-                key={item.id}
+                key={item.classId}
                 className="pb-3 border-b border-neutral-200 h-17.25"
               >
                 <h6 className="font-bold text-h5 leading-[100%] text-[#29343D]">
-                  {item.title}
+                  {item.name}
                 </h6>
 
                 <p className="mt-2 font-medium text-h6 text-neutral-600">
-                  {item.description}
+                  {item.clientCount} Members
                 </p>
               </div>
             );

@@ -102,9 +102,9 @@ describe("DADAN API (e2e)", () => {
       expect(noir.name).toBe("تشكيلة نوار");
     });
 
-    it("returns a localized design detail with specifications", async () => {
+    it("returns a localized piece detail with specifications", async () => {
       const res = await request(http)
-        .get("/client/designs/noir-cascade-necklace")
+        .get("/client/pieces/noir-cascade-necklace-000003")
         .set("Cookie", cookie)
         .expect(200);
       expect(res.body.name).toBe("عقد نوار المتدرج");
@@ -116,6 +116,26 @@ describe("DADAN API (e2e)", () => {
 
   describe("client flow (English client)", () => {
     let cookie: string;
+
+    it("class C cannot see a Class A collection", async () => {
+      const login = await request(http)
+        .post("/auth/validate-key")
+        .send({ houseKey: "dadan-key-002" })
+        .expect(201);
+      const classCCookie = cookieOf(login);
+
+      const res = await request(http)
+        .get("/client/collections")
+        .set("Cookie", classCCookie)
+        .expect(200);
+      expect(res.body.find((c: { slug: string }) => c.slug === "noir-collection")).toBeUndefined();
+      expect(res.body.find((c: { slug: string }) => c.slug === "gold-heritage")).toBeDefined();
+
+      await request(http)
+        .get("/client/collections/noir-collection")
+        .set("Cookie", classCCookie)
+        .expect(404);
+    });
 
     it("logs in and sees the catalog in English", async () => {
       const login = await request(http)
@@ -137,7 +157,7 @@ describe("DADAN API (e2e)", () => {
   describe("admin catalog + purchase flow", () => {
     let adminCookie: string;
     let clientCookie: string;
-    let designId: string;
+    let collectionId: string;
     let pieceId: string;
 
     it("admin logs in", async () => {
@@ -149,44 +169,73 @@ describe("DADAN API (e2e)", () => {
       expect(res.body.role).toBe("SUPER_ADMIN");
     });
 
-    it("admin lists collections and designs (bilingual fields)", async () => {
+    it("admin can list classes and cannot delete the default", async () => {
+      const res = await request(http)
+        .get("/admin/classes")
+        .set("Cookie", adminCookie)
+        .expect(200);
+      const defaultClass = res.body.find((c: { isDefault: boolean }) => c.isDefault);
+      expect(defaultClass.slug).toBe("class-c");
+      await request(http)
+        .delete(`/admin/classes/${defaultClass.id}`)
+        .set("Cookie", adminCookie)
+        .expect(400);
+    });
+
+    it("admin lists collections and pieces (bilingual fields)", async () => {
       const collections = await request(http)
         .get("/admin/collections")
         .set("Cookie", adminCookie)
         .expect(200);
       expect(collections.body.total).toBeGreaterThanOrEqual(3);
       expect(collections.body.items[0]).toHaveProperty("nameAr");
+      collectionId = collections.body.items.find(
+        (c: { slug: string }) => c.slug === "noir-collection",
+      ).id;
 
-      const designs = await request(http)
-        .get("/admin/designs")
+      const pieces = await request(http)
+        .get("/admin/pieces")
+        .query({ collectionId })
         .set("Cookie", adminCookie)
         .expect(200);
-      expect(designs.body.total).toBeGreaterThanOrEqual(8);
-      const noirNecklace = designs.body.items.find(
-        (d: { slug: string }) => d.slug === "noir-cascade-necklace",
+      expect(pieces.body.total).toBeGreaterThanOrEqual(2);
+      const noirNecklace = pieces.body.items.find((p: { slug: string }) =>
+        p.slug.startsWith("noir-cascade-necklace"),
       );
-      expect(noirNecklace.nameAr).toBe("عقد نوار المتدرج");
-      designId = noirNecklace.id;
-    });
-
-    it("admin uploads a design image", async () => {
-      const res = await request(http)
-        .post(`/admin/designs/${designId}/images`)
-        .set("Cookie", adminCookie)
-        .attach("file", TINY_JPEG, { filename: "extra.jpg", contentType: "image/jpeg" })
-        .expect(201);
-      expect(res.body.imageUrls.length).toBeGreaterThanOrEqual(2);
+      expect(noirNecklace.name).toBe("Noir Cascade Necklace");
     });
 
     it("admin registers a fresh piece for purchase", async () => {
       const res = await request(http)
         .post("/admin/pieces")
         .set("Cookie", adminCookie)
-        .send({ designId })
+        .send({
+          collectionId,
+          name: "Noir Cascade Necklace",
+          nameAr: "عقد نوار المتدرج",
+          slug: `e2e-noir-cascade-${Date.now()}`,
+          story: "Graduated onyx beads with a gold clasp.",
+          storyAr: "حبات عقيق متدرجة بمشبك ذهبي.",
+          material: "18K Gold, Onyx",
+          materialAr: "ذهب ١٨ قيراط، عقيق يماني",
+          weight: 28.5,
+          dimensions: "45 cm chain",
+          dimensionsAr: "سلسلة ٤٥ سم",
+          price: 62000,
+        })
         .expect(201);
       pieceId = res.body.id;
       expect(res.body.status).toBe("AVAILABLE");
       expect(res.body.serialNumber).toMatch(/^DADAN-/);
+    });
+
+    it("admin uploads a piece image", async () => {
+      const res = await request(http)
+        .post(`/admin/pieces/${pieceId}/images`)
+        .set("Cookie", adminCookie)
+        .attach("file", TINY_JPEG, { filename: "extra.jpg", contentType: "image/jpeg" })
+        .expect(201);
+      expect(res.body.imageUrls.length).toBeGreaterThanOrEqual(1);
     });
 
     it("client adds the piece to the cart and checks out (mock payment)", async () => {

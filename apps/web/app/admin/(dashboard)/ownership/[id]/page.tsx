@@ -1,6 +1,20 @@
+import { fetchAdminOwnershipDetail } from "@/features/admin/api/fetch-admin-ownership";
+import { OperationReviewActions } from "@/features/admin/components/operations/components/operation-review-actions";
+import { getAdminCookieHeader } from "@/features/auth/server/admin-session";
+import { ApiError } from "@/shared/lib/send-request";
 import { ArrowLeft } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
+import { notFound } from "next/navigation";
+
+function formatDate(value?: string | null) {
+  if (!value) return "";
+  return new Date(value).toLocaleDateString("en-GB", {
+    day: "2-digit",
+    month: "short",
+    year: "numeric",
+  });
+}
 
 export default async function OwnershipDetailsPage({
   params,
@@ -8,7 +22,19 @@ export default async function OwnershipDetailsPage({
   params: Promise<{ id: string }>;
 }) {
   const { id } = await params;
-  console.log(id);
+  const cookieHeader = await getAdminCookieHeader();
+  let record;
+  try {
+    record = await fetchAdminOwnershipDetail(id, cookieHeader);
+  } catch (err) {
+    if (err instanceof ApiError && err.status === 404) notFound();
+    throw err;
+  }
+  const currentOwnership =
+    record.ownershipRecords.find((item) => !item.transferredAt) ??
+    record.ownershipRecords.at(-1);
+  const transfer = record.activeTransfer;
+
   return (
     <>
       <div className="flex gap-[16px] px-7.5 py-3 [&>div]:rounded-xl [&>div]:h-15.5 [&>div]:bg-white">
@@ -40,7 +66,7 @@ export default async function OwnershipDetailsPage({
       <div className="px-7.5 py-[16px]">
         <div className="p-6 bg-white rounded-3xl">
           <h1 className="font-heading border-b border-[#E1E4E8] pt-[16px] pb-[32px] text-[32px] font-bold text-[#212630] leading-[100%]">
-            Ownership/Mawaddah Ring
+            Ownership/{record.name}
           </h1>
 
           <div className="pt-5 pb-[32px] border-b border-[#E1E4E8]">
@@ -48,82 +74,15 @@ export default async function OwnershipDetailsPage({
               Member Overview
             </h4>
 
-            <form>
-              <div className="grid grid-cols-2 gap-x-[32px] gap-y-3">
-                <div className="flex flex-col gap-2">
-                  <label
-                    htmlFor="mawaddahRing"
-                    className="text-[#272D35] text-h6 font-medium"
-                  >
-                    Mawaddah Ring
-                  </label>
-                  <input
-                    type="text"
-                    name="mawaddahRing"
-                    placeholder="Enter Mawaddah Ring"
-                    id="mawaddahRing"
-                    className="border-none bg-[#F8FAFC] h-17.5 p-[16px]"
-                  />
-                </div>
-
-                <div className="flex flex-col gap-2">
-                  <label
-                    htmlFor="currentOwner"
-                    className="text-[#272D35] text-h6 font-medium"
-                  >
-                    Current Owner
-                  </label>
-                  <input
-                    type="text"
-                    name="currentOwner"
-                    placeholder="Enter Current Owner"
-                    id="currentOwner"
-                    className="border-none bg-[#F8FAFC] h-17.5 p-[16px]"
-                  />
-                </div>
-
-                <div className="flex flex-col gap-2">
-                  <label
-                    htmlFor="ownershipStatus"
-                    className="text-[#272D35] text-h6 font-medium"
-                  >
-                    Ownership Status
-                  </label>
-                  <input
-                    type="text"
-                    name="ownershipStatus"
-                    placeholder="Enter Ownership Status"
-                    id="ownershipStatus"
-                    className="border-none bg-[#F8FAFC] h-17.5 p-[16px]"
-                  />
-                </div>
-
-                <div className="flex flex-col gap-2">
-                  <label
-                    htmlFor="acquired"
-                    className="text-[#272D35] text-h6 font-medium"
-                  >
-                    Acquired
-                  </label>
-                  <input
-                    type="text"
-                    name="acquired"
-                    placeholder="Enter Acquired"
-                    id="acquired"
-                    className="border-none bg-[#F8FAFC] h-17.5 p-[16px]"
-                  />
-                </div>
-              </div>
-
-              <div className="flex items-center justify-end gap-3 w-full mt-[16px]">
-                <button className="w-24 h-11 border border-[#EAE7E4] rounded-lg text-[14px] font-medium text-[#141210]">
-                  Edit
-                </button>
-                <button className="w-24 h-11 bg-[#BF7266] rounded-lg text-[14px] font-medium text-white">
-                  Save
-                </button>
-              </div>
-            </form>
+            <div className="grid grid-cols-2 gap-x-[32px] gap-y-3">
+              <ReadField label="Mawaddah Ring" value={record.name} />
+              <ReadField
+                label="Current Owner"
+                value={record.currentOwner?.displayName ?? ""}
+              />
+              <ReadField label="Ownership Status" value={record.status} />
+              <ReadField label="Acquired" value={formatDate(currentOwnership?.acquiredAt)} />
+            </div>
           </div>
 
           <div className="pt-[32px]">
@@ -132,73 +91,89 @@ export default async function OwnershipDetailsPage({
             </h4>
 
             <div className="pb-[32px] pt-6 border-b border-[#E1E4E8]">
-              <div className="flex items-center gap-[32px] pb-5 border-b border-[#E1E4E8] font-semibold">
-                <h6 className="font-heading text-h4">12 May 2026</h6>
+              {record.ownershipRecords.length === 0 ? (
+                <p className="text-[#353D48] text-h6">No ownership history yet.</p>
+              ) : (
+                record.ownershipRecords.map((item, index) => (
+                  <div
+                    key={item.id}
+                    className={`flex items-center gap-[32px] font-semibold ${
+                      index === 0 ? "pb-5 border-b border-[#E1E4E8]" : "pt-5"
+                    }`}
+                  >
+                    <h6 className="font-heading text-h4">{formatDate(item.acquiredAt)}</h6>
+                    <p className="text-[#353D48] text-h6">
+                      {item.client.displayName}
+                      <br />
+                      {item.transferredAt ? "Transferred Piece" : "Acquired Piece"}
+                    </p>
+                  </div>
+                ))
+              )}
+            </div>
+          </div>
 
-                <p className="text-[#353D48] text-h6">
-                  Ahmed Gad
+          {transfer && (
+            <div className="pt-[32px]">
+              <h4 className="font-heading text-h4 font-bold mb-6">
+                Transfer Details
+              </h4>
+
+              <div className="space-y-5 text-[#353D48] text-h6 [&>p]:border-[#E1E4E8] [&>p]:border-b [&>p]:pb-6 [&>p:last-child]:border-none">
+                <p>
+                  Current Owner
                   <br />
-                  Acquired Piece
+                  {transfer.fromClient.displayName}
+                </p>
+                <p>
+                  Recipient
+                  <br />
+                  {transfer.toClient.displayName}
+                </p>
+                <p>
+                  Transfer Type
+                  <br />
+                  {transfer.transferType}
+                </p>
+                <p>
+                  Requested
+                  <br />
+                  {formatDate(transfer.initiatedAt)}
+                </p>
+
+                <p>
+                  Status
+                  <br />
+                  <span className="text-[#FFD648] font-medium text-[12px] bg-[#FFF9E5] px-2 py-1">
+                    {transfer.status}
+                  </span>
                 </p>
               </div>
-              <div className="flex items-center gap-[32px] pt-5 font-semibold">
-                <h6 className="font-heading text-h4">18 Aug 2026</h6>
 
-                <p className="text-[#353D48] text-h6">
-                  Transfer Requested <br />
-                  Ahmed Gad → Omar Ali
-                </p>
-              </div>
+              <OperationReviewActions
+                kind="transfer"
+                id={transfer.id}
+                canReview={!["APPROVED", "REJECTED", "CANCELLED"].includes(transfer.status)}
+                approveLabel="Approve Transfer"
+              />
             </div>
-          </div>
-
-          <div className="pt-[32px]">
-            <h4 className="font-heading text-h4 font-bold mb-6">
-              Transfer Details
-            </h4>
-
-            <div className="space-y-5 text-[#353D48] text-h6 [&>p]:border-[#E1E4E8] [&>p]:border-b [&>p]:pb-6 [&>p:last-child]:border-none">
-              <p>
-                Current Owner
-                <br />
-                Ahmed Gad
-              </p>
-              <p>
-                Recipient
-                <br />
-                Omar Ali
-              </p>
-              <p>
-                Transfer Type
-                <br />
-                Private Transfer
-              </p>
-              <p>
-                Requested
-                <br />
-                18 Aug 2026
-              </p>
-
-              <p>
-                Status
-                <br />
-                <span className="text-[#FFD648] font-medium text-[12px] bg-[#FFF9E5] px-2 py-1">
-                  Pending
-                </span>
-              </p>
-            </div>
-
-            <div className="flex items-center justify-end gap-3 w-full mt-[16px]">
-              <button className="w-24 h-11 border border-[#EAE7E4] rounded-lg text-[14px] font-medium text-[#141210]">
-                Reject
-              </button>
-              <button className="w-36 h-11 bg-[#BF7266] rounded-lg text-[14px] font-medium text-white">
-                Approve Transfer
-              </button>
-            </div>
-          </div>
+          )}
         </div>
       </div>
     </>
+  );
+}
+
+function ReadField({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="flex flex-col gap-2">
+      <span className="text-[#272D35] text-h6 font-medium">{label}</span>
+      <input
+        type="text"
+        readOnly
+        value={value}
+        className="border-none bg-[#F8FAFC] h-17.5 p-[16px]"
+      />
+    </div>
   );
 }

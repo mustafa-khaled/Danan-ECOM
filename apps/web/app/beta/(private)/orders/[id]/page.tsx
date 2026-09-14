@@ -70,10 +70,10 @@ export default async function OrderDetailPage({
             {order.items.map((item) => (
               <li key={item.piece.id} className="flex gap-4">
                 <div className="relative h-20 w-16 shrink-0 overflow-hidden bg-(--color-surface)">
-                  {item.design.imageUrls[0] ? (
+                  {item.piece.imageUrls[0] ? (
                     <Image
-                      src={item.design.imageUrls[0]}
-                      alt={item.design.name}
+                      src={item.piece.imageUrls[0]}
+                      alt={item.piece.name}
                       fill
                       sizes="64px"
                       className="object-cover"
@@ -82,7 +82,7 @@ export default async function OrderDetailPage({
                 </div>
                 <div>
                   <p className="font-english text-lg text-(--color-text)">
-                    {item.design.name}
+                    {item.piece.name}
                   </p>
                   <div className="mt-2">
                     <SerialBadge serial={item.piece.serialNumber} />

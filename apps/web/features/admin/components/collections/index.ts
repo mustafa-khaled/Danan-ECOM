@@ -11,6 +11,8 @@ export { collectionPiecesColumns } from "./components/collection-pieces-columns"
 export { default as CollectionAccessTable } from "./components/collection-access-table";
 export { default as CollectionAccessFilter } from "./components/collection-access-filter";
 export { collectionAccessColumns } from "./components/collection-access-columns";
+export { default as RegisterPieceForm } from "./components/register-piece-form";
+export { PieceEditForm } from "./components/piece-edit-form";
 export { default as MembershipPermissionsTable } from "./components/membership-permissions-table";
 export { default as RolesPermissionsTable } from "./components/roles-permissions-table";
 export type { MembershipPermissionRow } from "./components/membership-permissions-table";

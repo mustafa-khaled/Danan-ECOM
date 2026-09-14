@@ -3,7 +3,7 @@ import { existsSync } from "node:fs";
 import * as path from "node:path";
 import sharp from "sharp";
 import { storage } from "@dadan/storage";
-import { COLLECTIONS, DESIGNS } from "./seed-data";
+import { CATALOG_TEMPLATES, COLLECTIONS } from "./seed-data";
 
 // ---------------------------------------------------------------------------
 // Seed assets — the single source of truth for every image the catalog uses.
@@ -36,7 +36,7 @@ export const SEED_ASSETS_DIR = path.resolve(
 
 export const SEED_ASSETS: SeedAsset[] = [
   ...COLLECTIONS.map((c) => ({ filename: c.cover, key: `collections/seed/${c.cover}` })),
-  ...DESIGNS.flatMap((d) =>
+  ...CATALOG_TEMPLATES.flatMap((d) =>
     d.images.map((image) => ({ filename: image, key: `designs/seed/${image}` })),
   ),
 ];

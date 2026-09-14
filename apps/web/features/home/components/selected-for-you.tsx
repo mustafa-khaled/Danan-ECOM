@@ -30,13 +30,13 @@ export default async function SelectedForYou({
         <div className="grid grid-cols-2 gap-2 sm:gap-6">
           {selectedPieces.map((piece, index) => (
             <Link
-              key={piece.designSlug}
-              href={`/beta/pieces/${piece.designSlug}`}
+              key={piece.slug}
+              href={`/beta/pieces/${piece.slug}`}
               className={index >= 2 ? "col-span-2" : ""}
             >
               <PieceCard
                 piece={{
-                  id: piece.designSlug,
+                  id: piece.slug,
                   name: piece.name,
                   imageUrl: piece.imageUrl ?? undefined,
                   imageLqip: piece.imageLqip ?? undefined,

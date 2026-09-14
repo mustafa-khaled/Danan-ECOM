@@ -2,11 +2,16 @@ import { sendRequest } from "@/shared/lib/send-request";
 import type { Paginated } from "@/shared/types/common";
 import type { AdminClientListItem, AdminClientDetail } from "../types";
 
-export function fetchAdminClients(page = 1, limit = 20, cookieHeader?: string, search?: string) {
+export function fetchAdminClients(
+  page = 1,
+  limit = 20,
+  cookieHeader?: string,
+  filters?: { q?: string; classId?: string; collectionId?: string; isActive?: boolean },
+) {
   return sendRequest<Paginated<AdminClientListItem>>({
     method: "GET",
     url: "/admin/clients",
-    params: { page, limit, q: search },
+    params: { page, limit, ...filters },
     cookieHeader,
   });
 }
@@ -24,7 +29,7 @@ export interface CreateClientInput {
   email: string;
   phone?: string;
   locale?: string;
-  visibilityGroups?: string[];
+  classId?: string;
 }
 
 export function createClient(data: CreateClientInput, cookieHeader?: string) {
@@ -42,7 +47,7 @@ export interface UpdateClientInput {
   phone?: string;
   locale?: string;
   isActive?: boolean;
-  visibilityGroups?: string[];
+  classId?: string;
 }
 
 export function updateClient(id: string, data: UpdateClientInput, cookieHeader?: string) {
@@ -58,20 +63,6 @@ export function rotateClientKey(id: string, cookieHeader?: string) {
   return sendRequest<{ houseKey: string }>({
     method: "POST",
     url: `/admin/clients/${id}/rotate-key`,
-    cookieHeader,
-  });
-}
-
-export function updateClientVisibilityGroups(
-  id: string,
-  add?: string[],
-  remove?: string[],
-  cookieHeader?: string,
-) {
-  return sendRequest<AdminClientDetail>({
-    method: "POST",
-    url: `/admin/clients/${id}/visibility-groups`,
-    body: { add, remove },
     cookieHeader,
   });
 }

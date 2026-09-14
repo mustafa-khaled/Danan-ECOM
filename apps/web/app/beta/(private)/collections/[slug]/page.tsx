@@ -64,7 +64,7 @@ export default async function CollectionDetailPage({
             )}
           </article>
 
-          {collection.designs.length === 0 ? (
+          {collection.pieces.length === 0 ? (
             <EmptyState
               title={t("empty")}
               description={t("emptyDescription")}
@@ -72,13 +72,13 @@ export default async function CollectionDetailPage({
             />
           ) : (
             <section className="grid lg:gap-[16px] gap-2 grid-cols-2 lg:grid-cols-3">
-              {collection.designs.map((design) => (
-                <Link key={design.id} href={`/beta/pieces/${design.slug}`}>
+              {collection.pieces.map((piece) => (
+                <Link key={piece.id} href={`/beta/pieces/${piece.slug}`}>
                   <PieceCard
                     piece={{
-                      id: design.id,
-                      name: design.name,
-                      imageUrl: design.imageUrls[0],
+                      id: piece.id,
+                      name: piece.name,
+                      imageUrl: piece.imageUrls[0],
                     }}
                   />
                 </Link>

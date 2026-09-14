@@ -3,12 +3,13 @@ import {
   NotFoundException,
 } from "@nestjs/common";
 import { ActorType } from "@dadan/db";
-import { normalizeVisibilityGroup } from "@dadan/utils";
 import { AuditService } from "../audit/audit.service";
 import { AuthService } from "../auth/auth.service";
+import { ClassesService } from "../classes/classes.service";
 import { PrismaService } from "../prisma/prisma.service";
-import { VisibilityService } from "../visibility/visibility.service";
 import { paginationParams } from "../common/constants";
+
+const CLASS_SELECT = { id: true, slug: true, name: true, nameAr: true } as const;
 
 @Injectable()
 export class ClientsService {
@@ -16,7 +17,7 @@ export class ClientsService {
     private readonly prisma: PrismaService,
     private readonly audit: AuditService,
     private readonly auth: AuthService,
-    private readonly visibility: VisibilityService,
+    private readonly classes: ClassesService,
   ) {}
 
   /** Never let the bcrypt House Key hash leave the API. */
@@ -67,7 +68,7 @@ export class ClientsService {
         email: true,
         phone: true,
         locale: true,
-        visibilityGroups: true,
+        class: { select: CLASS_SELECT },
         createdAt: true,
       },
     });
@@ -131,31 +132,76 @@ export class ClientsService {
         email: true,
         phone: true,
         locale: true,
-        visibilityGroups: true,
+        class: { select: CLASS_SELECT },
         createdAt: true,
       },
     });
   }
 
-  async listClients(page?: number, limit?: number) {
+  async listClients(
+    page?: number,
+    limit?: number,
+    filters?: {
+      q?: string;
+      classId?: string;
+      collectionId?: string;
+      isActive?: boolean;
+    },
+  ) {
     const { skip, take, page: p, limit: l } = paginationParams(page, limit);
+    const q = filters?.q?.trim();
+    let classIds = filters?.classId ? [filters.classId] : undefined;
+
+    if (filters?.collectionId) {
+      const rows = await this.prisma.db.collectionClass.findMany({
+        where: { collectionId: filters.collectionId },
+        select: { classId: true },
+      });
+      const accessClassIds = rows.map((row) => row.classId);
+      classIds = classIds
+        ? classIds.filter((id) => accessClassIds.includes(id))
+        : accessClassIds;
+      if (classIds.length === 0) {
+        return { items: [], total: 0, page: p, limit: l };
+      }
+    }
+
+    const where = {
+      ...(classIds ? { classId: { in: classIds } } : {}),
+      ...(filters?.isActive !== undefined ? { isActive: filters.isActive } : {}),
+      ...(q
+        ? {
+            OR: [
+              { displayName: { startsWith: q, mode: "insensitive" as const } },
+              { email: { startsWith: q.toLowerCase() } },
+              { houseId: { startsWith: q.toUpperCase() } },
+              { houseKeyPrefix: { startsWith: q } },
+            ],
+          }
+        : {}),
+    };
+
     const [items, total] = await Promise.all([
       this.prisma.db.client.findMany({
         skip,
         take,
+        where,
         orderBy: { createdAt: "desc" },
         select: {
           id: true,
           houseId: true,
           displayName: true,
           email: true,
+          phone: true,
           houseKeyPrefix: true,
           isActive: true,
-          visibilityGroups: true,
+          createdAt: true,
+          lastSeenAt: true,
+          class: { select: CLASS_SELECT },
           _count: { select: { ownedPieces: true } },
         },
       }),
-      this.prisma.db.client.count(),
+      this.prisma.db.client.count({ where }),
     ]);
 
     return {
@@ -169,6 +215,31 @@ export class ClientsService {
     };
   }
 
+  async getClientStats() {
+    const [total, byClass] = await Promise.all([
+      this.prisma.db.client.count(),
+      this.prisma.db.client.groupBy({
+        by: ["classId"],
+        _count: { _all: true },
+      }),
+    ]);
+    const classes = await this.prisma.db.class.findMany({
+      where: { id: { in: byClass.map((row) => row.classId) } },
+      select: { id: true, name: true, slug: true },
+    });
+    const classMap = new Map(classes.map((cls) => [cls.id, cls]));
+
+    return {
+      total,
+      byClass: byClass.map((row) => ({
+        classId: row.classId,
+        name: classMap.get(row.classId)?.name ?? row.classId,
+        slug: classMap.get(row.classId)?.slug ?? null,
+        count: row._count._all,
+      })),
+    };
+  }
+
   async createClient(
     adminId: string,
     data: {
@@ -176,16 +247,14 @@ export class ClientsService {
       email: string;
       phone?: string;
       locale?: string;
-      visibilityGroups?: string[];
+      classId?: string;
     },
     ipAddress?: string,
   ) {
     const plainKey = this.auth.generateHouseKey();
     const hashed = await this.auth.hashHouseKey(plainKey);
     const houseId = await this.generateUniqueHouseId();
-    const groups = data.visibilityGroups
-      ? this.visibility.normalizeGroups(data.visibilityGroups)
-      : [];
+    const classId = data.classId ?? (await this.classes.getDefaultId());
 
     const client = await this.prisma.db.client.create({
       data: {
@@ -196,8 +265,9 @@ export class ClientsService {
         email: data.email.toLowerCase().trim(),
         phone: data.phone,
         locale: data.locale ?? "ar",
-        visibilityGroups: groups,
+        classId,
       },
+      include: { class: { select: CLASS_SELECT } },
     });
 
     await this.audit.log({
@@ -215,25 +285,67 @@ export class ClientsService {
   async getClientById(id: string) {
     const client = await this.prisma.db.client.findUnique({
       where: { id },
-      include: {
+      select: {
+        id: true,
+        houseId: true,
+        displayName: true,
+        email: true,
+        phone: true,
+        locale: true,
+        houseKeyPrefix: true,
+        isActive: true,
+        createdAt: true,
+        updatedAt: true,
+        lastSeenAt: true,
+        class: { select: CLASS_SELECT },
         ownedPieces: {
-          include: {
-            design: { include: { collection: true } },
+          take: 20,
+          orderBy: { updatedAt: "desc" },
+          select: {
+            id: true,
+            name: true,
+            serialNumber: true,
+            status: true,
+            imageUrls: true,
+            collection: { select: { id: true, name: true } },
           },
         },
+        _count: { select: { ownedPieces: true } },
         sentTransfers: {
-          include: { piece: true, toClient: { select: { displayName: true } } },
+          take: 10,
           orderBy: { initiatedAt: "desc" },
+          select: {
+            id: true,
+            status: true,
+            initiatedAt: true,
+            piece: { select: { id: true, name: true, serialNumber: true } },
+            toClient: { select: { displayName: true } },
+          },
         },
         receivedTransfers: {
-          include: { piece: true, fromClient: { select: { displayName: true } } },
+          take: 10,
           orderBy: { initiatedAt: "desc" },
+          select: {
+            id: true,
+            status: true,
+            initiatedAt: true,
+            piece: { select: { id: true, name: true, serialNumber: true } },
+            fromClient: { select: { displayName: true } },
+          },
         },
       },
     });
     if (!client) throw new NotFoundException("errors.CLIENT_NOT_FOUND");
 
-    return this.stripHouseKey(client);
+    const { _count, ownedPieces, ...rest } = client;
+    return {
+      ...rest,
+      pieceCount: _count.ownedPieces,
+      ownedPieces: ownedPieces.map((piece) => ({
+        ...piece,
+        imageUrls: piece.imageUrls.slice(0, 1),
+      })),
+    };
   }
 
   /**
@@ -262,21 +374,19 @@ export class ClientsService {
       phone?: string;
       locale?: string;
       isActive?: boolean;
-      visibilityGroups?: string[];
+      classId?: string;
     },
     ipAddress?: string,
   ) {
     const updateData = {
       ...data,
       ...(data.email ? { email: data.email.toLowerCase().trim() } : {}),
-      ...(data.visibilityGroups
-        ? { visibilityGroups: this.visibility.normalizeGroups(data.visibilityGroups) }
-        : {}),
     };
 
     const client = await this.prisma.db.client.update({
       where: { id },
       data: updateData,
+      include: { class: { select: CLASS_SELECT } },
     });
 
     if (data.isActive === false) {
@@ -294,38 +404,6 @@ export class ClientsService {
     });
 
     return this.stripHouseKey(client);
-  }
-
-  async updateVisibilityGroups(
-    adminId: string,
-    id: string,
-    add?: string[],
-    remove?: string[],
-    ipAddress?: string,
-  ) {
-    const client = await this.prisma.db.client.findUnique({ where: { id } });
-    if (!client) throw new NotFoundException("errors.CLIENT_NOT_FOUND");
-
-    const groups = new Set(client.visibilityGroups.map(normalizeVisibilityGroup));
-    add?.forEach((g) => groups.add(normalizeVisibilityGroup(g)));
-    remove?.forEach((g) => groups.delete(normalizeVisibilityGroup(g)));
-
-    const updated = await this.prisma.db.client.update({
-      where: { id },
-      data: { visibilityGroups: [...groups] },
-    });
-
-    await this.audit.log({
-      actorType: ActorType.ADMIN,
-      actorId: adminId,
-      action: "CLIENT_VISIBILITY_UPDATED",
-      targetType: "Client",
-      targetId: id,
-      metadata: { add, remove },
-      ipAddress,
-    });
-
-    return this.stripHouseKey(updated);
   }
 
   async rotateKey(adminId: string, id: string, ipAddress?: string) {

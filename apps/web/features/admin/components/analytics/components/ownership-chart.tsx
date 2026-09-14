@@ -15,19 +15,22 @@ import {
   ChartTooltipContent,
 } from "@/components/ui/chart"
 
-const ownershipData = [
-  { month: "Jan", acquisitions: 48, transfers: 60, pending: 92 },
-  { month: "", acquisitions: 53, transfers: 62, pending: 70 },
-  { month: "Feb", acquisitions: 63, transfers: 56, pending: 68 },
-  { month: "", acquisitions: 65, transfers: 50, pending: 62 },
-  { month: "Feb", acquisitions: 53, transfers: 58, pending: 34 },
-  { month: "", acquisitions: 50, transfers: 50, pending: 36 },
-  { month: "Mar", acquisitions: 50, transfers: 51, pending: 38 },
-  { month: "Apr", acquisitions: 52, transfers: 53, pending: 39 },
-  { month: "Jun", acquisitions: 72, transfers: 85, pending: 30 },
-  { month: "Jul", acquisitions: 78, transfers: 88, pending: 26 },
-  { month: "Sep", acquisitions: 70, transfers: 81, pending: 24 },
-]
+export default function OwnershipChart({
+  data = [],
+}: {
+  data?: Array<{
+    period: string;
+    acquisitions: number;
+    transfers: number;
+    pending: number;
+  }>;
+}) {
+  const ownershipData = data.map((row) => ({
+    month: row.period.slice(5),
+    acquisitions: row.acquisitions,
+    transfers: row.transfers,
+    pending: row.pending,
+  }));
 
 const ownershipConfig = {
   acquisitions: {
@@ -44,7 +47,6 @@ const ownershipConfig = {
   },
 }
 
-export default function OwnershipChart() {
   return (
     <article className="rounded-xl bg-card p-7 shadow-sm ring-1 ring-border/40">
       <header className="mb-7 flex items-start justify-between gap-5">

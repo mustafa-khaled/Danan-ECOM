@@ -48,7 +48,7 @@ export const operationsColumns: ColumnDef<OperationItem>[] = [
     render: (_, row) => (
       <div className="flex flex-col min-w-0">
         <Link
-          href={`/admin/operations/${row.id}`}
+          href={`/admin/operations/${row.id}?kind=${row.kind}`}
           className="font-medium text-sm text-neutral-900 hover:text-warm-600 transition-colors truncate"
         >
           {row.title}

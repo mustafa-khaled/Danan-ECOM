@@ -17,7 +17,7 @@ import {
   Prisma,
 } from "@dadan/db";
 import type { Locale, ShippingAddress } from "@dadan/types";
-import { localizeDesign } from "../common/i18n/localize";
+import { localizePiece } from "../common/i18n/localize";
 import { AuditService } from "../audit/audit.service";
 import { CERTIFICATE_QUEUE } from "../certificates/jobs/certificate-job.processor";
 import type { GenerateCertificateJobData } from "../certificates/jobs/certificate-job.processor";
@@ -87,10 +87,12 @@ export class OrdersService {
             id: string;
             serialNumber: string;
             status: string;
-            designId: string;
+            name: string;
+            price: string;
+            collectionId: string;
           }>
         >`
-          SELECT id, "serialNumber", status, "designId"
+          SELECT id, "serialNumber", status, name, price, "collectionId"
           FROM "Piece"
           WHERE id = ANY(${params.pieceIds}::text[])
           FOR UPDATE
@@ -108,11 +110,11 @@ export class OrdersService {
           }
         }
 
-        // Get design info for the locked pieces
-        const designs = await tx.design.findMany({
-          where: { id: { in: lockedPieces.map((p) => p.designId) } },
+        const collections = await tx.collection.findMany({
+          where: { id: { in: lockedPieces.map((p) => p.collectionId) } },
+          select: { id: true, name: true },
         });
-        const designMap = new Map(designs.map((d) => [d.id, d]));
+        const collectionMap = new Map(collections.map((c) => [c.id, c]));
 
         return tx.order.create({
           data: {
@@ -132,20 +134,21 @@ export class OrdersService {
             shippingAddress: params.shippingAddress as object,
             items: {
               create: lockedPieces.map((p) => {
-                const design = designMap.get(p.designId)!;
-                const priceAtPurchase = Number(design.basePrice);
+                const priceAtPurchase = Number(p.price);
                 const itemTaxAmount =
                   Math.round(priceAtPurchase * params.taxRate * 100) / 100;
                 const lineTotal =
                   Math.round((priceAtPurchase + itemTaxAmount) * 100) / 100;
                 return {
                   pieceId: p.id,
-                  designId: p.designId,
-                  priceAtPurchase: design.basePrice,
+                  priceAtPurchase,
                   taxRate: params.taxRate,
                   taxAmount: itemTaxAmount,
                   lineTotal,
                   currency: params.currency,
+                  nameSnapshot: p.name,
+                  collectionNameSnapshot:
+                    collectionMap.get(p.collectionId)?.name ?? null,
                 };
               }),
             },
@@ -251,6 +254,9 @@ export class OrdersService {
         await tx.cartItem.deleteMany({ where: { clientId: existing.clientId } });
         await tx.checkoutReservation.deleteMany({
           where: { clientId: existing.clientId },
+        });
+        await tx.savedPiece.deleteMany({
+          where: { pieceId: { in: pieceIds } },
         });
 
         return { order: updated, alreadyConfirmed: false };
@@ -447,7 +453,7 @@ export class OrdersService {
         orderBy: { placedAt: "desc" },
         include: {
           items: {
-            include: { piece: true, design: true },
+            include: { piece: { include: { collection: true } } },
           },
         },
       }),
@@ -458,7 +464,7 @@ export class OrdersService {
     const allImageUrls: (string | null | undefined)[] = [];
     for (const order of items) {
       for (const item of order.items) {
-        allImageUrls.push(...item.design.imageUrls);
+        allImageUrls.push(...item.piece.imageUrls);
       }
     }
 
@@ -470,9 +476,9 @@ export class OrdersService {
         ...order,
         items: order.items.map((item) => ({
           ...item,
-          design: {
-            ...localizeDesign(item.design, locale),
-            imageUrls: item.design.imageUrls
+          piece: {
+            ...localizePiece(item.piece, locale),
+            imageUrls: item.piece.imageUrls
               .map((url) => urlMap.get(url))
               .filter((url): url is string => url !== undefined),
           },
@@ -493,7 +499,7 @@ export class OrdersService {
       where: { id: orderId, clientId },
       include: {
         items: {
-          include: { piece: true, design: true },
+          include: { piece: { include: { collection: true } } },
         },
       },
     });
@@ -502,7 +508,7 @@ export class OrdersService {
     // Collect all image URLs for batched resolution
     const allImageUrls: (string | null | undefined)[] = [];
     for (const item of order.items) {
-      allImageUrls.push(...item.design.imageUrls);
+      allImageUrls.push(...item.piece.imageUrls);
     }
     const urlMap = await this.storage.resolvePublicUrlsBatch(allImageUrls);
 
@@ -510,9 +516,9 @@ export class OrdersService {
       ...order,
       items: order.items.map((item) => ({
         ...item,
-        design: {
-          ...localizeDesign(item.design, locale),
-          imageUrls: item.design.imageUrls
+        piece: {
+          ...localizePiece(item.piece, locale),
+          imageUrls: item.piece.imageUrls
             .map((url) => urlMap.get(url))
             .filter((url): url is string => url !== undefined),
         },
@@ -538,13 +544,31 @@ export class OrdersService {
   async listAdminOrders(
     page?: number,
     limit?: number,
-    status?: OrderStatus,
-    clientId?: string,
+    filters?: {
+      status?: OrderStatus;
+      paymentStatus?: PaymentStatus;
+      paymentMethod?: string;
+      clientId?: string;
+      q?: string;
+    },
   ) {
     const { skip, take, page: p, limit: l } = paginationParams(page, limit);
+    const q = filters?.q?.trim();
     const where = {
-      ...(status ? { status } : {}),
-      ...(clientId ? { clientId } : {}),
+      ...(filters?.status ? { status: filters.status } : {}),
+      ...(filters?.paymentStatus ? { paymentStatus: filters.paymentStatus } : {}),
+      ...(filters?.paymentMethod ? { paymentMethod: filters.paymentMethod } : {}),
+      ...(filters?.clientId ? { clientId: filters.clientId } : {}),
+      ...(q
+        ? {
+            OR: [
+              { paymentReference: { contains: q, mode: "insensitive" as const } },
+              { client: { displayName: { contains: q, mode: "insensitive" as const } } },
+              { client: { email: { contains: q.toLowerCase() } } },
+              { items: { some: { piece: { serialNumber: { contains: q.toUpperCase() } } } } },
+            ],
+          }
+        : {}),
     };
 
     const [items, total] = await Promise.all([
@@ -553,9 +577,21 @@ export class OrdersService {
         skip,
         take,
         orderBy: { placedAt: "desc" },
-        include: {
-          client: { select: { displayName: true, email: true } },
-          items: { include: { piece: true } },
+        select: {
+          id: true,
+          status: true,
+          paymentStatus: true,
+          paymentMethod: true,
+          totalAmount: true,
+          currency: true,
+          placedAt: true,
+          client: { select: { id: true, displayName: true, email: true } },
+          items: {
+            select: {
+              id: true,
+              piece: { select: { serialNumber: true } },
+            },
+          },
         },
       }),
       this.prisma.db.order.count({ where }),
@@ -564,10 +600,59 @@ export class OrdersService {
     return { items, total, page: p, limit: l };
   }
 
+  async getOrderStats() {
+    const groups = await this.prisma.db.order.groupBy({
+      by: ["paymentStatus"],
+      _sum: { totalAmount: true },
+      _count: { _all: true },
+    });
+    const byStatus = Object.fromEntries(
+      groups.map((row) => [
+        row.paymentStatus,
+        {
+          count: row._count._all,
+          total: row._sum.totalAmount ?? 0,
+        },
+      ]),
+    );
+    const totalRevenue = groups
+      .filter((row) => row.paymentStatus === PaymentStatus.PAID)
+      .reduce((sum, row) => sum + Number(row._sum.totalAmount ?? 0), 0);
+    const pending = groups.find((row) => row.paymentStatus === PaymentStatus.PENDING);
+    const refunded = groups.filter((row) =>
+      row.paymentStatus === PaymentStatus.REFUNDED ||
+      row.paymentStatus === PaymentStatus.PARTIALLY_REFUNDED,
+    );
+    return {
+      totalRevenue,
+      successful: totalRevenue,
+      pending: Number(pending?._sum.totalAmount ?? 0),
+      refunded: refunded.reduce((sum, row) => sum + Number(row._sum.totalAmount ?? 0), 0),
+      byStatus,
+    };
+  }
+
   async getAdminOrder(id: string) {
     const order = await this.prisma.db.order.findUnique({
       where: { id },
-      include: {
+      select: {
+        id: true,
+        status: true,
+        paymentStatus: true,
+        fulfillmentStatus: true,
+        paymentMethod: true,
+        paymentProvider: true,
+        paymentReference: true,
+        subtotalAmount: true,
+        taxAmount: true,
+        shippingAmount: true,
+        discountAmount: true,
+        totalAmount: true,
+        currency: true,
+        shippingAddress: true,
+        placedAt: true,
+        createdAt: true,
+        updatedAt: true,
         client: {
           select: {
             id: true,
@@ -578,7 +663,23 @@ export class OrdersService {
             isActive: true,
           },
         },
-        items: { include: { piece: true, design: true } },
+        items: {
+          select: {
+            id: true,
+            priceAtPurchase: true,
+            lineTotal: true,
+            nameSnapshot: true,
+            collectionNameSnapshot: true,
+            piece: {
+              select: {
+                id: true,
+                serialNumber: true,
+                name: true,
+                collection: { select: { id: true, name: true } },
+              },
+            },
+          },
+        },
       },
     });
     if (!order) throw new NotFoundException("errors.ORDER_NOT_FOUND");

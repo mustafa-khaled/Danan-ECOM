@@ -6,10 +6,11 @@ import { seedAssets, seedCoverKey, seedImageKey, seedLqip, SEED_ASSETS_DIR } fro
 import {
   ALL_REFERENCED_ASSETS,
   CART_ITEMS,
+  CATALOG_TEMPLATES,
   CERTIFICATES,
+  CLASSES,
   CLIENTS,
   COLLECTIONS,
-  DESIGNS,
   ORDERS,
   PIECES,
   SAVED_PIECES,
@@ -92,17 +93,20 @@ async function main() {
     await tx.cartItem.deleteMany();
     await tx.savedPiece.deleteMany();
     await tx.verificationLog.deleteMany();
+    await tx.staffRequest.deleteMany();
     await tx.transferRequest.deleteMany();
     await tx.orderItem.deleteMany();
     await tx.order.deleteMany();
     await tx.certificate.deleteMany();
     await tx.ownershipRecord.deleteMany();
     await tx.piece.deleteMany();
-    await tx.designSpecification.deleteMany();
-    await tx.design.deleteMany();
+    await tx.pieceSpecification.deleteMany();
+    await tx.collectionClass.deleteMany();
     await tx.collection.deleteMany();
     await tx.client.deleteMany();
+    await tx.class.deleteMany();
     await tx.adminUser.deleteMany();
+    await tx.houseSettings.deleteMany();
     await tx.auditLog.deleteMany();
     await tx.failedRefund.deleteMany();
     console.log("Cleared all tables.\n");
@@ -111,6 +115,8 @@ async function main() {
     const adminSeeds = [
       { email: "admin@dadan.sa", displayName: "DADAN Super Admin", role: "SUPER_ADMIN" as const },
       { email: "staff@dadan.sa", displayName: "DADAN Staff", role: "STAFF" as const },
+      { email: "curator@dadan.sa", displayName: "DADAN Curator", role: "CURATOR" as const },
+      { email: "ops@dadan.sa", displayName: "DADAN Operations", role: "OPERATIONS" as const },
       { email: "viewer@dadan.sa", displayName: "DADAN Viewer", role: "VIEWER" as const },
     ];
     const admins: Array<{ id: string; email: string }> = [];
@@ -118,6 +124,23 @@ async function main() {
       admins.push(
         await tx.adminUser.create({ data: { ...a, passwordHash: adminPasswordHash } }),
       );
+    }
+
+    // --- Classes ---
+    const classes = new Map<string, { id: string }>();
+    for (const cls of CLASSES) {
+      const created = await tx.class.create({
+        data: {
+          name: cls.name,
+          nameAr: cls.nameAr,
+          slug: cls.slug,
+          description: cls.description,
+          sortOrder: cls.sortOrder,
+          isDefault: cls.isDefault ?? false,
+          isActive: true,
+        },
+      });
+      classes.set(cls.slug, created);
     }
 
     // --- Clients ---
@@ -131,14 +154,15 @@ async function main() {
           displayName: c.displayName,
           email: c.email,
           locale: c.locale,
-          visibilityGroups: c.visibilityGroups,
+          classId: classes.get(c.classSlug)!.id,
+          lastSeenAt: new Date(),
         },
       });
       clients.set(c.key, client);
     }
 
     // --- Collections ---
-    const collections = new Map<string, { id: string }>();
+    const collections = new Map<string, { id: string; name: string }>();
     for (const c of COLLECTIONS) {
       const collection = await tx.collection.create({
         data: {
@@ -151,53 +175,52 @@ async function main() {
           coverImageLqip: lqips[c.cover],
           isVisible: true,
           sortOrder: c.sortOrder,
-          visibilityGroups: c.visibilityGroups,
+          viewCount: 12 + c.sortOrder * 3,
+          origin: "Traditional Saudi architecture and desert light.",
+          meaning: "Safety, reassurance, affection, and compassion.",
+          inspiration: "The triangular windows and structure of the house.",
+          storyContent: "Stories of family, protection and belonging.",
+          classes: {
+            create: c.classSlugs.map((slug) => ({
+              classId: classes.get(slug)!.id,
+            })),
+          },
         },
       });
       collections.set(c.slug, collection);
     }
 
-    // --- Designs + specifications ---
-    const designs = new Map<string, { id: string }>();
-    const basePrices = new Map<string, number>();
-    for (const d of DESIGNS) {
-      const design = await tx.design.create({
-        data: {
-          name: d.name,
-          nameAr: d.nameAr,
-          slug: d.slug,
-          collectionId: collections.get(d.collectionSlug)!.id,
-          story: d.story,
-          storyAr: d.storyAr,
-          material: d.material,
-          materialAr: d.materialAr,
-          weight: d.weight,
-          dimensions: d.dimensions,
-          dimensionsAr: d.dimensionsAr,
-          imageUrls: d.images.map(seedImageKey),
-          imageLqips: d.images.map((f) => lqips[f]),
-          basePrice: d.basePrice,
-          currency: "SAR",
-          isActive: true,
-          visibilityGroups: d.visibilityGroups,
-          specifications: { create: d.specifications },
-        },
-      });
-      designs.set(d.slug, design);
-      basePrices.set(d.slug, d.basePrice);
-    }
+    const templates = new Map(CATALOG_TEMPLATES.map((t) => [t.slug, t]));
 
-    // --- Pieces + initial ownership records ---
-    const serialToDesignSlug = new Map(PIECES.map((p) => [p.serialNumber, p.designSlug]));
+    // --- Pieces + specifications + initial ownership records ---
+    const serialToTemplate = new Map(PIECES.map((p) => [p.serialNumber, p.templateSlug]));
     const pieces = new Map<string, { id: string }>();
     for (const p of PIECES) {
+      const template = templates.get(p.templateSlug)!;
+      const serialSuffix = p.serialNumber.replace(/-/g, "").slice(-6).toLowerCase();
       const piece = await tx.piece.create({
         data: {
           serialNumber: p.serialNumber,
-          designId: designs.get(p.designSlug)!.id,
+          collectionId: collections.get(template.collectionSlug)!.id,
+          name: template.name,
+          nameAr: template.nameAr,
+          slug: `${template.slug}-${serialSuffix}`,
+          story: template.story,
+          storyAr: template.storyAr,
+          material: template.material,
+          materialAr: template.materialAr,
+          weight: template.weight,
+          dimensions: template.dimensions,
+          dimensionsAr: template.dimensionsAr,
+          imageUrls: template.images.map(seedImageKey),
+          imageLqips: template.images.map((f) => lqips[f]),
+          price: template.price,
+          currency: "SAR",
+          isActive: true,
           status: p.status ?? (p.ownerKey ? "OWNED" : "AVAILABLE"),
           currentOwnerId: p.ownerKey ? clients.get(p.ownerKey)!.id : null,
           registeredAt: new Date(),
+          specifications: { create: template.specifications },
         },
       });
       pieces.set(p.serialNumber, piece);
@@ -238,17 +261,18 @@ async function main() {
     // --- Orders ---
     for (const o of ORDERS) {
       const items = o.pieceSerials.map((serial) => {
-        const designSlug = serialToDesignSlug.get(serial)!;
-        const price = basePrices.get(designSlug)!;
+        const template = templates.get(serialToTemplate.get(serial)!)!;
+        const price = template.price;
         const itemTax = Math.round(price * TAX_RATE * 100) / 100;
         return {
           pieceId: pieces.get(serial)!.id,
-          designId: designs.get(designSlug)!.id,
           priceAtPurchase: price,
           taxRate: TAX_RATE,
           taxAmount: itemTax,
           lineTotal: Math.round((price + itemTax) * 100) / 100,
           currency: "SAR",
+          nameSnapshot: template.name,
+          collectionNameSnapshot: collections.get(template.collectionSlug)!.name,
         };
       });
       const subtotal = items.reduce((sum, item) => sum + item.priceAtPurchase, 0);
@@ -324,12 +348,57 @@ async function main() {
       }
     }
 
+    await tx.houseSettings.create({
+      data: {
+        id: "default",
+        houseName: "DADAN",
+        description: "Private luxury jewelry ownership house",
+        contactEmail: "hello@dadan.sa",
+        supportContact: "+966500000000",
+        locale: "ar",
+        timezone: "Asia/Riyadh",
+        notificationPrefs: {
+          ownershipTransferRequest: true,
+          transferCompleted: true,
+          newMemberInvitation: true,
+          certificateIssued: true,
+          accessRequest: true,
+          paymentCompleted: true,
+          paymentFailed: true,
+        },
+      },
+    });
+
+    const firstClient = [...clients.values()][0];
+    const firstCollection = [...collections.values()][0];
+    if (firstClient && firstCollection) {
+      await tx.staffRequest.create({
+        data: {
+          requestNumber: "REQ-2026-001",
+          type: "MEMBERSHIP_UPGRADE",
+          status: "PENDING",
+          clientId: firstClient.id,
+          notes: "Seed membership upgrade request",
+        },
+      });
+      await tx.staffRequest.create({
+        data: {
+          requestNumber: "REQ-2026-002",
+          type: "ACCESS_REQUEST",
+          status: "PENDING",
+          clientId: firstClient.id,
+          collectionId: firstCollection.id,
+          notes: "Seed collection access request",
+        },
+      });
+    }
+
     // --- Summary ---
     console.log("=== Seed Summary ===");
     console.log(`  Admins:       ${admins.length} created`);
+    console.log(`  Classes:      ${CLASSES.length} created`);
     console.log(`  Clients:      ${CLIENTS.length} created`);
     console.log(`  Collections:  ${COLLECTIONS.length} created`);
-    console.log(`  Designs:      ${DESIGNS.length} created`);
     console.log(`  Pieces:       ${PIECES.length} created`);
     console.log(`  Certificates: ${CERTIFICATES.length} created`);
     console.log(`  Orders:       ${ORDERS.length} created`);

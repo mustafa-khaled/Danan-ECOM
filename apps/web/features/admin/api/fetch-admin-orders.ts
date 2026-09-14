@@ -2,11 +2,16 @@ import { sendRequest } from "@/shared/lib/send-request";
 import type { Paginated } from "@/shared/types/common";
 import type { AdminOrderListItem, AdminOrderDetail } from "../types";
 
-export function fetchAdminOrders(page = 1, limit = 20, cookieHeader?: string, status?: string) {
+export function fetchAdminOrders(
+  page = 1,
+  limit = 20,
+  cookieHeader?: string,
+  filters?: { status?: string; paymentStatus?: string; paymentMethod?: string; q?: string },
+) {
   return sendRequest<Paginated<AdminOrderListItem>>({
     method: "GET",
     url: "/admin/orders",
-    params: { page, limit, status },
+    params: { page, limit, ...filters },
     cookieHeader,
   });
 }

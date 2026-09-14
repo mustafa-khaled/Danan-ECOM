@@ -29,11 +29,10 @@ export interface OrderDetail {
     piece: {
       id: string;
       serialNumber: string;
-    };
-    design: {
       name: string;
       imageUrls: string[];
     };
+    nameSnapshot?: string;
     priceAtPurchase: string;
   }>;
 }

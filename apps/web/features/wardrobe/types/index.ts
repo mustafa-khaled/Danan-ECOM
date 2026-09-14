@@ -3,12 +3,18 @@ export interface WardrobePiece {
   serialNumber: string;
   status: string;
   acquiredAt: string;
-  design: {
-    name: string;
-    slug: string;
-    images: string[];
-    collection: string;
-  };
+  name: string;
+  slug: string;
+  images: string[];
+  collection: string;
+  story?: string;
+  material?: string;
+  weight?: number;
+  dimensions?: string;
+  price?: string;
+  currency?: string;
+  imageUrls?: string[];
+  specifications?: Array<{ key: string; value: string }>;
   activeTransfer?: {
     id: string;
   };

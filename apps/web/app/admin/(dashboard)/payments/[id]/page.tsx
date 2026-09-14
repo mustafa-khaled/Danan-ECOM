@@ -1,7 +1,10 @@
+import { fetchAdminOrderDetail } from "@/features/admin/api/fetch-admin-orders";
+import { getAdminCookieHeader } from "@/features/auth/server/admin-session";
+import { ApiError } from "@/shared/lib/send-request";
 import { ArrowLeft, Check } from "lucide-react";
-
 import Image from "next/image";
 import Link from "next/link";
+import { notFound } from "next/navigation";
 
 export default async function PaymentDetailsPage({
   params,
@@ -9,7 +12,14 @@ export default async function PaymentDetailsPage({
   params: Promise<{ id: string }>;
 }) {
   const { id } = await params;
-  console.log(id);
+  const cookieHeader = await getAdminCookieHeader();
+  let order;
+  try {
+    order = await fetchAdminOrderDetail(id, cookieHeader);
+  } catch (err) {
+    if (err instanceof ApiError && err.status === 404) notFound();
+    throw err;
+  }
 
   return (
     <>
@@ -21,7 +31,7 @@ export default async function PaymentDetailsPage({
         </div>
         <div className="w-full px-7.5 flex items-center justify-between">
           <h4 className="font-bold text-h6 text-neutral-800">
-            Payments / #PAY-00124
+            Payments / #{order.id.slice(0, 8)}
           </h4>
           <div className="flex items-center gap-2">
             <Image
@@ -42,7 +52,7 @@ export default async function PaymentDetailsPage({
       <div className="px-7.5 py-[16px]">
         <div className="p-6 bg-white rounded-3xl">
           <h1 className="font-heading border-b border-[#E1E4E8] pt-[16px] pb-[32px] text-[32px] font-bold text-[#212630] leading-[100%]">
-            Payment #PAY-00124
+            Payment #{order.id.slice(0, 8)}
           </h1>
 
           <div className="my-[32px] pb-5 border-b border-[#E1E4E8]">
@@ -59,8 +69,9 @@ export default async function PaymentDetailsPage({
                 <input
                   type="text"
                   name="amount"
-                  placeholder="Enter Amount"
-                  id="amount"
+                    defaultValue={`${order.totalAmount} ${order.currency}`}
+                    placeholder="Enter Amount"
+                    id="amount"
                   className="border-none bg-[#F8FAFC] h-17.5 p-[16px]"
                 />
               </div>

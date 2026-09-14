@@ -1,173 +1,65 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import { useQuery } from "@tanstack/react-query";
 import {
   OperationsTable,
   OperationsTableFilter,
   type OperationItem,
 } from "@/features/admin";
-
-const stats = [
-  {
-    id: 1,
-    title: "Pending Requests",
-    count: 12,
-  },
-  {
-    id: 2,
-    title: "Transfer Requests",
-    count: 6,
-  },
-  {
-    id: 3,
-    title: "Access Requests",
-    count: 5,
-  },
-  {
-    id: 4,
-    title: "Completed Requests",
-    count: 24,
-  },
-] as const;
-
-const initialOperations: OperationItem[] = [
-  {
-    id: "op-1",
-    requestNumber: "REQ-2025-081",
-    title: "Heritage Pendant Transfer",
-    type: "PIECE_TRANSFER",
-    transferType: "INCOMING",
-    memberName: "Sultan Al-Otaibi",
-    memberEmail: "sultan.otaibi@dadan.sa",
-    date: "12 Jan 2025",
-    status: "PENDING",
-    pieceName: "Heritage Pendant #004",
-  },
-  {
-    id: "op-2",
-    requestNumber: "REQ-2025-080",
-    title: "House Key Access Request",
-    type: "ACCESS_REQUEST",
-    transferType: "INTERNAL",
-    memberName: "Noura Al-Saud",
-    memberEmail: "noura.saud@royalhouse.sa",
-    date: "11 Jan 2025",
-    status: "COMPLETED",
-    pieceName: "Royal Signet Ring #012",
-  },
-  {
-    id: "op-3",
-    requestNumber: "REQ-2025-079",
-    title: "Outgoing Transfer of Mawaddah",
-    type: "PIECE_TRANSFER",
-    transferType: "OUTGOING",
-    memberName: "Tariq Mansour",
-    memberEmail: "tariq.mansour@gmail.com",
-    date: "10 Jan 2025",
-    status: "UNDER_REVIEW",
-    pieceName: "Mawaddah Ring #008",
-  },
-  {
-    id: "op-4",
-    requestNumber: "REQ-2025-078",
-    title: "Class A Membership Upgrade",
-    type: "MEMBERSHIP_UPGRADE",
-    transferType: "INTERNAL",
-    memberName: "Reem Al-Ghamdi",
-    memberEmail: "reem.ghamdi@dadan.sa",
-    date: "09 Jan 2025",
-    status: "PENDING",
-    pieceName: "House Key Access",
-  },
-  {
-    id: "op-5",
-    requestNumber: "REQ-2025-077",
-    title: "Ownership Certificate Transfer",
-    type: "PIECE_TRANSFER",
-    transferType: "INCOMING",
-    memberName: "Fahad Al-Husseini",
-    memberEmail: "fahad.h@atelier.com",
-    date: "08 Jan 2025",
-    status: "COMPLETED",
-    pieceName: "AlUla Cuff Bracelet #002",
-  },
-  {
-    id: "op-6",
-    requestNumber: "REQ-2025-076",
-    title: "Private Key Issuance",
-    type: "KEY_ISSUANCE",
-    transferType: "INTERNAL",
-    memberName: "Lina Al-Khatib",
-    memberEmail: "lina.khatib@luxury.sa",
-    date: "06 Jan 2025",
-    status: "REJECTED",
-    pieceName: "Security Key Protocol",
-  },
-  {
-    id: "op-7",
-    requestNumber: "REQ-2025-075",
-    title: "Desert Rose Choker Transfer",
-    type: "PIECE_TRANSFER",
-    transferType: "OUTGOING",
-    memberName: "Khalid Bin Rashid",
-    memberEmail: "khalid.rashid@house.sa",
-    date: "05 Jan 2025",
-    status: "COMPLETED",
-    pieceName: "Desert Rose Choker #001",
-  },
-  {
-    id: "op-8",
-    requestNumber: "REQ-2025-074",
-    title: "Heritage Brooch Transfer",
-    type: "PIECE_TRANSFER",
-    transferType: "INCOMING",
-    memberName: "Maha Al-Dossary",
-    memberEmail: "maha.dossary@invest.sa",
-    date: "03 Jan 2025",
-    status: "PENDING",
-    pieceName: "Heritage Brooch #009",
-  },
-];
+import {
+  fetchAdminOperations,
+  fetchAdminOperationsStats,
+} from "@/features/admin/api/fetch-admin-operations";
 
 export default function OperationsPage() {
-  const [operations] = useState<OperationItem[]>(initialOperations);
   const [searchValue, setSearchValue] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
   const [transferFilter, setTransferFilter] = useState("all");
   const [typeFilter, setTypeFilter] = useState("all");
 
-  const filteredOperations = useMemo(() => {
-    return operations.filter((op) => {
-      // Search filter
-      if (searchValue.trim()) {
-        const q = searchValue.toLowerCase();
-        const matchesSearch =
-          op.title.toLowerCase().includes(q) ||
-          op.requestNumber.toLowerCase().includes(q) ||
-          op.memberName.toLowerCase().includes(q) ||
-          op.memberEmail.toLowerCase().includes(q) ||
-          (op.pieceName && op.pieceName.toLowerCase().includes(q));
-        if (!matchesSearch) return false;
-      }
+  const statsQuery = useQuery({
+    queryKey: ["admin-operations-stats"],
+    queryFn: () => fetchAdminOperationsStats(),
+  });
+  const operationsQuery = useQuery({
+    queryKey: ["admin-operations", searchValue, statusFilter, typeFilter],
+    queryFn: () =>
+      fetchAdminOperations(1, 20, undefined, {
+        q: searchValue || undefined,
+        status: statusFilter === "all" ? undefined : statusFilter,
+        type: typeFilter === "all" ? undefined : typeFilter,
+      }),
+  });
 
-      // Status filter
-      if (statusFilter !== "all" && op.status !== statusFilter) {
-        return false;
-      }
+  const operations: OperationItem[] = useMemo(() => {
+    return (operationsQuery.data?.items ?? [])
+      .filter((item) => transferFilter === "all" || item.transferType === transferFilter)
+      .map((item) => ({
+        id: item.id,
+        kind: item.kind,
+        requestNumber: item.requestNumber,
+        title: item.title,
+        type: item.type as OperationItem["type"],
+        transferType: item.transferType as OperationItem["transferType"],
+        memberName: item.memberName,
+        memberEmail: item.memberEmail,
+        date: new Date(item.date).toLocaleDateString("en-GB", {
+          day: "2-digit",
+          month: "short",
+          year: "numeric",
+        }),
+        status: item.status as OperationItem["status"],
+        pieceName: item.pieceName,
+      }));
+  }, [operationsQuery.data, transferFilter]);
 
-      // Transfer type filter
-      if (transferFilter !== "all" && op.transferType !== transferFilter) {
-        return false;
-      }
-
-      // Request type filter
-      if (typeFilter !== "all" && op.type !== typeFilter) {
-        return false;
-      }
-
-      return true;
-    });
-  }, [operations, searchValue, statusFilter, transferFilter, typeFilter]);
+  const stats = [
+    { id: 1, title: "Pending Requests", count: statsQuery.data?.pending ?? 0 },
+    { id: 2, title: "Transfer Requests", count: statsQuery.data?.transfers ?? 0 },
+    { id: 3, title: "Access Requests", count: statsQuery.data?.access ?? 0 },
+    { id: 4, title: "Completed Requests", count: statsQuery.data?.completed ?? 0 },
+  ];
 
   return (
     <>
@@ -204,11 +96,10 @@ export default function OperationsPage() {
               onTypeFilterChange={setTypeFilter}
             />
 
-            <OperationsTable items={filteredOperations} />
+            <OperationsTable items={operations} />
           </div>
         </div>
       </div>
     </>
   );
 }
-

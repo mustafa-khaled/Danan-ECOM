@@ -26,16 +26,16 @@ export default async function SavedPage() {
         ) : (
           <div className="grid gap-6 sm:grid-cols-2">
             {saved.map((entry) => {
-              const href = entry.piece.design.slug
-                ? `/beta/pieces/${entry.piece.design.slug}`
+              const href = entry.piece.slug
+                ? `/beta/pieces/${entry.piece.slug}`
                 : `/beta/profile/wardrobe/${entry.piece.id}`;
               return (
                 <Link key={entry.piece.id} href={href}>
                   <PieceCard
                     piece={{
                       id: entry.piece.id,
-                      name: entry.piece.design.name,
-                      imageUrl: entry.piece.design.imageUrls?.[0],
+                      name: entry.piece.name,
+                      imageUrl: entry.piece.imageUrls?.[0],
                     }}
                   />
                 </Link>

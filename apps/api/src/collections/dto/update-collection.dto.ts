@@ -5,6 +5,7 @@ import {
   IsNumber,
   IsOptional,
   IsString,
+  IsUUID,
   MaxLength,
 } from "class-validator";
 
@@ -17,10 +18,17 @@ export class UpdateCollectionDto {
   @IsOptional() @IsString() @MaxLength(2048) coverImageUrl?: string;
   @IsOptional() @IsBoolean() isVisible?: boolean;
   @IsOptional() @IsNumber() sortOrder?: number;
+  @IsOptional() @IsString() @MaxLength(10000) origin?: string;
+  @IsOptional() @IsString() @MaxLength(10000) originAr?: string;
+  @IsOptional() @IsString() @MaxLength(10000) meaning?: string;
+  @IsOptional() @IsString() @MaxLength(10000) meaningAr?: string;
+  @IsOptional() @IsString() @MaxLength(10000) inspiration?: string;
+  @IsOptional() @IsString() @MaxLength(10000) inspirationAr?: string;
+  @IsOptional() @IsString() @MaxLength(20000) storyContent?: string;
+  @IsOptional() @IsString() @MaxLength(20000) storyContentAr?: string;
   @IsOptional()
   @IsArray()
-  @ArrayMaxSize(20)
-  @IsString({ each: true })
-  @MaxLength(64, { each: true })
-  visibilityGroups?: string[];
+  @ArrayMaxSize(50)
+  @IsUUID("4", { each: true })
+  classIds?: string[];
 }

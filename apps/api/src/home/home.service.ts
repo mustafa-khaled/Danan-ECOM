@@ -1,5 +1,5 @@
 import { Injectable } from "@nestjs/common";
-import { createHash } from "crypto";
+import { PieceStatus } from "@dadan/db";
 import type { Locale } from "@dadan/types";
 import { pickLocalized } from "../common/i18n/localize";
 import { PrismaService } from "../prisma/prisma.service";
@@ -11,32 +11,14 @@ const MAX_SELECTED_PIECES = 3;
 const POPULAR_CACHE_TTL_SECONDS = 300;
 
 export interface SelectedPiece {
-  designSlug: string;
+  slug: string;
   name: string;
   imageUrl: string | null;
   imageLqip: string | null;
-  basePrice: string;
+  price: string;
   currency: string;
   collectionName: string;
   collectionSlug: string;
-}
-
-interface DesignWithCollection {
-  id: string;
-  slug: string;
-  name: string;
-  nameAr: string | null;
-  imageUrls: string[];
-  imageLqips: string[];
-  basePrice: { toString(): string };
-  currency: string;
-  visibilityGroups: string[];
-  collection: {
-    name: string;
-    nameAr: string | null;
-    slug: string;
-    visibilityGroups: string[];
-  };
 }
 
 @Injectable()
@@ -50,212 +32,208 @@ export class HomeService {
 
   async getSelectedForYou(
     clientId: string,
-    clientGroups: string[],
+    classId: string,
     locale: Locale = "ar",
   ): Promise<SelectedPiece[]> {
     const results: SelectedPiece[] = [];
-    const selectedDesignIds = new Set<string>();
+    const selectedIds = new Set<string>();
 
-    await this.fillFromSavedPieces(clientId, clientGroups, locale, results, selectedDesignIds);
+    await this.fillFromSavedPieces(clientId, classId, locale, results, selectedIds);
     if (results.length >= MAX_SELECTED_PIECES) return results;
 
-    await this.fillFromPastOrders(clientId, clientGroups, locale, results, selectedDesignIds);
+    await this.fillFromPastOrders(clientId, classId, locale, results, selectedIds);
     if (results.length >= MAX_SELECTED_PIECES) return results;
 
-    await this.fillFromPopular(clientGroups, locale, results, selectedDesignIds);
+    await this.fillFromPopular(classId, locale, results, selectedIds);
     if (results.length >= MAX_SELECTED_PIECES) return results;
 
-    await this.fillFromNewest(clientGroups, locale, results, selectedDesignIds);
+    await this.fillFromNewest(classId, locale, results, selectedIds);
 
     return results;
   }
 
-  // --- Level 1: Designs from collections the user has saved pieces from ---
+  private catalogWhere(classId: string, extra?: Record<string, unknown>) {
+    return {
+      isActive: true,
+      status: PieceStatus.AVAILABLE,
+      currentOwnerId: null,
+      collection: this.visibility.prismaFilter(classId),
+      ...extra,
+    };
+  }
+
   private async fillFromSavedPieces(
     clientId: string,
-    clientGroups: string[],
+    classId: string,
     locale: Locale,
     results: SelectedPiece[],
-    selectedDesignIds: Set<string>,
+    selectedIds: Set<string>,
   ): Promise<void> {
     const savedPieces = await this.prisma.db.savedPiece.findMany({
       where: { clientId },
-      include: { piece: { include: { design: true } } },
+      include: { piece: { select: { id: true, collectionId: true } } },
       orderBy: { savedAt: "desc" },
       take: 10,
     });
 
     if (savedPieces.length === 0) return;
 
-    const savedDesignIds = new Set(savedPieces.map((sp) => sp.piece.designId));
+    const savedIds = new Set(savedPieces.map((sp) => sp.piece.id));
     const interestedCollectionIds = [
-      ...new Set(savedPieces.map((sp) => sp.piece.design.collectionId)),
+      ...new Set(savedPieces.map((sp) => sp.piece.collectionId)),
     ];
 
-    const relatedDesigns = await this.prisma.db.design.findMany({
-      where: {
+    const related = await this.prisma.db.piece.findMany({
+      where: this.catalogWhere(classId, {
         collectionId: { in: interestedCollectionIds },
-        isActive: true,
-        id: { notIn: [...savedDesignIds] },
-      },
+        id: { notIn: [...savedIds] },
+      }),
       include: { collection: true },
       take: MAX_SELECTED_PIECES * 2,
     });
 
-    for (const design of relatedDesigns) {
+    for (const piece of related) {
       if (results.length >= MAX_SELECTED_PIECES) break;
-      if (selectedDesignIds.has(design.id)) continue;
-      if (!this.visibility.canAccess(clientGroups, design.visibilityGroups)) continue;
-      if (!this.visibility.canAccess(clientGroups, design.collection.visibilityGroups)) continue;
-
-      selectedDesignIds.add(design.id);
-      results.push(await this.mapToSelectedPiece(design, locale));
+      if (selectedIds.has(piece.id)) continue;
+      selectedIds.add(piece.id);
+      results.push(await this.mapToSelectedPiece(piece, locale));
     }
   }
 
-  // --- Level 2: Designs from collections the user has ordered from ---
   private async fillFromPastOrders(
     clientId: string,
-    clientGroups: string[],
+    classId: string,
     locale: Locale,
     results: SelectedPiece[],
-    selectedDesignIds: Set<string>,
+    selectedIds: Set<string>,
   ): Promise<void> {
     const orderItems = await this.prisma.db.orderItem.findMany({
       where: {
         order: { clientId, status: { in: ["PAID", "FULFILLED"] } },
       },
-      include: { design: true },
+      include: { piece: { select: { id: true, collectionId: true } } },
       take: 10,
     });
 
     if (orderItems.length === 0) return;
 
-    const purchasedDesignIds = new Set(orderItems.map((oi) => oi.designId));
+    const purchasedIds = new Set(orderItems.map((oi) => oi.piece.id));
     const purchasedCollectionIds = [
-      ...new Set(orderItems.map((oi) => oi.design.collectionId)),
+      ...new Set(orderItems.map((oi) => oi.piece.collectionId)),
     ];
 
-    const relatedDesigns = await this.prisma.db.design.findMany({
-      where: {
+    const related = await this.prisma.db.piece.findMany({
+      where: this.catalogWhere(classId, {
         collectionId: { in: purchasedCollectionIds },
-        isActive: true,
-        id: { notIn: [...purchasedDesignIds, ...selectedDesignIds] },
-      },
+        id: { notIn: [...purchasedIds, ...selectedIds] },
+      }),
       include: { collection: true },
       take: MAX_SELECTED_PIECES * 2,
     });
 
-    for (const design of relatedDesigns) {
+    for (const piece of related) {
       if (results.length >= MAX_SELECTED_PIECES) break;
-      if (selectedDesignIds.has(design.id)) continue;
-      if (!this.visibility.canAccess(clientGroups, design.visibilityGroups)) continue;
-      if (!this.visibility.canAccess(clientGroups, design.collection.visibilityGroups)) continue;
-
-      selectedDesignIds.add(design.id);
-      results.push(await this.mapToSelectedPiece(design, locale));
+      if (selectedIds.has(piece.id)) continue;
+      selectedIds.add(piece.id);
+      results.push(await this.mapToSelectedPiece(piece, locale));
     }
   }
 
-  // --- Level 3: Most popular designs globally (cached in Redis) ---
   private async fillFromPopular(
-    clientGroups: string[],
+    classId: string,
     locale: Locale,
     results: SelectedPiece[],
-    selectedDesignIds: Set<string>,
+    selectedIds: Set<string>,
   ): Promise<void> {
-    const groupsHash = createHash("md5")
-      .update(clientGroups.slice().sort().join(","))
-      .digest("hex")
-      .slice(0, 12);
-    const cacheKey = `home:popular-designs:${groupsHash}`;
+    const cacheKey = `home:popular-pieces:${classId}`;
 
-    let designIds: string[] | null = null;
+    let pieceIds: string[] | null = null;
     const cached = await this.redis.get(cacheKey);
 
     if (cached) {
-      designIds = JSON.parse(cached) as string[];
+      pieceIds = JSON.parse(cached) as string[];
     } else {
-      const popular = await this.prisma.db.design.findMany({
-        where: { isActive: true },
-        include: { collection: true, _count: { select: { orderItems: true } } },
+      const popular = await this.prisma.db.piece.findMany({
+        where: this.catalogWhere(classId),
+        include: { _count: { select: { orderItems: true } } },
         orderBy: { orderItems: { _count: "desc" } },
         take: 10,
       });
-
-      const visible = popular.filter(
-        (d) =>
-          this.visibility.canAccess(clientGroups, d.visibilityGroups) &&
-          this.visibility.canAccess(clientGroups, d.collection.visibilityGroups),
+      pieceIds = popular.map((p) => p.id);
+      await this.redis.setWithExpiry(
+        cacheKey,
+        JSON.stringify(pieceIds),
+        POPULAR_CACHE_TTL_SECONDS,
       );
-
-      designIds = visible.map((d) => d.id);
-      await this.redis.setWithExpiry(cacheKey, JSON.stringify(designIds), POPULAR_CACHE_TTL_SECONDS);
     }
 
-    if (designIds.length === 0) return;
+    if (pieceIds.length === 0) return;
 
-    const designs = await this.prisma.db.design.findMany({
-      where: { id: { in: designIds }, isActive: true },
+    const pieces = await this.prisma.db.piece.findMany({
+      where: { id: { in: pieceIds }, ...this.catalogWhere(classId) },
       include: { collection: true },
     });
 
-    const designMap = new Map(designs.map((d) => [d.id, d]));
-    for (const id of designIds) {
+    const pieceMap = new Map(pieces.map((p) => [p.id, p]));
+    for (const id of pieceIds) {
       if (results.length >= MAX_SELECTED_PIECES) break;
-      if (selectedDesignIds.has(id)) continue;
-
-      const design = designMap.get(id);
-      if (!design) continue;
-      if (!this.visibility.canAccess(clientGroups, design.visibilityGroups)) continue;
-      if (!this.visibility.canAccess(clientGroups, design.collection.visibilityGroups)) continue;
-
-      selectedDesignIds.add(design.id);
-      results.push(await this.mapToSelectedPiece(design, locale));
+      if (selectedIds.has(id)) continue;
+      const piece = pieceMap.get(id);
+      if (!piece) continue;
+      selectedIds.add(piece.id);
+      results.push(await this.mapToSelectedPiece(piece, locale));
     }
   }
 
-  // --- Level 4: Newest designs (final fallback) ---
   private async fillFromNewest(
-    clientGroups: string[],
+    classId: string,
     locale: Locale,
     results: SelectedPiece[],
-    selectedDesignIds: Set<string>,
+    selectedIds: Set<string>,
   ): Promise<void> {
-    const newest = await this.prisma.db.design.findMany({
-      where: {
-        isActive: true,
-        id: { notIn: [...selectedDesignIds] },
-      },
+    const newest = await this.prisma.db.piece.findMany({
+      where: this.catalogWhere(classId, {
+        id: { notIn: [...selectedIds] },
+      }),
       include: { collection: true },
       orderBy: { createdAt: "desc" },
       take: MAX_SELECTED_PIECES * 2,
     });
 
-    for (const design of newest) {
+    for (const piece of newest) {
       if (results.length >= MAX_SELECTED_PIECES) break;
-      if (selectedDesignIds.has(design.id)) continue;
-      if (!this.visibility.canAccess(clientGroups, design.visibilityGroups)) continue;
-      if (!this.visibility.canAccess(clientGroups, design.collection.visibilityGroups)) continue;
-
-      selectedDesignIds.add(design.id);
-      results.push(await this.mapToSelectedPiece(design, locale));
+      if (selectedIds.has(piece.id)) continue;
+      selectedIds.add(piece.id);
+      results.push(await this.mapToSelectedPiece(piece, locale));
     }
   }
 
   private async mapToSelectedPiece(
-    design: DesignWithCollection,
+    piece: {
+      slug: string;
+      name: string;
+      nameAr: string | null;
+      imageUrls: string[];
+      imageLqips: string[];
+      price: { toString(): string };
+      currency: string;
+      collection: { name: string; nameAr: string | null; slug: string };
+    },
     locale: Locale,
   ): Promise<SelectedPiece> {
     return {
-      designSlug: design.slug,
-      name: pickLocalized(locale, design.name, design.nameAr),
-      imageUrl: await this.storage.resolvePublicUrl(design.imageUrls[0]),
-      imageLqip: design.imageLqips?.[0] ?? null,
-      basePrice: design.basePrice.toString(),
-      currency: design.currency,
-      collectionName: pickLocalized(locale, design.collection.name, design.collection.nameAr),
-      collectionSlug: design.collection.slug,
+      slug: piece.slug,
+      name: pickLocalized(locale, piece.name, piece.nameAr),
+      imageUrl: await this.storage.resolvePublicUrl(piece.imageUrls[0]),
+      imageLqip: piece.imageLqips?.[0] ?? null,
+      price: piece.price.toString(),
+      currency: piece.currency,
+      collectionName: pickLocalized(
+        locale,
+        piece.collection.name,
+        piece.collection.nameAr,
+      ),
+      collectionSlug: piece.collection.slug,
     };
   }
 }

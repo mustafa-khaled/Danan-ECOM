@@ -11,14 +11,7 @@ export const collectionSchema = z.object({
   descriptionAr: z.string().optional(),
   isVisible: z.boolean().default(true),
   sortOrder: z.coerce.number().int().default(0),
-  visibilityGroups: z
-    .string()
-    .transform((val) =>
-      val
-        ? val.split(",").map((g) => g.trim()).filter(Boolean)
-        : []
-    )
-    .default(""),
+  classIds: z.array(z.string()).default([]),
 });
 
 export const createCollectionSchema = collectionSchema;

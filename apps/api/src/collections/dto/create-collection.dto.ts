@@ -5,6 +5,7 @@ import {
   IsNumber,
   IsOptional,
   IsString,
+  IsUUID,
   MaxLength,
   MinLength,
 } from "class-validator";
@@ -20,8 +21,7 @@ export class CreateCollectionDto {
   @IsOptional() @IsNumber() sortOrder?: number;
   @IsOptional()
   @IsArray()
-  @ArrayMaxSize(20)
-  @IsString({ each: true })
-  @MaxLength(64, { each: true })
-  visibilityGroups?: string[];
+  @ArrayMaxSize(50)
+  @IsUUID("4", { each: true })
+  classIds?: string[];
 }

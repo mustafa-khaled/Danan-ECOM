@@ -55,7 +55,7 @@ export class CheckoutController {
   @Post("reserve")
   @HttpCode(HttpStatus.OK)
   reserve(@CurrentClient() client: ClientSession) {
-    return this.cart.reserveForCheckout(client.clientId, client.visibilityGroups);
+    return this.cart.reserveForCheckout(client.clientId, client.classId);
   }
 
   @Post()
@@ -63,7 +63,7 @@ export class CheckoutController {
     @CurrentClient() client: ClientSession,
     @Body() dto: CheckoutDto,
   ) {
-    return this.cart.checkout(client.clientId, client.visibilityGroups, dto);
+    return this.cart.checkout(client.clientId, client.classId, dto);
   }
 
   @Post("confirm")

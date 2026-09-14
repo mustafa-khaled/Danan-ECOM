@@ -1,191 +1,76 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useState } from "react";
+import { useQuery } from "@tanstack/react-query";
 import {
   OwnershipTable,
   OwnershipTableFilter,
   type OwnershipRecordItem,
 } from "@/features/admin";
-
-const stats = [
-  {
-    id: 1,
-    title: "Total Owned",
-    count: 324,
-  },
-  {
-    id: 2,
-    title: "Transfers",
-    count: 48,
-  },
-  {
-    id: 3,
-    title: "Pending Transfers",
-    count: 6,
-  },
-  {
-    id: 4,
-    title: "Available",
-    count: 22,
-  },
-] as const;
-
-const initialRecords: OwnershipRecordItem[] = [
-  {
-    id: "own-1",
-    pieceId: "p-1",
-    pieceName: "Heritage Pendant",
-    pieceSerial: "DDN-HP-004",
-    pieceImageUrl: "/assets/wardrobe.avif",
-    ownerName: "Sultan Al-Otaibi",
-    ownerEmail: "sultan.otaibi@dadan.sa",
-    collectionName: "Royal Desert",
-    status: "OWNED",
-    transferType: "DIRECT",
-    since: "12 Jan 2024",
-  },
-  {
-    id: "own-2",
-    pieceId: "p-2",
-    pieceName: "Mawaddah Ring",
-    pieceSerial: "DDN-MR-018",
-    pieceImageUrl: "/assets/mawaddah.avif",
-    ownerName: "Noura Al-Saud",
-    ownerEmail: "noura.saud@royalhouse.sa",
-    collectionName: "Eternal Sands",
-    status: "IN_TRANSFER",
-    transferType: "SECONDARY",
-    since: "04 Feb 2024",
-  },
-  {
-    id: "own-3",
-    pieceId: "p-3",
-    pieceName: "AlUla Cuff Bracelet",
-    pieceSerial: "DDN-AC-002",
-    pieceImageUrl: "/assets/wardrobe.avif",
-    ownerName: "Tariq Mansour",
-    ownerEmail: "tariq.mansour@gmail.com",
-    collectionName: "AlUla Heritage",
-    status: "OWNED",
-    transferType: "DIRECT",
-    since: "20 Mar 2024",
-  },
-  {
-    id: "own-4",
-    pieceId: "p-4",
-    pieceName: "Royal Signet Ring",
-    pieceSerial: "DDN-RS-012",
-    pieceImageUrl: "/assets/mawaddah.avif",
-    ownerName: "Reem Al-Ghamdi",
-    ownerEmail: "reem.ghamdi@dadan.sa",
-    collectionName: "Royal Desert",
-    status: "PENDING",
-    transferType: "GIFT",
-    since: "15 Apr 2024",
-  },
-  {
-    id: "own-5",
-    pieceId: "p-5",
-    pieceName: "Desert Rose Choker",
-    pieceSerial: "DDN-DR-001",
-    pieceImageUrl: "/assets/wardrobe.avif",
-    ownerName: "Fahad Al-Husseini",
-    ownerEmail: "fahad.h@atelier.com",
-    collectionName: "Celestial Oasis",
-    status: "OWNED",
-    transferType: "INHERITED",
-    since: "02 May 2024",
-  },
-  {
-    id: "own-6",
-    pieceId: "p-6",
-    pieceName: "Oasis Tiara",
-    pieceSerial: "DDN-OT-007",
-    pieceImageUrl: "/assets/wardrobe.avif",
-    ownerName: "Lina Al-Khatib",
-    ownerEmail: "lina.khatib@luxury.sa",
-    collectionName: "Celestial Oasis",
-    status: "AVAILABLE",
-    transferType: "NONE",
-    since: "18 Jun 2024",
-  },
-  {
-    id: "own-7",
-    pieceId: "p-7",
-    pieceName: "Heritage Brooch",
-    pieceSerial: "DDN-HB-009",
-    pieceImageUrl: "/assets/mawaddah.avif",
-    ownerName: "Khalid Bin Rashid",
-    ownerEmail: "khalid.rashid@house.sa",
-    collectionName: "Royal Desert",
-    status: "OWNED",
-    transferType: "DIRECT",
-    since: "01 Jul 2024",
-  },
-  {
-    id: "own-8",
-    pieceId: "p-8",
-    pieceName: "Lapis Lazuli Seal",
-    pieceSerial: "DDN-LS-003",
-    pieceImageUrl: "/assets/wardrobe.avif",
-    ownerName: "Maha Al-Dossary",
-    ownerEmail: "maha.dossary@invest.sa",
-    collectionName: "AlUla Heritage",
-    status: "OWNED",
-    transferType: "SECONDARY",
-    since: "14 Aug 2024",
-  },
-];
-
-const availableCollections = [
-  "Royal Desert",
-  "Eternal Sands",
-  "AlUla Heritage",
-  "Celestial Oasis",
-];
+import {
+  fetchAdminOwnership,
+  fetchAdminOwnershipStats,
+} from "@/features/admin/api/fetch-admin-ownership";
+import { fetchAdminCollections } from "@/features/admin/api/fetch-admin-collections";
 
 export default function OwnershipPage() {
-  const [records] = useState<OwnershipRecordItem[]>(initialRecords);
   const [searchValue, setSearchValue] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
   const [collectionFilter, setCollectionFilter] = useState("all");
   const [transferTypeFilter, setTransferTypeFilter] = useState("all");
 
-  const filteredRecords = useMemo(() => {
-    return records.filter((rec) => {
-      // Search filter
-      if (searchValue.trim()) {
-        const q = searchValue.toLowerCase();
-        const matchesSearch =
-          rec.pieceName.toLowerCase().includes(q) ||
-          rec.pieceSerial.toLowerCase().includes(q) ||
-          rec.ownerName.toLowerCase().includes(q) ||
-          rec.ownerEmail.toLowerCase().includes(q) ||
-          rec.collectionName.toLowerCase().includes(q);
-        if (!matchesSearch) return false;
-      }
+  const collectionsQuery = useQuery({
+    queryKey: ["admin-collections"],
+    queryFn: () => fetchAdminCollections(1, 100),
+  });
+  const selectedCollection = collectionsQuery.data?.items.find(
+    (collection) => collection.name === collectionFilter,
+  );
 
-      // Status filter
-      if (statusFilter !== "all" && rec.status !== statusFilter) {
-        return false;
-      }
+  const statsQuery = useQuery({
+    queryKey: ["admin-ownership-stats"],
+    queryFn: () => fetchAdminOwnershipStats(),
+  });
+  const recordsQuery = useQuery({
+    queryKey: ["admin-ownership", searchValue, statusFilter, selectedCollection?.id],
+    queryFn: () =>
+      fetchAdminOwnership(1, 20, undefined, {
+        q: searchValue || undefined,
+        status: statusFilter === "all" ? undefined : statusFilter,
+        collectionId: selectedCollection?.id,
+      }),
+  });
 
-      // Collection filter
-      if (collectionFilter !== "all" && rec.collectionName !== collectionFilter) {
-        return false;
-      }
+  const records: OwnershipRecordItem[] = (recordsQuery.data?.items ?? [])
+    .filter((item) =>
+      transferTypeFilter === "all" || item.transferType === transferTypeFilter,
+    )
+    .map((item) => ({
+      id: item.id,
+      pieceId: item.pieceId,
+      pieceName: item.pieceName,
+      pieceSerial: item.pieceSerial,
+      pieceImageUrl: item.pieceImageUrl ?? undefined,
+      ownerName: item.ownerName ?? "",
+      ownerEmail: item.ownerEmail ?? "",
+      collectionName: item.collectionName,
+      status: item.status,
+      transferType: (item.transferType as OwnershipRecordItem["transferType"]) ?? "NONE",
+      since: item.since
+        ? new Date(item.since).toLocaleDateString("en-GB", {
+            day: "2-digit",
+            month: "short",
+            year: "numeric",
+          })
+        : "",
+    }));
 
-      // Transfer Type filter
-      if (
-        transferTypeFilter !== "all" &&
-        rec.transferType !== transferTypeFilter
-      ) {
-        return false;
-      }
-
-      return true;
-    });
-  }, [records, searchValue, statusFilter, collectionFilter, transferTypeFilter]);
+  const stats = [
+    { id: 1, title: "Total Owned", count: statsQuery.data?.owned ?? 0 },
+    { id: 2, title: "Transfers", count: statsQuery.data?.transfers ?? 0 },
+    { id: 3, title: "Pending Transfers", count: statsQuery.data?.pendingTransfers ?? 0 },
+    { id: 4, title: "Available", count: statsQuery.data?.available ?? 0 },
+  ];
 
   return (
     <>
@@ -221,10 +106,10 @@ export default function OwnershipPage() {
               onCollectionFilterChange={setCollectionFilter}
               transferTypeFilter={transferTypeFilter}
               onTransferTypeFilterChange={setTransferTypeFilter}
-              collections={availableCollections}
+              collections={collectionsQuery.data?.items.map((c) => c.name) ?? []}
             />
 
-            <OwnershipTable items={filteredRecords} />
+            <OwnershipTable items={records} />
           </div>
         </div>
       </div>

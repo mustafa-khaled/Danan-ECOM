@@ -1,9 +1,17 @@
-import { IsEnum, IsOptional } from "class-validator";
+import { IsEnum, IsOptional, IsUUID } from "class-validator";
 import { TransferStatus } from "@dadan/db";
-import { PaginationQueryDto } from "../../common/dto/pagination.dto";
+import { AdminListQueryDto } from "../../common/dto/admin-list-query.dto";
 
-export class AdminTransferQueryDto extends PaginationQueryDto {
+export class AdminTransferQueryDto extends AdminListQueryDto {
   @IsOptional()
   @IsEnum(TransferStatus)
   status?: TransferStatus;
+
+  @IsOptional()
+  @IsUUID()
+  pieceId?: string;
+
+  @IsOptional()
+  @IsUUID()
+  fromClientId?: string;
 }

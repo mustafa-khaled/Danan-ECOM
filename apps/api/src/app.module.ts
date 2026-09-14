@@ -20,6 +20,7 @@ import { StorageModule } from "./storage/storage.module";
 import { AuthModule } from "./auth/auth.module";
 import { AdminAuthModule } from "./admin/auth/admin-auth.module";
 import { ClientsModule } from "./clients/clients.module";
+import { ClassesModule } from "./classes/classes.module";
 import { CollectionsModule } from "./collections/collections.module";
 import { PiecesModule } from "./pieces/pieces.module";
 import { CartModule } from "./cart/cart.module";
@@ -29,6 +30,12 @@ import { CertificatesModule } from "./certificates/certificates.module";
 import { VerifyModule } from "./verify/verify.module";
 import { TransfersModule } from "./transfers/transfers.module";
 import { HomeModule } from "./home/home.module";
+import { NotificationsModule } from "./notifications/notifications.module";
+import { DashboardModule } from "./dashboard/dashboard.module";
+import { OwnershipModule } from "./ownership/ownership.module";
+import { OperationsModule } from "./operations/operations.module";
+import { HouseSettingsModule } from "./settings/house-settings.module";
+import { StaffModule } from "./staff/staff.module";
 
 @Module({
   imports: [
@@ -71,6 +78,7 @@ import { HomeModule } from "./home/home.module";
     AuthModule,
     AdminAuthModule,
     ClientsModule,
+    ClassesModule,
     CollectionsModule,
     PiecesModule,
     CartModule,
@@ -80,6 +88,12 @@ import { HomeModule } from "./home/home.module";
     VerifyModule,
     TransfersModule,
     HomeModule,
+    NotificationsModule,
+    DashboardModule,
+    OwnershipModule,
+    OperationsModule,
+    HouseSettingsModule,
+    StaffModule,
   ],
   providers: [
     {

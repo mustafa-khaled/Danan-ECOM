@@ -1,10 +1,8 @@
-const memberships = [
-  { label: "Class A", value: 124, percentage: 34 },
-  { label: "Class B", value: 54, percentage: 51 },
-  { label: "Class C", value: 582, percentage: 68 },
-]
-
-export default function MembershipDistribution() {
+export default function MembershipDistribution({
+  memberships = [],
+}: {
+  memberships?: Array<{ label: string; value: number; percentage: number }>;
+}) {
   return (
     <section aria-labelledby="membership-distribution-title" className="w-full">
       <h4

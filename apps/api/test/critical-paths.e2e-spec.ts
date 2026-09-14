@@ -24,6 +24,36 @@ function cookieOf(res: request.Response): string {
   return (Array.isArray(cookies) ? cookies : [cookies]).join("; ");
 }
 
+async function registerTestPiece(
+  http: ReturnType<INestApplication["getHttpServer"]>,
+  adminCookie: string,
+  suffix = `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
+) {
+  const collections = await request(http)
+    .get("/admin/collections")
+    .set("Cookie", adminCookie)
+    .expect(200);
+  const collectionId = collections.body.items[0].id as string;
+  return request(http)
+    .post("/admin/pieces")
+    .set("Cookie", adminCookie)
+    .send({
+      collectionId,
+      name: "E2E Test Piece",
+      nameAr: "قطعة اختبار",
+      slug: `e2e-piece-${suffix}`,
+      story: "Test story for e2e registration.",
+      storyAr: "قصة اختبار لتسجيل القطعة.",
+      material: "Gold",
+      materialAr: "ذهب",
+      weight: 2.5,
+      dimensions: "2 cm",
+      dimensionsAr: "٢ سم",
+      price: 10000,
+    })
+    .expect(201);
+}
+
 describe("Critical Path Tests (e2e)", () => {
   let app: INestApplication;
   let http: ReturnType<INestApplication["getHttpServer"]>;
@@ -85,17 +115,7 @@ describe("Critical Path Tests (e2e)", () => {
 
     beforeAll(async () => {
       // Admin creates a fresh piece
-      const designs = await request(http)
-        .get("/admin/designs")
-        .set("Cookie", adminCookie)
-        .expect(200);
-      const designId = designs.body.items[0].id;
-
-      const piece = await request(http)
-        .post("/admin/pieces")
-        .set("Cookie", adminCookie)
-        .send({ designId })
-        .expect(201);
+      const piece = await registerTestPiece(http, adminCookie);
       pieceId = piece.body.id;
     });
 
@@ -206,17 +226,7 @@ describe("Critical Path Tests (e2e)", () => {
 
   describe("4. Double-charge prevention (idempotency)", () => {
     it("same cart contents submitted twice produces only one order", async () => {
-      const designs = await request(http)
-        .get("/admin/designs")
-        .set("Cookie", adminCookie)
-        .expect(200);
-      const designId = designs.body.items[0].id;
-
-      const piece = await request(http)
-        .post("/admin/pieces")
-        .set("Cookie", adminCookie)
-        .send({ designId })
-        .expect(201);
+      const piece = await registerTestPiece(http, adminCookie);
 
       await request(http)
         .post("/client/cart")
@@ -303,24 +313,14 @@ describe("Critical Path Tests (e2e)", () => {
       await request(http)
         .post("/admin/pieces")
         .set("Cookie", amiraCookie)
-        .send({ designId: "fake-id" })
+        .send({ collectionId: "00000000-0000-4000-8000-000000000000" })
         .expect(401);
     });
   });
 
   describe("7. Payment failure handling", () => {
     it("declined payment creates no order and piece stays AVAILABLE", async () => {
-      const designs = await request(http)
-        .get("/admin/designs")
-        .set("Cookie", adminCookie)
-        .expect(200);
-      const designId = designs.body.items[0].id;
-
-      const piece = await request(http)
-        .post("/admin/pieces")
-        .set("Cookie", adminCookie)
-        .send({ designId })
-        .expect(201);
+      const piece = await registerTestPiece(http, adminCookie);
 
       await request(http)
         .post("/client/cart")
@@ -360,17 +360,7 @@ describe("Critical Path Tests (e2e)", () => {
 
   describe("7b. 3-D Secure redirect flow", () => {
     it("returns a redirect instead of an order, then settles on confirm", async () => {
-      const designs = await request(http)
-        .get("/admin/designs")
-        .set("Cookie", adminCookie)
-        .expect(200);
-      const designId = designs.body.items[0].id;
-
-      const piece = await request(http)
-        .post("/admin/pieces")
-        .set("Cookie", adminCookie)
-        .send({ designId })
-        .expect(201);
+      const piece = await registerTestPiece(http, adminCookie);
 
       await request(http)
         .post("/client/cart")
@@ -487,53 +477,39 @@ describe("Critical Path Tests (e2e)", () => {
     });
   });
 
-  describe("10. Cart hold expiry", () => {
-    it("expired hold allows another client to add the piece", async () => {
-      const designs = await request(http)
-        .get("/admin/designs")
-        .set("Cookie", adminCookie)
-        .expect(200);
-      const designId = designs.body.items[0].id;
+  describe("10. Checkout hold is exclusive, cart is not", () => {
+    it("two clients can add the same piece until checkout reserve", async () => {
+      const piece = await registerTestPiece(http, adminCookie);
 
-      const piece = await request(http)
-        .post("/admin/pieces")
-        .set("Cookie", adminCookie)
-        .send({ designId })
-        .expect(201);
-
-      // Client A adds piece
       await request(http)
         .post("/client/cart")
         .set("Cookie", amiraCookie)
         .send({ pieceId: piece.body.id })
         .expect(201);
 
-      // Client B cannot add it while hold is active
-      const attemptWhileHeld = await request(http)
+      await request(http)
+        .post("/client/cart")
+        .set("Cookie", laylaCookie)
+        .send({ pieceId: piece.body.id })
+        .expect(201);
+
+      await request(http)
+        .post("/client/checkout/reserve")
+        .set("Cookie", amiraCookie)
+        .expect(200);
+
+      const attemptWhileReserved = await request(http)
         .post("/client/cart")
         .set("Cookie", laylaCookie)
         .send({ pieceId: piece.body.id });
 
-      expect(attemptWhileHeld.status).toBe(400);
+      expect(attemptWhileReserved.status).toBe(400);
+      expect(attemptWhileReserved.body.message).toContain("PIECE_RESERVED");
 
-      // Client A removes from cart (simulates expiry)
       await request(http)
         .delete(`/client/cart/${piece.body.id}`)
         .set("Cookie", amiraCookie)
         .expect(200);
-
-      // Now Client B can add it
-      const attemptAfterExpiry = await request(http)
-        .post("/client/cart")
-        .set("Cookie", laylaCookie)
-        .send({ pieceId: piece.body.id });
-
-      expect(attemptAfterExpiry.status).toBe(201);
-
-      // Cleanup
-      await request(http)
-        .delete(`/client/cart/${piece.body.id}`)
-        .set("Cookie", laylaCookie);
     });
   });
 });

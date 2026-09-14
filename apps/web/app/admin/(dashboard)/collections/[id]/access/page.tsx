@@ -1,4 +1,5 @@
 import { fetchAdminClients } from "@/features/admin/api/fetch-admin-clients";
+import { fetchAdminClientStats } from "@/features/admin/api/fetch-admin-stats";
 import { getAdminCookieHeader } from "@/features/auth/server/admin-session";
 import { parseAdminPage, ADMIN_PAGE_SIZE } from "@/shared/lib/parse-admin-page";
 import {
@@ -7,28 +8,6 @@ import {
 } from "@/features/admin";
 import type { AdminClientListItem } from "@/features/admin/types";
 
-const stats = [
-  {
-    id: 1,
-    title: "Total Members",
-    count: 1238,
-  },
-  {
-    id: 2,
-    title: "Class A",
-    count: 124,
-  },
-  {
-    id: 3,
-    title: "Class B",
-    count: 542,
-  },
-  {
-    id: 4,
-    title: "Class C",
-    count: 582,
-  },
-] as const;
 
 interface CollectionAccessPageProps {
   params: Promise<{ id: string }>;
@@ -46,11 +25,26 @@ export default async function CollectionAccessPage({
 
   let items: AdminClientListItem[] = [];
   let total = 0;
+  let stats = [{ id: 1, title: "Total Members", count: 0 }];
 
   try {
-    const res = await fetchAdminClients(page, ADMIN_PAGE_SIZE, cookieHeader, q);
+    const [res, clientStats] = await Promise.all([
+      fetchAdminClients(page, ADMIN_PAGE_SIZE, cookieHeader, {
+        q,
+        collectionId: id,
+      }),
+      fetchAdminClientStats(cookieHeader),
+    ]);
     items = res.items;
     total = res.total;
+    stats = [
+      { id: 1, title: "Total Members", count: clientStats.total },
+      ...clientStats.byClass.slice(0, 3).map((cls, index) => ({
+        id: index + 2,
+        title: cls.name,
+        count: cls.count,
+      })),
+    ];
   } catch {
     items = [];
     total = 0;

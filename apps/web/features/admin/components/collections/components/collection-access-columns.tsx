@@ -22,20 +22,13 @@ export const collectionAccessColumns: ColumnDef<AdminClientListItem>[] = [
   {
     key: "class",
     label: "Class",
-    accessor: "memberClass",
+    accessor: (row) => row.class?.name ?? row.memberClass ?? "",
     width: "140px",
-    render: (v, row) => {
-      const className =
-        v ||
-        (row.visibilityGroups?.length > 0
-          ? row.visibilityGroups[0]
-          : "Class A");
-      return (
-        <span className="inline-flex items-center px-2.5 py-1  text-xs font-semibold text-ds-text">
-          {String(className)}
-        </span>
-      );
-    },
+    render: (v) => (
+      <span className="inline-flex items-center px-2.5 py-1  text-xs font-semibold text-ds-text">
+        {String(v || "—")}
+      </span>
+    ),
   },
   {
     key: "accessStatus",

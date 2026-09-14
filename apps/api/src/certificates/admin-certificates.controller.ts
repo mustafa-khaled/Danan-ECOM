@@ -17,7 +17,7 @@ import { AdminGuard } from "../admin/auth/guards/admin.guard";
 import { Roles } from "../admin/auth/decorators/roles.decorator";
 import { CurrentAdmin } from "../admin/auth/decorators/current-admin.decorator";
 import type { AdminSession } from "@dadan/types";
-import { PaginationQueryDto } from "../common/dto/pagination.dto";
+import { AdminCertificateQueryDto } from "./dto/admin-certificate-query.dto";
 import { PrismaService } from "../prisma/prisma.service";
 
 @Controller("admin/certificates")
@@ -68,7 +68,10 @@ export class AdminCertificatesController {
   }
 
   @Get()
-  list(@Query() query: PaginationQueryDto) {
-    return this.certificates.listCertificates(query.page, query.limit);
+  list(@Query() query: AdminCertificateQueryDto) {
+    return this.certificates.listCertificates(query.page, query.limit, {
+      q: query.q,
+      isActive: query.isActive,
+    });
   }
 }

@@ -4,7 +4,7 @@ import type { Locale } from "@/i18n/routing";
 import { DesignActions } from "./design-actions";
 import { WardrobeActions } from "./wardrobe-actions";
 import { formatPrice } from "@/shared/utils/format";
-import type { DesignDetail } from "@/features/pieces";
+import type { PieceDetail } from "@/features/pieces";
 import { Container } from "./ui";
 import { cn } from "@/lib/utils";
 
@@ -16,29 +16,29 @@ interface WardrobeInfo {
 }
 
 interface PieceDetailsProps {
-  design: DesignDetail;
+  piece: PieceDetail;
   isWardrobe?: boolean;
   wardrobeInfo?: WardrobeInfo;
 }
 
 export default async function PieceDetails({
-  design,
+  piece,
   isWardrobe,
   wardrobeInfo,
 }: PieceDetailsProps) {
   const t = await getTranslations("piece");
   const locale = (await getLocale()) as Locale;
 
-  const firstAvailable = design.availablePieces?.[0];
+  const canPurchase = piece.status === "AVAILABLE";
 
   return (
     <div className="flex flex-col gap-[16px] xl:flex-row xl:h-225 h-258.5">
       {/* Left: Main Product Image */}
       <div className="relative w-full xl:h-auto h-108 overflow-hidden">
-        {design.imageUrls[0] ? (
+        {piece.imageUrls[0] ? (
           <Image
-            src={design.imageUrls[0]}
-            alt={design.name}
+            src={piece.imageUrls[0]}
+            alt={piece.name}
             fill
             priority
             sizes="(max-width: 1024px) 100vw, 50vw"
@@ -62,27 +62,27 @@ export default async function PieceDetails({
           {/* Title & Collection Subtitle */}
           <div className="xl:mb-[32px] xl:pb-0 pb-[16px]">
             <h1 className="font-heading font-bold lg:leading-15.75 xl:text-h1 text-h4 text-neutral-900">
-              {design.name}
+              {piece.name}
             </h1>
             <p className="my-[16px] xl:text-h3 text-h6 font-semibold text-neutral-800">
-              {t("partOfCollection", { collection: design.collection.name })}
+              {t("partOfCollection", { collection: piece.collection.name })}
             </p>
 
             {/* Story / Description */}
-            {design.story ? (
+            {piece.story ? (
               <p className="xl:text-h5 text-[14px] text-neutral-800 font-medium">
-                {design.story}
+                {piece.story}
               </p>
             ) : null}
           </div>
 
           {/* Specs Bullet List */}
           <ul className="xl:py-[32px] py-[16px] border-y border-neutral-200 xl:space-y-6 space-y-3">
-            <SpecRow label={t("material")} value={design.material} />
-            {design.specifications.map((spec) => (
+            <SpecRow label={t("material")} value={piece.material} />
+            {piece.specifications.map((spec) => (
               <SpecRow key={spec.key} label={spec.key} value={spec.value} />
             ))}
-            <SpecRow label={t("weight")} value={`${design.weight}g`} />
+            <SpecRow label={t("weight")} value={`${piece.weight}g`} />
             <SpecRow label={t("origin")} value="Crafted in Saudi Arabia" />
           </ul>
 
@@ -90,21 +90,21 @@ export default async function PieceDetails({
           <div className="xl:pt-12 pt-[16px]">
             <div className="xl:text-h3 text-h6 font-bold text-neutral-800 xl:mb-[32px] mb-[16px]">
               <p>{t("becomePartOfStory")}</p>
-              <p>{formatPrice(design.basePrice, design.currency, locale)}</p>
+              <p>{formatPrice(piece.price, piece.currency, locale)}</p>
             </div>
 
             {isWardrobe && wardrobeInfo ? (
               <WardrobeActions
                 pieceId={wardrobeInfo.pieceId}
-                pieceName={design.name}
+                pieceName={piece.name}
                 serialNumber={wardrobeInfo.serialNumber}
                 status={wardrobeInfo.status}
                 activeTransfer={wardrobeInfo.activeTransfer}
               />
-            ) : (design.availablePieces?.length ?? 0) > 0 && firstAvailable ? (
+            ) : canPurchase ? (
               <DesignActions
-                pieceId={firstAvailable.id}
-                initialSaved={firstAvailable.isSaved}
+                pieceId={piece.id}
+                initialSaved={piece.isSaved}
               />
             ) : (
               <p className="text-sm text-ds-text-muted font-body">

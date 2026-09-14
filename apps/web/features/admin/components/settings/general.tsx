@@ -1,6 +1,7 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   Accordion,
   AccordionContent,
@@ -14,10 +15,47 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import {
+  fetchHouseSettings,
+  updateHouseSettings,
+} from "@/features/admin/api/fetch-admin-settings";
 
 export default function General() {
+  const queryClient = useQueryClient();
+  const settingsQuery = useQuery({
+    queryKey: ["admin-house-settings"],
+    queryFn: () => fetchHouseSettings(),
+  });
   const [language, setLanguage] = useState("en");
   const [timezone, setTimezone] = useState("utc");
+  const [houseName, setHouseName] = useState("");
+  const [description, setDescription] = useState("");
+  const [contactEmail, setContactEmail] = useState("");
+  const [supportContact, setSupportContact] = useState("");
+
+  useEffect(() => {
+    const settings = settingsQuery.data;
+    if (!settings) return;
+    setHouseName(settings.houseName);
+    setDescription(settings.description ?? "");
+    setContactEmail(settings.contactEmail ?? "");
+    setSupportContact(settings.supportContact ?? "");
+    setLanguage(settings.locale);
+    setTimezone(settings.timezone);
+  }, [settingsQuery.data]);
+
+  const save = useMutation({
+    mutationFn: () =>
+      updateHouseSettings({
+        houseName,
+        description,
+        contactEmail,
+        supportContact,
+        locale: language,
+        timezone,
+      }),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["admin-house-settings"] }),
+  });
 
   return (
     <section>
@@ -38,65 +76,58 @@ export default function General() {
             </h4>
             <div className="grid py-5 border-t  border-b border-[#E1E4E8] grid-cols-2 gap-x-[32px] gap-y-3">
               <div className="flex flex-col gap-2">
-                <label
-                  htmlFor="houseName"
-                  className="text-[#272D35] text-h6 font-medium"
-                >
+                <label htmlFor="houseName" className="text-[#272D35] text-h6 font-medium">
                   House Name
                 </label>
                 <input
                   type="text"
                   name="houseName"
-                  placeholder="Enter house name"
                   id="houseName"
+                  value={houseName}
+                  onChange={(e) => setHouseName(e.target.value)}
+                  placeholder="Enter house name"
                   className="border-none bg-[#F8FAFC] h-17.5 p-[16px]"
                 />
               </div>
-
               <div className="flex flex-col gap-2">
-                <label
-                  htmlFor="description"
-                  className="text-[#272D35] text-h6 font-medium"
-                >
+                <label htmlFor="description" className="text-[#272D35] text-h6 font-medium">
                   Description
                 </label>
                 <input
                   type="text"
                   name="description"
-                  placeholder="Enter description"
                   id="description"
+                  value={description}
+                  onChange={(e) => setDescription(e.target.value)}
+                  placeholder="Enter description"
                   className="border-none bg-[#F8FAFC] h-17.5 p-[16px]"
                 />
               </div>
-
               <div className="flex flex-col gap-2">
-                <label
-                  htmlFor="contactEmail"
-                  className="text-[#272D35] text-h6 font-medium"
-                >
+                <label htmlFor="contactEmail" className="text-[#272D35] text-h6 font-medium">
                   Contact Email
                 </label>
                 <input
                   type="text"
                   name="contactEmail"
-                  placeholder="[EMAIL_ADDRESS]"
                   id="contactEmail"
+                  value={contactEmail}
+                  onChange={(e) => setContactEmail(e.target.value)}
+                  placeholder="[EMAIL_ADDRESS]"
                   className="border-none bg-[#F8FAFC] h-17.5 p-[16px]"
                 />
               </div>
-
               <div className="flex flex-col gap-2">
-                <label
-                  htmlFor="supportContact"
-                  className="text-[#272D35] text-h6 font-medium"
-                >
+                <label htmlFor="supportContact" className="text-[#272D35] text-h6 font-medium">
                   Support Contact
                 </label>
                 <input
                   type="text"
                   name="supportContact"
-                  placeholder="***"
                   id="supportContact"
+                  value={supportContact}
+                  onChange={(e) => setSupportContact(e.target.value)}
+                  placeholder="***"
                   className="border-none bg-[#F8FAFC] h-17.5 p-[16px]"
                 />
               </div>
@@ -105,10 +136,7 @@ export default function General() {
             <h4 className="font-heading my-5 text-h4 font-bold">REGIONAL </h4>
             <div className="grid grid-cols-2 gap-x-[32px] gap-y-3">
               <div className="flex flex-col gap-2">
-                <label
-                  htmlFor="language"
-                  className="text-[#272D35] text-h6 font-medium"
-                >
+                <label htmlFor="language" className="text-[#272D35] text-h6 font-medium">
                   Language
                 </label>
                 <Select value={language} onValueChange={setLanguage}>
@@ -124,12 +152,8 @@ export default function General() {
                   </SelectContent>
                 </Select>
               </div>
-
               <div className="flex flex-col gap-2">
-                <label
-                  htmlFor="timezone"
-                  className="text-[#272D35] text-h6 font-medium"
-                >
+                <label htmlFor="timezone" className="text-[#272D35] text-h6 font-medium">
                   Timezone
                 </label>
                 <Select value={timezone} onValueChange={setTimezone}>
@@ -140,18 +164,21 @@ export default function General() {
                     <SelectValue placeholder="Select timezone" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="utc">
-                      UTC (Gulf Standard Time - 4)
-                    </SelectItem>
-                    <SelectItem value="gst">
-                      GST (Gulf Standard Time)
-                    </SelectItem>
-                    <SelectItem value="est">
-                      EST (Eastern Standard Time)
-                    </SelectItem>
+                    <SelectItem value="utc">UTC (Gulf Standard Time - 4)</SelectItem>
+                    <SelectItem value="Asia/Riyadh">GST (Gulf Standard Time)</SelectItem>
+                    <SelectItem value="est">EST (Eastern Standard Time)</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
+            </div>
+            <div className="flex justify-end mt-5">
+              <button
+                type="button"
+                onClick={() => save.mutate()}
+                className="w-24 h-11 bg-[#BF7266] rounded-lg text-[14px] font-medium text-white"
+              >
+                Save
+              </button>
             </div>
           </AccordionContent>
         </AccordionItem>

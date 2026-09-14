@@ -26,7 +26,12 @@ export class AdminTransfersController {
 
   @Get()
   list(@Query() query: AdminTransferQueryDto) {
-    return this.transfers.listAdminTransfers(query.page, query.limit, query.status);
+    return this.transfers.listAdminTransfers(query.page, query.limit, {
+      status: query.status,
+      pieceId: query.pieceId,
+      fromClientId: query.fromClientId,
+      q: query.q,
+    });
   }
 
   @Get(":id")

@@ -1,23 +1,39 @@
+export interface AdminClass {
+  id: string;
+  name: string;
+  nameAr?: string | null;
+  slug: string;
+  description?: string | null;
+  sortOrder: number;
+  isDefault: boolean;
+  isActive: boolean;
+  clientCount?: number;
+  collectionCount?: number;
+}
+
 export interface AdminClientListItem {
   id: string;
   displayName: string;
   email: string;
+  phone?: string | null;
   houseKeyPrefix: string;
   isActive: boolean;
-  visibilityGroups: string[];
+  class?: AdminClass;
   pieceCount: number;
   memberClass?: string;
   accessStatus?: string;
   joinedAt?: string;
   createdAt?: string;
+  lastSeenAt?: string | null;
   updatedAt?: string;
 }
 
 export interface AdminPieceListItem {
   id: string;
   serialNumber: string;
+  name?: string;
   pieceName?: string;
-  designName: string;
+  designName?: string;
   collection: string;
   collectionId?: string;
   type?: string;
@@ -26,7 +42,6 @@ export interface AdminPieceListItem {
   status: string;
   ownership?: string;
   access?: string;
-  visibilityGroups?: string[];
   updatedAt?: string;
   createdAt?: string;
 }
@@ -34,6 +49,8 @@ export interface AdminPieceListItem {
 export interface AdminOrderListItem {
   id: string;
   status: string;
+  paymentStatus?: string;
+  paymentMethod?: string | null;
   totalAmount: string | number;
   currency: string;
   placedAt: string;
@@ -47,7 +64,7 @@ export interface AdminTransferListItem {
   transferType: string;
   initiatedAt: string;
   needsReview?: boolean;
-  piece: { serialNumber: string; design: { name: string; imageUrls: string[] } };
+  piece: { serialNumber: string; name?: string; imageUrls?: string[] };
   fromClient: { displayName: string; email: string };
   toClient: { displayName: string; email: string };
 }
@@ -70,8 +87,8 @@ export interface AdminCollectionListItem {
   coverImageUrl?: string | null;
   isVisible: boolean;
   sortOrder: number;
-  visibilityGroups: string[];
-  designCount: number;
+  classes?: AdminClass[];
+  designCount?: number;
   pieceCount?: number;
   ownerCount?: number;
   createdAt?: string;
@@ -81,26 +98,18 @@ export interface AdminCollectionListItem {
 export interface AdminCollectionDetail extends AdminCollectionListItem {
   createdAt: string;
   updatedAt: string;
-}
-
-export interface AdminDesignListItem {
-  id: string;
-  name: string;
-  nameAr: string;
-  slug: string;
-  collectionId: string;
-  collectionName?: string;
-  material: string;
-  materialAr?: string | null;
-  weight: string | number;
-  dimensions: string;
-  dimensionsAr?: string | null;
-  basePrice: string | number;
-  currency: string;
-  imageUrls: string[];
-  isActive: boolean;
-  visibilityGroups: string[];
-  pieceCount?: number;
+  origin?: string | null;
+  meaning?: string | null;
+  inspiration?: string | null;
+  storyContent?: string | null;
+  storyImageUrls?: string[];
+  stats?: { pieceCount: number; ownerCount: number; transferCount: number };
+  health?: {
+    hasStory: boolean;
+    hasCover: boolean;
+    hasPieces: boolean;
+    hasAccessRules: boolean;
+  };
 }
 
 export interface AdminCertificateListItem {
@@ -109,7 +118,7 @@ export interface AdminCertificateListItem {
   isActive: boolean;
   issuedAt: string;
   pdfUrl: string | null;
-  piece: { serialNumber: string; design: { name: string } };
+  piece: { serialNumber: string; name?: string };
   owner: { displayName: string } | null;
 }
 
@@ -126,23 +135,33 @@ export interface AdminVerificationLogItem {
 export interface AdminClientDetail {
   id: string;
   displayName: string;
-  displayNameAr: string | null;
+  displayNameAr?: string | null;
   email: string;
+  phone?: string | null;
+  houseId?: string;
   houseKeyPrefix: string;
   isActive: boolean;
-  visibilityGroups: string[];
+  class?: AdminClass;
   pieceCount: number;
   createdAt: string;
   updatedAt: string;
+  lastSeenAt?: string | null;
+  ownedPieces?: Array<{
+    id: string;
+    name: string;
+    serialNumber: string;
+    imageUrls: string[];
+    collection?: { name: string };
+  }>;
 }
 
 export interface AdminPieceDetail {
   id: string;
   serialNumber: string;
-  designId: string;
-  designName: string;
-  collection: string;
+  name?: string;
+  slug?: string;
   collectionId: string;
+  collection: string;
   currentOwner: string | null;
   currentOwnerId: string | null;
   status: string;
@@ -153,6 +172,8 @@ export interface AdminPieceDetail {
 export interface AdminOrderDetail {
   id: string;
   status: string;
+  paymentStatus?: string;
+  paymentMethod?: string | null;
   totalAmount: string | number;
   currency: string;
   placedAt: string;
@@ -160,7 +181,7 @@ export interface AdminOrderDetail {
   client: { id: string; displayName: string; email: string };
   items: Array<{
     id: string;
-    piece: { id: string; serialNumber: string; design: { name: string } };
+    piece: { id: string; serialNumber: string; name?: string };
     priceAtPurchase: string | number;
   }>;
   shippingAddress?: string | null;

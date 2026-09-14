@@ -42,8 +42,8 @@ export default async function YourCollection({
 
   const items: DisplayPiece[] = wardrobe.map((item) => ({
     id: item.id,
-    name: item.design?.name || "",
-    imageUrl: item.design?.images?.[0] || "",
+    name: item.name || "",
+    imageUrl: item.images?.[0] || "",
     ownedSince: formatAcquiredDate(item.acquiredAt),
     href: `/beta/profile/wardrobe/${item.id}`,
   }));

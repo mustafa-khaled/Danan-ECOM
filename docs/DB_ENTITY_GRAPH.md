@@ -44,7 +44,6 @@ erDiagram
 
 | Model        | References                                         | Why no FK                                                                                                                                        |
 | ------------ | -------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------ |
-| **CartItem** | `clientId`, `pieceId` (plain strings, indexed)     | Deliberately unlinked — a lightweight, fast-expiring hold; no cascade behavior wanted when a client/piece changes.                               |
 | **AuditLog** | `actorType` + `actorId`, `targetType` + `targetId` | Polymorphic by design — one row can point at a `Client`, `AdminUser`, or system actor acting on any target model, so a single FK isn't possible. |
 
 ---
@@ -440,19 +439,28 @@ The transferred piece is set to `PieceStatus.TRANSFER_PENDING` as part of seedin
 
 ### CartItem
 
-**Role:** Temporary reservation ("hold") on a piece while a client is checking out, so two clients can't buy the same one-of-a-kind piece simultaneously.
+**Role:** Per-client shopping cart line. **Not** an exclusive inventory lock. Two clients may hold the same piece in cart until checkout reserve.
 
-| Property    | Type     | Constraints         | Meaning                                                                                                    |
-| ----------- | -------- | ------------------- | ---------------------------------------------------------------------------------------------------------- |
-| `id`        | String   | PK, `uuid()`        | Primary key.                                                                                               |
-| `clientId`  | String   | indexed             | Client holding the piece (no DB FK).                                                                       |
-| `pieceId`   | String   | **unique**, indexed | Piece being held — global uniqueness means only one active hold per piece at a time.                       |
-| `addedAt`   | DateTime | default `now()`     | When the hold started.                                                                                     |
-| `expiresAt` | DateTime | indexed             | When the hold auto-releases (30 minutes after `addedAt`, enforced in `apps/api/src/cart/cart.service.ts`). |
+| Property   | Type     | Constraints          | Meaning                               |
+| ---------- | -------- | -------------------- | ------------------------------------- |
+| `id`       | String   | PK, `uuid()`         | Primary key.                          |
+| `clientId` | String   | FK → Client, indexed | Cart owner.                           |
+| `pieceId`  | String   | FK → Piece           | Piece in this client's cart.          |
+| `addedAt`  | DateTime | default `now()`      | When the line was added or refreshed. |
 
-**Relations:** none (no DB FK; linked by convention to `Client`/`Piece`).
+**Uniqueness:** `@@unique([clientId, pieceId])` — not global on `pieceId`.
 
-**Seed rows (1):** Amira holds `DADAN-2026-OA-000004` in her cart with a 7-day expiry.
+### CheckoutReservation
+
+**Role:** Exclusive hold created at `POST /client/checkout/reserve`. Prevents a second client from reserving or adding the piece while checkout (including 3-D Secure) is in progress.
+
+| Property    | Type     | Constraints     | Meaning                                                |
+| ----------- | -------- | --------------- | ------------------------------------------------------ |
+| `id`        | String   | PK, `uuid()`    | Primary key.                                           |
+| `clientId`  | String   | FK → Client     | Client who started checkout.                           |
+| `pieceId`   | String   | **unique**, FK  | One active reservation per piece.                      |
+| `expiresAt` | DateTime | indexed         | 35 minutes from reserve (see `CHECKOUT_HOLD_MINUTES`). |
+| `createdAt` | DateTime | default `now()` | When the reservation started.                          |
 
 ---
 
@@ -477,7 +485,7 @@ The transferred piece is set to `PieceStatus.TRANSFER_PENDING` as part of seedin
 
 - **`OwnershipRecord` is append-only** — rows are never deleted or overwritten once created, even when ownership changes; a new row is added instead.
 - **`TransferRequest.status` moves forward only** — `INITIATED → SENDER_CONFIRMED → RECIPIENT_CONFIRMED → DADAN_REVIEW → APPROVED/REJECTED`, or `CANCELLED` from any pre-terminal state. The DB does not enforce this; the transfer service does.
-- **`CartItem.pieceId` is globally unique** — a piece can only be held by one client's cart at a time, with a 30-minute expiry window, since each piece is a one-of-a-kind physical item.
+- **`CheckoutReservation.pieceId` is globally unique** — exclusive hold starts at checkout reserve (35 minutes), not when a piece is added to cart.
 - **`Certificate.pdfUrl` stores an S3-style storage object key**, not a public URL — the API generates a signed/temporary URL on demand.
 - **Bilingual fields fall back to English** — every `*Ar` field (`nameAr`, `descriptionAr`, `storyAr`, `materialAr`, `dimensionsAr`, `keyAr`, `valueAr`) is optional and falls back to its non-Arabic counterpart when null.
 - **`visibilityGroups`** (on `Client`, `Collection`, `Design`) implement a tag-based access-control scheme (`packages/utils/src/index.ts#hasVisibilityAccess`): an item with an empty `visibilityGroups` array is visible to everyone; an item tagged `admin-only` is hidden from all clients; otherwise a client can see the item only if at least one of their groups overlaps with the item's groups (case-insensitive, whitespace-normalized).

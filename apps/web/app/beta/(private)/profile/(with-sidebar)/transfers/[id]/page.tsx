@@ -62,10 +62,10 @@ export default async function TransferDetailPage({ params }: TransferDetailPageP
         <section className="border border-[var(--color-border)] bg-white p-6">
           <h2 className="font-english text-xl text-[var(--color-text)]">{t("piece")}</h2>
           <div className="relative mt-4 aspect-[4/3] overflow-hidden bg-[var(--color-surface)]">
-            {transfer.piece.design.imageUrls[0] ? (
+            {transfer.piece.imageUrls[0] ? (
               <Image
-                src={transfer.piece.design.imageUrls[0]}
-                alt={transfer.piece.design.name}
+                src={transfer.piece.imageUrls[0]}
+                alt={transfer.piece.name}
                 fill
                 sizes="(max-width: 1024px) 100vw, 50vw"
                 className="object-cover"
@@ -77,7 +77,7 @@ export default async function TransferDetailPage({ params }: TransferDetailPageP
             )}
           </div>
           <p className="mt-4 font-english text-2xl text-[var(--color-text)]">
-            {transfer.piece.design.name}
+            {transfer.piece.name}
           </p>
           <div className="mt-3">
             <SerialBadge serial={transfer.piece.serialNumber} />

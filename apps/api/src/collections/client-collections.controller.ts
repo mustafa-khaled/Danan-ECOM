@@ -16,10 +16,7 @@ export class ClientCollectionsController {
     @CurrentClient() client: ClientSession,
     @CurrentLocale() locale: Locale,
   ) {
-    return this.collections.getVisibleCollections(
-      client.visibilityGroups,
-      locale,
-    );
+    return this.collections.getVisibleCollections(client.classId, locale);
   }
 
   @Get("collections/:slug")
@@ -31,22 +28,22 @@ export class ClientCollectionsController {
   ) {
     return this.collections.getCollectionBySlug(
       slug,
-      client.visibilityGroups,
+      client.classId,
       query.page,
       query.limit,
       locale,
     );
   }
 
-  @Get("designs/:slug")
-  getDesign(
+  @Get("pieces/:slug")
+  getPiece(
     @CurrentClient() client: ClientSession,
     @CurrentLocale() locale: Locale,
     @Param("slug") slug: string,
   ) {
-    return this.collections.getDesignBySlug(
+    return this.collections.getPieceBySlug(
       slug,
-      client.visibilityGroups,
+      client.classId,
       locale,
       client.clientId,
     );

@@ -19,7 +19,7 @@ import {
 } from "@dadan/db";
 import type { Locale } from "@dadan/types";
 import { canTransitionTransfer, maskDisplayName } from "@dadan/utils";
-import { localizeDesign, pickLocalized } from "../common/i18n/localize";
+import { localizePiece, pickLocalized } from "../common/i18n/localize";
 import { AuditService } from "../audit/audit.service";
 import { CERTIFICATE_QUEUE } from "../certificates/jobs/certificate-job.processor";
 import type { GenerateCertificateJobData } from "../certificates/jobs/certificate-job.processor";
@@ -71,7 +71,6 @@ export class TransfersService {
     // Pre-check piece ownership (non-locking, for early rejection)
     const piece = await this.prisma.db.piece.findFirst({
       where: { id: data.pieceId, currentOwnerId: clientId },
-      include: { design: true },
     });
     if (!piece) throw new NotFoundException("errors.PIECE_NOT_FOUND");
 
@@ -140,7 +139,7 @@ export class TransfersService {
             status: TransferStatus.INITIATED,
           },
           include: {
-            piece: { include: { design: true } },
+            piece: true,
             toClient: { select: { displayName: true, email: true } },
           },
         });
@@ -175,10 +174,10 @@ export class TransfersService {
         serialNumber: transfer.piece.serialNumber,
         name: pickLocalized(
           locale,
-          transfer.piece.design.name,
-          transfer.piece.design.nameAr,
+          transfer.piece.name,
+          transfer.piece.nameAr,
         ),
-        image: await this.storage.resolvePublicUrl(transfer.piece.design.imageUrls[0]),
+        image: await this.storage.resolvePublicUrl(transfer.piece.imageUrls[0]),
       },
       recipientDisplayName: maskDisplayName(transfer.toClient.displayName),
     };
@@ -359,7 +358,9 @@ export class TransfersService {
         ...(status ? { status } : {}),
       },
       include: {
-        piece: { include: { design: true } },
+        piece: {
+          select: { id: true, serialNumber: true, name: true, nameAr: true },
+        },
         fromClient: { select: { displayName: true } },
         toClient: { select: { displayName: true } },
       },
@@ -374,7 +375,7 @@ export class TransfersService {
       piece: {
         id: t.piece.id,
         serialNumber: t.piece.serialNumber,
-        name: pickLocalized(locale, t.piece.design.name, t.piece.design.nameAr),
+        name: pickLocalized(locale, t.piece.name, t.piece.nameAr),
       },
       otherPartyDisplayName: maskDisplayName(
         t.fromClientId === clientId
@@ -395,7 +396,7 @@ export class TransfersService {
         OR: [{ fromClientId: clientId }, { toClientId: clientId }],
       },
       include: {
-        piece: { include: { design: true } },
+        piece: true,
         fromClient: { select: { displayName: true } },
         toClient: { select: { displayName: true } },
       },
@@ -412,12 +413,8 @@ export class TransfersService {
       fromClientId: transfer.fromClientId,
       toClientId: transfer.toClientId,
       piece: {
-        id: transfer.piece.id,
-        serialNumber: transfer.piece.serialNumber,
-        design: {
-          ...localizeDesign(transfer.piece.design, locale),
-          imageUrls: await this.storage.resolvePublicUrls(transfer.piece.design.imageUrls),
-        },
+        ...localizePiece(transfer.piece, locale),
+        imageUrls: await this.storage.resolvePublicUrls(transfer.piece.imageUrls),
       },
       fromClient: { displayName: transfer.fromClient.displayName },
       toClient: { displayName: transfer.toClient.displayName },
@@ -427,10 +424,30 @@ export class TransfersService {
   async listAdminTransfers(
     page?: number,
     limit?: number,
-    status?: TransferStatus,
+    filters?: {
+      status?: TransferStatus;
+      pieceId?: string;
+      fromClientId?: string;
+      q?: string;
+    },
   ) {
     const { skip, take, page: p, limit: l } = paginationParams(page, limit);
-    const where = status ? { status } : {};
+    const q = filters?.q?.trim();
+    const where = {
+      ...(filters?.status ? { status: filters.status } : {}),
+      ...(filters?.pieceId ? { pieceId: filters.pieceId } : {}),
+      ...(filters?.fromClientId ? { fromClientId: filters.fromClientId } : {}),
+      ...(q
+        ? {
+            OR: [
+              { piece: { name: { contains: q, mode: "insensitive" as const } } },
+              { piece: { serialNumber: { contains: q.toUpperCase() } } },
+              { fromClient: { displayName: { contains: q, mode: "insensitive" as const } } },
+              { toClient: { displayName: { contains: q, mode: "insensitive" as const } } },
+            ],
+          }
+        : {}),
+    };
 
     const [items, total] = await Promise.all([
       this.prisma.db.transferRequest.findMany({
@@ -438,29 +455,37 @@ export class TransfersService {
         skip,
         take,
         orderBy: { initiatedAt: "desc" },
-        include: {
-          piece: { include: { design: true } },
-          fromClient: { select: { displayName: true, email: true } },
-          toClient: { select: { displayName: true, email: true } },
+        select: {
+          id: true,
+          status: true,
+          transferType: true,
+          initiatedAt: true,
+          piece: {
+            select: { id: true, name: true, serialNumber: true, imageUrls: true },
+          },
+          fromClient: { select: { id: true, displayName: true, email: true } },
+          toClient: { select: { id: true, displayName: true, email: true } },
         },
       }),
       this.prisma.db.transferRequest.count({ where }),
     ]);
 
+    const urlMap = await this.storage.resolvePublicUrlsBatch(
+      items.flatMap((t) => t.piece.imageUrls.slice(0, 1)),
+    );
+
     return {
-      items: await Promise.all(
-        items.map(async (t) => ({
-          ...t,
-          needsReview: t.status === TransferStatus.DADAN_REVIEW,
-          piece: {
-            ...t.piece,
-            design: {
-              ...t.piece.design,
-              imageUrls: await this.storage.resolvePublicUrls(t.piece.design.imageUrls),
-            },
-          },
-        })),
-      ),
+      items: items.map((t) => ({
+        ...t,
+        needsReview: t.status === TransferStatus.DADAN_REVIEW,
+        piece: {
+          ...t.piece,
+          imageUrls: t.piece.imageUrls
+            .slice(0, 1)
+            .map((key) => urlMap.get(key))
+            .filter((url): url is string => !!url),
+        },
+      })),
       total,
       page: p,
       limit: l,
@@ -480,7 +505,7 @@ export class TransfersService {
     const transfer = await this.prisma.db.transferRequest.findUnique({
       where: { id },
       include: {
-        piece: { include: { design: true } },
+        piece: true,
         fromClient: { select: safeClientSelect },
         toClient: { select: safeClientSelect },
       },
@@ -585,6 +610,10 @@ export class TransfersService {
             clientId: transfer.toClientId,
             acquisitionType: this.transferTypeToAcquisition(transfer.transferType),
           },
+        });
+
+        await tx.savedPiece.deleteMany({
+          where: { pieceId: transfer.pieceId },
         });
       },
       {

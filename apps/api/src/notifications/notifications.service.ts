@@ -4,12 +4,24 @@ import { I18nService } from "nestjs-i18n";
 import type { Locale } from "@dadan/types";
 import * as nodemailer from "nodemailer";
 import { DEFAULT_LOCALE, isLocale } from "../common/i18n/locale";
+import { PrismaService } from "../prisma/prisma.service";
 
 interface EmailContent {
   subject: string;
   heading: string;
   body: string;
   extraLine?: string;
+}
+
+type NotificationIcon = "verified" | "document" | "clock" | "envelope";
+
+interface NotificationItem {
+  id: string;
+  icon: NotificationIcon;
+  title: string;
+  description: string;
+  href: string;
+  createdAt: Date;
 }
 
 @Injectable()
@@ -21,6 +33,7 @@ export class NotificationsService {
 
   constructor(
     private readonly i18n: I18nService,
+    private readonly prisma: PrismaService,
     config: ConfigService,
   ) {
     const smtpHost = config.get<string>("SMTP_HOST");
@@ -43,6 +56,134 @@ export class NotificationsService {
       this.transporter = null;
       this.logger.warn("SMTP not configured - emails will be logged only");
     }
+  }
+
+  async list(clientId: string, locale: Locale = "ar") {
+    const [orders, transfers, certificates] = await Promise.all([
+      this.prisma.db.order.findMany({
+        where: { clientId, status: { in: ["PAID", "FULFILLED", "PROCESSING"] } },
+        orderBy: { placedAt: "desc" },
+        take: 20,
+        select: {
+          id: true,
+          placedAt: true,
+          items: {
+            take: 1,
+            select: { nameSnapshot: true, pieceId: true },
+          },
+        },
+      }),
+      this.prisma.db.transferRequest.findMany({
+        where: {
+          OR: [{ fromClientId: clientId }, { toClientId: clientId }],
+        },
+        orderBy: { initiatedAt: "desc" },
+        take: 20,
+        select: {
+          id: true,
+          status: true,
+          initiatedAt: true,
+          completedAt: true,
+          piece: { select: { name: true, nameAr: true } },
+        },
+      }),
+      this.prisma.db.certificate.findMany({
+        where: { ownerId: clientId },
+        orderBy: { issuedAt: "desc" },
+        take: 20,
+        select: {
+          id: true,
+          issuedAt: true,
+          pieceId: true,
+          piece: { select: { name: true, nameAr: true } },
+        },
+      }),
+    ]);
+
+    const items: NotificationItem[] = [];
+
+    for (const order of orders) {
+      const pieceName = order.items[0]?.nameSnapshot ?? "";
+      items.push({
+        id: `order-${order.id}`,
+        icon: "envelope",
+        title: locale === "ar" ? "طلب" : "Order",
+        description:
+          locale === "ar"
+            ? `تم تأكيد طلبك${pieceName ? ` لـ ${pieceName}` : ""}.`
+            : `Your order${pieceName ? ` for ${pieceName}` : ""} has been confirmed.`,
+        href: `/beta/orders/${order.id}`,
+        createdAt: order.placedAt,
+      });
+    }
+
+    for (const transfer of transfers) {
+      const pieceName =
+        locale === "ar"
+          ? (transfer.piece.nameAr ?? transfer.piece.name)
+          : transfer.piece.name;
+      const completed = ["APPROVED", "REJECTED", "CANCELLED"].includes(
+        transfer.status,
+      );
+      items.push({
+        id: `transfer-${transfer.id}`,
+        icon: completed ? "verified" : "clock",
+        title: locale === "ar" ? "نقل ملكية" : "Transfer",
+        description:
+          locale === "ar"
+            ? `تحديث نقل ملكية ${pieceName}.`
+            : `Ownership transfer update for ${pieceName}.`,
+        href: `/beta/profile/transfers/${transfer.id}`,
+        createdAt: transfer.completedAt ?? transfer.initiatedAt,
+      });
+    }
+
+    for (const certificate of certificates) {
+      const pieceName =
+        locale === "ar"
+          ? (certificate.piece.nameAr ?? certificate.piece.name)
+          : certificate.piece.name;
+      items.push({
+        id: `cert-${certificate.id}`,
+        icon: "document",
+        title: locale === "ar" ? "شهادة" : "Certificate",
+        description:
+          locale === "ar"
+            ? `صدرت شهادة ملكية لـ ${pieceName}.`
+            : `Your ownership certificate for ${pieceName} has been issued.`,
+        href: `/beta/profile/wardrobe/${certificate.pieceId}`,
+        createdAt: certificate.issuedAt,
+      });
+    }
+
+    items.sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
+
+    const startOfToday = new Date();
+    startOfToday.setHours(0, 0, 0, 0);
+    const weekAgo = new Date(startOfToday);
+    weekAgo.setDate(weekAgo.getDate() - 7);
+
+    const today = items.filter((item) => item.createdAt >= startOfToday);
+    const thisWeek = items.filter(
+      (item) => item.createdAt < startOfToday && item.createdAt >= weekAgo,
+    );
+
+    return {
+      groups: [
+        { key: "today" as const, items: today.map((item) => this.toPublic(item)) },
+        { key: "thisWeek" as const, items: thisWeek.map((item) => this.toPublic(item)) },
+      ],
+    };
+  }
+
+  private toPublic(item: NotificationItem) {
+    return {
+      id: item.id,
+      icon: item.icon,
+      title: item.title,
+      description: item.description,
+      href: item.href,
+    };
   }
 
   private normalizeLocale(locale?: string): Locale {

@@ -45,13 +45,13 @@ export function DesktopHeader({
           </div>
 
           {/* Greeting text in SERIF font matching design */}
-          <p className="font-heading font-semibold text-[14px] md:text-h6 leading-none tracking-[-0.02em] text-neutral-800">
+          <p className="font-heading mt-1.5 font-semibold text-[14px] md:text-h6 leading-none tracking-[-0.02em] text-neutral-800">
             {greeting} {displayName}
           </p>
         </div>
 
         {/* ── Desktop Right Section (Utility Icons Top, Navigation Links Bottom) ── */}
-        <div className="hidden lg:flex flex-col justify-between items-end h-full">
+        <div className="hidden lg:flex flex-col gap-2 justify-between items-end h-full">
           {/* Top Utility Icons */}
           <div className="flex items-center gap-5 lg:gap-6">
             {/* Notification Bell Icon */}

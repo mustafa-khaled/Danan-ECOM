@@ -26,6 +26,14 @@ export class ClientWardrobeController {
     return this.pieces.getWardrobe(client.clientId, locale, query.limit);
   }
 
+  @Get("history")
+  getHistory(
+    @CurrentClient() client: ClientSession,
+    @CurrentLocale() locale: Locale,
+  ) {
+    return this.pieces.getOwnershipHistory(client.clientId, locale);
+  }
+
   @Get("my-collection")
   getMyCollection(
     @CurrentClient() client: ClientSession,

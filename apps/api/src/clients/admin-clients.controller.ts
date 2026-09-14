@@ -17,10 +17,9 @@ import { CurrentAdmin } from "../admin/auth/decorators/current-admin.decorator";
 import type { AdminSession } from "@dadan/types";
 import type { Request } from "express";
 import { getClientIp } from "../common/constants";
-import { PaginationQueryDto } from "../common/dto/pagination.dto";
+import { AdminClientQueryDto } from "./dto/admin-client-query.dto";
 import { CreateClientDto } from "./dto/create-client.dto";
 import { UpdateClientDto } from "./dto/update-client.dto";
-import { VisibilityGroupsDto } from "./dto/visibility-groups.dto";
 
 @Controller("admin/clients")
 @UseGuards(AdminGuard)
@@ -28,8 +27,18 @@ export class AdminClientsController {
   constructor(private readonly clients: ClientsService) {}
 
   @Get()
-  list(@Query() query: PaginationQueryDto) {
-    return this.clients.listClients(query.page, query.limit);
+  list(@Query() query: AdminClientQueryDto) {
+    return this.clients.listClients(query.page, query.limit, {
+      q: query.q,
+      classId: query.classId,
+      collectionId: query.collectionId,
+      isActive: query.isActive,
+    });
+  }
+
+  @Get("stats")
+  stats() {
+    return this.clients.getClientStats();
   }
 
   @Post()
@@ -54,22 +63,6 @@ export class AdminClientsController {
     @Req() req: Request,
   ) {
     return this.clients.updateClient(admin.adminId, id, dto, getClientIp(req));
-  }
-
-  @Post(":id/visibility-groups")
-  updateVisibility(
-    @CurrentAdmin() admin: AdminSession,
-    @Param("id") id: string,
-    @Body() dto: VisibilityGroupsDto,
-    @Req() req: Request,
-  ) {
-    return this.clients.updateVisibilityGroups(
-      admin.adminId,
-      id,
-      dto.add,
-      dto.remove,
-      getClientIp(req),
-    );
   }
 
   @Post(":id/rotate-key")

@@ -1,38 +1,60 @@
-import { hasVisibilityAccess } from "@dadan/utils";
 import { VisibilityService } from "../src/visibility/visibility.service";
-
-describe("hasVisibilityAccess", () => {
-  it("grants access when the item has no visibility groups", () => {
-    expect(hasVisibilityAccess(["standard"], [])).toBe(true);
-  });
-
-  it("denies access to admin-only items", () => {
-    expect(hasVisibilityAccess(["vip", "inner-circle"], ["admin-only"])).toBe(false);
-  });
-
-  it("grants access when client and item groups intersect", () => {
-    expect(hasVisibilityAccess(["vip"], ["VIP"])).toBe(true);
-    expect(hasVisibilityAccess(["inner circle"], ["inner-circle"])).toBe(true);
-  });
-
-  it("denies access when groups do not intersect", () => {
-    expect(hasVisibilityAccess(["standard"], ["vip", "inner-circle"])).toBe(false);
-  });
-});
 
 describe("VisibilityService", () => {
   const service = new VisibilityService();
 
-  it("filters collections by client visibility groups", () => {
-    const items = [
-      { id: "public", visibilityGroups: [] as string[] },
-      { id: "vip-only", visibilityGroups: ["vip"] },
-      { id: "admin-only", visibilityGroups: ["admin-only"] },
-      { id: "inner", visibilityGroups: ["inner-circle"] },
-    ];
+  it("builds a class-assignment Prisma filter", () => {
+    expect(service.prismaFilter("class-c")).toEqual({
+      isVisible: true,
+      classes: { some: { classId: "class-c" } },
+    });
+  });
 
-    const filtered = service.filterByVisibility(items, ["vip"]);
+  it("grants access only when the collection is visible and assigned to the class", () => {
+    expect(
+      service.canAccessCollection("class-c", {
+        isVisible: true,
+        classes: [{ classId: "class-c" }],
+      }),
+    ).toBe(true);
+    expect(
+      service.canAccessCollection("class-c", {
+        isVisible: true,
+        classes: [{ classId: "class-a" }],
+      }),
+    ).toBe(false);
+    expect(
+      service.canAccessCollection("class-c", {
+        isVisible: false,
+        classes: [{ classId: "class-c" }],
+      }),
+    ).toBe(false);
+    expect(
+      service.canAccessCollection("class-c", {
+        isVisible: true,
+        classes: [],
+      }),
+    ).toBe(false);
+  });
 
-    expect(filtered.map((item) => item.id)).toEqual(["public", "vip-only"]);
+  it("grants piece access only when the piece is active and the collection is allowed", () => {
+    expect(
+      service.canAccessPiece("class-a", {
+        isActive: true,
+        collection: {
+          isVisible: true,
+          classes: [{ classId: "class-a" }],
+        },
+      }),
+    ).toBe(true);
+    expect(
+      service.canAccessPiece("class-a", {
+        isActive: false,
+        collection: {
+          isVisible: true,
+          classes: [{ classId: "class-a" }],
+        },
+      }),
+    ).toBe(false);
   });
 });

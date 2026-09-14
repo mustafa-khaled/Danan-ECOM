@@ -3,21 +3,59 @@
 import { useState, useRef, useEffect } from "react";
 import Link from "next/link";
 import { Eye, CheckCircle2, XCircle, EllipsisVertical, FileText } from "lucide-react";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
+import {
+  approveStaffRequest,
+  rejectStaffRequest,
+} from "@/features/admin/api/fetch-admin-operations";
+import {
+  approveTransfer,
+  rejectTransfer,
+} from "@/features/admin/api/fetch-admin-transfers";
 import type { OperationItem } from "../types";
 
 interface OperationsRowActionsProps {
   operation: OperationItem;
-  onApprove?: (id: string) => void;
-  onReject?: (id: string) => void;
 }
 
 export function OperationsRowActions({
   operation,
-  onApprove,
-  onReject,
 }: OperationsRowActionsProps) {
   const [isOpen, setIsOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
+  const queryClient = useQueryClient();
+
+  const invalidate = () => {
+    queryClient.invalidateQueries({ queryKey: ["admin-operations"] });
+    queryClient.invalidateQueries({ queryKey: ["admin-operations-stats"] });
+  };
+
+  const approve = useMutation({
+    mutationFn: async () => {
+      if (operation.kind === "transfer") {
+        await approveTransfer(operation.id);
+        return;
+      }
+      return approveStaffRequest(operation.id);
+    },
+    onSuccess: (result) => {
+      if (result && "houseKey" in result && result.houseKey) {
+        window.alert(`House key issued once: ${result.houseKey}`);
+      }
+      invalidate();
+    },
+  });
+
+  const reject = useMutation({
+    mutationFn: async () => {
+      if (operation.kind === "transfer") {
+        await rejectTransfer(operation.id);
+        return;
+      }
+      await rejectStaffRequest(operation.id);
+    },
+    onSuccess: invalidate,
+  });
 
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
@@ -55,7 +93,7 @@ export function OperationsRowActions({
           className="absolute right-0 top-full mt-1 z-30 w-44 rounded-lg border border-ds-border bg-ds-background shadow-lg py-1 animate-in fade-in zoom-in-95"
         >
           <Link
-            href={`/admin/operations/${operation.id}`}
+            href={`/admin/operations/${operation.id}?kind=${operation.kind}`}
             onClick={() => setIsOpen(false)}
             className="flex items-center gap-2 px-3 py-2 text-xs font-medium text-ds-text hover:bg-ds-surface hover:text-(--color-gold) transition-colors"
           >
@@ -67,9 +105,10 @@ export function OperationsRowActions({
             <>
               <button
                 type="button"
+                disabled={approve.isPending || reject.isPending}
                 onClick={() => {
                   setIsOpen(false);
-                  onApprove?.(operation.id);
+                  approve.mutate();
                 }}
                 className="w-full flex items-center gap-2 px-3 py-2 text-xs font-medium text-emerald-600 hover:bg-emerald-50 transition-colors text-left"
               >
@@ -78,9 +117,10 @@ export function OperationsRowActions({
               </button>
               <button
                 type="button"
+                disabled={approve.isPending || reject.isPending}
                 onClick={() => {
                   setIsOpen(false);
-                  onReject?.(operation.id);
+                  reject.mutate();
                 }}
                 className="w-full flex items-center gap-2 px-3 py-2 text-xs font-medium text-rose-600 hover:bg-rose-50 transition-colors text-left"
               >
@@ -91,7 +131,7 @@ export function OperationsRowActions({
           )}
 
           <Link
-            href={`/admin/operations/${operation.id}/certificate`}
+            href={`/admin/operations/${operation.id}/certificate?kind=${operation.kind}`}
             onClick={() => setIsOpen(false)}
             className="flex items-center gap-2 px-3 py-2 text-xs font-medium text-ds-text hover:bg-ds-surface transition-colors"
           >

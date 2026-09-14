@@ -4,49 +4,42 @@ import {
   MembershipDistribution,
   OwnershipChart,
 } from "@/features/admin";
+import { fetchAdminAnalytics } from "@/features/admin/api/fetch-admin-analytics";
+import { getAdminCookieHeader } from "@/features/auth/server/admin-session";
 import { ArrowUpLeft } from "lucide-react";
 import Link from "next/link";
 
-const stats = [
-  {
-    id: 1,
-    title: "Members",
-    count: "1,248",
-    link: {
-      title: "8.4%",
-      href: "/",
-    },
-  },
-  {
-    id: 2,
-    title: "Active Members",
-    count: "1,842",
-    link: {
-      title: "5.2%",
-      href: "/",
-    },
-  },
-  {
-    id: 3,
-    title: "Pieces Owned",
-    count: "324",
-    link: {
-      title: "12.1%",
-      href: "/",
-    },
-  },
-  {
-    id: 4,
-    title: "Revenue",
-    count: "238,500",
-    link: {
-      title: "14.2%",
-      href: "/",
-    },
-  },
-] as const;
+export default async function AnalyticsPage() {
+  const cookieHeader = await getAdminCookieHeader();
+  const analytics = await fetchAdminAnalytics("12m", cookieHeader);
 
-export default function AnalyticsPage() {
+  const stats = [
+    {
+      id: 1,
+      title: "Members",
+      count: analytics.kpis.members.toLocaleString(),
+      link: { title: `${analytics.kpis.deltas.members}%`, href: "/admin/members" },
+    },
+    {
+      id: 2,
+      title: "Active Members",
+      count: analytics.kpis.activeMembers.toLocaleString(),
+      link: { title: `${analytics.kpis.deltas.activeMembers}%`, href: "/admin/members" },
+    },
+    {
+      id: 3,
+      title: "Pieces Owned",
+      count: analytics.kpis.piecesOwned.toLocaleString(),
+      link: { title: `${analytics.kpis.deltas.piecesOwned}%`, href: "/admin/ownership" },
+    },
+    {
+      id: 4,
+      title: "Revenue",
+      count: analytics.kpis.revenue.toLocaleString(),
+      link: { title: `${analytics.kpis.deltas.revenue}%`, href: "/admin/payments" },
+    },
+  ];
+
   return (
     <>
       <div className="bg-white h-15 px-7.5 flex items-center font-bold text-h5 text-neutral-800">
@@ -67,18 +60,16 @@ export default function AnalyticsPage() {
                 <div className="flex items-center w-full justify-between text-[12px] text-neutral-600">
                   <span>{stat.title}</span>
 
-                  {stat.link?.href && (
-                    <Link
-                      href={stat.link.href}
-                      className="text-[#4CBEAE] flex items-center gap-3"
-                    >
-                      {stat.link.title}
+                  <Link
+                    href={stat.link.href}
+                    className="text-[#4CBEAE] flex items-center gap-3"
+                  >
+                    {stat.link.title}
 
-                      <span className="w-6 h-6 bg-[#EBFAF0] rounded-full flex items-center justify-center">
-                        <ArrowUpLeft className="size-4" />
-                      </span>
-                    </Link>
-                  )}
+                    <span className="w-6 h-6 bg-[#EBFAF0] rounded-full flex items-center justify-center">
+                      <ArrowUpLeft className="size-4" />
+                    </span>
+                  </Link>
                 </div>
               </div>
             ))}
@@ -86,13 +77,26 @@ export default function AnalyticsPage() {
 
           <div className="space-y-[32px]">
             <div className="grid grid-cols-2 gap-[32px]">
-              <MembersChart />
-              <OwnershipChart />
+              <MembersChart data={analytics.membersOverTime} />
+              <OwnershipChart data={analytics.ownershipOverTime} />
             </div>
 
-            <CollectionPerformance />
+            <CollectionPerformance
+              data={analytics.collectionPerformance.map((row) => ({
+                name: row.name,
+                views: row.views,
+                saves: row.saves,
+                acquisitions: row.acquisitions,
+              }))}
+            />
 
-            <MembershipDistribution />
+            <MembershipDistribution
+              memberships={analytics.membershipDistribution.map((row) => ({
+                label: row.name,
+                value: row.count,
+                percentage: row.percentage,
+              }))}
+            />
           </div>
         </div>
       </div>

@@ -6,13 +6,13 @@ export const collectionPiecesColumns: ColumnDef<AdminPieceListItem>[] = [
   {
     key: "pieceName",
     label: "Piece Name",
-    accessor: "designName",
+    accessor: (row) => row.name || row.pieceName || row.designName,
     width: "220px",
     sortable: true,
     render: (_, row) => (
       <div className="truncate">
         <p className="font-medium text-ds-text truncate">
-          {row.pieceName || row.designName}
+          {row.name || row.pieceName || row.designName}
         </p>
         <p className="text-xs text-ds-text-secondary font-mono mt-0.5">
           {row.serialNumber}
@@ -90,10 +90,8 @@ export const collectionPiecesColumns: ColumnDef<AdminPieceListItem>[] = [
     label: "Access",
     accessor: "access",
     width: "160px",
-    render: (v, row) => {
-      const groups = row.visibilityGroups ?? [];
-      const accessLabel =
-        v || (groups.length > 0 ? groups.join(", ") : "All Clients");
+    render: (v) => {
+      const accessLabel = v || "Collection";
       return (
         <span className="text-sm text-ds-text truncate block">
           {String(accessLabel)}

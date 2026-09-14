@@ -1,45 +1,46 @@
 import { ArrowUpLeft } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
+import type { AdminOverview } from "@/features/admin/api/fetch-admin-overview";
 
-const statsMockData = [
-  {
-    id: 1,
-    title: "Members",
-    count: 1248,
-    icon: "/admin/profile-2user.svg",
-    link: {
-      title: "+32 This Month",
-      href: "/",
+export default function Stats({ data }: { data: AdminOverview["stats"] }) {
+  const cards = [
+    {
+      id: 1,
+      title: "Members",
+      count: data.members.total,
+      icon: "/admin/profile-2user.svg",
+      link: {
+        title: `+${data.members.addedThisMonth} This Month`,
+        href: "/admin/members",
+      },
     },
-  },
-  {
-    id: 2,
-    title: "Collections",
-    description: "2 Draft",
-    count: 8,
-    icon: "/admin/trontron-(trx).svg",
-  },
-  {
-    id: 3,
-    title: "Pieces",
-    description: "18 Recently Added",
-    count: 364,
-    icon: "/admin/binance-coin-(bnb).svg",
-  },
-  {
-    id: 4,
-    title: "Pending Transfers",
-    description: "Require Review",
-    count: 12,
-    icon: "/admin/sms-tracking.svg",
-  },
-];
+    {
+      id: 2,
+      title: "Collections",
+      description: `${data.collections.hidden} Draft`,
+      count: data.collections.total,
+      icon: "/admin/trontron-(trx).svg",
+    },
+    {
+      id: 3,
+      title: "Pieces",
+      description: `${data.pieces.addedLast30d} Recently Added`,
+      count: data.pieces.total,
+      icon: "/admin/binance-coin-(bnb).svg",
+    },
+    {
+      id: 4,
+      title: "Pending Transfers",
+      description: "Require Review",
+      count: data.pendingTransfers.total,
+      icon: "/admin/sms-tracking.svg",
+    },
+  ];
 
-export default function Stats() {
   return (
     <div className="grid grid-cols-4 gap-3">
-      {statsMockData.map((s) => {
+      {cards.map((s) => {
         return (
           <div
             key={s.id}
@@ -56,8 +57,8 @@ export default function Stats() {
               <div className="flex items-center justify-between text-[12px] text-neutral-600">
                 <span>{s.title}</span>
 
-                {s.description && <span>{s.description}</span>}
-                {s.link?.href && (
+                {"description" in s && s.description ? <span>{s.description}</span> : null}
+                {"link" in s && s.link?.href ? (
                   <Link
                     href={s.link.href}
                     className="text-[#4CBEAE] flex items-center gap-3"
@@ -68,7 +69,7 @@ export default function Stats() {
                       <ArrowUpLeft className="size-4" />
                     </span>
                   </Link>
-                )}
+                ) : null}
               </div>
             </div>
           </div>

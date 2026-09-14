@@ -1,5 +1,6 @@
 "use client";
 
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   Accordion,
   AccordionContent,
@@ -7,8 +8,40 @@ import {
   AccordionTrigger,
 } from "@/components/ui/accordion";
 import { Switch } from "@/components/ui";
+import {
+  fetchHouseSettings,
+  updateHouseSettings,
+} from "@/features/admin/api/fetch-admin-settings";
+
+const NOTIFICATION_TOGGLES = [
+  { key: "ownershipTransferRequest", label: "Ownership Transfer Request" },
+  { key: "transferCompleted", label: "Transfer Completed" },
+  { key: "newMemberInvitation", label: "New Member Invitation" },
+  { key: "certificateIssued", label: "Certificate Issued" },
+  { key: "accessRequest", label: "Access Request" },
+  { key: "paymentCompleted", label: "Payment Completed" },
+  { key: "paymentFailed", label: "Payment Failed" },
+] as const;
 
 export default function SystemNotifications() {
+  const queryClient = useQueryClient();
+  const settingsQuery = useQuery({
+    queryKey: ["admin-house-settings"],
+    queryFn: () => fetchHouseSettings(),
+  });
+  const save = useMutation({
+    mutationFn: (patch: {
+      key: (typeof NOTIFICATION_TOGGLES)[number]["key"];
+      checked: boolean;
+    }) =>
+      updateHouseSettings({
+        notificationPrefs: { [patch.key]: patch.checked },
+      }),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["admin-house-settings"] }),
+  });
+
+  const prefs = settingsQuery.data?.notificationPrefs ?? {};
+
   return (
     <section>
       <Accordion type="single" collapsible>
@@ -21,82 +54,26 @@ export default function SystemNotifications() {
 
           <AccordionContent className="p-6">
             <div className="grid grid-cols-2 gap-x-[32px] gap-y-3">
-              <div className="flex items-center justify-between p-[16px] bg-[#F8FAFC] h-17.5">
-                <span className="text-h6 text-[#5D697A]">
-                  Ownership Transfer Request
-                </span>
-                <Switch
-                  id="accessKeyToggle"
-                  variant="success"
-                  defaultChecked={true}
-                  aria-label="Private House Access"
-                />
-              </div>
-              <div className="flex items-center justify-between p-[16px] bg-[#F8FAFC] h-17.5">
-                <span className="text-h6 text-[#5D697A]">
-                  Transfer Completed
-                </span>
-                <Switch
-                  id="privateKeyToggle"
-                  variant="success"
-                  defaultChecked={true}
-                  aria-label="Private Key Required"
-                />
-              </div>
-
-              <div className="flex items-center justify-between p-[16px] bg-[#F8FAFC] h-17.5">
-                <span className="text-h6 text-[#5D697A]">
-                  New Member Invitation
-                </span>
-                <Switch
-                  id="allowInvitations"
-                  variant="success"
-                  defaultChecked={true}
-                  aria-label="Admin Approval Required"
-                />
-              </div>
-              <div className="flex items-center justify-between p-[16px] bg-[#F8FAFC] h-17.5">
-                <span className="text-h6 text-[#5D697A]">
-                  Certificate Issued
-                </span>
-                <Switch
-                  id="adminApprovalToggle"
-                  variant="success"
-                  defaultChecked={true}
-                  aria-label="Admin Approval"
-                />
-              </div>
-              <div className="flex items-center justify-between p-[16px] bg-[#F8FAFC] h-17.5">
-                <span className="text-h6 text-[#5D697A]">Access Request</span>
-                <Switch
-                  id="adminApprovalToggle"
-                  variant="success"
-                  defaultChecked={true}
-                  aria-label="Admin Approval"
-                />
-              </div>
-
-              <div className="flex items-center justify-between p-[16px] bg-[#F8FAFC] h-17.5">
-                <span className="text-h6 text-[#5D697A]">
-                  Payment Completed
-                </span>
-                <Switch
-                  id="adminApprovalToggle"
-                  variant="success"
-                  defaultChecked={true}
-                  aria-label="Admin Approval"
-                />
-              </div>
-
-              <div className="flex items-center justify-between p-[16px] bg-[#F8FAFC] h-17.5 col-span-2">
-                <span className="text-h6 text-[#5D697A]">Payment Failed</span>
-                <Switch
-                  id="adminApprovalToggle"
-                  variant="success"
-                  defaultChecked={true}
-                  aria-label="Admin Approval"
-                />
-              </div>
+              {NOTIFICATION_TOGGLES.map((toggle, index) => (
+                <div
+                  key={toggle.key}
+                  className={`flex items-center justify-between p-[16px] bg-[#F8FAFC] h-17.5 ${
+                    index === NOTIFICATION_TOGGLES.length - 1 ? "col-span-2" : ""
+                  }`}
+                >
+                  <span className="text-h6 text-[#5D697A]">{toggle.label}</span>
+                  <Switch
+                    id={toggle.key}
+                    variant="success"
+                    checked={prefs[toggle.key] !== false}
+                    disabled={!settingsQuery.data || save.isPending}
+                    aria-label={toggle.label}
+                    onCheckedChange={(details) =>
+                      save.mutate({ key: toggle.key, checked: details.checked })
+                    }
+                  />
+                </div>
+              ))}
             </div>
           </AccordionContent>
         </AccordionItem>

@@ -1,52 +1,38 @@
 import { Injectable } from "@nestjs/common";
-import {
-  ADMIN_ONLY_VISIBILITY_GROUP,
-  hasVisibilityAccess,
-  normalizeVisibilityGroup,
-} from "@dadan/utils";
+import type { Prisma } from "@dadan/db";
 
-/** The `visibilityGroups` shape shared by Collection, Design and Client. */
-export interface VisibilityWhere {
-  NOT: { visibilityGroups: { has: string } };
-  OR: [
-    { visibilityGroups: { isEmpty: true } },
-    { visibilityGroups: { hasSome: string[] } },
-  ];
-}
+export type CollectionClassFilter = Prisma.CollectionWhereInput;
 
 @Injectable()
 export class VisibilityService {
-  normalizeGroups(groups: string[]): string[] {
-    return groups.map(normalizeVisibilityGroup);
-  }
-
   /**
-   * The `canAccess` rule expressed as a Prisma `where` fragment, so catalog
-   * queries can be filtered and paginated in the database instead of loading
-   * every row and filtering in memory.
-   *
-   * Group names are normalised on every write path, so this matches
-   * `canAccess` exactly. Where they could ever disagree it is stricter, which
-   * fails closed.
+   * A collection is visible to a client only when it is published and assigned
+   * to the client's class. Empty CollectionClass = visible to nobody.
    */
-  prismaFilter(clientGroups: string[]): VisibilityWhere {
+  prismaFilter(classId: string): CollectionClassFilter {
     return {
-      NOT: { visibilityGroups: { has: ADMIN_ONLY_VISIBILITY_GROUP } },
-      OR: [
-        { visibilityGroups: { isEmpty: true } },
-        { visibilityGroups: { hasSome: this.normalizeGroups(clientGroups) } },
-      ],
+      isVisible: true,
+      classes: { some: { classId } },
     };
   }
 
-  canAccess(clientGroups: string[], itemGroups: string[]): boolean {
-    return hasVisibilityAccess(clientGroups, itemGroups);
+  canAccessCollection(
+    classId: string,
+    collection: { isVisible: boolean; classes: { classId: string }[] },
+  ): boolean {
+    return (
+      collection.isVisible &&
+      collection.classes.some((row) => row.classId === classId)
+    );
   }
 
-  filterByVisibility<T extends { visibilityGroups: string[] }>(
-    items: T[],
-    clientGroups: string[],
-  ): T[] {
-    return items.filter((item) => this.canAccess(clientGroups, item.visibilityGroups));
+  canAccessPiece(
+    classId: string,
+    piece: {
+      isActive: boolean;
+      collection: { isVisible: boolean; classes: { classId: string }[] };
+    },
+  ): boolean {
+    return piece.isActive && this.canAccessCollection(classId, piece.collection);
   }
 }

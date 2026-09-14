@@ -21,6 +21,7 @@ describe("AuthService", () => {
         findMany: jest.fn(),
         findUnique: jest.fn(),
         findFirst: jest.fn(),
+        update: jest.fn().mockResolvedValue({}),
       },
     },
   };
@@ -66,10 +67,12 @@ describe("AuthService", () => {
 
   describe("validateKey", () => {
     it("returns tokens for a valid house key", async () => {
+      const membershipClass = { id: "class-a", slug: "class-a", name: "Class A" };
       const client = {
         id: "client-1",
         displayName: "Test Client",
-        visibilityGroups: ["vip"],
+        classId: "class-a",
+        class: membershipClass,
         houseKey: "hashed-key",
         isActive: true,
         locale: "ar",
@@ -84,7 +87,7 @@ describe("AuthService", () => {
       expect(result.client).toEqual({
         clientId: "client-1",
         displayName: "Test Client",
-        visibilityGroups: ["vip"],
+        class: { id: "class-a", slug: "class-a", name: "Class A" },
         locale: "ar",
       });
       expect(jwtMock.signAsync).toHaveBeenCalled();
@@ -97,7 +100,7 @@ describe("AuthService", () => {
         {
           id: "client-1",
           displayName: "Test Client",
-          visibilityGroups: [],
+          classId: "class-c",
           houseKey: "hashed-key",
           isActive: true,
         },
@@ -144,7 +147,8 @@ describe("AuthService", () => {
       prismaMock.db.client.findFirst.mockResolvedValue({
         id: "client-1",
         displayName: "Test Client",
-        visibilityGroups: ["vip"],
+        classId: "class-a",
+        class: { id: "class-a", slug: "class-a", name: "Class A" },
         locale: "en",
         isActive: true,
       });

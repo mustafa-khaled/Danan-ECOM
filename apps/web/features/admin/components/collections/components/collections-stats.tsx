@@ -1,33 +1,36 @@
 import Image from "next/image";
 
-const statsMockData = [
-  {
-    id: 1,
-    title: "Members",
-    count: 8,
-    icon: "/admin/triangle.svg",
-  },
-  {
-    id: 2,
-    title: "Collections",
-    count: 6,
-    icon: "/admin/tick-circle.svg",
-  },
-  {
-    id: 3,
-    title: "Pieces",
-    count: 2,
-    icon: "/admin/clipboard.svg",
-  },
-  {
-    id: 4,
-    title: "Pending Transfers",
-    count: 0,
-    icon: "/admin/document-copy.svg",
-  },
-];
-
-export default function CollectionsStats() {
+export default function CollectionsStats({
+  stats,
+}: {
+  stats: { members: number; collections: number; pieces: number; pendingTransfers: number };
+}) {
+  const statsMockData = [
+    {
+      id: 1,
+      title: "Members",
+      count: stats.members,
+      icon: "/admin/triangle.svg",
+    },
+    {
+      id: 2,
+      title: "Collections",
+      count: stats.collections,
+      icon: "/admin/tick-circle.svg",
+    },
+    {
+      id: 3,
+      title: "Pieces",
+      count: stats.pieces,
+      icon: "/admin/clipboard.svg",
+    },
+    {
+      id: 4,
+      title: "Pending Transfers",
+      count: stats.pendingTransfers,
+      icon: "/admin/document-copy.svg",
+    },
+  ];
   return (
     <div className="grid grid-cols-4 gap-3">
       {statsMockData.map((s) => {

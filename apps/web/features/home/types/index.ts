@@ -1,9 +1,9 @@
 export interface SelectedPiece {
-  designSlug: string;
+  slug: string;
   name: string;
   imageUrl: string | null;
   imageLqip: string | null;
-  basePrice: string;
+  price: string;
   currency: string;
   collectionName: string;
   collectionSlug: string;

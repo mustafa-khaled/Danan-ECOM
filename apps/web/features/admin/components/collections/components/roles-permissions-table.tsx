@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { DataTable, type ColumnDef } from "@/components/ui";
-import { Pencil, Trash2, Check } from "lucide-react";
+import { Check } from "lucide-react";
 
 export interface RolePermissionRow {
   id: string;
@@ -116,32 +116,6 @@ const columns: ColumnDef<RolePermissionRow>[] = [
         >
           <Check className="size-3" />
         </span>
-      </div>
-    ),
-  },
-  {
-    key: "actions",
-    label: "Actions",
-    align: "right",
-    hideable: false,
-    render: (_, row) => (
-      <div className="flex items-center justify-end gap-2">
-        <button
-          type="button"
-          className="p-2 text-[#5D697A] hover:text-[#BF7266] hover:bg-[#F8FAFC] rounded-lg transition-colors"
-          title="Edit permission"
-          aria-label={`Edit ${row.name}`}
-        >
-          <Pencil className="w-4 h-4" />
-        </button>
-        <button
-          type="button"
-          className="p-2 text-[#5D697A] hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
-          title="Delete permission"
-          aria-label={`Delete ${row.name}`}
-        >
-          <Trash2 className="w-4 h-4" />
-        </button>
       </div>
     ),
   },

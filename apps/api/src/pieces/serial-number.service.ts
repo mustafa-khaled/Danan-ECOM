@@ -1,28 +1,23 @@
 import { Injectable } from "@nestjs/common";
-import {
-  collectionCodeFromSlug,
-  generateSerialNumber,
-} from "@dadan/utils";
+import { collectionCodeFromSlug, generateSerialNumber } from "@dadan/utils";
 import { PrismaService } from "../prisma/prisma.service";
 
 @Injectable()
 export class SerialNumberService {
   constructor(private readonly prisma: PrismaService) {}
 
-  async generateForDesign(designId: string): Promise<string> {
+  async generateForCollection(collectionId: string): Promise<string> {
     return this.prisma.db.$transaction(async (tx) => {
-      const design = await tx.design.findUniqueOrThrow({
-        where: { id: designId },
-        include: { collection: true },
+      const collection = await tx.collection.findUniqueOrThrow({
+        where: { id: collectionId },
+        select: { id: true, slug: true },
       });
 
-      const collectionCode = collectionCodeFromSlug(design.collection.slug);
+      const collectionCode = collectionCodeFromSlug(collection.slug);
       const year = new Date().getFullYear();
 
       const count = await tx.piece.count({
-        where: {
-          design: { collectionId: design.collectionId },
-        },
+        where: { collectionId: collection.id },
       });
 
       const serialNumber = generateSerialNumber(year, collectionCode, count + 1);

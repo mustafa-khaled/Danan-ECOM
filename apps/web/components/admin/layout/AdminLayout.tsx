@@ -13,12 +13,14 @@ export interface AdminLayoutProps {
     role: string;
     avatarUrl?: string;
   };
+  pendingCount?: number;
 }
 
 export function AdminLayout({
   children,
   title,
   admin,
+  pendingCount,
 }: AdminLayoutProps) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
@@ -36,11 +38,13 @@ export function AdminLayout({
       <AdminSidebar
         mobileOpen={sidebarOpen}
         onMobileClose={() => setSidebarOpen(false)}
+        admin={fallbackAdmin}
       />
       <div className="flex-1 flex flex-col min-w-0">
         <AdminTopbar
           title={title}
           admin={fallbackAdmin}
+          pendingCount={pendingCount}
           onToggleSidebar={() => setSidebarOpen((prev) => !prev)}
         />
 

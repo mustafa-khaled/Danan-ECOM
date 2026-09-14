@@ -21,11 +21,11 @@ This document describes **what the platform does and which rules are non-negotia
 
 ### 1.1 Product model
 
-DADAN Dijital is a **private luxury jewelry ownership platform**. Clients do not browse a public catalog — they enter with a **House Key** issued by DADAN and see a **curated experience** based on visibility groups. Each physical jewelry piece has a **unique serial number**, a **digital certificate of authenticity**, and an **append-only ownership history**.
+DADAN Dijital is a **private luxury jewelry ownership platform**. Clients do not browse a public catalog — they enter with a **House Key** issued by DADAN and see a **curated experience** based on their membership class. Each physical jewelry piece has a **unique serial number**, a **digital certificate of authenticity**, and an **append-only ownership history**.
 
 Core capabilities:
 
-- **Curated catalog** — collections and designs filtered per client
+- **Curated catalog** — collections and unique pieces filtered per membership class
 - **Direct purchase** — one-of-a-kind pieces; each serial sold once
 - **Jewelry wardrobe** — owned pieces, certificates, ownership timeline
 - **Ownership transfer** — multi-party workflow requiring DADAN approval
@@ -56,23 +56,24 @@ Client and admin sessions are **fully separate** — different JWTs, different c
 
 ### 2.1 Entity glossary
 
-| Entity                  | Represents                              | Key rules                                                                    |
-| ----------------------- | --------------------------------------- | ---------------------------------------------------------------------------- |
-| **Client**              | Invitation-only user                    | House Key hashed; `visibilityGroups` drive curation; `isActive` gates login  |
-| **Collection**          | Curated catalog grouping                | `slug`, cover image, visibility groups; soft-delete via `isVisible: false`   |
-| **Design**              | Product template (not a physical piece) | Story, specs, gallery, `basePrice` in SAR; soft-delete via `isActive: false` |
-| **DesignSpecification** | Key/value spec row                      | e.g. Stone, Cut, Carat                                                       |
-| **Piece**               | Physical instance of a design           | **Immutable `serialNumber`**; status lifecycle; optional `currentOwnerId`    |
-| **OwnershipRecord**     | Ownership event                         | **Append-only** — never delete; `transferredAt` set when ownership ends      |
-| **Certificate**         | Digital authenticity PDF                | One **active** cert per piece; superseded certs archived, never deleted      |
-| **Order**               | Purchase transaction                    | Links client, items, payment, shipping                                       |
-| **OrderItem**           | Line item snapshot                      | `pieceId`, `designId`, `priceAtPurchase`                                     |
-| **SavedPiece**          | Client wishlist                         | Composite PK `(clientId, pieceId)`                                           |
-| **TransferRequest**     | Ownership transfer workflow             | Multi-step state machine; one active transfer per piece                      |
-| **VerificationLog**     | Public verify audit                     | Logs FOUND/NOT_FOUND; no owner PII on public endpoint                        |
-| **AdminUser**           | DADAN staff                             | Role-based access (`SUPER_ADMIN`, `STAFF`, `VIEWER`)                         |
-| **AuditLog**            | Immutable action trail                  | Every significant mutation                                                   |
-| **CartItem**            | Temporary piece reservation             | 30-minute hold; `pieceId` globally unique in cart                            |
+| Entity                 | Represents                           | Key rules                                                                                     |
+| ---------------------- | ------------------------------------ | --------------------------------------------------------------------------------------------- |
+| **Class**              | Membership tier (A / B / C + extras) | Seeded `class-a`/`class-b`/`class-c`; Class C is `isDefault`; soft-hide via `isActive: false` |
+| **CollectionClass**    | Collection ↔ class access            | Empty join = visible to **no** clients; required for catalog visibility                       |
+| **Client**             | Invitation-only user                 | House Key hashed; exactly one `classId` (defaults to Class C); `isActive` gates login         |
+| **Collection**         | Curated catalog grouping             | `slug`, cover image, `CollectionClass` rows; soft-delete via `isVisible: false`               |
+| **Piece**              | Unique physical piece                | Catalog fields + **immutable `serialNumber`**; belongs to a collection; optional owner        |
+| **PieceSpecification** | Key/value spec row                   | e.g. Stone, Cut, Carat                                                                        |
+| **OwnershipRecord**    | Ownership event                      | **Append-only** — never delete; `transferredAt` set when ownership ends                       |
+| **Certificate**        | Digital authenticity PDF             | One **active** cert per piece; superseded certs archived, never deleted                       |
+| **Order**              | Purchase transaction                 | Links client, items, payment, shipping                                                        |
+| **OrderItem**          | Line item snapshot                   | `pieceId`, `priceAtPurchase`, `nameSnapshot`, `collectionNameSnapshot`                        |
+| **SavedPiece**         | Client wishlist                      | Composite PK `(clientId, pieceId)`                                                            |
+| **TransferRequest**    | Ownership transfer workflow          | Multi-step state machine; one active transfer per piece                                       |
+| **VerificationLog**    | Public verify audit                  | Logs FOUND/NOT_FOUND; no owner PII on public endpoint                                         |
+| **AdminUser**          | DADAN staff                          | Role-based access (`SUPER_ADMIN`, `STAFF`, `VIEWER`)                                          |
+| **AuditLog**           | Immutable action trail               | Every significant mutation                                                                    |
+| **CartItem**           | Client cart line                     | Per-client; **not** an exclusive hold. Exclusive lock is `CheckoutReservation` at checkout    |
 
 ### 2.2 Enums
 
@@ -99,7 +100,7 @@ Database fields store **object keys only** — never public URLs.
 | Field                      | Stores             | Example key                            |
 | -------------------------- | ------------------ | -------------------------------------- |
 | `Certificate.pdfUrl`       | PDF object key     | `certificates/{certificateId}.pdf`     |
-| `Design.imageUrls[]`       | Gallery image keys | `designs/{designId}/{uuid}.jpg`        |
+| `Piece.imageUrls[]`        | Gallery image keys | `pieces/{pieceId}/{uuid}.jpg`          |
 | `Collection.coverImageUrl` | Cover image key    | `collections/{collectionId}/cover.jpg` |
 
 Signed URLs are generated at **read time** via `packages/storage` (default expiry: 3600 seconds).
@@ -117,9 +118,11 @@ erDiagram
   Client ||--o{ OwnershipRecord : history
   Client ||--o{ Certificate : issued_to
 
-  Collection ||--o{ Design : contains
-  Design ||--o{ DesignSpecification : has
-  Design ||--o{ Piece : instantiates
+  Class ||--o{ Client : assigned
+  Collection ||--o{ CollectionClass : grants
+  Class ||--o{ CollectionClass : sees
+  Collection ||--o{ Piece : contains
+  Piece ||--o{ PieceSpecification : has
 
   Piece ||--o{ OwnershipRecord : history
   Piece ||--o{ Certificate : certifies
@@ -145,7 +148,7 @@ erDiagram
 | Storage          | Bcrypt hash in `Client.houseKey`; plaintext **never** stored                   |
 | Admin display    | First 4 chars in `houseKeyPrefix` only                                         |
 | Session          | JWT in httpOnly cookie `dadan_session`; 30-day expiry                          |
-| JWT payload      | `sub` (clientId), `displayName`, `visibilityGroups`                            |
+| JWT payload      | `sub` (clientId), `displayName`, `classId`, `class` `{ id, slug, name }`       |
 | Active gate      | `isActive: false` → cannot validate key or call `/auth/me`                     |
 | Rate limit       | 5 attempts per IP per 15 minutes (Redis key `auth:validate-key:{ip}`)          |
 | Failure response | Always generic **401 `"Unauthorized"`** — never reveal if key exists           |
@@ -157,7 +160,7 @@ erDiagram
 - `POST /auth/logout` — requires client session
 - `GET /auth/me` — returns profile; **never** returns `houseKey` or `houseKeyPrefix`
 
-**Client profile fields returned:** `id`, `displayName`, `email`, `phone`, `locale`, `visibilityGroups`, `createdAt`
+**Client profile fields returned:** `id`, `displayName`, `email`, `phone`, `locale`, `class`, `createdAt`
 
 ### 3.2 Admin authentication
 
@@ -183,9 +186,9 @@ erDiagram
 | Action                        | SUPER_ADMIN | STAFF | VIEWER |
 | ----------------------------- | :---------: | :---: | :----: |
 | Client list / create / update |     yes     |  yes  |  yes   |
-| Visibility group management   |     yes     |  yes  |  yes   |
+| Class CRUD                    |     yes     |  yes  |  read  |
 | **Rotate House Key**          |     yes     |  no   |   no   |
-| Collection / design CRUD      |     yes     |  yes  |  yes   |
+| Collection / piece CRUD       |     yes     |  yes  |  yes   |
 | Piece register / assign       |     yes     |  yes  |  yes   |
 | Order management              |     yes     |  yes  |  yes   |
 | Transfer list / contact logs  |     yes     |  yes  |  yes   |
@@ -199,7 +202,7 @@ Wrong role on protected route → **403 `"Insufficient permissions"`** (the only
 | Situation                                | Status  | Rationale                        |
 | ---------------------------------------- | ------- | -------------------------------- |
 | Missing / invalid session                | 401     | Standard auth failure            |
-| Hidden collection, design, piece, cert   | **404** | Do not reveal resource exists    |
+| Hidden collection, piece, cert           | **404** | Do not reveal resource exists    |
 | Wrong admin role                         | 403     | Admin RBAC only                  |
 | Auth rate limit                          | 429     | House Key brute-force protection |
 | Verify rate limit                        | 429     | Public endpoint abuse protection |
@@ -209,50 +212,53 @@ Wrong role on protected route → **403 `"Insufficient permissions"`** (the only
 
 ## 4. Visibility and curation
 
-**Enforced in:** `packages/utils/src/index.ts` (`hasVisibilityAccess`), `apps/api/src/visibility/visibility.service.ts`
+**Enforced in:** `apps/api/src/visibility/visibility.service.ts`
 
-### 4.1 Group rules
+### 4.1 Class rules
 
-1. **Normalization:** trim → lowercase → spaces replaced with `-` (kebab-case)
-2. **Empty item groups:** visible to **all** active clients
-3. **Non-empty item groups:** client must share **at least one** group with the item (intersection)
-4. **`admin-only` tag:** item is **never** visible to clients, regardless of client groups
+1. Every client has **exactly one** `classId`. New clients without an explicit class get **Class C** (`isDefault: true`).
+2. A collection is visible only if `isVisible: true` **and** a `CollectionClass` row exists for the client's class.
+3. **Empty join = visible to no clients.** Admin must assign at least one class.
+4. Pieces have **no** class of their own. If the client can see the collection, they can see its active pieces.
+5. Extra classes beyond A/B/C are allowed. There is no hierarchical “A sees everything” rank.
 
 ### 4.2 Where visibility applies
 
-| Resource                                 | Filter                                      |
-| ---------------------------------------- | ------------------------------------------- |
-| Collections (client list/detail)         | `isVisible: true` + visibility intersection |
-| Designs (within collection, detail page) | `isActive: true` + visibility intersection  |
-| Piece counts on collection cards         | Only pieces client can see                  |
-| Design detail — purchasable pieces       | Only `status: AVAILABLE` pieces shown       |
+| Resource                          | Filter                                                         |
+| --------------------------------- | -------------------------------------------------------------- |
+| Collections (client list/detail)  | `isVisible: true` + `CollectionClass.classId = client.classId` |
+| Pieces (list under collection)    | Collection allowed + piece `isActive: true`                    |
+| Piece detail `GET /client/pieces` | Same collection class check; 404 if hidden                     |
+| Home selected pieces              | Same class filter                                              |
+| Cart / saved / checkout           | Price from `piece.price`; visibility = collection class        |
 
 ### 4.3 Denial behavior
 
-If a client lacks visibility for a collection or design, the API returns **404** with the same message as a truly missing slug (`"Collection not found"` / `"Design not found"`). This is intentional — **never use 403** for client catalog denial.
+If a client lacks visibility for a collection or piece, the API returns **404** with the same message as a truly missing slug (`"Collection not found"` / `"Piece not found"`). This is intentional — **never use 403** for client catalog denial.
 
 ### 4.4 Business outcome
 
-Different valid House Keys with different `visibilityGroups` must produce **different curated experiences** (different collections, designs, and available pieces).
+Different valid House Keys with different classes must produce **different curated experiences** (different collections and pieces).
 
 ---
 
-## 5. Catalog: collections, designs, pieces
+## 5. Catalog: classes, collections, pieces
 
-### 5.1 Collections and designs (admin)
+### 5.1 Classes and collections (admin)
 
-**Enforced in:** `apps/api/src/collections/collections.service.ts`
+**Enforced in:** `apps/api/src/classes/classes.service.ts`, `apps/api/src/collections/collections.service.ts`
 
-| Operation         | Behavior                                                         |
-| ----------------- | ---------------------------------------------------------------- |
-| Create collection | Name, slug, description, cover, sort order, visibility groups    |
-| Update collection | Partial update; groups normalized                                |
-| Delete collection | **Soft delete** — sets `isVisible: false`                        |
-| Create design     | Linked to collection; default currency `SAR`; empty `imageUrls`  |
-| Update design     | Partial update including price, story, material, dimensions      |
-| Delete design     | **Soft delete** — sets `isActive: false`                         |
-| Upload image      | Validates MIME/size via storage; appends S3 key to `imageUrls[]` |
-| Upsert specs      | Match by `(designId, key)` — update or create                    |
+| Operation         | Behavior                                                               |
+| ----------------- | ---------------------------------------------------------------------- |
+| Create class      | Unique kebab slug; optional `isDefault` (transactionally unset others) |
+| Update class      | Partial update; only one default at a time                             |
+| Delete class      | Soft — `isActive: false`. 400 if default or clients still assigned     |
+| Create collection | Name, slug, description, cover, sort order, `classIds[]` join rewrite  |
+| Update collection | Partial update; `classIds` replaces join rows in a transaction         |
+| Delete collection | **Soft delete** — sets `isVisible: false`                              |
+| Register piece    | Catalog fields on the piece; serial via `generateForCollection`        |
+| Upload image      | Validates MIME/size via storage; key `pieces/{pieceId}/{uuid}.{ext}`   |
+| Upsert specs      | Match by `(pieceId, key)` — update or create                           |
 
 All admin mutations write **AuditLog** entries.
 
@@ -276,7 +282,7 @@ All admin mutations write **AuditLog** entries.
 
 **Register piece (`POST /admin/pieces`):**
 
-1. Generate serial number for design's collection
+1. Generate serial number for the piece's collection
 2. Create piece — `AVAILABLE` unless `initialClientId` provided
 3. If initial owner: set `OWNED`, create `OwnershipRecord`, generate certificate
 4. Audit: `PIECE_REGISTERED`
@@ -353,25 +359,28 @@ stateDiagram-v2
 
 ## 7. Cart, checkout, and orders
 
-### 7.1 Cart holds
+### 7.1 Cart and checkout hold
 
 **Enforced in:** `apps/api/src/cart/cart.service.ts`
 
-| Rule              | Detail                                                       |
-| ----------------- | ------------------------------------------------------------ |
-| Scope             | Server-side; tied to authenticated client                    |
-| Hold duration     | **30 minutes** from `addedAt`                                |
-| Global uniqueness | One `CartItem` row per `pieceId` system-wide                 |
-| Add constraints   | Piece must be `AVAILABLE`, no `currentOwnerId`               |
-| Conflict          | If another client holds piece and hold **not expired** → 400 |
-| Expired hold      | Old row deleted; piece becomes addable again                 |
-| Cleanup           | Cron every 5 minutes + cleanup on read/add/checkout          |
+Cart is **not** an exclusive lock. Multiple clients may add the same available piece. The exclusive lock is a **checkout reservation**.
+
+| Rule            | Detail                                                                                           |
+| --------------- | ------------------------------------------------------------------------------------------------ |
+| Cart scope      | Server-side; tied to authenticated client                                                        |
+| Cart uniqueness | One `CartItem` per `(clientId, pieceId)` — not global                                            |
+| Add constraints | Piece must be `AVAILABLE`, no `currentOwnerId`, no active checkout reservation by another client |
+| Exclusive hold  | `CheckoutReservation` at `POST /client/checkout/reserve`; `pieceId` globally unique              |
+| Hold duration   | **35 minutes** (`CHECKOUT_HOLD_MINUTES`) so 3-D Secure can complete                              |
+| Conflict        | Another client already has an unexpired reservation → 400 `PIECE_RESERVED`                       |
+| Cleanup         | Cron deletes expired `CheckoutReservation` rows                                                  |
 
 **Endpoints:**
 
 - `GET /client/cart`
 - `POST /client/cart` — body `{ pieceId }`
 - `DELETE /client/cart/:pieceId`
+- `POST /client/checkout/reserve` — exclusive hold
 
 ### 7.2 Checkout flow
 
@@ -447,7 +456,7 @@ Provider selection is automatic based on `PAYMENT_PROVIDER_KEY`:
 
 | Step | Action                                                                   |
 | ---- | ------------------------------------------------------------------------ |
-| 1    | Load piece with design, specs, collection, owner                         |
+| 1    | Load piece with specs, collection, owner                                 |
 | 2    | Generate number: `CERT-{YEAR}-{8_HEX_UPPER}`                             |
 | 3    | Build verification URL: `{BASE_URL}/verify?serial={serial}&token={hmac}` |
 | 4    | HMAC token: `sha256("{serial}:{certificateId}", CERT_SIGNING_SECRET)`    |
@@ -484,7 +493,7 @@ Provider selection is automatic based on `PAYMENT_PROVIDER_KEY`:
 | Rate limit       | 30 requests per IP per 60 seconds                                                              |
 | Input            | Query params `serial`, `token`                                                                 |
 | Validation       | Piece exists + active certificate + HMAC matches (`timingSafeEqual`)                           |
-| Success response | Piece name, collection, design specs, issuedAt — **no owner name or client data**              |
+| Success response | Piece name, collection, piece specs, issuedAt — **no owner name or client data**               |
 | Failure response | Always **404 `"Certificate not found"`** — same for invalid serial, bad token, or missing cert |
 | Logging          | Every attempt → `VerificationLog` with `FOUND` or `NOT_FOUND`                                  |
 
@@ -580,13 +589,13 @@ Invalid transition → **400** with message indicating illegal `from → to`.
 
 ### 10.1 Client management
 
-| Operation          | Key business rule                                                      |
-| ------------------ | ---------------------------------------------------------------------- |
-| Create client      | Auto-generate House Key; return plaintext **once**; hash stored        |
-| Update client      | Admin can change displayName, email, phone, locale, isActive, groups   |
-| Client self-update | **Phone and locale only**                                              |
-| Rotate key         | SUPER_ADMIN; invalidates old key immediately; new plaintext shown once |
-| Visibility groups  | Add/remove via normalized set merge                                    |
+| Operation          | Key business rule                                                                            |
+| ------------------ | -------------------------------------------------------------------------------------------- |
+| Create client      | Auto-generate House Key; return plaintext **once**; hash stored; `classId` omitted → Class C |
+| Update client      | Admin can change displayName, email, phone, locale, isActive, `classId`                      |
+| Client self-update | **Phone and locale only**                                                                    |
+| Rotate key         | SUPER_ADMIN; invalidates old key immediately; new plaintext shown once                       |
+| Class assignment   | Exactly one class per client; reassign before deleting a class                               |
 
 ### 10.2 Inventory management
 
@@ -618,11 +627,11 @@ See §5.1. Image uploads go through `@dadan/storage` with MIME and size validati
 
 ### 11.2 Key path conventions
 
-| Asset                | Pattern                                  |
-| -------------------- | ---------------------------------------- |
-| Design gallery image | `designs/{designId}/{uuid}.{ext}`        |
-| Collection cover     | `collections/{collectionId}/cover.{ext}` |
-| Certificate PDF      | `certificates/{certificateId}.pdf`       |
+| Asset               | Pattern                                  |
+| ------------------- | ---------------------------------------- |
+| Piece gallery image | `pieces/{pieceId}/{uuid}.{ext}`          |
+| Collection cover    | `collections/{collectionId}/cover.{ext}` |
+| Certificate PDF     | `certificates/{certificateId}.pdf`       |
 
 ### 11.3 Upload validation
 
@@ -665,13 +674,12 @@ Audit entries are **append-only** — no updates or deletes.
 | `ADMIN_LOGOUT`                                    | Admin logout                        |
 | `CLIENT_CREATED`                                  | Admin creates client                |
 | `CLIENT_UPDATED`                                  | Admin updates client                |
-| `CLIENT_VISIBILITY_UPDATED`                       | Admin changes visibility groups     |
+| `CLASS_CREATED` / `UPDATED` / `SOFT_DELETED`      | Class admin ops                     |
 | `COLLECTION_CREATED` / `UPDATED` / `SOFT_DELETED` | Collection admin ops                |
-| `DESIGN_CREATED` / `UPDATED` / `SOFT_DELETED`     | Design admin ops                    |
-| `DESIGN_IMAGE_UPLOADED`                           | Design image upload                 |
-| `DESIGN_SPECS_UPDATED`                            | Specification upsert                |
 | `PIECE_REGISTERED`                                | New piece created                   |
-| `PIECE_UPDATED`                                   | Piece status/notes update           |
+| `PIECE_UPDATED`                                   | Piece catalog/status update         |
+| `PIECE_IMAGE_UPLOADED`                            | Piece gallery upload                |
+| `PIECE_SPECS_UPDATED`                             | Specification upsert                |
 | `PIECE_ASSIGNED`                                  | Piece assigned to client            |
 | `ORDER_PLACED`                                    | Successful checkout                 |
 | `PIECE_OWNERSHIP_TRANSFERRED`                     | System ownership change on purchase |
@@ -711,7 +719,7 @@ Verifiable business outcomes before marking a phase complete.
 - [ ] Invalid House Key → 401 with no detail about reason
 - [ ] Different valid House Keys → different curated experiences
 - [ ] Client display name in header on every authenticated page
-- [ ] Piece outside visibility groups → 404 (not 403)
+- [ ] Piece or collection outside the client's class → 404 (not 403)
 - [ ] Direct purchase → piece appears in Wardrobe
 - [ ] Certificate PDF downloads with correct piece and owner data
 - [ ] Serial verification returns piece info but **never** owner identity
@@ -735,16 +743,11 @@ Differences between **product spec** and **current code** — review before exte
 | Gap                        | Spec                                               | Current implementation                                                                               |
 | -------------------------- | -------------------------------------------------- | ---------------------------------------------------------------------------------------------------- |
 | Payment provider           | Tap Payments integration                           | Implemented (backend + frontend tokenization); 3DS redirect and Apple Pay not implemented — see §7.5 |
-| Order cancel               | Client can cancel `PENDING` orders                 | Checkout creates `PAID`; cancel endpoint unreachable                                                 |
-| Order status FSM           | Implied workflow                                   | Admin can set any status freely                                                                      |
-| Transfer reject guard      | Should reject from `DADAN_REVIEW`                  | No status prerequisite on reject                                                                     |
+| Order cancel               | Client can cancel `PENDING` orders                 | Checkout typically creates `PAID`; cancel only works while `PENDING`                                 |
 | Transfer recipient confirm | Status → `RECIPIENT_CONFIRMED` then `DADAN_REVIEW` | May skip `RECIPIENT_CONFIRMED` persistence                                                           |
-| Saved pieces validation    | Should validate piece exists/visible               | No existence or visibility check                                                                     |
 | `RETIRED` status           | Defined in schema                                  | Rarely used in services                                                                              |
-| `VIEWER` admin role        | Read-only admin                                    | Same access as STAFF except `@Roles` endpoints                                                       |
-| JWT revocation             | —                                                  | Logout is cookie-only; no server-side deny list                                                      |
-| Admin login rate limit     | Recommended                                        | Not implemented                                                                                      |
-| Storybook / E2E tests      | Prompt 08/14 deliverables                          | Partial or missing                                                                                   |
+| CURATOR / OPERATIONS roles | Distinct admin roles                               | Assignable; API treats them like STAFF except `@Roles(SUPER_ADMIN)` endpoints                        |
+| Storybook / E2E tests      | Prompt 08/14 deliverables                          | Partial                                                                                              |
 
 When fixing gaps, update this document and the relevant service in `apps/api/src/`.
 

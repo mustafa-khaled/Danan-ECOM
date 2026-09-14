@@ -31,8 +31,8 @@ export default async function WardrobePage() {
               <PieceCard
                 piece={{
                   id: item.id,
-                  name: item.design.name,
-                  imageUrl: item.design.images[0],
+                  name: item.name,
+                  imageUrl: item.images[0],
                   ownedSince: item?.ownershipHistory?.[0]?.acquiredAt
                     ? new Date(item.ownershipHistory[0].acquiredAt)
                         .toLocaleDateString("en-US", {

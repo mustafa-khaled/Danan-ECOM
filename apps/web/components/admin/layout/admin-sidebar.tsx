@@ -8,11 +8,13 @@ import UserAccountFooter from "./user-account-footer";
 interface AdminSidebarProps {
   mobileOpen: boolean;
   onMobileClose: () => void;
+  admin?: { displayName: string; email?: string };
 }
 
 export function AdminSidebar({
   mobileOpen,
   onMobileClose,
+  admin,
 }: AdminSidebarProps) {
   return (
     <>
@@ -43,7 +45,7 @@ export function AdminSidebar({
         />
 
         {/* User Account Footer */}
-        <UserAccountFooter />
+        <UserAccountFooter admin={admin} />
       </aside>
     </>
   );

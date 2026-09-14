@@ -5,7 +5,8 @@ import { createContext, useContext, type ReactNode } from "react";
 export interface ClientContextValue {
   clientId: string;
   displayName: string;
-  visibilityGroups: string[];
+  classId: string;
+  classSlug: string;
 }
 
 const ClientContext = createContext<ClientContextValue | null>(null);

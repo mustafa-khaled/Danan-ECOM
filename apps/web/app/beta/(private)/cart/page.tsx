@@ -39,10 +39,10 @@ export default async function CartPage() {
                   className="flex flex-col gap-4 border border-border bg-white p-4 sm:flex-row sm:items-center"
                 >
                   <div className="relative h-24 w-20 shrink-0 overflow-hidden bg-(--color-surface)">
-                    {piece.design.imageUrls[0] ? (
+                    {piece.imageUrls[0] ? (
                       <Image
-                        src={piece.design.imageUrls[0]}
-                        alt={piece.design.name}
+                        src={piece.imageUrls[0]}
+                        alt={piece.name}
                         fill
                         sizes="80px"
                         className="object-cover"
@@ -51,10 +51,10 @@ export default async function CartPage() {
                   </div>
                   <div className="min-w-0 flex-1">
                     <p className="text-xs tracking-[0.12em] uppercase text-(--color-text-muted)">
-                      {piece.design.collection.name}
+                      {piece.collection.name}
                     </p>
                     <h2 className="font-english text-xl text-(--color-text)">
-                      {piece.design.name}
+                      {piece.name}
                     </h2>
                     <div className="mt-2">
                       <SerialBadge serial={piece.serialNumber} />
@@ -63,8 +63,8 @@ export default async function CartPage() {
                   <div className="flex flex-col items-end gap-2">
                     <p className="font-english text-lg text-(--color-text)">
                       {formatPrice(
-                        piece.design.basePrice,
-                        piece.design.currency,
+                        piece.price,
+                        piece.currency,
                         locale,
                       )}
                     </p>

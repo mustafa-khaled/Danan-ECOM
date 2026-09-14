@@ -4,9 +4,10 @@ import { ClientProfileController } from "./client-profile.controller";
 import { AdminClientsController } from "./admin-clients.controller";
 import { AuthModule } from "../auth/auth.module";
 import { AdminAuthModule } from "../admin/auth/admin-auth.module";
+import { ClassesModule } from "../classes/classes.module";
 
 @Module({
-  imports: [AuthModule, AdminAuthModule],
+  imports: [AuthModule, AdminAuthModule, ClassesModule],
   controllers: [ClientProfileController, AdminClientsController],
   providers: [ClientsService],
   exports: [ClientsService],

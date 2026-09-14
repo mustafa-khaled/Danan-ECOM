@@ -11,6 +11,7 @@ interface AdminTopbarProps {
     displayName?: string;
     avatarUrl?: string;
   };
+  pendingCount?: number;
   onToggleSidebar?: () => void;
 }
 
@@ -49,11 +50,6 @@ function getTitleFromPathname(pathname: string): string {
   if (path.match(/^\/admin\/operations\/[^/]+\/certificate$/)) return "Operation Certificate";
   if (path.match(/^\/admin\/operations\/[^/]+$/)) return "Operation Details";
 
-  // Stories / Designs
-  if (path === "/admin/designs") return "Stories";
-  if (path === "/admin/designs/new") return "New Story";
-  if (path.match(/^\/admin\/designs\/[^/]+$/)) return "Story Details";
-
   // Pieces
   if (path === "/admin/pieces") return "Pieces";
   if (path === "/admin/pieces/new") return "New Piece";
@@ -83,6 +79,7 @@ function getTitleFromPathname(pathname: string): string {
 export function AdminTopbar({
   title,
   admin,
+  pendingCount = 0,
   onToggleSidebar,
 }: AdminTopbarProps) {
   const pathname = usePathname();
@@ -116,7 +113,7 @@ export function AdminTopbar({
           >
             <Bell className="size-6 sm:size-7.5" fill="" />
             <span className="absolute top-1 inset-e-1.5 w-4 h-4 bg-ds-error text-white text-[10px] font-bold rounded-full flex items-center justify-center shadow-xs">
-              2
+              {pendingCount}
             </span>
           </button>
 
