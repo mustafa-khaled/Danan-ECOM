@@ -4,6 +4,7 @@ import { PrismaService } from "../src/prisma/prisma.service";
 import { AuditService } from "../src/audit/audit.service";
 import { AuthService } from "../src/auth/auth.service";
 import { ClassesService } from "../src/classes/classes.service";
+import { StorageService } from "../src/storage/storage.service";
 
 describe("ClientsService.listClients", () => {
   let service: ClientsService;
@@ -25,6 +26,12 @@ describe("ClientsService.listClients", () => {
         { provide: AuditService, useValue: { log: jest.fn() } },
         { provide: AuthService, useValue: {} },
         { provide: ClassesService, useValue: {} },
+        {
+          provide: StorageService,
+          useValue: {
+            resolvePublicUrlsBatch: jest.fn().mockResolvedValue(new Map()),
+          },
+        },
       ],
     }).compile();
 
