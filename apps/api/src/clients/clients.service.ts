@@ -8,6 +8,7 @@ import { AuditService } from "../audit/audit.service";
 import { AuthService } from "../auth/auth.service";
 import { ClassesService } from "../classes/classes.service";
 import { PrismaService } from "../prisma/prisma.service";
+import { StorageService } from "../storage/storage.service";
 import { paginationParams } from "../common/constants";
 
 const CLASS_SELECT = { id: true, slug: true, name: true, nameAr: true } as const;
@@ -19,6 +20,7 @@ export class ClientsService {
     private readonly audit: AuditService,
     private readonly auth: AuthService,
     private readonly classes: ClassesService,
+    private readonly storage: StorageService,
   ) {}
 
   /** Never let the bcrypt House Key hash leave the API. */
@@ -344,11 +346,21 @@ export class ClientsService {
 
     // H-08: Mask houseKeyPrefix in API responses
     const { _count, ownedPieces, houseKeyPrefix, ...rest } = client;
+
+    const urlMap = await this.storage.resolvePublicUrlsBatch(
+      ownedPieces.map((piece) => piece.mainImageUrl),
+    );
+
     return {
       ...rest,
       houseKeyPrefix: "****",
       pieceCount: _count.ownedPieces,
-      ownedPieces: ownedPieces.map((piece) => ({ ...piece })),
+      ownedPieces: ownedPieces.map((piece) => ({
+        ...piece,
+        mainImageUrl: piece.mainImageUrl
+          ? (urlMap.get(piece.mainImageUrl) ?? null)
+          : null,
+      })),
     };
   }
 

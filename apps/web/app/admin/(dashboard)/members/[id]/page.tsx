@@ -46,7 +46,9 @@ export default async function MemberDetailsPage({
           </Link>
         </div>
         <div className="w-full px-7.5 flex items-center justify-between">
-          <h4 className="font-bold text-h6 text-neutral-800">{t("nav.members")}</h4>
+          <h4 className="font-bold text-h6 text-neutral-800">
+            {t("nav.members")}
+          </h4>
           <div className="flex items-center gap-2">
             <Image
               src="/admin/solar_home-2-line-duotone.svg"
@@ -86,7 +88,9 @@ export default async function MemberDetailsPage({
           <div className="pt-5 pb-[32px] border-b border-[#E1E4E8]">
             <div className="flex items-start justify-between">
               <div>
-                <h4 className="font-heading text-h4 font-bold">{t("members.ownedPieces")}</h4>
+                <h4 className="font-heading text-h4 font-bold">
+                  {t("members.ownedPieces")}
+                </h4>
                 <p className="text-h6 font-semibold text-[#4B5563]">
                   {t("members.ownedCount", { count: member.pieceCount })}
                 </p>
