@@ -1,7 +1,3 @@
-export function designImageKey(designId: string, fileId: string, ext: string): string {
-  return `designs/${designId}/${fileId}.${ext}`;
-}
-
 export function pieceImageKey(pieceId: string, fileId: string, ext: string): string {
   return `pieces/${pieceId}/${fileId}.${ext}`;
 }
@@ -10,13 +6,6 @@ export function collectionCoverKey(collectionId: string, ext: string): string {
   return `collections/${collectionId}/cover.${ext}`;
 }
 
-export function collectionStoryImageKey(
-  collectionId: string,
-  fileId: string,
-  ext: string,
-): string {
-  return `collections/${collectionId}/story/${fileId}.${ext}`;
-}
 
 export function certificatePdfKey(certificateId: string): string {
   return `certificates/${certificateId}.pdf`;

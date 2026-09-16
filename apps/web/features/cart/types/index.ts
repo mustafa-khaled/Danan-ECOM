@@ -7,7 +7,8 @@ export interface CartItem {
     name: string;
     price: string;
     currency: string;
-    imageUrls: string[];
+    mainImageUrl?: string | null;
+    mainImageLqip?: string | null;
     collection: {
       name: string;
     };

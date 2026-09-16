@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { DataTable, type ColumnDef } from "@/components/ui/data-table";
+import { useTranslations } from "next-intl";
 
 interface CollectionPerformanceItem {
   name: string;
@@ -15,18 +16,19 @@ export default function CollectionPerformance({
 }: {
   data?: CollectionPerformanceItem[];
 }) {
+  const t = useTranslations("admin");
   const collectionPerformanceData = data;
 
 const columns: ColumnDef<CollectionPerformanceItem>[] = [
   {
     key: "name",
-    label: "Collection",
+    label: t("common.collection"),
     accessor: "name",
     sortable: true,
   },
   {
     key: "views",
-    label: "Views",
+    label: t("analytics.views"),
     accessor: "views",
     align: "right",
     sortable: true,
@@ -36,7 +38,7 @@ const columns: ColumnDef<CollectionPerformanceItem>[] = [
   },
   {
     key: "saves",
-    label: "Saves",
+    label: t("analytics.saves"),
     accessor: "saves",
     align: "right",
     sortable: true,
@@ -46,7 +48,7 @@ const columns: ColumnDef<CollectionPerformanceItem>[] = [
   },
   {
     key: "acquisitions",
-    label: "Acquisitions",
+    label: t("analytics.acquisitions"),
     accessor: "acquisitions",
     align: "right",
     sortable: true,
@@ -76,7 +78,7 @@ const columns: ColumnDef<CollectionPerformanceItem>[] = [
   return (
     <div>
       <h4 className="uppercase font-heading mb-6 text-h4 font-bold">
-        Collection Performance
+        {t("analytics.collectionPerformance")}
       </h4>
 
       <DataTable
@@ -93,8 +95,8 @@ const columns: ColumnDef<CollectionPerformanceItem>[] = [
               currentSort={sort}
             />
             <DataTable.Body
-              emptyTitle="No collection data"
-              emptyMessage="Collection performance data will appear here."
+              emptyTitle={t("analytics.noData")}
+              emptyMessage={t("analytics.noDataMessage")}
             />
           </DataTable.Table>
         </DataTable.Container>

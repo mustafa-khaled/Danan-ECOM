@@ -1,8 +1,11 @@
 "use client";
 
+import { useMemo } from "react";
+import { useLocale, useTranslations } from "next-intl";
 import { DataTable } from "@/components/ui/data-table";
-import { ownershipColumns } from "./ownership-columns";
+import { getOwnershipColumns } from "./ownership-columns";
 import type { OwnershipRecordItem } from "../types";
+import type { Locale } from "@/i18n/routing";
 
 interface OwnershipTableProps {
   items: OwnershipRecordItem[];
@@ -13,11 +16,15 @@ export default function OwnershipTable({
   items,
   isLoading = false,
 }: OwnershipTableProps) {
+  const t = useTranslations("admin");
+  const locale = useLocale() as Locale;
+  const columns = useMemo(() => getOwnershipColumns(t, locale), [t, locale]);
+
   return (
     <div className="space-y-4">
       <DataTable
         data={items}
-        columns={ownershipColumns}
+        columns={columns}
         keyExtractor={(row) => row.id}
         hoverable
         isLoading={isLoading}
@@ -27,8 +34,8 @@ export default function OwnershipTable({
           <DataTable.Table>
             <DataTable.Header />
             <DataTable.Body
-              emptyTitle="No ownership records found"
-              emptyMessage="No pieces or owners match the selected filters or search query."
+              emptyTitle={t("ownership.emptyFound")}
+              emptyMessage={t("ownership.emptyFoundMessage")}
             />
           </DataTable.Table>
         </DataTable.Container>

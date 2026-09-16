@@ -2,16 +2,15 @@
 
 import { useState, useRef, useEffect } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { Eye, CheckCircle2, XCircle, EllipsisVertical, FileText } from "lucide-react";
+import { useTranslations } from "next-intl";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import {
   approveStaffRequest,
   rejectStaffRequest,
 } from "@/features/admin/api/fetch-admin-operations";
-import {
-  approveTransfer,
-  rejectTransfer,
-} from "@/features/admin/api/fetch-admin-transfers";
+import { approveTransfer } from "@/features/admin/api/fetch-admin-transfers";
 import type { OperationItem } from "../types";
 
 interface OperationsRowActionsProps {
@@ -21,6 +20,8 @@ interface OperationsRowActionsProps {
 export function OperationsRowActions({
   operation,
 }: OperationsRowActionsProps) {
+  const t = useTranslations("admin");
+  const router = useRouter();
   const [isOpen, setIsOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
   const queryClient = useQueryClient();
@@ -48,13 +49,17 @@ export function OperationsRowActions({
 
   const reject = useMutation({
     mutationFn: async () => {
+      // Transfer rejections require a reason — navigate to the detail page
+      // where the full rejection form is available.
       if (operation.kind === "transfer") {
-        await rejectTransfer(operation.id);
+        router.push(`/admin/operations/${operation.id}?kind=transfer`);
         return;
       }
       await rejectStaffRequest(operation.id);
     },
-    onSuccess: invalidate,
+    onSuccess: () => {
+      if (operation.kind !== "transfer") invalidate();
+    },
   });
 
   useEffect(() => {
@@ -90,7 +95,7 @@ export function OperationsRowActions({
       {isOpen && (
         <div
           onClick={(e) => e.stopPropagation()}
-          className="absolute right-0 top-full mt-1 z-30 w-44 rounded-lg border border-ds-border bg-ds-background shadow-lg py-1 animate-in fade-in zoom-in-95"
+          className="absolute end-0 top-full mt-1 z-30 w-44 rounded-lg border border-ds-border bg-ds-background shadow-lg py-1 animate-in fade-in zoom-in-95"
         >
           <Link
             href={`/admin/operations/${operation.id}?kind=${operation.kind}`}
@@ -98,7 +103,7 @@ export function OperationsRowActions({
             className="flex items-center gap-2 px-3 py-2 text-xs font-medium text-ds-text hover:bg-ds-surface hover:text-(--color-gold) transition-colors"
           >
             <Eye className="h-3.5 w-3.5" />
-            <span>View Details</span>
+            <span>{t("rowActions.view")}</span>
           </Link>
 
           {operation.status === "PENDING" && (
@@ -113,7 +118,7 @@ export function OperationsRowActions({
                 className="w-full flex items-center gap-2 px-3 py-2 text-xs font-medium text-emerald-600 hover:bg-emerald-50 transition-colors text-left"
               >
                 <CheckCircle2 className="h-3.5 w-3.5" />
-                <span>Approve</span>
+                <span>{t("rowActions.approve")}</span>
               </button>
               <button
                 type="button"
@@ -125,7 +130,7 @@ export function OperationsRowActions({
                 className="w-full flex items-center gap-2 px-3 py-2 text-xs font-medium text-rose-600 hover:bg-rose-50 transition-colors text-left"
               >
                 <XCircle className="h-3.5 w-3.5" />
-                <span>Reject</span>
+                <span>{t("rowActions.reject")}</span>
               </button>
             </>
           )}
@@ -136,7 +141,7 @@ export function OperationsRowActions({
             className="flex items-center gap-2 px-3 py-2 text-xs font-medium text-ds-text hover:bg-ds-surface transition-colors"
           >
             <FileText className="h-3.5 w-3.5" />
-            <span>Certificate Info</span>
+            <span>{t("rowActions.certificate")}</span>
           </Link>
         </div>
       )}

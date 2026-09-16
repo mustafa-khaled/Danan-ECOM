@@ -1,24 +1,21 @@
-import { Injectable } from "@nestjs/common";
+import { BadRequestException, Injectable } from "@nestjs/common";
 import sharp from "sharp";
 import { validateMagicBytes } from "@dadan/storage";
 import { StorageService } from "./storage.service";
 
 export interface ImageVariants {
-  original: string;
+  /** Storage key of the served image. The only key any record persists. */
   webp: string;
-  thumbnail: string;
-  lqip: string;
+  /** Inlined blur placeholder. Stored on the row, not in object storage. */
   lqipDataUrl: string;
 }
 
-const THUMBNAIL_WIDTH = 400;
-const THUMBNAIL_HEIGHT = 500;
 const LQIP_WIDTH = 20;
 const LQIP_HEIGHT = 25;
 const WEBP_QUALITY = 85;
-const THUMBNAIL_QUALITY = 80;
 const LQIP_QUALITY = 20;
 const MAX_DIMENSION = 4096;
+const MAX_FILE_SIZE = 20 * 1024 * 1024; // 20MB
 
 @Injectable()
 export class ImageProcessingService {
@@ -41,6 +38,10 @@ export class ImageProcessingService {
     baseKey: string,
     contentType: string,
   ): Promise<ImageVariants> {
+    // M-04: Re-validate buffer size as defense-in-depth beyond multer's limit
+    if (buffer.length > MAX_FILE_SIZE) {
+      throw new BadRequestException("File exceeds maximum allowed size");
+    }
     await validateMagicBytes(buffer, contentType);
     await this.validateDimensions(buffer);
 
@@ -49,16 +50,13 @@ export class ImageProcessingService {
     const keyWithoutExt = baseKey.replace(new RegExp(`\\.${ext}$`), "");
 
     const webpKey = `${keyWithoutExt}.webp`;
-    const thumbnailKey = `${keyWithoutExt}-thumb.webp`;
-    const lqipKey = `${keyWithoutExt}-lqip.webp`;
 
-    const [webpBuffer, thumbnailBuffer, lqipBuffer] = await Promise.all([
+    // Only the webp key is ever written to a row, so it is the only object worth
+    // storing: the original, a thumbnail and a standalone lqip file used to be
+    // uploaded too, but nothing referenced them and `deletePieceFiles` could not
+    // find them to clean up, so every upload leaked three objects.
+    const [webpBuffer, lqipBuffer] = await Promise.all([
       image.clone().webp({ quality: WEBP_QUALITY }).toBuffer(),
-      image
-        .clone()
-        .resize(THUMBNAIL_WIDTH, THUMBNAIL_HEIGHT, { fit: "cover" })
-        .webp({ quality: THUMBNAIL_QUALITY })
-        .toBuffer(),
       image
         .clone()
         .resize(LQIP_WIDTH, LQIP_HEIGHT, { fit: "cover" })
@@ -67,21 +65,13 @@ export class ImageProcessingService {
         .toBuffer(),
     ]);
 
-    const lqipDataUrl = `data:image/webp;base64,${lqipBuffer.toString("base64")}`;
-
-    await Promise.all([
-      this.storage.upload(baseKey, buffer, { contentType }),
-      this.storage.upload(webpKey, webpBuffer, { contentType: "image/webp" }),
-      this.storage.upload(thumbnailKey, thumbnailBuffer, { contentType: "image/webp" }),
-      this.storage.upload(lqipKey, lqipBuffer, { contentType: "image/webp" }),
-    ]);
+    await this.storage.upload(webpKey, webpBuffer, {
+      contentType: "image/webp",
+    });
 
     return {
-      original: baseKey,
       webp: webpKey,
-      thumbnail: thumbnailKey,
-      lqip: lqipKey,
-      lqipDataUrl,
+      lqipDataUrl: `data:image/webp;base64,${lqipBuffer.toString("base64")}`,
     };
   }
 

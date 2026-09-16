@@ -6,35 +6,42 @@ import {
 } from "@/features/admin";
 import { fetchAdminAnalytics } from "@/features/admin/api/fetch-admin-analytics";
 import { getAdminCookieHeader } from "@/features/auth/server/admin-session";
+import { pickLocalized } from "@/shared/lib/pick-localized";
 import { ArrowUpLeft } from "lucide-react";
+import { getLocale, getTranslations } from "next-intl/server";
+import type { Locale } from "@/i18n/routing";
 import Link from "next/link";
 
 export default async function AnalyticsPage() {
   const cookieHeader = await getAdminCookieHeader();
-  const analytics = await fetchAdminAnalytics("12m", cookieHeader);
+  const [analytics, t, locale] = await Promise.all([
+    fetchAdminAnalytics("12m", cookieHeader),
+    getTranslations("admin"),
+    getLocale() as Promise<Locale>,
+  ]);
 
   const stats = [
     {
       id: 1,
-      title: "Members",
+      title: t("analytics.members"),
       count: analytics.kpis.members.toLocaleString(),
       link: { title: `${analytics.kpis.deltas.members}%`, href: "/admin/members" },
     },
     {
       id: 2,
-      title: "Active Members",
+      title: t("analytics.activeMembers"),
       count: analytics.kpis.activeMembers.toLocaleString(),
       link: { title: `${analytics.kpis.deltas.activeMembers}%`, href: "/admin/members" },
     },
     {
       id: 3,
-      title: "Pieces Owned",
+      title: t("analytics.piecesOwned"),
       count: analytics.kpis.piecesOwned.toLocaleString(),
       link: { title: `${analytics.kpis.deltas.piecesOwned}%`, href: "/admin/ownership" },
     },
     {
       id: 4,
-      title: "Revenue",
+      title: t("analytics.revenue"),
       count: analytics.kpis.revenue.toLocaleString(),
       link: { title: `${analytics.kpis.deltas.revenue}%`, href: "/admin/payments" },
     },
@@ -43,8 +50,7 @@ export default async function AnalyticsPage() {
   return (
     <>
       <div className="bg-white h-15 px-7.5 flex items-center font-bold text-h5 text-neutral-800">
-        Understand House activity, member engagement, pieces, ownership and
-        revenue.
+        {t("analytics.banner")}
       </div>
 
       <div className="px-7.5 py-6.75">
@@ -83,7 +89,7 @@ export default async function AnalyticsPage() {
 
             <CollectionPerformance
               data={analytics.collectionPerformance.map((row) => ({
-                name: row.name,
+                name: pickLocalized(locale, row.name, row.nameAr),
                 views: row.views,
                 saves: row.saves,
                 acquisitions: row.acquisitions,
@@ -92,7 +98,7 @@ export default async function AnalyticsPage() {
 
             <MembershipDistribution
               memberships={analytics.membershipDistribution.map((row) => ({
-                label: row.name,
+                label: pickLocalized(locale, row.name, row.nameAr),
                 value: row.count,
                 percentage: row.percentage,
               }))}

@@ -12,8 +12,10 @@ import {
 } from "@/features/admin";
 import { fetchAdminOrders } from "@/features/admin/api/fetch-admin-orders";
 import { fetchAdminOrderStats } from "@/features/admin/api/fetch-admin-stats";
+import { useTranslations } from "next-intl";
 
 export default function PaymentsPage() {
+  const t = useTranslations("admin");
   const [searchValue, setSearchValue] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
   const [amountFilter, setAmountFilter] = useState("all");
@@ -59,8 +61,7 @@ export default function PaymentsPage() {
   return (
     <>
       <div className="bg-white h-15 px-7.5 flex items-center font-bold text-h5 text-neutral-800">
-        Manage and monitor all financial transactions related to DADAN pieces
-        and purchases.
+        {t("payments.banner")}
       </div>
 
       <div className="px-7.5 py-6.75">

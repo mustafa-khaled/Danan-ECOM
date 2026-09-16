@@ -7,13 +7,10 @@ import {
   Logger,
   NotFoundException,
 } from "@nestjs/common";
-import { InjectQueue } from "@nestjs/bullmq";
-import { Queue } from "bullmq";
 import {
   AcquisitionType,
   ActorType,
   PieceStatus,
-  Prisma,
   TransferStatus,
   TransferType,
 } from "@dadan/db";
@@ -21,8 +18,7 @@ import type { Locale } from "@dadan/types";
 import { canTransitionTransfer, maskDisplayName } from "@dadan/utils";
 import { localizePiece, pickLocalized } from "../common/i18n/localize";
 import { AuditService } from "../audit/audit.service";
-import { CERTIFICATE_QUEUE } from "../certificates/jobs/certificate-job.processor";
-import type { GenerateCertificateJobData } from "../certificates/jobs/certificate-job.processor";
+import { CertificateOutboxService } from "../certificates/certificate-outbox.service";
 import { ClientsService } from "../clients/clients.service";
 import { NotificationsService } from "../notifications/notifications.service";
 import { PrismaService } from "../prisma/prisma.service";
@@ -33,6 +29,7 @@ import {
   RATE_LIMIT_MAX,
   RATE_LIMIT_WINDOW_SECONDS,
 } from "../common/constants";
+import { runSerializable } from "../common/db/serializable";
 
 @Injectable()
 export class TransfersService {
@@ -42,7 +39,7 @@ export class TransfersService {
     private readonly prisma: PrismaService,
     private readonly clients: ClientsService,
     private readonly audit: AuditService,
-    @InjectQueue(CERTIFICATE_QUEUE) private readonly certificateQueue: Queue<GenerateCertificateJobData>,
+    private readonly outbox: CertificateOutboxService,
     private readonly notifications: NotificationsService,
     private readonly redis: RedisService,
     private readonly storage: StorageService,
@@ -86,7 +83,8 @@ export class TransfersService {
       throw new BadRequestException("errors.CANNOT_TRANSFER_TO_SELF");
     }
 
-    const transfer = await this.prisma.db.$transaction(
+    const transfer = await runSerializable(
+      this.prisma.db,
       async (tx) => {
         // CR-03: Lock the piece row to prevent concurrent transfer initiation
         const [lockedPiece] = await tx.$queryRaw<
@@ -144,9 +142,6 @@ export class TransfersService {
           },
         });
       },
-      {
-        isolationLevel: Prisma.TransactionIsolationLevel.Serializable,
-      },
     );
 
     await this.audit.log({
@@ -177,14 +172,15 @@ export class TransfersService {
           transfer.piece.name,
           transfer.piece.nameAr,
         ),
-        image: await this.storage.resolvePublicUrl(transfer.piece.imageUrls[0]),
+        image: await this.storage.resolvePublicUrl(transfer.piece.mainImageUrl),
       },
       recipientDisplayName: maskDisplayName(transfer.toClient.displayName),
     };
   }
 
   async confirmSender(transferId: string, clientId: string, ipAddress?: string) {
-    const updated = await this.prisma.db.$transaction(
+    const updated = await runSerializable(
+      this.prisma.db,
       async (tx) => {
         await tx.$queryRaw`
           SELECT id FROM "TransferRequest"
@@ -207,7 +203,6 @@ export class TransfersService {
           include: { toClient: { select: { email: true, locale: true } } },
         });
       },
-      { isolationLevel: Prisma.TransactionIsolationLevel.Serializable },
     );
 
     await this.audit.log({
@@ -228,7 +223,8 @@ export class TransfersService {
   }
 
   async confirmRecipient(transferId: string, clientId: string, ipAddress?: string) {
-    const updated = await this.prisma.db.$transaction(
+    const updated = await runSerializable(
+      this.prisma.db,
       async (tx) => {
         await tx.$queryRaw`
           SELECT id FROM "TransferRequest"
@@ -251,7 +247,6 @@ export class TransfersService {
           },
         });
       },
-      { isolationLevel: Prisma.TransactionIsolationLevel.Serializable },
     );
 
     await this.audit.log({
@@ -282,7 +277,8 @@ export class TransfersService {
       throw new BadRequestException("errors.TRANSFER_NOT_CANCELLABLE");
     }
 
-    const updated = await this.prisma.db.$transaction(
+    const updated = await runSerializable(
+      this.prisma.db,
       async (tx) => {
         // Lock transfer and piece for atomic cancellation
         const [lockedTransfer] = await tx.$queryRaw<
@@ -320,9 +316,6 @@ export class TransfersService {
           },
         });
       },
-      {
-        isolationLevel: Prisma.TransactionIsolationLevel.Serializable,
-      },
     );
 
     await this.audit.log({
@@ -352,6 +345,7 @@ export class TransfersService {
     locale: Locale = "ar",
     status?: TransferStatus,
   ) {
+    // L-05: Limit result set to prevent unbounded response sizes
     const transfers = await this.prisma.db.transferRequest.findMany({
       where: {
         OR: [{ fromClientId: clientId }, { toClientId: clientId }],
@@ -365,6 +359,7 @@ export class TransfersService {
         toClient: { select: { displayName: true } },
       },
       orderBy: { initiatedAt: "desc" },
+      take: 100,
     });
 
     return transfers.map((t) => ({
@@ -414,6 +409,8 @@ export class TransfersService {
       toClientId: transfer.toClientId,
       piece: {
         ...localizePiece(transfer.piece, locale),
+        mainImageUrl: await this.storage.resolvePublicUrl(transfer.piece.mainImageUrl),
+        mainImageLqip: transfer.piece.mainImageLqip ?? null,
         imageUrls: await this.storage.resolvePublicUrls(transfer.piece.imageUrls),
       },
       fromClient: { displayName: transfer.fromClient.displayName },
@@ -461,7 +458,7 @@ export class TransfersService {
           transferType: true,
           initiatedAt: true,
           piece: {
-            select: { id: true, name: true, serialNumber: true, imageUrls: true },
+            select: { id: true, name: true, nameAr: true, serialNumber: true, mainImageUrl: true },
           },
           fromClient: { select: { id: true, displayName: true, email: true } },
           toClient: { select: { id: true, displayName: true, email: true } },
@@ -471,7 +468,7 @@ export class TransfersService {
     ]);
 
     const urlMap = await this.storage.resolvePublicUrlsBatch(
-      items.flatMap((t) => t.piece.imageUrls.slice(0, 1)),
+      items.map((t) => t.piece.mainImageUrl).filter(Boolean) as string[],
     );
 
     return {
@@ -480,10 +477,9 @@ export class TransfersService {
         needsReview: t.status === TransferStatus.DADAN_REVIEW,
         piece: {
           ...t.piece,
-          imageUrls: t.piece.imageUrls
-            .slice(0, 1)
-            .map((key) => urlMap.get(key))
-            .filter((url): url is string => !!url),
+          mainImageUrl: t.piece.mainImageUrl
+            ? (urlMap.get(t.piece.mainImageUrl) ?? null)
+            : null,
         },
       })),
       total,
@@ -528,7 +524,8 @@ export class TransfersService {
       throw new BadRequestException("Transfer is not awaiting review");
     }
 
-    await this.prisma.db.$transaction(
+    await runSerializable(
+      this.prisma.db,
       async (tx) => {
         // CR-04: Lock both transfer and piece rows for atomic approval
         const [lockedTransfer] = await tx.$queryRaw<
@@ -615,32 +612,28 @@ export class TransfersService {
         await tx.savedPiece.deleteMany({
           where: { pieceId: transfer.pieceId },
         });
-      },
-      {
-        isolationLevel: Prisma.TransactionIsolationLevel.Serializable,
+
+        // The outgoing certificate names the sender as owner, so it must stop
+        // being authoritative the moment ownership moves. Leaving that to the
+        // regeneration job opened a window — unbounded if the job was lost — in
+        // which the piece belonged to the recipient while a valid certificate
+        // still attested that the sender owned it.
+        await tx.certificate.updateMany({
+          where: { pieceId: transfer.pieceId, isActive: true },
+          data: { isActive: false },
+        });
+
+        // Recorded in this transaction so the recipient's certificate cannot be
+        // lost to a Redis outage in the gap between commit and enqueue.
+        await this.outbox.record(tx, {
+          pieceId: transfer.pieceId,
+          clientId: transfer.toClientId,
+          transferId: id,
+          regenerate: true,
+          adminId,
+        });
       },
     );
-
-    this.certificateQueue.add(
-      "regenerate-certificate",
-      {
-        pieceId: transfer.pieceId,
-        clientId: transfer.toClientId,
-        transferId: id,
-        regenerate: true,
-        adminId,
-      },
-      {
-        attempts: 5,
-        backoff: { type: "exponential", delay: 2000 },
-        removeOnComplete: true,
-        removeOnFail: 50,
-      },
-    ).catch((err) => {
-      this.logger.error(
-        `Failed to enqueue cert regeneration for piece ${transfer.pieceId}: ${err instanceof Error ? err.message : String(err)}`,
-      );
-    });
 
     await this.audit.log({
       actorType: ActorType.ADMIN,
@@ -686,7 +679,8 @@ export class TransfersService {
       throw new BadRequestException("Transfer is not awaiting review");
     }
 
-    await this.prisma.db.$transaction(
+    await runSerializable(
+      this.prisma.db,
       async (tx) => {
         // Lock transfer and piece for atomic rejection
         const [lockedTransfer] = await tx.$queryRaw<
@@ -723,9 +717,6 @@ export class TransfersService {
           where: { id: transfer.pieceId },
           data: { status: PieceStatus.OWNED },
         });
-      },
-      {
-        isolationLevel: Prisma.TransactionIsolationLevel.Serializable,
       },
     );
 

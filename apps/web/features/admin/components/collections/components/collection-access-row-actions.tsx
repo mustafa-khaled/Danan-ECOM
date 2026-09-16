@@ -3,6 +3,7 @@
 import { useState, useRef, useEffect } from "react";
 import Link from "next/link";
 import { Eye, Pencil, KeyRound, MoreVertical } from "lucide-react";
+import { useTranslations } from "next-intl";
 import type { AdminClientListItem } from "@/features/admin/types";
 
 interface CollectionAccessRowActionsProps {
@@ -10,6 +11,7 @@ interface CollectionAccessRowActionsProps {
 }
 
 export function CollectionAccessRowActions({ member }: CollectionAccessRowActionsProps) {
+  const t = useTranslations("admin");
   const [isOpen, setIsOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
 
@@ -46,7 +48,7 @@ export function CollectionAccessRowActions({ member }: CollectionAccessRowAction
       {isOpen && (
         <div
           onClick={(e) => e.stopPropagation()}
-          className="absolute right-0 top-full mt-1 z-30 w-40 rounded-lg border border-ds-border bg-ds-background shadow-lg py-1 animate-in fade-in zoom-in-95"
+          className="absolute end-0 top-full mt-1 z-30 w-40 rounded-lg border border-ds-border bg-ds-background shadow-lg py-1 animate-in fade-in zoom-in-95"
         >
           <Link
             href={`/admin/clients/${member.id}`}
@@ -54,7 +56,7 @@ export function CollectionAccessRowActions({ member }: CollectionAccessRowAction
             className="flex items-center gap-2 px-3 py-2 text-xs font-medium text-ds-text hover:bg-ds-surface hover:text-(--color-gold) transition-colors"
           >
             <Eye className="h-3.5 w-3.5" />
-            <span>View Profile</span>
+            <span>{t("rowActions.view")}</span>
           </Link>
           <Link
             href={`/admin/clients/${member.id}/edit`}
@@ -62,7 +64,7 @@ export function CollectionAccessRowActions({ member }: CollectionAccessRowAction
             className="flex items-center gap-2 px-3 py-2 text-xs font-medium text-ds-text hover:bg-ds-surface hover:text-(--color-gold) transition-colors"
           >
             <Pencil className="h-3.5 w-3.5" />
-            <span>Edit Access</span>
+            <span>{t("rowActions.edit")}</span>
           </Link>
           <button
             type="button"
@@ -72,7 +74,7 @@ export function CollectionAccessRowActions({ member }: CollectionAccessRowAction
             className="w-full flex items-center gap-2 px-3 py-2 text-xs font-medium text-ds-text hover:bg-ds-surface hover:text-(--color-gold) transition-colors text-left"
           >
             <KeyRound className="h-3.5 w-3.5" />
-            <span>Rotate House Key</span>
+            <span>{t("rowActions.rotateKey")}</span>
           </button>
         </div>
       )}

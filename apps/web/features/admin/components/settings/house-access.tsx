@@ -20,8 +20,10 @@ import {
   updateHouseSettings,
   type HouseSettings,
 } from "@/features/admin/api/fetch-admin-settings";
+import { useTranslations } from "next-intl";
 
 export default function HouseAccess() {
+  const t = useTranslations("admin.settings");
   const queryClient = useQueryClient();
   const settingsQuery = useQuery({
     queryKey: ["admin-house-settings"],
@@ -41,9 +43,9 @@ export default function HouseAccess() {
         <AccordionItem value="house">
           <AccordionTrigger className="py-[16px] px-6 border-b border-[#E1E4E8]">
             <div className="text-[#29343D]">
-              <h2 className="font-bold text-h5 leading-[100%]">House Access</h2>
+              <h2 className="font-bold text-h5 leading-[100%]">{t("houseAccess")}</h2>
               <p className="text-[12px] font-semibold mt-3">
-                Control how members enter the private House.
+                {t("houseAccessHint")}
               </p>
             </div>
           </AccordionTrigger>

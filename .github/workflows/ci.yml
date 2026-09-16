@@ -11,6 +11,7 @@
 #   build        — pnpm build
 #   docker-build — Docker image build verification + image vulnerability scan
 #   e2e          — Playwright end-to-end tests
+#   api-e2e      — NestJS integration tests (Postgres + Redis + seeded data)
 #
 # NOT included: automatic deployment. Deploy via deploy.sh from the server.
 #
@@ -193,6 +194,117 @@ jobs:
             apps/web/test-results/
           if-no-files-found: ignore
           retention-days: 7
+
+  # ---------------------------------------------------------------------------
+  # API integration tests — concurrent checkout, IDOR, order FSM, idempotency
+  #
+  # `pnpm test` cannot pick these up: apps/api/jest.config.js matches
+  # ".*\.spec\.ts$", which requires a literal dot before "spec" and so skips
+  # "*.e2e-spec.ts". They need a real Postgres + Redis + seeded database.
+  #
+  # Deliberately a separate job from the Playwright `e2e` one: this suite buys
+  # pieces and drives orders through their state machine, which would poison
+  # Playwright's checkout fixtures if both ran against the same database.
+  # ---------------------------------------------------------------------------
+  api-e2e:
+    name: API integration tests
+    needs: code-quality
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: dadan
+          POSTGRES_PASSWORD: dadan
+          POSTGRES_DB: dadan
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U dadan -d dadan"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+      redis:
+        image: redis:7-alpine
+        ports:
+          - 6379:6379
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    env:
+      CI: "true"
+      NODE_ENV: test
+      DATABASE_URL: postgresql://dadan:dadan@localhost:5432/dadan
+      REDIS_URL: redis://localhost:6379
+      JWT_SECRET: ci-test-jwt-secret-minimum-32-chars!!
+      ADMIN_JWT_SECRET: ci-test-admin-jwt-secret-min-32-chars!!
+      CERT_SIGNING_SECRET: ci-cert-signing-secret
+      BASE_URL: http://localhost:4000
+      WEB_ORIGIN: http://localhost:3000
+      COOKIE_SECURE: "false"
+      STORAGE_PROVIDER: local
+      STORAGE_LOCAL_PATH: /tmp/dadan-uploads
+      # Read by both the seed and the suite's admin login.
+      SEED_ADMIN_PASSWORD: ci-test-admin-password
+      # The suite hammers auth endpoints across many cases.
+      AUTH_RATE_LIMIT_MAX: "100"
+
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+
+      - uses: pnpm/action-setup@fc06bc1257f339d1d5d8b3a19a8cae5388b55320 # v4.4.0
+
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Generate Prisma client
+        working-directory: packages/db
+        run: pnpm exec prisma generate
+
+      - name: Run database migrations
+        working-directory: packages/db
+        run: pnpm exec prisma migrate deploy
+
+      # A field added to schema.prisma without a migration produces a client that
+      # queries a column the database does not have; the failure then surfaces at
+      # runtime as P2022 rather than in CI. Compares the just-migrated database
+      # against the schema, allowlisting the partial indexes Prisma cannot express.
+      - name: Check for schema drift
+        working-directory: packages/db
+        run: pnpm db:check-drift
+
+      - name: Build utils package (required by seed)
+        run: pnpm --filter @dadan/utils build
+
+      - name: Build storage package for seed assets
+        run: pnpm --filter @dadan/storage build
+
+      - name: Prepare upload directory
+        run: mkdir -p /tmp/dadan-uploads
+
+      - name: Seed database
+        env:
+          SEED_ALLOW_DESTRUCTIVE: "true"
+        working-directory: packages/db
+        run: pnpm exec tsx prisma/seed.ts
+
+      # Scoped to critical-paths for now. The sibling app.e2e-spec.ts has
+      # pre-existing failures unrelated to checkout (it shares this process's
+      # per-IP auth rate-limit budget, expects seed pieces that were renamed,
+      # and 500s on image upload); adding it here would make the job red on day
+      # one. Drop the pattern once that suite is repaired.
+      - name: Run API integration tests
+        run: pnpm --filter @dadan/api test:e2e --testPathPattern critical-paths
 
   # ---------------------------------------------------------------------------
   # Build — pnpm build (depends on code-quality)

@@ -4,6 +4,7 @@ import type { NestExpressApplication } from "@nestjs/platform-express";
 import { DocumentBuilder, SwaggerModule } from "@nestjs/swagger";
 import compression from "compression";
 import cookieParser from "cookie-parser";
+import express from "express";
 import helmet from "helmet";
 import { AppModule } from "./app.module";
 import { JsonLogger } from "./common/logger/json-logger.service";
@@ -34,14 +35,24 @@ async function bootstrap() {
     ),
   );
 
+  // L-04: Explicitly disable x-powered-by as defense-in-depth (Helmet also does this)
+  app.disable("x-powered-by");
   app.use(helmet());
   app.use(compression());
   app.use(cookieParser());
+
+  // L-02: Explicit body size limit to prevent memory exhaustion
+  app.use(express.json({ limit: "1mb" }));
+  app.use(express.urlencoded({ extended: true, limit: "1mb" }));
+  // M-02: Only allow the web frontend origin in CORS; the API should not CORS-trust itself.
+  // env.validation.ts requires WEB_ORIGIN in production, so a missing value here
+  // can only mean local development.
+  const webOrigin = process.env.WEB_ORIGIN;
+  if (!webOrigin && process.env.NODE_ENV === "production") {
+    throw new Error("WEB_ORIGIN is required in production");
+  }
   app.enableCors({
-    origin: [
-      process.env.WEB_ORIGIN ?? "http://localhost:3000",
-      process.env.BASE_URL,
-    ].filter((origin): origin is string => Boolean(origin)),
+    origin: [webOrigin ?? "http://localhost:3000"],
     credentials: true,
     methods: ["GET", "POST", "PUT", "PATCH", "DELETE"],
     allowedHeaders: ["Content-Type", "Authorization", "Accept-Language", "X-Request-ID"],
@@ -54,8 +65,8 @@ async function bootstrap() {
     }),
   );
 
-  // The catalog is private; never expose interactive API docs in production.
-  if (process.env.NODE_ENV !== "production") {
+  // M-11: Only expose Swagger in development (not staging/test) to limit reconnaissance
+  if (process.env.NODE_ENV === "development") {
     const swaggerConfig = new DocumentBuilder()
       .setTitle("DADAN API")
       .setDescription(

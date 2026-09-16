@@ -23,6 +23,7 @@ export interface AdminAnalytics {
   collectionPerformance: Array<{
     id: string;
     name: string;
+    nameAr?: string | null;
     views: number;
     saves: number;
     acquisitions: number;
@@ -30,6 +31,7 @@ export interface AdminAnalytics {
   membershipDistribution: Array<{
     classId: string;
     name: string;
+    nameAr?: string | null;
     count: number;
     percentage: number;
   }>;

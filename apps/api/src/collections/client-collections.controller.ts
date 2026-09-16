@@ -29,6 +29,7 @@ export class ClientCollectionsController {
     return this.collections.getCollectionBySlug(
       slug,
       client.classId,
+      client.clientId,
       query.page,
       query.limit,
       locale,

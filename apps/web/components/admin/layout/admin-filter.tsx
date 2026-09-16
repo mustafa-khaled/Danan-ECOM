@@ -2,6 +2,7 @@
 
 import { useRouter, usePathname, useSearchParams } from "next/navigation";
 import { useTransition } from "react";
+import { useTranslations } from "next-intl";
 
 interface AdminFilterProps {
   paramName: string;
@@ -15,6 +16,7 @@ export function AdminFilter({ paramName, label, options, includeAll = true }: Ad
   const pathname = usePathname();
   const searchParams = useSearchParams();
   const [isPending, startTransition] = useTransition();
+  const t = useTranslations("admin.common");
   const current = searchParams.get(paramName) ?? "";
 
   const handleChange = (value: string) => {
@@ -45,7 +47,7 @@ export function AdminFilter({ paramName, label, options, includeAll = true }: Ad
         disabled={isPending}
         className="rounded-(--radius-sm) border border-(--color-border) bg-(--color-surface) px-3 py-1.5 text-xs text-(--color-text) focus:border-(--color-accent) focus:outline-none"
       >
-        {includeAll && <option value="">All</option>}
+        {includeAll && <option value="">{t("all")}</option>}
         {options.map((opt) => (
           <option key={opt.value} value={opt.value}>
             {opt.label}

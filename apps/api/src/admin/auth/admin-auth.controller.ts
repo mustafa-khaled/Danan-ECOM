@@ -12,9 +12,11 @@ import { Throttle } from "@nestjs/throttler";
 import type { Request, Response } from "express";
 import { AdminAuthService } from "./admin-auth.service";
 import { AdminLoginDto } from "./dto/admin-login.dto";
+import { ChangePasswordDto } from "./dto/change-password.dto";
 import { AdminGuard } from "./guards/admin.guard";
 import { CurrentAdmin } from "./decorators/current-admin.decorator";
 import { AllowViewerWrite } from "./decorators/allow-viewer-write.decorator";
+import { AllowPasswordChangePending } from "./decorators/allow-password-change-pending.decorator";
 import { Public } from "../../common/decorators/public.decorator";
 import type { AdminSession } from "@dadan/types";
 import {
@@ -33,6 +35,7 @@ export class AdminAuthController {
   constructor(private readonly adminAuth: AdminAuthService) {}
 
   @Public()
+  @Throttle({ default: { limit: 5, ttl: 900_000 } })
   @Post("login")
   async login(
     @Body() dto: AdminLoginDto,
@@ -88,15 +91,44 @@ export class AdminAuthController {
     return { success: true };
   }
 
+  // Reachable while a rotation is pending so the UI can hydrate the session and
+  // route the admin to the change-password screen.
   @Get("me")
   @UseGuards(AdminGuard)
+  @AllowPasswordChangePending()
   getMe(@CurrentAdmin() admin: AdminSession) {
     return admin;
+  }
+
+  @Post("change-password")
+  @UseGuards(AdminGuard)
+  @AllowViewerWrite()
+  @AllowPasswordChangePending()
+  @Throttle({ default: { limit: 5, ttl: 900_000 } })
+  async changePassword(
+    @CurrentAdmin() admin: AdminSession,
+    @Body() dto: ChangePasswordDto,
+    @Req() req: Request,
+    @Res({ passthrough: true }) res: Response,
+  ) {
+    await this.adminAuth.changePassword(
+      admin.adminId,
+      dto.currentPassword,
+      dto.newPassword,
+      getClientIp(req),
+    );
+
+    // Clear cookies since all sessions are revoked
+    res.clearCookie(ADMIN_COOKIE, clearCookieOptions());
+    res.clearCookie(ADMIN_REFRESH_COOKIE, clearCookieOptions());
+
+    return { success: true };
   }
 
   @Post("logout")
   @UseGuards(AdminGuard)
   @AllowViewerWrite()
+  @AllowPasswordChangePending()
   async logout(
     @CurrentAdmin() admin: AdminSession,
     @Req() req: Request,
@@ -121,6 +153,7 @@ export class AdminAuthController {
   @Post("logout-all")
   @UseGuards(AdminGuard)
   @AllowViewerWrite()
+  @AllowPasswordChangePending()
   async logoutAll(
     @CurrentAdmin() admin: AdminSession,
     @Req() req: Request,

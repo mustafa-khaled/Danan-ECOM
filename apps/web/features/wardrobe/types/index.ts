@@ -5,6 +5,8 @@ export interface WardrobePiece {
   acquiredAt: string;
   name: string;
   slug: string;
+  mainImageUrl?: string | null;
+  mainImageLqip?: string | null;
   images: string[];
   collection: string;
   story?: string;

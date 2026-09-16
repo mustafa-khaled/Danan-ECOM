@@ -1,15 +1,14 @@
 import { Injectable, Logger, NotFoundException } from "@nestjs/common";
 import { Cron, CronExpression } from "@nestjs/schedule";
-import { randomUUID } from "node:crypto";
 import { ActorType, PieceStatus, Prisma } from "@dadan/db";
 import {
   collectionCoverKey,
-  collectionStoryImageKey,
   extFromMime,
 } from "@dadan/storage";
 import type { Locale } from "@dadan/types";
 import { AuditService } from "../audit/audit.service";
 import { PrismaService } from "../prisma/prisma.service";
+import { RedisService } from "../redis/redis.service";
 import { StorageService } from "../storage/storage.service";
 import { ImageProcessingService } from "../storage/image-processing.service";
 import { VisibilityService } from "../visibility/visibility.service";
@@ -17,6 +16,9 @@ import { MAX_CATALOG_ROWS, paginationParams } from "../common/constants";
 import { localizeSpecifications, pickLocalized } from "../common/i18n/localize";
 
 const PIECE_FILE_RETENTION_DAYS = 30;
+
+/** One view per client per collection per hour. */
+const VIEW_DEDUP_SECONDS = 3600;
 
 const CLASS_SELECT = {
   id: true,
@@ -27,8 +29,11 @@ const CLASS_SELECT = {
 
 @Injectable()
 export class CollectionsService {
+  private readonly logger = new Logger(CollectionsService.name);
+
   constructor(
     private readonly prisma: PrismaService,
+    private readonly redis: RedisService,
     private readonly visibility: VisibilityService,
     private readonly audit: AuditService,
     private readonly storage: StorageService,
@@ -81,6 +86,7 @@ export class CollectionsService {
   async getCollectionBySlug(
     slug: string,
     classId: string,
+    clientId: string,
     page?: number,
     limit?: number,
     locale: Locale = "ar",
@@ -101,10 +107,27 @@ export class CollectionsService {
       status: PieceStatus.AVAILABLE,
       currentOwnerId: null,
     };
-    void this.prisma.db.collection.update({
-      where: { id: collection.id },
-      data: { viewCount: { increment: 1 } },
-    });
+
+    // H-04: Deduplicate view counts per client per hour via Redis. The claim is
+    // atomic — a check-then-set let concurrent requests from one client each
+    // count a view — and it is released if the increment does not land, so a
+    // dropped view is retried rather than silently lost for the hour.
+    const viewKey = `views:${collection.id}:${clientId}`;
+    if (await this.redis.setIfAbsent(viewKey, "1", VIEW_DEDUP_SECONDS)) {
+      try {
+        await this.prisma.db.collection.update({
+          where: { id: collection.id },
+          data: { viewCount: { increment: 1 } },
+        });
+      } catch (error) {
+        await this.redis.del(viewKey);
+        this.logger.warn(
+          `Failed to record view for collection ${collection.id}: ${
+            error instanceof Error ? error.message : String(error)
+          }`,
+        );
+      }
+    }
 
     const [paginated, total] = await Promise.all([
       this.prisma.db.piece.findMany({
@@ -123,15 +146,15 @@ export class CollectionsService {
           materialAr: true,
           price: true,
           currency: true,
-          imageUrls: true,
-          imageLqips: true,
+          mainImageUrl: true,
+          mainImageLqip: true,
         },
       }),
       this.prisma.db.piece.count({ where: pieceWhere }),
     ]);
 
     const urlMap = await this.storage.resolvePublicUrlsBatch(
-      paginated.flatMap((piece) => piece.imageUrls),
+      paginated.map((piece) => piece.mainImageUrl).filter(Boolean) as string[],
     );
 
     return {
@@ -154,10 +177,10 @@ export class CollectionsService {
         material: pickLocalized(locale, piece.material, piece.materialAr),
         price: piece.price,
         currency: piece.currency,
-        imageUrls: piece.imageUrls
-          .map((key) => urlMap.get(key))
-          .filter((url): url is string => !!url),
-        imageLqips: piece.imageLqips ?? [],
+        mainImageUrl: piece.mainImageUrl
+          ? (urlMap.get(piece.mainImageUrl) ?? null)
+          : null,
+        mainImageLqip: piece.mainImageLqip ?? null,
       })),
       total,
       page: p,
@@ -202,6 +225,8 @@ export class CollectionsService {
       material: pickLocalized(locale, piece.material, piece.materialAr),
       weight: piece.weight,
       dimensions: pickLocalized(locale, piece.dimensions, piece.dimensionsAr),
+      mainImageUrl: await this.storage.resolvePublicUrl(piece.mainImageUrl),
+      mainImageLqip: piece.mainImageLqip ?? null,
       imageUrls: await this.storage.resolvePublicUrls(piece.imageUrls),
       imageLqips: piece.imageLqips ?? [],
       price: piece.price,
@@ -318,15 +343,6 @@ export class CollectionsService {
         isVisible: true,
         sortOrder: true,
         viewCount: true,
-        origin: true,
-        originAr: true,
-        meaning: true,
-        meaningAr: true,
-        inspiration: true,
-        inspirationAr: true,
-        storyContent: true,
-        storyContentAr: true,
-        storyImageUrls: true,
         createdAt: true,
         updatedAt: true,
         classes: { select: { class: { select: CLASS_SELECT } } },
@@ -342,15 +358,10 @@ export class CollectionsService {
       }),
     ]);
 
-    const { classes, storyImageUrls, ...rest } = collection;
-    const hasStory = Boolean(
-      collection.origin || collection.meaning || collection.inspiration || collection.storyContent,
-    );
-
+    const { classes, ...rest } = collection;
     return {
       ...rest,
       coverImageUrl: await this.storage.resolvePublicUrl(collection.coverImageUrl),
-      storyImageUrls: await this.storage.resolvePublicUrls(storyImageUrls),
       classes: classes.map((row) => row.class),
       stats: {
         pieceCount,
@@ -358,7 +369,6 @@ export class CollectionsService {
         transferCount,
       },
       health: {
-        hasStory,
         hasCover: Boolean(collection.coverImageUrl),
         hasPieces: pieceCount > 0,
         hasAccessRules: classes.length > 0,
@@ -440,14 +450,6 @@ export class CollectionsService {
       coverImageUrl?: string;
       isVisible?: boolean;
       sortOrder?: number;
-      origin?: string;
-      originAr?: string;
-      meaning?: string;
-      meaningAr?: string;
-      inspiration?: string;
-      inspirationAr?: string;
-      storyContent?: string;
-      storyContentAr?: string;
       classIds?: string[];
     },
     ipAddress?: string,
@@ -534,46 +536,6 @@ export class CollectionsService {
     };
   }
 
-  async uploadStoryImage(
-    adminId: string,
-    id: string,
-    buffer: Buffer,
-    contentType: string,
-    ipAddress?: string,
-  ) {
-    const collection = await this.prisma.db.collection.findUnique({
-      where: { id },
-      select: { id: true, storyImageUrls: true },
-    });
-    if (!collection) throw new NotFoundException("errors.COLLECTION_NOT_FOUND");
-
-    const fileId = randomUUID();
-    const ext = extFromMime(contentType);
-    const key = collectionStoryImageKey(id, fileId, ext);
-    const variants = await this.imageProcessing.processAndUpload(buffer, key, contentType);
-
-    const updated = await this.prisma.db.collection.update({
-      where: { id },
-      data: { storyImageUrls: { push: variants.webp } },
-      select: { id: true, storyImageUrls: true },
-    });
-
-    await this.audit.log({
-      actorType: ActorType.ADMIN,
-      actorId: adminId,
-      action: "COLLECTION_UPDATED",
-      targetType: "Collection",
-      targetId: id,
-      metadata: { storyImage: variants.webp },
-      ipAddress,
-    });
-
-    return {
-      id: updated.id,
-      storyImageUrls: await this.storage.resolvePublicUrls(updated.storyImageUrls),
-    };
-  }
-
   async deleteCollection(adminId: string, id: string, ipAddress?: string) {
     const collection = await this.prisma.db.collection.update({
       where: { id },
@@ -595,17 +557,21 @@ export class CollectionsService {
   async deletePieceFiles(pieceId: string): Promise<{ deleted: number; errors: number }> {
     const piece = await this.prisma.db.piece.findUnique({
       where: { id: pieceId },
-      select: { imageUrls: true },
+      select: { mainImageUrl: true, imageUrls: true },
     });
 
-    if (!piece?.imageUrls?.length) {
+    const allKeys = [
+      ...(piece?.mainImageUrl ? [piece.mainImageUrl] : []),
+      ...(piece?.imageUrls ?? []),
+    ];
+    if (allKeys.length === 0) {
       return { deleted: 0, errors: 0 };
     }
 
     let deleted = 0;
     let errors = 0;
 
-    for (const key of piece.imageUrls) {
+    for (const key of allKeys) {
       try {
         const exists = await this.storage.exists(key);
         if (exists) {
@@ -652,7 +618,7 @@ export class PieceCleanupService {
       where: {
         isActive: false,
         updatedAt: { lte: retentionDate },
-        imageUrls: { isEmpty: false },
+        OR: [{ mainImageUrl: { not: null } }, { imageUrls: { isEmpty: false } }],
       },
       select: { id: true },
     });
@@ -676,7 +642,7 @@ export class PieceCleanupService {
       if (deleted > 0) {
         await this.prisma.db.piece.update({
           where: { id: piece.id },
-          data: { imageUrls: [], imageLqips: [] },
+          data: { mainImageUrl: null, mainImageLqip: null, imageUrls: [], imageLqips: [] },
         });
       }
     }

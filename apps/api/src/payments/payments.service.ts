@@ -1,11 +1,13 @@
 import { createHmac, timingSafeEqual } from "node:crypto";
 import { Injectable, Logger } from "@nestjs/common";
 import { ConfigService } from "@nestjs/config";
-import { ActorType, OrderStatus, Prisma } from "@dadan/db";
+import { Cron, CronExpression } from "@nestjs/schedule";
+import { ActorType, OrderStatus, PaymentStatus, Prisma } from "@dadan/db";
 import { AuditService } from "../audit/audit.service";
 import { OrdersService } from "../orders/orders.service";
 import { RedisService } from "../redis/redis.service";
 import { webhookReplayKey } from "../common/constants";
+import { withCronLease } from "../common/cron/cron-lease";
 
 export interface PaymentResult {
   success: boolean;
@@ -46,6 +48,8 @@ export interface ChargeParams {
 /** Subset of the Tap charge object used by this service. */
 export interface TapCharge {
   id: string;
+  /** Tap's discriminator. `"charge"` here; refunds and invoices reuse the webhook. */
+  object?: string;
   status: string;
   amount: number;
   currency: string;
@@ -53,6 +57,34 @@ export interface TapCharge {
   transaction?: { url?: string; created?: string };
   reference?: { gateway?: string; payment?: string };
   metadata?: Record<string, string>;
+}
+
+/**
+ * Webhook bodies arrive unvalidated: the global `ValidationPipe` skips them
+ * because `TapCharge` is an interface, and a DTO class would be worse — with
+ * `forbidNonWhitelisted` it would strip the nested `reference` / `transaction`
+ * fields the signature is computed over.
+ *
+ * Rejecting here rather than in `verifyWebhookSignature` keeps a malformed post
+ * a 401 instead of a 500, and stops non-charge objects (a refund delivered to
+ * the same URL carries `status: "REFUNDED"`, which classifies as a failure)
+ * from ever reaching the order state machine.
+ */
+export function isTapChargeEvent(body: unknown): body is TapCharge {
+  if (typeof body !== "object" || body === null) return false;
+  const charge = body as Partial<TapCharge>;
+  return (
+    // Absent on older Tap payloads, so only a *wrong* value is disqualifying.
+    (charge.object === undefined || charge.object === "charge") &&
+    typeof charge.id === "string" &&
+    charge.id.length > 0 &&
+    typeof charge.status === "string" &&
+    charge.status.length > 0 &&
+    typeof charge.currency === "string" &&
+    charge.currency.length > 0 &&
+    typeof charge.amount === "number" &&
+    Number.isFinite(charge.amount)
+  );
 }
 
 type PaymentProvider = "mock" | "tap";
@@ -91,6 +123,19 @@ function currencyDecimals(currency: string): number {
  */
 const WEBHOOK_REPLAY_TTL_SECONDS = 7 * 24 * 60 * 60;
 
+/**
+ * How long a claimed-but-unfinished delivery blocks a retry. Short, because it
+ * is only a backstop for a process that died mid-handler — the handler releases
+ * its own claim on error.
+ */
+const WEBHOOK_IN_FLIGHT_SECONDS = 120;
+
+/**
+ * Held for less than the 5-minute cron interval so a crashed sweep resumes on
+ * the next tick, but long enough to cover a full batch of 30s Tap lookups.
+ */
+const RECONCILE_LEASE_SECONDS = 4 * 60;
+
 @Injectable()
 export class PaymentsService {
   private readonly logger = new Logger(PaymentsService.name);
@@ -99,6 +144,8 @@ export class PaymentsService {
   private readonly webhookSecret: string | undefined;
   private readonly webhookUrl: string | undefined;
   private readonly redirectUrl: string;
+  /** Guards the reconciliation sweep against overlapping with itself. */
+  private reconciling = false;
 
   constructor(
     private readonly config: ConfigService,
@@ -127,31 +174,16 @@ export class PaymentsService {
       this.logger.warn("Payment provider: Mock (no real payments will be processed)");
     }
 
-    // Tap signs webhooks with the merchant secret API key by default, but
-    // reusing it here means anyone holding the API key of *any* environment
-    // sharing the Tap account can forge webhooks for this one. Production must
-    // therefore configure a dedicated webhook secret in the Tap dashboard.
+    // Tap issues no dedicated webhook secret: the `hashstring` header is an
+    // HMAC keyed with the same secret API key used for Bearer auth, so that key
+    // is the correct default here. PAYMENT_PROVIDER_SECRET stays supported only
+    // for merchants Tap has given a separate signing key.
+    // https://developers.tap.company/docs/webhook
     const webhookSecret = config.get<string>("PAYMENT_PROVIDER_SECRET");
-    if (this.provider === "tap" && config.get<string>("NODE_ENV") === "production") {
-      if (!webhookSecret) {
-        throw new Error(
-          "PAYMENT_PROVIDER_SECRET is required in production. Configure a " +
-            "dedicated webhook secret in the Tap dashboard instead of reusing " +
-            "PAYMENT_PROVIDER_KEY to sign webhooks.",
-        );
-      }
-      if (webhookSecret === providerKey) {
-        throw new Error(
-          "PAYMENT_PROVIDER_SECRET must differ from PAYMENT_PROVIDER_KEY so a " +
-            "leaked API key cannot be used to sign forged webhooks.",
-        );
-      }
-    }
     this.webhookSecret = webhookSecret || this.secretKey;
-    if (this.provider === "tap" && !webhookSecret) {
-      this.logger.warn(
-        "PAYMENT_PROVIDER_SECRET is not set; falling back to the Tap API key " +
-          "for webhook signature verification (not permitted in production).",
+    if (this.provider === "tap" && webhookSecret) {
+      this.logger.log(
+        "Verifying payment webhooks with PAYMENT_PROVIDER_SECRET instead of the Tap API key",
       );
     }
     this.webhookUrl = config.get<string>("PAYMENT_WEBHOOK_URL") || undefined;
@@ -183,9 +215,6 @@ export class PaymentsService {
       Authorization: `Bearer ${this.secretKey}`,
       "Content-Type": "application/json",
     };
-    if (params.idempotencyKey) {
-      headers["Idempotency-Key"] = params.idempotencyKey;
-    }
 
     const body = JSON.stringify({
       // Tap rejects amounts carrying more precision than the currency allows.
@@ -199,6 +228,19 @@ export class PaymentsService {
       save_card: false,
       description: "DADAN Dijital purchase",
       statement_descriptor: "DADAN",
+      // Stated explicitly so the relationship with CHECKOUT_HOLD_MINUTES (35) is
+      // visible: the charge must expire before we release the pieces, never after.
+      transaction: { expiry: { period: 30, type: "MINUTE" } },
+      // Tap reads idempotency from `reference.idempotent`, not from a header, and
+      // honours it for 24h. Without it the retry loop below could turn an
+      // aborted-but-successful request into a second charge.
+      // https://developers.tap.company/docs/idempotency
+      reference: {
+        ...(params.idempotencyKey ? { idempotent: params.idempotencyKey } : {}),
+        ...(params.metadata.orderId
+          ? { order: params.metadata.orderId, transaction: params.metadata.orderId }
+          : {}),
+      },
       metadata: { ...params.metadata, paymentMethod: params.paymentMethod },
       customer: {
         first_name: firstName ?? "DADAN",
@@ -398,9 +440,13 @@ export class PaymentsService {
           },
           body: JSON.stringify({
             charge_id: providerReference,
-            amount,
+            // Tap rejects more precision than the currency allows.
+            amount: Number(amount.toFixed(currencyDecimals(currency))),
             currency: currency.toUpperCase(),
             reason: "requested_by_customer",
+            // Keyed to the charge so `RefundRecoveryService`'s retries — and the
+            // compensating refund in `CartService` — cannot refund twice.
+            reference: { idempotent: `refund_${providerReference}` },
           }),
           signal: controller.signal,
         });
@@ -499,16 +545,35 @@ export class PaymentsService {
    */
   async handleChargeEvent(charge: TapCharge): Promise<void> {
     // Tap has no nonce and retries deliveries, so a captured (charge, status)
-    // pair stays replayable forever once observed. Collapse repeats here
-    // rather than relying on order state alone.
+    // pair stays replayable forever once observed. The claim is atomic because a
+    // check-then-set let two concurrent deliveries of the same charge both pass
+    // the check and both act on it.
     const replayKey = webhookReplayKey(charge.id, charge.status);
-    if (await this.redis.exists(replayKey)) {
+    const claimed = await this.redis.setIfAbsent(
+      replayKey,
+      "1",
+      WEBHOOK_IN_FLIGHT_SECONDS,
+    );
+    if (!claimed) {
       this.logger.warn(
         `Ignoring replayed Tap webhook for charge ${charge.id} (${charge.status})`,
       );
       return;
     }
 
+    try {
+      await this.processChargeEvent(charge, replayKey);
+    } catch (error) {
+      // Release the claim so Tap's next retry is processed rather than ignored.
+      await this.redis.del(replayKey);
+      throw error;
+    }
+  }
+
+  private async processChargeEvent(
+    charge: TapCharge,
+    replayKey: string,
+  ): Promise<void> {
     const order = await this.orders.findOrderForCharge(
       charge.id,
       charge.metadata?.orderId,
@@ -573,6 +638,38 @@ export class PaymentsService {
           targetId: order.id,
           metadata: { chargeId: charge.id },
         });
+      } else if (
+        order.paymentStatus === PaymentStatus.PAID &&
+        order.paymentReference === charge.id
+      ) {
+        // A duplicate delivery for the charge that already settled this order.
+        this.logger.log(
+          `Charge ${charge.id} already settled order ${order.id}; nothing to do`,
+        );
+      } else {
+        // Money captured with nowhere to land — the order was cancelled or
+        // failed before this delivery arrived. Queue the refund we owe rather
+        // than dropping the event, which previously left the customer charged
+        // for pieces that had already been released.
+        await this.audit.log({
+          actorType: ActorType.SYSTEM,
+          actorId: "tap-webhook",
+          action: "PAYMENT_CAPTURED_WITHOUT_OPEN_ORDER",
+          targetType: "Order",
+          targetId: order.id,
+          metadata: {
+            chargeId: charge.id,
+            chargeAmount: charge.amount,
+            chargeCurrency: charge.currency,
+            orderStatus: order.status,
+            orderPaymentStatus: order.paymentStatus,
+          },
+        });
+        await this.orders.recordUnmatchedCapture(order, charge);
+        this.logger.error(
+          `Charge ${charge.id} captured ${charge.amount} ${charge.currency} but ` +
+            `order ${order.id} is ${order.status}/${order.paymentStatus} — refund queued`,
+        );
       }
       await this.markWebhookProcessed(replayKey);
       return;
@@ -605,10 +702,130 @@ export class PaymentsService {
   }
 
   /**
-   * Recorded only after the event has been acted on, so a delivery that threw
-   * mid-processing is still retryable by Tap.
+   * Extends the in-flight claim to the full replay window. Only called once the
+   * event has been acted on, so a delivery that threw mid-processing keeps the
+   * short TTL and stays retryable.
    */
   private async markWebhookProcessed(replayKey: string): Promise<void> {
     await this.redis.setWithExpiry(replayKey, "1", WEBHOOK_REPLAY_TTL_SECONDS);
+  }
+
+  /**
+   * Safety net for a webhook that never arrived. Tap only retries a delivery
+   * twice before giving up, and a cardholder who closes the browser mid-3DS
+   * never hits the return URL either — so without this an order could be
+   * cancelled (releasing its pieces) while the customer's card was charged.
+   *
+   * Runs after the order's own TTL has elapsed, by which point Tap's 30-minute
+   * transaction window has closed and the charge status is final.
+   */
+  @Cron(CronExpression.EVERY_5_MINUTES)
+  async reconcileStalePendingOrders(): Promise<void> {
+    // The in-process flag only stops this instance overlapping itself; the Redis
+    // lease stops every other replica running the same sweep, which would issue
+    // duplicate gateway calls for the same orders.
+    if (this.reconciling) {
+      this.logger.warn("Skipping reconciliation sweep: previous run still in progress");
+      return;
+    }
+    this.reconciling = true;
+    try {
+      await withCronLease(
+        this.redis,
+        "payments:reconcile-stale-orders",
+        RECONCILE_LEASE_SECONDS,
+        this.logger,
+        async () => {
+          const stale = await this.orders.findStalePendingOrders();
+          for (const order of stale) {
+            if (!order.paymentReference) continue;
+            try {
+              await this.reconcileStaleOrder(order);
+            } catch (error) {
+              this.logger.error(
+                `Failed to reconcile stale order ${order.id}: ${error instanceof Error ? error.message : String(error)}`,
+              );
+            }
+          }
+        },
+      );
+    } finally {
+      this.reconciling = false;
+    }
+  }
+
+  private async reconcileStaleOrder(order: {
+    id: string;
+    paymentReference: string | null;
+    totalAmount: Prisma.Decimal | number | string;
+    currency: string;
+  }): Promise<void> {
+    const reference = order.paymentReference!;
+
+    // The mock provider has no authoritative remote state, so there is nothing
+    // to recover — treat the order as abandoned exactly as before.
+    if (this.provider !== "tap") {
+      await this.orders.failOrderPayment(order.id, "PENDING_ORDER_EXPIRED");
+      return;
+    }
+
+    const charge = await this.retrieveCharge(reference);
+    if (!charge) {
+      // Could be a transient Tap outage. Leaving the order PENDING keeps its
+      // pieces held for one more sweep, which is far cheaper than cancelling an
+      // order whose payment we could not rule out.
+      this.logger.warn(
+        `Leaving order ${order.id} pending: charge ${reference} could not be retrieved`,
+      );
+      return;
+    }
+
+    const status = this.classifyChargeStatus(charge);
+
+    if (status === "captured") {
+      if (!this.chargeSettlesOrder(charge, order)) {
+        await this.audit.log({
+          actorType: ActorType.SYSTEM,
+          actorId: "reconciliation",
+          action: "PAYMENT_RECONCILE_AMOUNT_MISMATCH",
+          targetType: "Order",
+          targetId: order.id,
+          metadata: {
+            chargeId: charge.id,
+            chargeAmount: charge.amount,
+            chargeCurrency: charge.currency,
+            orderAmount: String(order.totalAmount),
+            orderCurrency: order.currency,
+          },
+        });
+        this.logger.error(
+          `Refusing to settle order ${order.id}: charge ${charge.id} settles ` +
+            `${charge.amount} ${charge.currency} but the order totals ` +
+            `${String(order.totalAmount)} ${order.currency}`,
+        );
+        return;
+      }
+
+      await this.orders.confirmOrderPayment(order.id, { paymentReference: charge.id });
+      await this.audit.log({
+        actorType: ActorType.SYSTEM,
+        actorId: "reconciliation",
+        action: "ORDER_RECOVERED_FROM_MISSED_WEBHOOK",
+        targetType: "Order",
+        targetId: order.id,
+        metadata: { chargeId: charge.id, chargeStatus: charge.status },
+      });
+      this.logger.warn(
+        `Recovered order ${order.id} from captured charge ${charge.id} that no webhook delivered`,
+      );
+      return;
+    }
+
+    // Either a terminal failure, or still un-authenticated past Tap's expiry —
+    // both mean the charge can no longer capture, so release the pieces.
+    await this.orders.failOrderPayment(
+      order.id,
+      status === "failed" ? charge.status : "PENDING_ORDER_EXPIRED",
+    );
   }
 }

@@ -78,7 +78,7 @@ export default async function CollectionDetailPage({
                     piece={{
                       id: piece.id,
                       name: piece.name,
-                      imageUrl: piece.imageUrls[0],
+                      imageUrl: piece.mainImageUrl ?? undefined,
                     }}
                   />
                 </Link>

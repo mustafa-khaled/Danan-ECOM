@@ -243,6 +243,8 @@ export class NotificationsService {
       });
       this.logger.log(`Email sent to ${to}: ${subject}`);
     } catch (error) {
+      // L-06: TODO — Consider adding a retry queue (e.g., BullMQ) for critical emails
+      // (order confirmations, transfer notifications) instead of fire-and-forget.
       this.logger.error(`Failed to send email to ${to}: ${error}`);
     }
   }
@@ -307,5 +309,29 @@ export class NotificationsService {
     void this.sendTemplatedEmail(to, "orderPlaced", this.normalizeLocale(data.locale), {
       orderId: data.orderId,
     });
+  }
+
+  sendStaffCreatedEmail(
+    to: string,
+    data: { displayName: string; temporaryPassword: string },
+  ) {
+    const subject = "Your admin account has been created";
+    const text = [
+      `Hello ${data.displayName},`,
+      "",
+      "Your admin account has been created. Please log in with the temporary password below and change it immediately.",
+      "",
+      `Temporary Password: ${data.temporaryPassword}`,
+      "",
+      "You will be required to change your password on first login.",
+    ].join("\n");
+    const html = [
+      `<h2>Welcome, ${data.displayName}</h2>`,
+      "<p>Your admin account has been created. Please log in with the temporary password below and change it immediately.</p>",
+      `<p><strong>Temporary Password:</strong> <code>${data.temporaryPassword}</code></p>`,
+      "<p><em>You will be required to change your password on first login.</em></p>",
+    ].join("");
+
+    void this.sendEmail(to, subject, text, html);
   }
 }

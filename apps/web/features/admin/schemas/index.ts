@@ -13,3 +13,10 @@ export {
   type CreateClientFormValues,
   type UpdateClientFormValues,
 } from "./client";
+
+export {
+  registerPieceSchema,
+  updatePieceFormSchema,
+  type RegisterPieceFormValues,
+  type UpdatePieceFormValues,
+} from "./piece";

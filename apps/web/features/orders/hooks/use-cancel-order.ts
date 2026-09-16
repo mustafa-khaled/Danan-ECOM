@@ -1,18 +1,16 @@
 "use client";
 
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { useRouter } from "next/navigation";
+import { ordersKeys } from "@/shared/lib/query-keys";
 import { cancelOrder as cancelOrderApi } from "../api/cancel-order";
 
 export function useCancelOrder() {
   const queryClient = useQueryClient();
-  const router = useRouter();
 
   const { mutateAsync: cancelOrder, isPending, error } = useMutation({
     mutationFn: (orderId: string) => cancelOrderApi(orderId),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["orders"] });
-      router.refresh();
+      queryClient.invalidateQueries({ queryKey: ordersKeys.all });
     },
   });
 

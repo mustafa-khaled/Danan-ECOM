@@ -3,6 +3,7 @@
 import { useState, useRef, useEffect } from "react";
 import Link from "next/link";
 import { Eye, Pencil, EllipsisVertical } from "lucide-react";
+import { useTranslations } from "next-intl";
 import type { AdminCollectionListItem } from "@/features/admin/types";
 
 interface CollectionRowActionsProps {
@@ -12,6 +13,7 @@ interface CollectionRowActionsProps {
 export function CollectionRowActions({
   collection,
 }: CollectionRowActionsProps) {
+  const t = useTranslations("admin");
   const [isOpen, setIsOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
 
@@ -48,7 +50,7 @@ export function CollectionRowActions({
       {isOpen && (
         <div
           onClick={(e) => e.stopPropagation()}
-          className="absolute right-0 top-full mt-1 z-30 w-36 rounded-lg border border-ds-border bg-ds-background shadow-lg py-1 animate-in fade-in zoom-in-95"
+          className="absolute end-0 top-full mt-1 z-30 w-36 rounded-lg border border-ds-border bg-ds-background shadow-lg py-1 animate-in fade-in zoom-in-95"
         >
           <Link
             href={`/admin/collections/${collection.id}`}
@@ -56,7 +58,7 @@ export function CollectionRowActions({
             className="flex items-center gap-2 px-3 py-2 text-xs font-medium text-ds-text hover:bg-ds-surface hover:text-(--color-gold) transition-colors"
           >
             <Eye className="h-3.5 w-3.5" />
-            <span>View Details</span>
+            <span>{t("rowActions.view")}</span>
           </Link>
           <Link
             href={`/admin/collections/${collection.id}/edit`}
@@ -64,7 +66,7 @@ export function CollectionRowActions({
             className="flex items-center gap-2 px-3 py-2 text-xs font-medium text-ds-text hover:bg-ds-surface hover:text-(--color-gold) transition-colors"
           >
             <Pencil className="h-3.5 w-3.5" />
-            <span>Edit Collection</span>
+            <span>{t("rowActions.edit")}</span>
           </Link>
         </div>
       )}

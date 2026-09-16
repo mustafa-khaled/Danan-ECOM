@@ -2,6 +2,7 @@ import {
   Controller,
   Get,
   Param,
+  ParseUUIDPipe,
   Query,
   UseGuards,
 } from "@nestjs/common";
@@ -46,7 +47,7 @@ export class ClientWardrobeController {
   getOne(
     @CurrentClient() client: ClientSession,
     @CurrentLocale() locale: Locale,
-    @Param("pieceId") pieceId: string,
+    @Param("pieceId", ParseUUIDPipe) pieceId: string,
   ) {
     return this.pieces.getWardrobePiece(client.clientId, pieceId, locale);
   }

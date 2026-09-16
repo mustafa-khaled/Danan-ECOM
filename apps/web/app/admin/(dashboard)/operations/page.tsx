@@ -11,8 +11,15 @@ import {
   fetchAdminOperations,
   fetchAdminOperationsStats,
 } from "@/features/admin/api/fetch-admin-operations";
+import { useTranslations } from "next-intl";
+import { useLocale } from "next-intl";
+import type { Locale } from "@/i18n/routing";
+import { pickLocalized } from "@/shared/lib/pick-localized";
+import { formatAdminDate } from "@/shared/utils/format";
 
 export default function OperationsPage() {
+  const t = useTranslations("admin");
+  const locale = useLocale() as Locale;
   const [searchValue, setSearchValue] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
   const [transferFilter, setTransferFilter] = useState("all");
@@ -35,36 +42,37 @@ export default function OperationsPage() {
   const operations: OperationItem[] = useMemo(() => {
     return (operationsQuery.data?.items ?? [])
       .filter((item) => transferFilter === "all" || item.transferType === transferFilter)
-      .map((item) => ({
-        id: item.id,
-        kind: item.kind,
-        requestNumber: item.requestNumber,
-        title: item.title,
-        type: item.type as OperationItem["type"],
-        transferType: item.transferType as OperationItem["transferType"],
-        memberName: item.memberName,
-        memberEmail: item.memberEmail,
-        date: new Date(item.date).toLocaleDateString("en-GB", {
-          day: "2-digit",
-          month: "short",
-          year: "numeric",
-        }),
-        status: item.status as OperationItem["status"],
-        pieceName: item.pieceName,
-      }));
-  }, [operationsQuery.data, transferFilter]);
+      .map((item) => {
+        const pieceName = pickLocalized(locale, item.pieceName ?? "", item.pieceNameAr);
+        return {
+          id: item.id,
+          kind: item.kind,
+          requestNumber: item.requestNumber,
+          title: item.kind === "transfer" && pieceName
+            ? `${pieceName} ${t("operations.transferSuffix")}`
+            : item.title,
+          type: item.type as OperationItem["type"],
+          transferType: item.transferType as OperationItem["transferType"],
+          memberName: item.memberName,
+          memberEmail: item.memberEmail,
+          date: formatAdminDate(item.date, locale),
+          status: item.status as OperationItem["status"],
+          pieceName,
+        };
+      });
+  }, [operationsQuery.data, transferFilter, locale, t]);
 
   const stats = [
-    { id: 1, title: "Pending Requests", count: statsQuery.data?.pending ?? 0 },
-    { id: 2, title: "Transfer Requests", count: statsQuery.data?.transfers ?? 0 },
-    { id: 3, title: "Access Requests", count: statsQuery.data?.access ?? 0 },
-    { id: 4, title: "Completed Requests", count: statsQuery.data?.completed ?? 0 },
+    { id: 1, title: t("operations.pendingRequests"), count: statsQuery.data?.pending ?? 0 },
+    { id: 2, title: t("operations.transferRequests"), count: statsQuery.data?.transfers ?? 0 },
+    { id: 3, title: t("operations.accessRequests"), count: statsQuery.data?.access ?? 0 },
+    { id: 4, title: t("operations.completedRequests"), count: statsQuery.data?.completed ?? 0 },
   ];
 
   return (
     <>
       <div className="bg-white h-15 px-7.5 flex items-center font-bold text-h5 text-neutral-800">
-        Manage pending requests and operational activities across the DADAN House.
+        {t("operations.banner")}
       </div>
 
       <div className="px-7.5 py-6.75">

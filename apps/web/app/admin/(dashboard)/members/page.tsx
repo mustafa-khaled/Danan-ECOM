@@ -11,32 +11,33 @@ import { fetchAdminClients } from "@/features/admin/api/fetch-admin-clients";
 import { fetchAdminClasses } from "@/features/admin/api/fetch-admin-classes";
 import { fetchAdminClientStats } from "@/features/admin/api/fetch-admin-stats";
 import type { AdminClientListItem } from "@/features/admin/types";
+import { useTranslations } from "next-intl";
+import { useLocale } from "next-intl";
+import type { Locale } from "@/i18n/routing";
+import { pickLocalized } from "@/shared/lib/pick-localized";
+import { formatAdminDate } from "@/shared/utils/format";
 
-function formatDate(value?: string | null) {
-  if (!value) return "";
-  return new Date(value).toLocaleDateString("en-GB", {
-    day: "2-digit",
-    month: "short",
-    year: "numeric",
-  });
-}
-
-function mapClient(client: AdminClientListItem): MemberListItem {
+function mapClient(
+  client: AdminClientListItem,
+  locale: Locale,
+): MemberListItem {
   return {
     id: client.id,
     cellNumber: client.phone ?? "",
     name: client.displayName,
     email: client.email,
-    membershipClass: client.class?.name ?? "Class C",
+    membershipClass: pickLocalized(locale, client.class?.name ?? "", client.class?.nameAr),
     status: client.isActive ? "ACTIVE" : "INACTIVE",
     ownedPiecesCount: client.pieceCount,
     houseKeyActive: client.isActive,
-    joinedDate: formatDate(client.createdAt),
-    lastActive: formatDate(client.lastSeenAt),
+    joinedDate: formatAdminDate(client.createdAt, locale),
+    lastActive: formatAdminDate(client.lastSeenAt, locale),
   };
 }
 
 export default function MembersPage() {
+  const t = useTranslations("admin");
+  const locale = useLocale() as Locale;
   const [searchValue, setSearchValue] = useState("");
   const [classFilter, setClassFilter] = useState("all");
   const [statusFilter, setStatusFilter] = useState("all");
@@ -72,7 +73,7 @@ export default function MembersPage() {
       }),
   });
 
-  const members = (membersQuery.data?.items ?? []).map(mapClient);
+  const members = (membersQuery.data?.items ?? []).map((c) => mapClient(c, locale));
   const filteredMembers = useMemo(() => {
     if (houseKeyFilter === "all") return members;
     return members.filter((member) =>
@@ -81,7 +82,7 @@ export default function MembersPage() {
   }, [houseKeyFilter, members]);
 
   const stats = [
-    { id: 1, title: "Total Members", count: statsQuery.data?.total ?? members.length },
+    { id: 1, title: t("members.total"), count: statsQuery.data?.total ?? members.length },
     ...(statsQuery.data?.byClass ?? []).slice(0, 3).map((cls, index) => ({
       id: index + 2,
       title: cls.name,
@@ -92,7 +93,7 @@ export default function MembersPage() {
   return (
     <>
       <div className="bg-white h-15 px-7.5 flex items-center font-bold text-h5 text-neutral-800">
-        Manage House members, access, and membership class.
+        {t("members.banner")}
       </div>
 
       <div className="px-7.5 py-6.75">

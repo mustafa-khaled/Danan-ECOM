@@ -117,6 +117,9 @@ model Class {
 
   @@index([isDefault])
   @@index([isActive, sortOrder])
+  /// SQL-only, see `20260914100000_normalize_catalog_classes`:
+  ///   UNIQUE one_default_class ON (isDefault) WHERE isDefault = true
+  ///     — exactly one class can be the default.
 }
 
 model CollectionClass {
@@ -181,15 +184,6 @@ model Collection {
   isVisible        Boolean  @default(true)
   sortOrder        Int      @default(0)
   viewCount        Int      @default(0)
-  origin           String?  @db.Text
-  originAr         String?  @db.Text
-  meaning          String?  @db.Text
-  meaningAr        String?  @db.Text
-  inspiration      String?  @db.Text
-  inspirationAr    String?  @db.Text
-  storyContent     String?  @db.Text
-  storyContentAr   String?  @db.Text
-  storyImageUrls   String[]
   createdAt        DateTime @default(now())
   updatedAt        DateTime @updatedAt
 
@@ -222,9 +216,13 @@ model Piece {
   dimensions     String
   /// Arabic dimensions; falls back to `dimensions` when null.
   dimensionsAr   String?
-  imageUrls      String[]
-  /// Low-quality image placeholder data URLs (base64) for blur-up loading.
-  imageLqips     String[]
+  /// Primary/hero image storage key. Exclusive — not duplicated in imageUrls.
+  mainImageUrl   String?
+  /// Low-quality image placeholder (base64) for the main image.
+  mainImageLqip  String?
+  imageUrls      String[]      @default([])
+  /// Low-quality image placeholder data URLs (base64) for gallery images.
+  imageLqips     String[]      @default([])
   price          Decimal     @db.Decimal(12, 2)
   currency       String      @default("SAR")
   notes          String?     @db.Text
@@ -250,6 +248,14 @@ model Piece {
   @@index([status, createdAt])
   @@index([isActive, collectionId])
   @@index([updatedAt])
+  /// The admin piece list filters by collection and orders by name.
+  @@index([collectionId, name])
+  /// SQL-only, see `20260729130000_production_readiness` and
+  /// `20260914100000_normalize_catalog_classes`:
+  ///   CHECK piece_owned_has_owner — OWNED/TRANSFER_PENDING require currentOwnerId,
+  ///     AVAILABLE/RETIRED require it to be NULL. Any status change must set both
+  ///     columns in the same statement.
+  ///   CHECK piece_weight_positive, piece_price_nonnegative.
 }
 
 model PieceSpecification {
@@ -286,6 +292,13 @@ model OwnershipRecord {
   @@index([pieceId, transferredAt])
   @@index([clientId])
   @@index([acquiredAt])
+  /// SQL-only — Prisma cannot express partial indexes, so these live in
+  /// `20260729094439_add_integrity_constraints` and are enforced only by the
+  /// database. `scripts/check-schema-drift.mjs` allowlists them.
+  ///   UNIQUE one_current_owner_per_piece ON (pieceId) WHERE transferredAt IS NULL
+  ///     — at most one open ownership record per piece.
+  ///   INDEX ownership_record_current_idx ON (pieceId, clientId) WHERE transferredAt IS NULL
+  ///     — serves the "who owns this now" lookups.
 }
 
 model Certificate {
@@ -308,6 +321,9 @@ model Certificate {
   @@index([pieceId, isActive])
   @@index([isActive, issuedAt])
   @@index([ownerId])
+  /// SQL-only, see `20260729094439_add_integrity_constraints`:
+  ///   UNIQUE one_active_certificate_per_piece ON (pieceId) WHERE isActive = true
+  ///     — a piece can only have one certificate that attests current ownership.
 }
 
 model Order {
@@ -342,13 +358,20 @@ model Order {
   client Client      @relation(fields: [clientId], references: [id])
   items  OrderItem[]
 
+  /// One order per gateway charge. Guards against a replayed webhook or a
+  /// retried confirmation attaching the same charge to a second order.
+  @@unique([paymentProvider, paymentReference])
   @@index([clientId, status])
   @@index([clientId, placedAt(sort: Desc)])
   @@index([paymentReference])
-  @@index([paymentStatus])
+  /// `totalAmount` is included so the revenue groupBy in `getOrderStats` is an
+  /// index-only scan; it cannot be windowed because it reports lifetime revenue.
+  @@index([paymentStatus, totalAmount])
   @@index([fulfillmentStatus])
   @@index([placedAt(sort: Desc)])
   @@index([status, placedAt])
+  /// SQL-only, see `20260729130000_production_readiness`:
+  ///   CHECK order_amounts_nonnegative — every monetary column is >= 0.
 }
 
 model OrderItem {
@@ -372,7 +395,11 @@ model OrderItem {
   order Order @relation(fields: [orderId], references: [id], onDelete: Cascade)
   piece Piece @relation(fields: [pieceId], references: [id])
 
+  /// A piece appears at most once in an order.
+  @@unique([orderId, pieceId], map: "unique_piece_per_order")
   @@index([pieceId])
+  /// SQL-only, see `20260729130000_production_readiness`:
+  ///   CHECK order_item_amounts_nonnegative — price, tax and line total are >= 0.
 }
 
 model SavedPiece {
@@ -384,6 +411,8 @@ model SavedPiece {
   piece  Piece  @relation(fields: [pieceId], references: [id], onDelete: Cascade)
 
   @@id([clientId, pieceId])
+  /// A client's saved list is read newest-first; the primary key cannot serve the sort.
+  @@index([clientId, savedAt(sort: Desc)])
 }
 
 /// Transfer status transitions are forward-only (enforce in service layer).
@@ -412,6 +441,11 @@ model TransferRequest {
   @@index([toClientId])
   @@index([status])
   @@index([status, initiatedAt(sort: Desc)])
+  /// SQL-only, see `20260729094439_add_integrity_constraints`:
+  ///   UNIQUE one_active_transfer_per_piece ON (pieceId)
+  ///     WHERE status IN ('INITIATED','SENDER_CONFIRMED','RECIPIENT_CONFIRMED','DADAN_REVIEW')
+  ///     — the backstop behind the FOR UPDATE check in `TransfersService.initiate`.
+  ///   CHECK transfer_participants_must_differ — fromClientId <> toClientId.
 }
 
 model VerificationLog {
@@ -432,14 +466,15 @@ model VerificationLog {
 }
 
 model AdminUser {
-  id           String    @id @default(uuid())
-  email        String    @unique
-  passwordHash String
-  displayName  String
-  role         AdminRole @default(STAFF)
-  isActive     Boolean   @default(true)
-  createdAt    DateTime  @default(now())
-  updatedAt    DateTime  @updatedAt
+  id                 String    @id @default(uuid())
+  email              String    @unique
+  passwordHash       String
+  displayName        String
+  role               AdminRole @default(STAFF)
+  isActive           Boolean   @default(true)
+  mustChangePassword Boolean   @default(true)
+  createdAt          DateTime  @default(now())
+  updatedAt          DateTime  @updatedAt
 
   transfersReviewed TransferRequest[]
   staffRequestsReviewed StaffRequest[]
@@ -522,6 +557,48 @@ model HouseSettings {
   requireKeyRenewal      Boolean  @default(true)
   notificationPrefs      Json
   updatedAt              DateTime @updatedAt
+}
+
+/// Transactional outbox for certificate generation.
+///
+/// The certificate job used to be pushed straight to BullMQ after the
+/// ownership-moving transaction committed. Redis being unavailable at that
+/// instant — or the process dying between commit and enqueue — silently left a
+/// piece owned with no certificate, and nothing ever noticed. Writing the intent
+/// in the same transaction that moves ownership makes the two atomic; a
+/// dispatcher drains the table into the queue afterwards and can retry forever.
+model CertificateOutbox {
+  id           String    @id @default(uuid())
+  pieceId      String
+  clientId     String
+  orderId      String?
+  transferId   String?
+  regenerate   Boolean   @default(false)
+  adminId      String?
+  attempts     Int       @default(0)
+  lastError    String?
+  dispatchedAt DateTime?
+  createdAt    DateTime  @default(now())
+
+  /// Drives the dispatcher's "oldest undispatched first" claim query.
+  @@index([dispatchedAt, createdAt])
+}
+
+/// Monotonic sequence per human-readable numbering scheme.
+///
+/// Serial and request numbers used to be derived from `COUNT(*)`, which is not a
+/// reservation: two concurrent writers read the same count, build the same
+/// number, and one loses to the unique index (or, once a piece is deleted, a
+/// number gets reused). Allocation goes through
+/// `INSERT ... ON CONFLICT DO UPDATE ... RETURNING`, which takes a row lock and
+/// hands out each value exactly once.
+///
+/// `scope` is the namespace the sequence belongs to — `piece:<collectionId>:<year>`
+/// or `staff-request:<year>`.
+model SerialCounter {
+  scope        String   @id
+  lastSequence Int      @default(0)
+  updatedAt    DateTime @updatedAt
 }
 
 model StaffRequest {

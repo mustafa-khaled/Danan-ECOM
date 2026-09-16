@@ -110,7 +110,7 @@ describe("DADAN API (e2e)", () => {
       expect(res.body.name).toBe("عقد نوار المتدرج");
       expect(res.body.material).toContain("ذهب");
       expect(res.body.specifications[0].key).toBe("الحجر");
-      expect(res.body.imageUrls.length).toBeGreaterThan(0);
+      expect(res.body.mainImageUrl ?? res.body.imageUrls?.length).toBeTruthy();
     });
   });
 
@@ -235,7 +235,7 @@ describe("DADAN API (e2e)", () => {
         .set("Cookie", adminCookie)
         .attach("file", TINY_JPEG, { filename: "extra.jpg", contentType: "image/jpeg" })
         .expect(201);
-      expect(res.body.imageUrls.length).toBeGreaterThanOrEqual(1);
+      expect(res.body.mainImageUrl).toBeTruthy();
     });
 
     it("client adds the piece to the cart and checks out (mock payment)", async () => {

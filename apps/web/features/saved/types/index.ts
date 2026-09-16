@@ -6,6 +6,8 @@ export interface SavedEntry {
     status: string;
     name: string;
     slug?: string;
+    mainImageUrl?: string | null;
+    mainImageLqip?: string | null;
     imageUrls?: string[];
     collection?: { name: string };
   };

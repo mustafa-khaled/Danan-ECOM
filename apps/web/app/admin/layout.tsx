@@ -4,7 +4,7 @@ export default function AdminShellLayout({
   children: React.ReactNode;
 }) {
   return (
-    <div lang="en" dir="ltr" data-theme="admin" className="min-h-dvh">
+    <div data-theme="admin" className="min-h-dvh">
       {children}
     </div>
   );

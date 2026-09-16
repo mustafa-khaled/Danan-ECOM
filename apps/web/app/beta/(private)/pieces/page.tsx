@@ -10,7 +10,7 @@ interface PieceItem {
   id: string;
   name: string;
   slug: string;
-  imageUrls: string[];
+  mainImageUrl?: string | null;
   price: string;
   currency: string;
   collectionName: string;
@@ -72,7 +72,7 @@ export default async function PiecesPage() {
                 piece={{
                   id: piece.id,
                   name: piece.name,
-                  imageUrl: piece.imageUrls[0],
+                  imageUrl: piece.mainImageUrl ?? undefined,
                 }}
               />
             </Link>

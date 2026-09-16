@@ -213,8 +213,8 @@ export class HomeService {
       slug: string;
       name: string;
       nameAr: string | null;
-      imageUrls: string[];
-      imageLqips: string[];
+      mainImageUrl: string | null;
+      mainImageLqip: string | null;
       price: { toString(): string };
       currency: string;
       collection: { name: string; nameAr: string | null; slug: string };
@@ -224,8 +224,8 @@ export class HomeService {
     return {
       slug: piece.slug,
       name: pickLocalized(locale, piece.name, piece.nameAr),
-      imageUrl: await this.storage.resolvePublicUrl(piece.imageUrls[0]),
-      imageLqip: piece.imageLqips?.[0] ?? null,
+      imageUrl: await this.storage.resolvePublicUrl(piece.mainImageUrl),
+      imageLqip: piece.mainImageLqip ?? null,
       price: piece.price.toString(),
       currency: piece.currency,
       collectionName: pickLocalized(

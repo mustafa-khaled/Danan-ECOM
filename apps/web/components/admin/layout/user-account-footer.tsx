@@ -1,7 +1,10 @@
+"use client";
+
 import React from "react";
 import { LogOut } from "lucide-react";
 import { useLogout } from "@/features/auth";
 import { useRouter } from "next/navigation";
+import { useTranslations } from "next-intl";
 import Image from "next/image";
 
 export default function UserAccountFooter({
@@ -10,6 +13,7 @@ export default function UserAccountFooter({
   admin?: { displayName: string; email?: string };
 }) {
   const router = useRouter();
+  const t = useTranslations("admin.common");
 
   const { logout, isPending } = useLogout();
 
@@ -36,7 +40,7 @@ export default function UserAccountFooter({
 
           <div className="text-[12px]">
             <h6 className="font-semibold text-[#212630] flex gap-1 items-center">
-              {admin?.displayName || "Account Manager"}
+              {admin?.displayName || t("accountManager")}
               <Image
                 src="/admin/verified-fill.svg"
                 alt="verified icon"
@@ -51,7 +55,7 @@ export default function UserAccountFooter({
         <button
           onClick={handleLogout}
           disabled={isPending}
-          title="Sign Out"
+          title={t("signOut")}
           className="p-2 rounded-xl text-ds-error hover:bg-ds-error-bg transition-colors shrink-0 cursor-pointer"
         >
           <LogOut className="size-6 rtl:rotate-180" />

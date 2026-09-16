@@ -1,9 +1,11 @@
 import {
+  BadRequestException,
   Body,
   Controller,
   Delete,
   Get,
   Param,
+  ParseUUIDPipe,
   Patch,
   Post,
   Query,
@@ -17,6 +19,8 @@ import type { Request } from "express";
 import { CollectionsService } from "./collections.service";
 import { AdminGuard } from "../admin/auth/guards/admin.guard";
 import { CurrentAdmin } from "../admin/auth/decorators/current-admin.decorator";
+import { RequireAdminArea } from "../admin/auth/decorators/require-admin-area.decorator";
+import { AdminArea } from "../admin/auth/admin-permissions";
 import type { AdminSession } from "@dadan/types";
 import { getClientIp } from "../common/constants";
 import { AdminCollectionQueryDto } from "./dto/admin-collection-query.dto";
@@ -33,6 +37,7 @@ const imageUpload = FileInterceptor("file", {
 
 @Controller("admin")
 @UseGuards(AdminGuard)
+@RequireAdminArea(AdminArea.COLLECTIONS)
 export class AdminCollectionsController {
   constructor(private readonly collections: CollectionsService) {}
 
@@ -53,7 +58,7 @@ export class AdminCollectionsController {
   }
 
   @Get("collections/:id")
-  getCollection(@Param("id") id: string) {
+  getCollection(@Param("id", ParseUUIDPipe) id: string) {
     return this.collections.getCollectionAdmin(id);
   }
 
@@ -69,7 +74,7 @@ export class AdminCollectionsController {
   @Patch("collections/:id")
   updateCollection(
     @CurrentAdmin() admin: AdminSession,
-    @Param("id") id: string,
+    @Param("id", ParseUUIDPipe) id: string,
     @Body() dto: UpdateCollectionDto,
     @Req() req: Request,
   ) {
@@ -80,28 +85,15 @@ export class AdminCollectionsController {
   @UseInterceptors(imageUpload)
   uploadCover(
     @CurrentAdmin() admin: AdminSession,
-    @Param("id") id: string,
-    @UploadedFile() file: { buffer: Buffer; mimetype: string },
+    @Param("id", ParseUUIDPipe) id: string,
+    @UploadedFile() file: { buffer: Buffer; mimetype: string } | undefined,
     @Req() req: Request,
   ) {
+    // Also covers a file rejected by fileFilter, which multer drops silently.
+    if (!file) {
+      throw new BadRequestException("An image file is required");
+    }
     return this.collections.uploadCover(
-      admin.adminId,
-      id,
-      file.buffer,
-      file.mimetype,
-      getClientIp(req),
-    );
-  }
-
-  @Post("collections/:id/story-images")
-  @UseInterceptors(imageUpload)
-  uploadStoryImage(
-    @CurrentAdmin() admin: AdminSession,
-    @Param("id") id: string,
-    @UploadedFile() file: { buffer: Buffer; mimetype: string },
-    @Req() req: Request,
-  ) {
-    return this.collections.uploadStoryImage(
       admin.adminId,
       id,
       file.buffer,
@@ -113,7 +105,7 @@ export class AdminCollectionsController {
   @Delete("collections/:id")
   deleteCollection(
     @CurrentAdmin() admin: AdminSession,
-    @Param("id") id: string,
+    @Param("id", ParseUUIDPipe) id: string,
     @Req() req: Request,
   ) {
     return this.collections.deleteCollection(admin.adminId, id, getClientIp(req));

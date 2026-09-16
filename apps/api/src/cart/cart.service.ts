@@ -1,13 +1,14 @@
 import {
   BadRequestException,
+  ConflictException,
   Injectable,
-  InternalServerErrorException,
   Logger,
   NotFoundException,
+  ServiceUnavailableException,
 } from "@nestjs/common";
 import { ConfigService } from "@nestjs/config";
 import { Cron, CronExpression } from "@nestjs/schedule";
-import { createHash } from "node:crypto";
+import { createHash, randomUUID } from "node:crypto";
 import { ActorType, OrderStatus, PaymentStatus, PieceStatus } from "@dadan/db";
 import type { Locale, ShippingAddress } from "@dadan/types";
 import { localizePiece, pickLocalized } from "../common/i18n/localize";
@@ -15,12 +16,17 @@ import { AuditService } from "../audit/audit.service";
 import { OrdersService } from "../orders/orders.service";
 import { PaymentsService, PaymentMethod } from "../payments/payments.service";
 import { PrismaService } from "../prisma/prisma.service";
+import { RedisService } from "../redis/redis.service";
 import { StorageService } from "../storage/storage.service";
 import { VisibilityService } from "../visibility/visibility.service";
+import { withCronLease } from "../common/cron/cron-lease";
 
 // Must outlive Tap's 3-D Secure window (30 minutes) so a cardholder who takes
 // their time on the bank's OTP page does not lose the pieces mid-authentication.
 const CHECKOUT_HOLD_MINUTES = 35;
+
+/** Below the 5-minute cron interval so a crashed run resumes on the next tick. */
+const CLEANUP_LEASE_SECONDS = 4 * 60;
 
 export interface CheckoutPaidResult {
   status: "paid";
@@ -75,7 +81,7 @@ export class CartService {
       : [];
     const pieceMap = new Map(pieces.map((p) => [p.id, p]));
     const urlMap = await this.storage.resolvePublicUrlsBatch(
-      pieces.flatMap((p) => p.imageUrls),
+      pieces.map((p) => p.mainImageUrl).filter(Boolean) as string[],
     );
 
     const items = dbItems.map((item) => {
@@ -99,9 +105,10 @@ export class CartService {
             name: pickLocalized(locale, collection.name, collection.nameAr),
             slug: collection.slug,
           },
-          imageUrls: piece.imageUrls
-            .map((key) => urlMap.get(key))
-            .filter((url): url is string => !!url),
+          mainImageUrl: piece.mainImageUrl
+            ? (urlMap.get(piece.mainImageUrl) ?? null)
+            : null,
+          mainImageLqip: piece.mainImageLqip ?? null,
         },
       };
     });
@@ -207,28 +214,33 @@ export class CartService {
       this.assertPieceVisible(piece, classId);
     }
 
-    const existingReservations = await this.prisma.db.checkoutReservation.findMany({
-      where: { pieceId: { in: pieceIds } },
-    });
-
     const now = new Date();
-    for (const reservation of existingReservations) {
-      if (reservation.clientId !== clientId && reservation.expiresAt > now) {
-        throw new BadRequestException("errors.PIECE_RESERVED");
-      }
+    const expiresAt = new Date(now.getTime() + CHECKOUT_HOLD_MINUTES * 60 * 1000);
+    const reservationIds = pieceIds.map(() => randomUUID());
+
+    // A read-then-upsert cannot hold this invariant: the `update` branch of an
+    // unconditional upsert reassigns `clientId`, so two clients reserving the
+    // same piece concurrently both pass the check and the second silently steals
+    // the first one's hold. The `DO UPDATE ... WHERE` predicate makes the claim
+    // atomic — a row is only taken over when it is already ours or has expired,
+    // and a skipped row is omitted from RETURNING, which is how a lost race is
+    // detected here.
+    const claimed = await this.prisma.db.$queryRaw<Array<{ pieceId: string }>>`
+      INSERT INTO "CheckoutReservation" ("id", "clientId", "pieceId", "expiresAt", "createdAt")
+      SELECT r.id, ${clientId}::text, r."pieceId", ${expiresAt}::timestamp(3), ${now}::timestamp(3)
+      FROM unnest(${reservationIds}::text[], ${pieceIds}::text[]) AS r(id, "pieceId")
+      ON CONFLICT ("pieceId") DO UPDATE
+        SET "clientId"  = EXCLUDED."clientId",
+            "expiresAt" = EXCLUDED."expiresAt",
+            "createdAt" = EXCLUDED."createdAt"
+        WHERE "CheckoutReservation"."clientId" = EXCLUDED."clientId"
+           OR "CheckoutReservation"."expiresAt" <= ${now}::timestamp(3)
+      RETURNING "pieceId"
+    `;
+
+    if (claimed.length !== pieceIds.length) {
+      throw new ConflictException("errors.PIECE_RESERVED");
     }
-
-    const expiresAt = new Date(Date.now() + CHECKOUT_HOLD_MINUTES * 60 * 1000);
-
-    await Promise.all(
-      pieceIds.map((pieceId) =>
-        this.prisma.db.checkoutReservation.upsert({
-          where: { pieceId },
-          create: { clientId, pieceId, expiresAt },
-          update: { clientId, expiresAt, createdAt: now },
-        }),
-      ),
-    );
 
     return { reserved: true, expiresAt };
   }
@@ -290,11 +302,15 @@ export class CartService {
     // Compute per-item tax to match order creation (avoids rounding mismatch)
     let subtotal = 0;
     let vatAmount = 0;
+    // Handed to `createPendingOrder`, which re-reads the same rows under
+    // `FOR UPDATE` and rejects the order if a price moved in between.
+    const expectedUnitPrices: Record<string, number> = {};
     for (const piece of pieces) {
       const price = Number(piece.price);
       const itemTax = Math.round(price * vatRate * 100) / 100;
       subtotal += price;
       vatAmount += itemTax;
+      expectedUnitPrices[piece.id] = price;
     }
     subtotal = Math.round(subtotal * 100) / 100;
     vatAmount = Math.round(vatAmount * 100) / 100;
@@ -309,6 +325,7 @@ export class CartService {
     const order = await this.orders.createPendingOrder({
       clientId,
       pieceIds,
+      expectedUnitPrices,
       subtotalAmount: subtotal,
       taxAmount: vatAmount,
       taxRate: vatRate,
@@ -433,6 +450,14 @@ export class CartService {
   /**
    * Settles an order whose charge already exists, refunding if the pieces were
    * lost to a concurrent buyer between authorisation and confirmation.
+   *
+   * Only a `ConflictException` means the sale is genuinely lost. Every other
+   * failure — a serialization abort, a pool timeout, a dropped connection — is
+   * transient and `confirmOrderPayment` is idempotent, so the order is left
+   * PENDING for `reconcileStalePendingOrders` to settle against Tap's
+   * authoritative state. Refunding on a transient error would give the pieces
+   * away for free, and would do so silently if the transaction had in fact
+   * committed before the connection dropped.
    */
   private async confirmOrCompensate(
     orderId: string,
@@ -446,6 +471,15 @@ export class CartService {
         paymentReference: providerReference,
       });
     } catch (error) {
+      if (!(error instanceof ConflictException)) {
+        this.logger.error(
+          `Confirmation of order ${orderId} failed transiently; leaving it PENDING ` +
+            `for reconciliation rather than refunding charge ${providerReference}`,
+          error instanceof Error ? error.stack : String(error),
+        );
+        throw new ServiceUnavailableException("errors.CHECKOUT_PENDING");
+      }
+
       await this.refundFailedCheckout(
         clientId,
         providerReference,
@@ -454,10 +488,9 @@ export class CartService {
         error,
       );
       await this.orders
-        .failOrderPayment(orderId, "CONFIRMATION_FAILED")
+        .failOrderPayment(orderId, "PIECE_UNAVAILABLE")
         .catch(() => undefined);
-      if (error instanceof BadRequestException) throw error;
-      throw new InternalServerErrorException("errors.CHECKOUT_REFUNDED");
+      throw new ConflictException("errors.CHECKOUT_REFUNDED");
     }
   }
 
@@ -577,16 +610,24 @@ export class CartCleanupService {
   constructor(
     private readonly cart: CartService,
     private readonly orders: OrdersService,
+    private readonly redis: RedisService,
   ) {}
 
   @Cron(CronExpression.EVERY_5_MINUTES)
-  handleCleanup() {
-    void this.cart.cleanupExpiredItems();
-    // Releases pieces held by checkouts abandoned partway through 3-D Secure.
-    void this.orders.expireStalePendingOrders().catch((error: unknown) => {
-      this.logger.error(
-        `Failed to expire stale pending orders: ${error instanceof Error ? error.message : String(error)}`,
-      );
-    });
+  async handleCleanup() {
+    await withCronLease(
+      this.redis,
+      "cart:cleanup",
+      CLEANUP_LEASE_SECONDS,
+      this.logger,
+      async () => {
+        await this.cart.cleanupExpiredItems();
+        // Releases pieces held by checkouts abandoned before they reached the
+        // gateway. Orders that already have a charge belong to
+        // `PaymentsService.reconcileStalePendingOrders`, which asks Tap for the
+        // charge's real status before cancelling anything.
+        await this.orders.expireStalePendingOrders();
+      },
+    );
   }
 }

@@ -12,8 +12,15 @@ import {
   fetchAdminOwnershipStats,
 } from "@/features/admin/api/fetch-admin-ownership";
 import { fetchAdminCollections } from "@/features/admin/api/fetch-admin-collections";
+import { useTranslations } from "next-intl";
+import { useLocale } from "next-intl";
+import type { Locale } from "@/i18n/routing";
+import { pickLocalized } from "@/shared/lib/pick-localized";
+import { formatAdminDate } from "@/shared/utils/format";
 
 export default function OwnershipPage() {
+  const t = useTranslations("admin");
+  const locale = useLocale() as Locale;
   const [searchValue, setSearchValue] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
   const [collectionFilter, setCollectionFilter] = useState("all");
@@ -48,34 +55,28 @@ export default function OwnershipPage() {
     .map((item) => ({
       id: item.id,
       pieceId: item.pieceId,
-      pieceName: item.pieceName,
+      pieceName: pickLocalized(locale, item.pieceName, item.pieceNameAr),
       pieceSerial: item.pieceSerial,
       pieceImageUrl: item.pieceImageUrl ?? undefined,
       ownerName: item.ownerName ?? "",
       ownerEmail: item.ownerEmail ?? "",
-      collectionName: item.collectionName,
+      collectionName: pickLocalized(locale, item.collectionName, item.collectionNameAr),
       status: item.status,
       transferType: (item.transferType as OwnershipRecordItem["transferType"]) ?? "NONE",
-      since: item.since
-        ? new Date(item.since).toLocaleDateString("en-GB", {
-            day: "2-digit",
-            month: "short",
-            year: "numeric",
-          })
-        : "",
+      since: formatAdminDate(item.since, locale),
     }));
 
   const stats = [
-    { id: 1, title: "Total Owned", count: statsQuery.data?.owned ?? 0 },
-    { id: 2, title: "Transfers", count: statsQuery.data?.transfers ?? 0 },
-    { id: 3, title: "Pending Transfers", count: statsQuery.data?.pendingTransfers ?? 0 },
-    { id: 4, title: "Available", count: statsQuery.data?.available ?? 0 },
+    { id: 1, title: t("ownership.totalOwned"), count: statsQuery.data?.owned ?? 0 },
+    { id: 2, title: t("ownership.transfers"), count: statsQuery.data?.transfers ?? 0 },
+    { id: 3, title: t("ownership.pendingTransfers"), count: statsQuery.data?.pendingTransfers ?? 0 },
+    { id: 4, title: t("ownership.available"), count: statsQuery.data?.available ?? 0 },
   ];
 
   return (
     <>
       <div className="bg-white h-15 px-7.5 flex items-center font-bold text-h5 text-neutral-800">
-        Manage ownership records, transfers, and ownership activity.
+        {t("ownership.banner")}
       </div>
 
       <div className="px-7.5 py-6.75">

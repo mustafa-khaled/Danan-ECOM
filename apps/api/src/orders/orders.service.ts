@@ -5,8 +5,6 @@ import {
   Logger,
   NotFoundException,
 } from "@nestjs/common";
-import { InjectQueue } from "@nestjs/bullmq";
-import { Queue } from "bullmq";
 import {
   AcquisitionType,
   ActorType,
@@ -14,21 +12,30 @@ import {
   OrderStatus,
   PaymentStatus,
   PieceStatus,
-  Prisma,
 } from "@dadan/db";
 import type { Locale, ShippingAddress } from "@dadan/types";
-import { localizePiece } from "../common/i18n/localize";
+import { pickLocalized } from "../common/i18n/localize";
 import { AuditService } from "../audit/audit.service";
-import { CERTIFICATE_QUEUE } from "../certificates/jobs/certificate-job.processor";
-import type { GenerateCertificateJobData } from "../certificates/jobs/certificate-job.processor";
+import { CertificateOutboxService } from "../certificates/certificate-outbox.service";
 import { NotificationsService } from "../notifications/notifications.service";
 import { PrismaService } from "../prisma/prisma.service";
 import { StorageService } from "../storage/storage.service";
 import { paginationParams } from "../common/constants";
+import { runSerializable } from "../common/db/serializable";
 
 export interface CreateOrderParams {
   clientId: string;
   pieceIds: string[];
+  /**
+   * The unit price, per piece id, that the totals below were computed from.
+   *
+   * The caller reads prices without a lock; this transaction then re-reads them
+   * under `FOR UPDATE` and derives each `lineTotal` from the locked value. Without
+   * this cross-check an admin price edit landing in that window produced an order
+   * whose item line totals did not add up to its `totalAmount` — and it was the
+   * stale `totalAmount` that got charged.
+   */
+  expectedUnitPrices: Record<string, number>;
   subtotalAmount: number;
   taxAmount: number;
   taxRate: number;
@@ -45,13 +52,84 @@ export interface CreateOrderParams {
 /** PENDING orders past this age are assumed abandoned mid-3DS and released. */
 const PENDING_ORDER_TTL_MINUTES = 35;
 
+/** Per-sweep cap; each order with a charge costs one gateway round trip. */
+const STALE_ORDER_SWEEP_LIMIT = 50;
+
+/** Money is stored as `Decimal(12,2)`, so two decimal places is the unit of truth. */
+function roundMoney(value: number): number {
+  return Math.round(value * 100) / 100;
+}
+
+/** Compares amounts below the smallest representable difference. */
+function sameMoney(a: number, b: number): boolean {
+  return Math.abs(a - b) < 0.005;
+}
+
+/**
+ * Client-facing order reads used to `include` the whole piece and its whole
+ * collection. That pulled `story` plus the base64 `imageLqips` array for every
+ * line of every order on the page — hundreds of kilobytes to render a list that
+ * only shows a name and a thumbnail.
+ */
+const ORDER_ITEM_SELECT = {
+  id: true,
+  pieceId: true,
+  priceAtPurchase: true,
+  taxRate: true,
+  taxAmount: true,
+  discountAmount: true,
+  lineTotal: true,
+  currency: true,
+  nameSnapshot: true,
+  collectionNameSnapshot: true,
+  piece: {
+    select: {
+      id: true,
+      serialNumber: true,
+      name: true,
+      nameAr: true,
+      mainImageUrl: true,
+      mainImageLqip: true,
+      collectionId: true,
+    },
+  },
+} as const;
+
+type OrderItemProjection = {
+  piece: {
+    name: string;
+    nameAr: string | null;
+    mainImageUrl: string | null;
+    mainImageLqip: string | null;
+  };
+};
+
+/** Resolves the thumbnail URL and collapses the piece name to one locale. */
+function localizeOrderItem<T extends OrderItemProjection>(
+  item: T,
+  locale: Locale,
+  urlMap: Map<string, string>,
+) {
+  const { nameAr, ...piece } = item.piece;
+  return {
+    ...item,
+    piece: {
+      ...piece,
+      name: pickLocalized(locale, piece.name, nameAr),
+      mainImageUrl: piece.mainImageUrl
+        ? (urlMap.get(piece.mainImageUrl) ?? null)
+        : null,
+    },
+  };
+}
+
 @Injectable()
 export class OrdersService {
   private readonly logger = new Logger(OrdersService.name);
 
   constructor(
     private readonly prisma: PrismaService,
-    @InjectQueue(CERTIFICATE_QUEUE) private readonly certificateQueue: Queue<GenerateCertificateJobData>,
+    private readonly outbox: CertificateOutboxService,
     private readonly audit: AuditService,
     private readonly notifications: NotificationsService,
     private readonly storage: StorageService,
@@ -78,89 +156,123 @@ export class OrdersService {
       }
     }
 
-    return this.prisma.db.$transaction(
-      async (tx) => {
-        // CR-02: Lock piece rows with FOR UPDATE to prevent double-sale
-        // This ensures no concurrent transaction can modify these pieces
-        const lockedPieces = await tx.$queryRaw<
-          Array<{
-            id: string;
-            serialNumber: string;
-            status: string;
-            name: string;
-            price: string;
-            collectionId: string;
-          }>
-        >`
-          SELECT id, "serialNumber", status, name, price, "collectionId"
-          FROM "Piece"
-          WHERE id = ANY(${params.pieceIds}::text[])
-          FOR UPDATE
-        `;
+    return runSerializable(this.prisma.db, async (tx) => {
+      // CR-02: Lock piece rows with FOR UPDATE to prevent double-sale
+      // This ensures no concurrent transaction can modify these pieces
+      const lockedPieces = await tx.$queryRaw<
+        Array<{
+          id: string;
+          serialNumber: string;
+          status: string;
+          name: string;
+          price: string;
+          currency: string;
+          collectionId: string;
+        }>
+      >`
+        SELECT id, "serialNumber", status, name, price, currency, "collectionId"
+        FROM "Piece"
+        WHERE id = ANY(${params.pieceIds}::text[])
+        FOR UPDATE
+      `;
 
-        if (lockedPieces.length !== params.pieceIds.length) {
-          throw new BadRequestException("One or more pieces not found");
+      if (lockedPieces.length !== params.pieceIds.length) {
+        throw new BadRequestException("One or more pieces not found");
+      }
+
+      for (const piece of lockedPieces) {
+        if (piece.status !== PieceStatus.AVAILABLE) {
+          throw new ConflictException(
+            `Piece ${piece.serialNumber} is no longer available`,
+          );
         }
+      }
 
-        for (const piece of lockedPieces) {
-          if (piece.status !== PieceStatus.AVAILABLE) {
-            throw new ConflictException(
-              `Piece ${piece.serialNumber} is no longer available`,
-            );
-          }
+      // The pieces stay AVAILABLE until payment is confirmed, so the row lock
+      // above only holds for the length of this transaction. `CheckoutReservation`
+      // is what actually keeps two buyers off the same piece across the 3DS
+      // window, which makes it a precondition for creating the order rather than
+      // just a cart-level courtesy check.
+      const heldByCaller = await tx.checkoutReservation.count({
+        where: {
+          pieceId: { in: params.pieceIds },
+          clientId: params.clientId,
+          expiresAt: { gt: new Date() },
+        },
+      });
+      if (heldByCaller !== params.pieceIds.length) {
+        throw new ConflictException("errors.RESERVATION_EXPIRED");
+      }
+
+      // Prices and currency must still be what the quoted totals were built from,
+      // otherwise the amount charged and the amount itemised would disagree.
+      for (const piece of lockedPieces) {
+        const quoted = params.expectedUnitPrices[piece.id];
+        if (
+          quoted === undefined ||
+          !sameMoney(Number(piece.price), quoted) ||
+          piece.currency !== params.currency
+        ) {
+          throw new ConflictException("errors.PRICE_CHANGED");
         }
+      }
 
-        const collections = await tx.collection.findMany({
-          where: { id: { in: lockedPieces.map((p) => p.collectionId) } },
-          select: { id: true, name: true },
-        });
-        const collectionMap = new Map(collections.map((c) => [c.id, c]));
+      const collections = await tx.collection.findMany({
+        where: { id: { in: lockedPieces.map((p) => p.collectionId) } },
+        select: { id: true, name: true },
+      });
+      const collectionMap = new Map(collections.map((c) => [c.id, c]));
 
-        return tx.order.create({
-          data: {
-            clientId: params.clientId,
-            status: OrderStatus.PENDING,
-            paymentStatus: PaymentStatus.PENDING,
-            fulfillmentStatus: FulfillmentStatus.UNFULFILLED,
-            subtotalAmount: params.subtotalAmount,
-            taxAmount: params.taxAmount,
-            taxRate: params.taxRate,
-            totalAmount: params.totalAmount,
-            currency: params.currency,
-            paymentProvider: params.paymentProvider,
-            paymentMethod: params.paymentMethod,
-            paymentReference: params.paymentReference,
-            idempotencyKey: params.idempotencyKey,
-            shippingAddress: params.shippingAddress as object,
-            items: {
-              create: lockedPieces.map((p) => {
-                const priceAtPurchase = Number(p.price);
-                const itemTaxAmount =
-                  Math.round(priceAtPurchase * params.taxRate * 100) / 100;
-                const lineTotal =
-                  Math.round((priceAtPurchase + itemTaxAmount) * 100) / 100;
-                return {
-                  pieceId: p.id,
-                  priceAtPurchase,
-                  taxRate: params.taxRate,
-                  taxAmount: itemTaxAmount,
-                  lineTotal,
-                  currency: params.currency,
-                  nameSnapshot: p.name,
-                  collectionNameSnapshot:
-                    collectionMap.get(p.collectionId)?.name ?? null,
-                };
-              }),
-            },
-          },
-          include: { items: true },
-        });
-      },
-      {
-        // Use serializable isolation for maximum safety
-        isolationLevel: Prisma.TransactionIsolationLevel.Serializable,
-      },
-    );
+      const items = lockedPieces.map((p) => {
+        const priceAtPurchase = Number(p.price);
+        const itemTaxAmount = roundMoney(priceAtPurchase * params.taxRate);
+        return {
+          pieceId: p.id,
+          priceAtPurchase,
+          taxRate: params.taxRate,
+          taxAmount: itemTaxAmount,
+          lineTotal: roundMoney(priceAtPurchase + itemTaxAmount),
+          currency: params.currency,
+          nameSnapshot: p.name,
+          collectionNameSnapshot: collectionMap.get(p.collectionId)?.name ?? null,
+        };
+      });
+
+      // Belt and braces on the money maths: the line totals are what the customer
+      // sees itemised and `totalAmount` is what the gateway charges, so a rounding
+      // change in either place must not be allowed to silently split them.
+      const lineTotalSum = roundMoney(
+        items.reduce((sum, item) => sum + item.lineTotal, 0),
+      );
+      if (!sameMoney(lineTotalSum, params.totalAmount)) {
+        this.logger.error(
+          `Order totals disagree for client ${params.clientId}: line totals sum to ` +
+            `${lineTotalSum} but the order totals ${params.totalAmount}`,
+        );
+        throw new ConflictException("errors.PRICE_CHANGED");
+      }
+
+      return tx.order.create({
+        data: {
+          clientId: params.clientId,
+          status: OrderStatus.PENDING,
+          paymentStatus: PaymentStatus.PENDING,
+          fulfillmentStatus: FulfillmentStatus.UNFULFILLED,
+          subtotalAmount: params.subtotalAmount,
+          taxAmount: params.taxAmount,
+          taxRate: params.taxRate,
+          totalAmount: params.totalAmount,
+          currency: params.currency,
+          paymentProvider: params.paymentProvider,
+          paymentMethod: params.paymentMethod,
+          paymentReference: params.paymentReference,
+          idempotencyKey: params.idempotencyKey,
+          shippingAddress: params.shippingAddress as object,
+          items: { create: items },
+        },
+        include: { items: true },
+      });
+    });
   }
 
   /** Records the gateway charge id so an inbound webhook can find this order. */
@@ -182,7 +294,8 @@ export class OrdersService {
     orderId: string,
     options: { paymentReference?: string; paymentMethod?: string } = {},
   ) {
-    const { order, alreadyConfirmed } = await this.prisma.db.$transaction(
+    const { order, alreadyConfirmed } = await runSerializable(
+      this.prisma.db,
       async (tx) => {
         const existing = await tx.order.findUnique({
           where: { id: orderId },
@@ -235,6 +348,14 @@ export class OrdersService {
                 acquisitionType: AcquisitionType.PURCHASE,
               },
             });
+
+            // Recorded in this transaction so a Redis outage between commit and
+            // enqueue cannot leave a paid-for piece without a certificate.
+            await this.outbox.record(tx, {
+              pieceId: piece.id,
+              clientId: existing.clientId,
+              orderId: existing.id,
+            });
           }
         }
 
@@ -251,19 +372,19 @@ export class OrdersService {
           include: { items: true },
         });
 
-        await tx.cartItem.deleteMany({ where: { clientId: existing.clientId } });
+        // Scoped to this order's pieces: the client may have a second checkout
+        // in flight, and items added during the 3DS window must survive.
+        await tx.cartItem.deleteMany({
+          where: { pieceId: { in: pieceIds } },
+        });
         await tx.checkoutReservation.deleteMany({
-          where: { clientId: existing.clientId },
+          where: { pieceId: { in: pieceIds } },
         });
         await tx.savedPiece.deleteMany({
           where: { pieceId: { in: pieceIds } },
         });
 
         return { order: updated, alreadyConfirmed: false };
-      },
-      {
-        // Use serializable isolation for maximum safety
-        isolationLevel: Prisma.TransactionIsolationLevel.Serializable,
       },
     );
 
@@ -279,21 +400,20 @@ export class OrdersService {
       targetId: order.id,
     });
 
-    for (const item of order.items) {
-      await this.audit.log({
+    await this.audit.logMany(
+      order.items.map((item) => ({
         actorType: ActorType.SYSTEM,
         actorId: "system",
         action: "PIECE_OWNERSHIP_TRANSFERRED",
         targetType: "Piece",
         targetId: item.pieceId,
         metadata: { orderId: order.id, clientId: order.clientId },
-      });
-
-      this.generateCertificateWithRetry(item.pieceId, order.clientId, order.id);
-    }
+      })),
+    );
 
     const client = await this.prisma.db.client.findUnique({
       where: { id: order.clientId },
+      select: { email: true, locale: true },
     });
     if (client) {
       this.notifications.sendOrderPlacedEmail(client.email, {
@@ -306,12 +426,43 @@ export class OrdersService {
   }
 
   /**
+   * Records that money was captured for an order that can no longer accept it
+   * (typically CANCELLED before the webhook arrived). The row is picked up by
+   * `RefundRecoveryService`, which retries the refund with a charge-keyed
+   * idempotency reference and escalates to an admin once attempts are exhausted.
+   *
+   * Idempotent: repeated deliveries for the same charge reuse the open row
+   * rather than queueing a second refund.
+   */
+  async recordUnmatchedCapture(
+    order: { id: string; clientId: string; status: OrderStatus },
+    charge: { id: string; amount: number; currency: string; status: string },
+  ): Promise<void> {
+    const existing = await this.prisma.db.failedRefund.findFirst({
+      where: { providerReference: charge.id, resolvedAt: null },
+      select: { id: true },
+    });
+    if (existing) return;
+
+    await this.prisma.db.failedRefund.create({
+      data: {
+        clientId: order.clientId,
+        providerReference: charge.id,
+        amount: charge.amount,
+        currency: charge.currency,
+        reason: `CAPTURED_WITHOUT_OPEN_ORDER:${order.status}:${order.id}`,
+      },
+    });
+  }
+
+  /**
    * Marks a PENDING order as failed and releases the pieces it was holding.
    * Safe to call repeatedly — an already-cancelled order is left untouched.
    */
   async failOrderPayment(orderId: string, reason: string) {
     const existing = await this.prisma.db.order.findUnique({
       where: { id: orderId },
+      include: { items: { select: { pieceId: true } } },
     });
     if (!existing) throw new NotFoundException("errors.ORDER_NOT_FOUND");
 
@@ -334,8 +485,12 @@ export class OrdersService {
       },
     });
 
+    // Only this order's holds: the client may have another checkout in flight.
     await this.prisma.db.checkoutReservation.deleteMany({
-      where: { clientId: existing.clientId },
+      where: {
+        clientId: existing.clientId,
+        pieceId: { in: existing.items.map((item) => item.pieceId) },
+      },
     });
 
     await this.audit.log({
@@ -380,31 +535,56 @@ export class OrdersService {
 
     if (!metadataOrderId) return null;
 
-    // Tap's webhook signature does not cover `metadata`, so this id is
-    // attacker-controllable on an otherwise valid charge. Only orders that are
-    // not yet bound to a different charge may be resolved this way; callers
-    // must still verify the amount before settling.
+    // M-07: Tap's webhook signature does not cover `metadata`, so this id is
+    // attacker-controllable on an otherwise valid charge. Only PENDING orders
+    // that are not yet bound to a different charge may be resolved this way;
+    // callers must still verify the amount before settling.
     return this.prisma.db.order.findFirst({
       where: {
         id: metadataOrderId,
+        status: OrderStatus.PENDING,
         OR: [{ paymentReference: null }, { paymentReference: chargeId }],
       },
     });
   }
 
   /**
-   * Releases pieces held by orders whose cardholder never came back from 3DS.
-   * Without this an abandoned checkout would hold its pieces indefinitely.
+   * Orders whose cardholder never came back from 3DS. Those carrying a
+   * `paymentReference` may still have captured at the gateway, so the caller
+   * must ask the provider before cancelling them — see
+   * `PaymentsService.reconcileStalePendingOrders`.
+   */
+  findStalePendingOrders() {
+    const cutoff = new Date(Date.now() - PENDING_ORDER_TTL_MINUTES * 60 * 1000);
+    return this.prisma.db.order.findMany({
+      where: { status: OrderStatus.PENDING, placedAt: { lt: cutoff } },
+      // Bounded so a backlog cannot serialise hundreds of 30s gateway lookups
+      // into a single cron tick; the oldest are drained first and the rest wait
+      // for the next sweep.
+      take: STALE_ORDER_SWEEP_LIMIT,
+      orderBy: { placedAt: "asc" },
+      select: {
+        id: true,
+        paymentReference: true,
+        totalAmount: true,
+        currency: true,
+        clientId: true,
+      },
+    });
+  }
+
+  /**
+   * Releases pieces held by stale orders that never reached the gateway, so an
+   * abandoned checkout cannot hold its pieces indefinitely. Orders that do have
+   * a charge reference are deliberately left to the reconciliation sweep, which
+   * checks with the provider first rather than cancelling a captured payment.
    */
   async expireStalePendingOrders(): Promise<number> {
-    const cutoff = new Date(Date.now() - PENDING_ORDER_TTL_MINUTES * 60 * 1000);
-    const stale = await this.prisma.db.order.findMany({
-      where: { status: OrderStatus.PENDING, placedAt: { lt: cutoff } },
-      select: { id: true },
-    });
+    const stale = await this.findStalePendingOrders();
 
     let expired = 0;
     for (const order of stale) {
+      if (order.paymentReference) continue;
       try {
         await this.failOrderPayment(order.id, "PENDING_ORDER_EXPIRED");
         expired += 1;
@@ -415,27 +595,6 @@ export class OrdersService {
       }
     }
     return expired;
-  }
-
-  private generateCertificateWithRetry(
-    pieceId: string,
-    clientId: string,
-    orderId: string,
-  ): void {
-    this.certificateQueue.add(
-      "generate-certificate",
-      { pieceId, clientId, orderId },
-      {
-        attempts: 5,
-        backoff: { type: "exponential", delay: 2000 },
-        removeOnComplete: true,
-        removeOnFail: 50,
-      },
-    ).catch((err) => {
-      this.logger.error(
-        `Failed to enqueue certificate job for piece ${pieceId}: ${err instanceof Error ? err.message : String(err)}`,
-      );
-    });
   }
 
   async getClientOrders(
@@ -451,38 +610,27 @@ export class OrdersService {
         skip,
         take,
         orderBy: { placedAt: "desc" },
-        include: {
-          items: {
-            include: { piece: { include: { collection: true } } },
-          },
-        },
+        include: { items: { select: ORDER_ITEM_SELECT } },
       }),
       this.prisma.db.order.count({ where: { clientId } }),
     ]);
 
-    // Collect all unique image URLs across all order items for batched resolution
-    const allImageUrls: (string | null | undefined)[] = [];
+    // Collect all main image keys for batched resolution
+    const allMainImageUrls: string[] = [];
     for (const order of items) {
       for (const item of order.items) {
-        allImageUrls.push(...item.piece.imageUrls);
+        if (item.piece.mainImageUrl) allMainImageUrls.push(item.piece.mainImageUrl);
       }
     }
 
-    // Resolve all URLs in a single batch
-    const urlMap = await this.storage.resolvePublicUrlsBatch(allImageUrls);
+    const urlMap = await this.storage.resolvePublicUrlsBatch(allMainImageUrls);
 
     return {
       items: items.map((order) => ({
         ...order,
-        items: order.items.map((item) => ({
-          ...item,
-          piece: {
-            ...localizePiece(item.piece, locale),
-            imageUrls: item.piece.imageUrls
-              .map((url) => urlMap.get(url))
-              .filter((url): url is string => url !== undefined),
-          },
-        })),
+        items: order.items.map((item) =>
+          localizeOrderItem(item, locale, urlMap),
+        ),
       })),
       total,
       page: p,
@@ -497,48 +645,52 @@ export class OrdersService {
   ) {
     const order = await this.prisma.db.order.findFirst({
       where: { id: orderId, clientId },
-      include: {
-        items: {
-          include: { piece: { include: { collection: true } } },
-        },
-      },
+      include: { items: { select: ORDER_ITEM_SELECT } },
     });
     if (!order) throw new NotFoundException("errors.ORDER_NOT_FOUND");
 
-    // Collect all image URLs for batched resolution
-    const allImageUrls: (string | null | undefined)[] = [];
-    for (const item of order.items) {
-      allImageUrls.push(...item.piece.imageUrls);
-    }
-    const urlMap = await this.storage.resolvePublicUrlsBatch(allImageUrls);
+    const mainImageKeys = order.items
+      .map((item) => item.piece.mainImageUrl)
+      .filter(Boolean) as string[];
+    const urlMap = await this.storage.resolvePublicUrlsBatch(mainImageKeys);
 
     return {
       ...order,
-      items: order.items.map((item) => ({
-        ...item,
-        piece: {
-          ...localizePiece(item.piece, locale),
-          imageUrls: item.piece.imageUrls
-            .map((url) => urlMap.get(url))
-            .filter((url): url is string => url !== undefined),
-        },
-      })),
+      items: order.items.map((item) => localizeOrderItem(item, locale, urlMap)),
     };
   }
 
   async cancelOrder(clientId: string, orderId: string) {
     const order = await this.prisma.db.order.findFirst({
       where: { id: orderId, clientId },
+      include: { items: { select: { pieceId: true } } },
     });
     if (!order) throw new NotFoundException("errors.ORDER_NOT_FOUND");
     if (order.status !== OrderStatus.PENDING) {
       throw new BadRequestException("errors.ORDER_NOT_CANCELLABLE");
     }
+    // A charge exists and may still capture (the cardholder could be mid-3DS).
+    // Cancelling here would release the pieces while the money still lands,
+    // so only the reconciliation sweep — which asks Tap for the authoritative
+    // status first — may close this order.
+    if (order.paymentReference) {
+      throw new ConflictException("errors.ORDER_PAYMENT_IN_PROGRESS");
+    }
 
-    return this.prisma.db.order.update({
+    const pieceIds = order.items.map((item) => item.pieceId);
+
+    const cancelled = await this.prisma.db.order.update({
       where: { id: orderId },
       data: { status: OrderStatus.CANCELLED },
     });
+
+    // H-07: Release this order's checkout reservations so the pieces become
+    // available immediately, without touching holds for another in-flight order.
+    await this.prisma.db.checkoutReservation.deleteMany({
+      where: { clientId, pieceId: { in: pieceIds } },
+    });
+
+    return cancelled;
   }
 
   async listAdminOrders(
@@ -589,7 +741,7 @@ export class OrdersService {
           items: {
             select: {
               id: true,
-              piece: { select: { serialNumber: true } },
+              piece: { select: { serialNumber: true, name: true, nameAr: true } },
             },
           },
         },
@@ -675,7 +827,8 @@ export class OrdersService {
                 id: true,
                 serialNumber: true,
                 name: true,
-                collection: { select: { id: true, name: true } },
+                nameAr: true,
+                collection: { select: { id: true, name: true, nameAr: true } },
               },
             },
           },
@@ -686,10 +839,17 @@ export class OrdersService {
     return order;
   }
 
+  /**
+   * A settled order can no longer be cancelled by a status change: doing so
+   * left the money captured, the pieces owned and the certificates valid while
+   * the order read CANCELLED, and permanently wedged the order because both
+   * `confirmOrderPayment` and `failOrderPayment` refuse to touch it afterwards.
+   * Unwinding a paid order goes through `refundOrder`, which compensates.
+   */
   private static readonly ORDER_TRANSITIONS: Record<OrderStatus, OrderStatus[]> = {
     [OrderStatus.PENDING]: [OrderStatus.PAID, OrderStatus.CANCELLED],
-    [OrderStatus.PAID]: [OrderStatus.PROCESSING, OrderStatus.CANCELLED],
-    [OrderStatus.PROCESSING]: [OrderStatus.FULFILLED, OrderStatus.CANCELLED],
+    [OrderStatus.PAID]: [OrderStatus.PROCESSING],
+    [OrderStatus.PROCESSING]: [OrderStatus.FULFILLED],
     [OrderStatus.FULFILLED]: [],
     [OrderStatus.CANCELLED]: [],
   };
@@ -700,19 +860,26 @@ export class OrdersService {
     status: OrderStatus,
     ipAddress?: string,
   ) {
-    const existing = await this.prisma.db.order.findUnique({ where: { id } });
-    if (!existing) throw new NotFoundException("errors.ORDER_NOT_FOUND");
+    // Read and write under one lock: two admins acting at once could otherwise
+    // both pass the transition check against the same starting status.
+    const { order, from } = await runSerializable(this.prisma.db, async (tx) => {
+      await tx.$queryRaw`SELECT id FROM "Order" WHERE id = ${id}::text FOR UPDATE`;
 
-    const allowedTransitions = OrdersService.ORDER_TRANSITIONS[existing.status];
-    if (!allowedTransitions.includes(status)) {
-      throw new BadRequestException(
-        `Invalid order status transition from ${existing.status} to ${status}`,
-      );
-    }
+      const existing = await tx.order.findUnique({
+        where: { id },
+        select: { status: true },
+      });
+      if (!existing) throw new NotFoundException("errors.ORDER_NOT_FOUND");
 
-    const order = await this.prisma.db.order.update({
-      where: { id },
-      data: { status },
+      const allowedTransitions = OrdersService.ORDER_TRANSITIONS[existing.status];
+      if (!allowedTransitions.includes(status)) {
+        throw new BadRequestException(
+          `Invalid order status transition from ${existing.status} to ${status}`,
+        );
+      }
+
+      const updated = await tx.order.update({ where: { id }, data: { status } });
+      return { order: updated, from: existing.status };
     });
 
     await this.audit.log({
@@ -721,10 +888,148 @@ export class OrdersService {
       action: "ORDER_STATUS_UPDATED",
       targetType: "Order",
       targetId: id,
-      metadata: { from: existing.status, to: status },
+      metadata: { from, to: status },
       ipAddress,
     });
 
     return order;
+  }
+
+  /**
+   * Unwinds a settled order: releases the pieces, closes their ownership
+   * records, revokes the certificates and queues the gateway refund.
+   *
+   * The gateway call is deliberately not made here. Recording a `FailedRefund`
+   * hands it to `RefundRecoveryService`, which retries with a charge-keyed
+   * idempotency reference and escalates to an admin when attempts run out — so
+   * a gateway outage cannot leave the DB unwound but the money still captured.
+   *
+   * Pieces the client no longer owns (already transferred on, or mid-transfer)
+   * are left alone and reported back for manual follow-up.
+   */
+  async refundOrder(
+    adminId: string,
+    id: string,
+    reason: string,
+    ipAddress?: string,
+  ) {
+    const result = await runSerializable(this.prisma.db, async (tx) => {
+      await tx.$queryRaw`SELECT id FROM "Order" WHERE id = ${id}::text FOR UPDATE`;
+
+      const existing = await tx.order.findUnique({
+        where: { id },
+        select: {
+          id: true,
+          clientId: true,
+          status: true,
+          paymentStatus: true,
+          paymentReference: true,
+          totalAmount: true,
+          currency: true,
+          items: { select: { pieceId: true } },
+        },
+      });
+      if (!existing) throw new NotFoundException("errors.ORDER_NOT_FOUND");
+
+      if (existing.paymentStatus !== PaymentStatus.PAID) {
+        throw new BadRequestException("errors.ORDER_NOT_REFUNDABLE");
+      }
+
+      const pieceIds = existing.items.map((item) => item.pieceId);
+      const lockedPieces = await tx.$queryRaw<
+        Array<{ id: string; status: string; currentOwnerId: string | null }>
+      >`
+        SELECT id, status, "currentOwnerId"
+        FROM "Piece"
+        WHERE id = ANY(${pieceIds}::text[])
+        FOR UPDATE
+      `;
+
+      const releasable = lockedPieces.filter(
+        (piece) =>
+          piece.status === PieceStatus.OWNED &&
+          piece.currentOwnerId === existing.clientId,
+      );
+      const skipped = lockedPieces
+        .filter((piece) => !releasable.some((r) => r.id === piece.id))
+        .map((piece) => piece.id);
+
+      const now = new Date();
+      const releasableIds = releasable.map((piece) => piece.id);
+
+      if (releasableIds.length > 0) {
+        await tx.piece.updateMany({
+          where: { id: { in: releasableIds } },
+          data: { status: PieceStatus.AVAILABLE, currentOwnerId: null },
+        });
+
+        // Append-only history: close the record rather than deleting it.
+        await tx.ownershipRecord.updateMany({
+          where: {
+            pieceId: { in: releasableIds },
+            clientId: existing.clientId,
+            transferredAt: null,
+          },
+          data: { transferredAt: now },
+        });
+
+        await tx.certificate.updateMany({
+          where: { pieceId: { in: releasableIds }, isActive: true },
+          data: { isActive: false },
+        });
+      }
+
+      const order = await tx.order.update({
+        where: { id },
+        data: {
+          status: OrderStatus.CANCELLED,
+          paymentStatus: PaymentStatus.REFUNDED,
+          fulfillmentStatus: FulfillmentStatus.RETURNED,
+        },
+      });
+
+      if (existing.paymentReference) {
+        const pending = await tx.failedRefund.findFirst({
+          where: { providerReference: existing.paymentReference, resolvedAt: null },
+          select: { id: true },
+        });
+        if (!pending) {
+          await tx.failedRefund.create({
+            data: {
+              clientId: existing.clientId,
+              providerReference: existing.paymentReference,
+              amount: existing.totalAmount,
+              currency: existing.currency,
+              reason: `ADMIN_REFUND:${id}:${reason}`,
+            },
+          });
+        }
+      }
+
+      return { order, released: releasableIds, skipped };
+    });
+
+    await this.audit.log({
+      actorType: ActorType.ADMIN,
+      actorId: adminId,
+      action: "ORDER_REFUNDED",
+      targetType: "Order",
+      targetId: id,
+      metadata: {
+        reason,
+        releasedPieces: result.released,
+        skippedPieces: result.skipped,
+      },
+      ipAddress,
+    });
+
+    if (result.skipped.length > 0) {
+      this.logger.error(
+        `Order ${id} refunded but ${result.skipped.length} piece(s) could not be ` +
+          `released (no longer owned by the buyer): ${result.skipped.join(", ")}`,
+      );
+    }
+
+    return result.order;
   }
 }

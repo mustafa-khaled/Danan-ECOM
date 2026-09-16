@@ -27,6 +27,7 @@ export class OwnershipService {
         ? {
             OR: [
               { name: { contains: q, mode: "insensitive" as const } },
+              { nameAr: { contains: q, mode: "insensitive" as const } },
               { serialNumber: { contains: q.toUpperCase() } },
               {
                 currentOwner: {
@@ -47,10 +48,11 @@ export class OwnershipService {
         select: {
           id: true,
           name: true,
+          nameAr: true,
           serialNumber: true,
           status: true,
-          imageUrls: true,
-          collection: { select: { id: true, name: true } },
+          mainImageUrl: true,
+          collection: { select: { id: true, name: true, nameAr: true } },
           currentOwner: { select: { displayName: true, email: true } },
           ownershipRecords: {
             where: { transferredAt: null },
@@ -69,7 +71,7 @@ export class OwnershipService {
     ]);
 
     const urlMap = await this.storage.resolvePublicUrlsBatch(
-      items.map((piece) => piece.imageUrls[0]).filter(Boolean),
+      items.map((piece) => piece.mainImageUrl).filter(Boolean) as string[],
     );
 
     return {
@@ -77,13 +79,15 @@ export class OwnershipService {
         id: piece.id,
         pieceId: piece.id,
         pieceName: piece.name,
+        pieceNameAr: piece.nameAr,
         pieceSerial: piece.serialNumber,
-        pieceImageUrl: piece.imageUrls[0]
-          ? (urlMap.get(piece.imageUrls[0]) ?? null)
+        pieceImageUrl: piece.mainImageUrl
+          ? (urlMap.get(piece.mainImageUrl) ?? null)
           : null,
         ownerName: piece.currentOwner?.displayName ?? null,
         ownerEmail: piece.currentOwner?.email ?? null,
         collectionName: piece.collection.name,
+        collectionNameAr: piece.collection.nameAr,
         status: this.toUiStatus(piece.status, piece.transferRequests.length > 0),
         transferType: piece.ownershipRecords[0]?.acquisitionType ?? null,
         since: piece.ownershipRecords[0]?.acquiredAt ?? null,
@@ -110,10 +114,13 @@ export class OwnershipService {
       select: {
         id: true,
         name: true,
+        nameAr: true,
         serialNumber: true,
         status: true,
+        mainImageUrl: true,
+        mainImageLqip: true,
         imageUrls: true,
-        collection: { select: { id: true, name: true } },
+        collection: { select: { id: true, name: true, nameAr: true } },
         currentOwner: {
           select: { id: true, displayName: true, email: true, houseKeyPrefix: true },
         },
@@ -156,6 +163,7 @@ export class OwnershipService {
 
     return {
       ...piece,
+      mainImageUrl: await this.storage.resolvePublicUrl(piece.mainImageUrl),
       imageUrls: await this.storage.resolvePublicUrls(piece.imageUrls),
       activeTransfer: piece.transferRequests[0] ?? null,
       status: this.toUiStatus(piece.status, Boolean(piece.transferRequests[0])),

@@ -6,12 +6,14 @@ import {
   SystemNotifications,
 } from "@/features/admin";
 import React from "react";
+import { getTranslations } from "next-intl/server";
 
-export default function SettingsPage() {
+export default async function SettingsPage() {
+  const t = await getTranslations("admin");
   return (
     <>
       <div className="bg-white h-15 px-7.5 flex items-center font-bold text-h5 text-neutral-800">
-        Configure your House, access rules, and system preferences.
+        {t("settings.banner")}
       </div>
 
       <div className="px-7.5 py-6.75">

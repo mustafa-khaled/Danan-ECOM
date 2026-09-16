@@ -109,6 +109,8 @@ async function main() {
     await tx.houseSettings.deleteMany();
     await tx.auditLog.deleteMany();
     await tx.failedRefund.deleteMany();
+    await tx.certificateOutbox.deleteMany();
+    await tx.serialCounter.deleteMany();
     console.log("Cleared all tables.\n");
 
     // --- Admin users ---
@@ -122,7 +124,14 @@ async function main() {
     const admins: Array<{ id: string; email: string }> = [];
     for (const a of adminSeeds) {
       admins.push(
-        await tx.adminUser.create({ data: { ...a, passwordHash: adminPasswordHash } }),
+        // `mustChangePassword` defaults to true for accounts one admin creates for
+        // another. The seed has no shared default password — SEED_ADMIN_PASSWORD is
+        // required — so the operator already chose it and these accounts are usable
+        // immediately. Without this every seeded admin, including the ones the e2e
+        // suite logs in as, would be locked out of everything but change-password.
+        await tx.adminUser.create({
+          data: { ...a, passwordHash: adminPasswordHash, mustChangePassword: false },
+        }),
       );
     }
 
@@ -176,10 +185,6 @@ async function main() {
           isVisible: true,
           sortOrder: c.sortOrder,
           viewCount: 12 + c.sortOrder * 3,
-          origin: "Traditional Saudi architecture and desert light.",
-          meaning: "Safety, reassurance, affection, and compassion.",
-          inspiration: "The triangular windows and structure of the house.",
-          storyContent: "Stories of family, protection and belonging.",
           classes: {
             create: c.classSlugs.map((slug) => ({
               classId: classes.get(slug)!.id,
@@ -212,8 +217,10 @@ async function main() {
           weight: template.weight,
           dimensions: template.dimensions,
           dimensionsAr: template.dimensionsAr,
-          imageUrls: template.images.map(seedImageKey),
-          imageLqips: template.images.map((f) => lqips[f]),
+          mainImageUrl: template.images[0] ? seedImageKey(template.images[0]) : null,
+          mainImageLqip: template.images[0] ? (lqips[template.images[0]] ?? null) : null,
+          imageUrls: template.images.slice(1).map(seedImageKey),
+          imageLqips: template.images.slice(1).map((f) => lqips[f] ?? ""),
           price: template.price,
           currency: "SAR",
           isActive: true,
@@ -392,6 +399,34 @@ async function main() {
         },
       });
     }
+
+    // --- Serial counters ---
+    //
+    // The fixtures above carry their own serial and request numbers, so the
+    // allocator's counters have to be advanced past them. Without this the next
+    // `registerPiece` allocates sequence 1 and loses to the unique index on
+    // `Piece.serialNumber`. Same derivation as the backfill in the
+    // `20260916140000_serial_counter` migration.
+    await tx.$executeRaw`
+      INSERT INTO "SerialCounter" ("scope", "lastSequence", "updatedAt")
+      SELECT
+        'piece:' || p."collectionId" || ':' || split_part(p."serialNumber", '-', 2),
+        MAX((split_part(p."serialNumber", '-', 4))::int),
+        now()
+      FROM "Piece" p
+      WHERE p."serialNumber" ~ '^DADAN-[0-9]{4}-[A-Z0-9]+-[0-9]+$'
+      GROUP BY 1
+    `;
+    await tx.$executeRaw`
+      INSERT INTO "SerialCounter" ("scope", "lastSequence", "updatedAt")
+      SELECT
+        'staff-request:' || split_part(s."requestNumber", '-', 2),
+        MAX((split_part(s."requestNumber", '-', 3))::int),
+        now()
+      FROM "StaffRequest" s
+      WHERE s."requestNumber" ~ '^REQ-[0-9]{4}-[0-9]+$'
+      GROUP BY 1
+    `;
 
     // --- Summary ---
     console.log("=== Seed Summary ===");

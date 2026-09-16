@@ -7,6 +7,7 @@ import {
 import {
   AdminRole,
   ActorType,
+  Prisma,
   StaffRequestStatus,
   StaffRequestType,
   TransferStatus,
@@ -37,24 +38,25 @@ export class OperationsService {
     filters?: { q?: string; type?: OperationType; status?: OperationStatus },
   ) {
     const { skip, take, page: p, limit: l } = paginationParams(page, limit);
+
+    // The list is a union of two tables ordered by date, so the requested window
+    // can only contain rows from the first `skip + take` of each source. Fetching
+    // exactly that instead of a fixed 200-row cap keeps deep pages correct.
+    const window = skip + take;
+    const includeTransfers =
+      !filters?.type || filters.type === "PIECE_TRANSFER";
+    const includeStaff = filters?.type !== "PIECE_TRANSFER";
+
     const [transfers, staff, transferTotal, staffTotal] = await Promise.all([
-      filters?.type && filters.type !== "PIECE_TRANSFER"
-        ? Promise.resolve([])
-        : this.loadTransfers(filters),
-      filters?.type === "PIECE_TRANSFER"
-        ? Promise.resolve([])
-        : this.loadStaff(filters),
-      filters?.type && filters.type !== "PIECE_TRANSFER"
-        ? Promise.resolve(0)
-        : this.countTransfers(filters),
-      filters?.type === "PIECE_TRANSFER"
-        ? Promise.resolve(0)
-        : this.countStaff(filters),
+      includeTransfers ? this.loadTransfers(filters, window) : [],
+      includeStaff ? this.loadStaff(filters, window) : [],
+      includeTransfers ? this.countTransfers(filters) : 0,
+      includeStaff ? this.countStaff(filters) : 0,
     ]);
 
     const items = [...transfers, ...staff]
       .sort((a, b) => b.date.localeCompare(a.date))
-      .slice(skip, skip + take);
+      .slice(skip, window);
 
     return { items, total: transferTotal + staffTotal, page: p, limit: l };
   }
@@ -142,7 +144,7 @@ export class OperationsService {
         createdAt: true,
         targetClassId: true,
         client: { select: { id: true, displayName: true, email: true, classId: true } },
-        collection: { select: { id: true, name: true } },
+        collection: { select: { id: true, name: true, nameAr: true } },
       },
     });
     if (!request) throw new NotFoundException("errors.STAFF_REQUEST_NOT_FOUND");
@@ -162,22 +164,36 @@ export class OperationsService {
     });
     if (!client) throw new NotFoundException("errors.CLIENT_NOT_FOUND");
 
-    const year = new Date().getUTCFullYear();
-    const prefix = `REQ-${year}-`;
-    const existing = await this.prisma.db.staffRequest.count({
-      where: { requestNumber: { startsWith: prefix } },
-    });
-    const requestNumber = `${prefix}${String(existing + 1).padStart(3, "0")}`;
+    // The counter row is locked by the allocation until this transaction commits,
+    // so two concurrent creates get consecutive numbers. Deriving the sequence
+    // from `COUNT(*)` instead gave them both the same number, and one lost to the
+    // unique index on `requestNumber`.
+    const created = await this.prisma.db.$transaction(async (tx) => {
+      const year = new Date().getUTCFullYear();
+      const rows = await tx.$queryRaw<Array<{ lastSequence: number }>>`
+        INSERT INTO "SerialCounter" ("scope", "lastSequence", "updatedAt")
+        VALUES (${`staff-request:${year}`}::text, 1, now())
+        ON CONFLICT ("scope") DO UPDATE
+          SET "lastSequence" = "SerialCounter"."lastSequence" + 1,
+              "updatedAt" = now()
+        RETURNING "lastSequence"
+      `;
 
-    const created = await this.prisma.db.staffRequest.create({
-      data: {
-        requestNumber,
-        type: data.type,
-        clientId: data.clientId,
-        targetClassId: data.targetClassId,
-        collectionId: data.collectionId,
-        notes: data.notes,
-      },
+      const sequence = rows[0]?.lastSequence;
+      if (sequence === undefined) {
+        throw new Error("Request number allocation returned no row");
+      }
+
+      return tx.staffRequest.create({
+        data: {
+          requestNumber: `REQ-${year}-${String(sequence).padStart(3, "0")}`,
+          type: data.type,
+          clientId: data.clientId,
+          targetClassId: data.targetClassId,
+          collectionId: data.collectionId,
+          notes: data.notes,
+        },
+      });
     });
 
     await this.audit.log({
@@ -328,30 +344,66 @@ export class OperationsService {
     return status as StaffRequestStatus;
   }
 
-  private async loadTransfers(filters?: { q?: string; status?: OperationStatus }) {
+  /** Shared by `loadTransfers` and `countTransfers` so the two cannot drift apart. */
+  private transferWhere(filters?: {
+    q?: string;
+    status?: OperationStatus;
+  }): Prisma.TransferRequestWhereInput {
     const q = filters?.q?.trim();
+    const status = this.transferStatusFilter(filters?.status);
+    return {
+      ...(status ? { status } : {}),
+      ...(q
+        ? {
+            OR: [
+              { piece: { name: { contains: q, mode: "insensitive" as const } } },
+              { piece: { nameAr: { contains: q, mode: "insensitive" as const } } },
+              { fromClient: { displayName: { contains: q, mode: "insensitive" as const } } },
+              { toClient: { displayName: { contains: q, mode: "insensitive" as const } } },
+            ],
+          }
+        : {}),
+    };
+  }
+
+  /** Shared by `loadStaff` and `countStaff` so the two cannot drift apart. */
+  private staffWhere(filters?: {
+    q?: string;
+    type?: OperationType;
+    status?: OperationStatus;
+  }): Prisma.StaffRequestWhereInput {
+    const q = filters?.q?.trim();
+    const status = this.staffStatusFilter(filters?.status);
+    return {
+      ...(filters?.type && filters.type !== "PIECE_TRANSFER"
+        ? { type: filters.type as StaffRequestType }
+        : {}),
+      ...(status ? { status } : {}),
+      ...(q
+        ? {
+            OR: [
+              { requestNumber: { contains: q, mode: "insensitive" as const } },
+              { client: { displayName: { contains: q, mode: "insensitive" as const } } },
+              { client: { email: { contains: q.toLowerCase() } } },
+            ],
+          }
+        : {}),
+    };
+  }
+
+  private async loadTransfers(
+    filters: { q?: string; status?: OperationStatus } | undefined,
+    take: number,
+  ) {
     const items = await this.prisma.db.transferRequest.findMany({
-      where: {
-        ...(this.transferStatusFilter(filters?.status)
-          ? { status: this.transferStatusFilter(filters?.status) }
-          : {}),
-        ...(q
-          ? {
-              OR: [
-                { piece: { name: { contains: q, mode: "insensitive" as const } } },
-                { fromClient: { displayName: { contains: q, mode: "insensitive" as const } } },
-                { toClient: { displayName: { contains: q, mode: "insensitive" as const } } },
-              ],
-            }
-          : {}),
-      },
+      where: this.transferWhere(filters),
       orderBy: { initiatedAt: "desc" },
-      take: 200,
+      take,
       select: {
         id: true,
         status: true,
         initiatedAt: true,
-        piece: { select: { name: true } },
+        piece: { select: { name: true, nameAr: true } },
         fromClient: { select: { displayName: true, email: true } },
       },
     });
@@ -368,35 +420,20 @@ export class OperationsService {
       date: item.initiatedAt.toISOString(),
       status: this.mapTransferStatus(item.status),
       pieceName: item.piece.name,
+      pieceNameAr: item.piece.nameAr,
     }));
   }
 
-  private async loadStaff(filters?: {
-    q?: string;
-    type?: OperationType;
-    status?: OperationStatus;
-  }) {
-    const q = filters?.q?.trim();
+  private async loadStaff(
+    filters:
+      | { q?: string; type?: OperationType; status?: OperationStatus }
+      | undefined,
+    take: number,
+  ) {
     const items = await this.prisma.db.staffRequest.findMany({
-      where: {
-        ...(filters?.type && filters.type !== "PIECE_TRANSFER"
-          ? { type: filters.type as StaffRequestType }
-          : {}),
-        ...(this.staffStatusFilter(filters?.status)
-          ? { status: this.staffStatusFilter(filters?.status) }
-          : {}),
-        ...(q
-          ? {
-              OR: [
-                { requestNumber: { contains: q, mode: "insensitive" as const } },
-                { client: { displayName: { contains: q, mode: "insensitive" as const } } },
-                { client: { email: { contains: q.toLowerCase() } } },
-              ],
-            }
-          : {}),
-      },
+      where: this.staffWhere(filters),
       orderBy: { createdAt: "desc" },
-      take: 200,
+      take,
       select: {
         id: true,
         requestNumber: true,
@@ -404,7 +441,7 @@ export class OperationsService {
         status: true,
         createdAt: true,
         client: { select: { displayName: true, email: true } },
-        collection: { select: { name: true } },
+        collection: { select: { name: true, nameAr: true } },
       },
     });
 
@@ -420,47 +457,23 @@ export class OperationsService {
       date: item.createdAt.toISOString(),
       status: item.status as OperationStatus,
       pieceName: item.collection?.name,
+      pieceNameAr: item.collection?.nameAr,
     }));
   }
 
   private countTransfers(filters?: { q?: string; status?: OperationStatus }) {
-    const q = filters?.q?.trim();
     return this.prisma.db.transferRequest.count({
-      where: {
-        ...(this.transferStatusFilter(filters?.status)
-          ? { status: this.transferStatusFilter(filters?.status) }
-          : {}),
-        ...(q
-          ? {
-              OR: [
-                { piece: { name: { contains: q, mode: "insensitive" as const } } },
-                { fromClient: { displayName: { contains: q, mode: "insensitive" as const } } },
-              ],
-            }
-          : {}),
-      },
+      where: this.transferWhere(filters),
     });
   }
 
-  private countStaff(filters?: { q?: string; type?: OperationType; status?: OperationStatus }) {
-    const q = filters?.q?.trim();
+  private countStaff(filters?: {
+    q?: string;
+    type?: OperationType;
+    status?: OperationStatus;
+  }) {
     return this.prisma.db.staffRequest.count({
-      where: {
-        ...(filters?.type && filters.type !== "PIECE_TRANSFER"
-          ? { type: filters.type as StaffRequestType }
-          : {}),
-        ...(this.staffStatusFilter(filters?.status)
-          ? { status: this.staffStatusFilter(filters?.status) }
-          : {}),
-        ...(q
-          ? {
-              OR: [
-                { requestNumber: { contains: q, mode: "insensitive" as const } },
-                { client: { displayName: { contains: q, mode: "insensitive" as const } } },
-              ],
-            }
-          : {}),
-      },
+      where: this.staffWhere(filters),
     });
   }
 

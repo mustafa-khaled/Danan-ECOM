@@ -24,16 +24,57 @@ function cookieOf(res: request.Response): string {
   return (Array.isArray(cookies) ? cookies : [cookies]).join("; ");
 }
 
+/**
+ * Resolved from the *most restricted* client's catalog rather than
+ * `/admin/collections`, whose first row is often a collection Layla's class
+ * cannot see — a piece placed there 404s on add-to-cart and every test that
+ * needs two competing buyers fails for the wrong reason.
+ */
+async function visibleCollectionId(
+  http: ReturnType<INestApplication["getHttpServer"]>,
+  clientCookie: string,
+): Promise<string> {
+  const collections = await request(http)
+    .get("/client/collections")
+    .set("Cookie", clientCookie)
+    .expect(200);
+  const items = (collections.body.items ?? collections.body) as { id: string }[];
+  const first = items[0];
+  if (!first) throw new Error("Client can see no collections; is the database seeded?");
+  return first.id;
+}
+
+/**
+ * The seed ships both clients a populated cart, and `reserveForCheckout` holds
+ * *every* piece in the cart — so a leftover item that is no longer AVAILABLE
+ * makes a reserve fail with PIECE_NOT_AVAILABLE before it ever evaluates the
+ * piece under test. Tests that assert on reservation behaviour must start from
+ * an empty cart.
+ */
+async function clearCart(
+  http: ReturnType<INestApplication["getHttpServer"]>,
+  clientCookie: string,
+): Promise<void> {
+  const cart = await request(http)
+    .get("/client/cart")
+    .set("Cookie", clientCookie)
+    .expect(200);
+
+  const items = (cart.body.items ?? []) as { piece?: { id: string } }[];
+  for (const item of items) {
+    if (!item.piece) continue;
+    await request(http)
+      .delete(`/client/cart/${item.piece.id}`)
+      .set("Cookie", clientCookie);
+  }
+}
+
 async function registerTestPiece(
   http: ReturnType<INestApplication["getHttpServer"]>,
   adminCookie: string,
+  collectionId: string,
   suffix = `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
 ) {
-  const collections = await request(http)
-    .get("/admin/collections")
-    .set("Cookie", adminCookie)
-    .expect(200);
-  const collectionId = collections.body.items[0].id as string;
   return request(http)
     .post("/admin/pieces")
     .set("Cookie", adminCookie)
@@ -59,6 +100,7 @@ describe("Critical Path Tests (e2e)", () => {
   let http: ReturnType<INestApplication["getHttpServer"]>;
   let amiraCookie: string;
   let laylaCookie: string;
+  let collectionId: string;
   let adminCookie: string;
 
   beforeAll(async () => {
@@ -104,6 +146,11 @@ describe("Critical Path Tests (e2e)", () => {
       .send({ email: ADMIN_EMAIL, password: ADMIN_PASSWORD })
       .expect(201);
     adminCookie = cookieOf(adminRes);
+
+    collectionId = await visibleCollectionId(http, laylaCookie);
+
+    await clearCart(http, amiraCookie);
+    await clearCart(http, laylaCookie);
   });
 
   afterAll(async () => {
@@ -115,7 +162,7 @@ describe("Critical Path Tests (e2e)", () => {
 
     beforeAll(async () => {
       // Admin creates a fresh piece
-      const piece = await registerTestPiece(http, adminCookie);
+      const piece = await registerTestPiece(http, adminCookie, collectionId);
       pieceId = piece.body.id;
     });
 
@@ -144,8 +191,10 @@ describe("Critical Path Tests (e2e)", () => {
         .post("/client/checkout/reserve")
         .set("Cookie", laylaCookie);
 
-      expect(secondReserve.status).toBe(400);
-      expect(secondReserve.body.message).toContain("PIECE_RESERVED");
+      // 409, not 400: the hold is now claimed atomically and a lost claim is a
+      // conflict over a resource someone else holds, not a malformed request.
+      expect(secondReserve.status).toBe(409);
+      expect(secondReserve.body.messageKey).toBe("errors.PIECE_RESERVED");
 
       // First client completes checkout
       const checkout1 = await request(http)
@@ -226,13 +275,21 @@ describe("Critical Path Tests (e2e)", () => {
 
   describe("4. Double-charge prevention (idempotency)", () => {
     it("same cart contents submitted twice produces only one order", async () => {
-      const piece = await registerTestPiece(http, adminCookie);
+      const piece = await registerTestPiece(http, adminCookie, collectionId);
 
       await request(http)
         .post("/client/cart")
         .set("Cookie", amiraCookie)
         .send({ pieceId: piece.body.id })
         .expect(201);
+
+      // Checkout requires an unexpired hold on every cart piece, and anchors the
+      // idempotency key to it — so the reserve step is what makes the retry below
+      // reuse the key rather than mint a new one.
+      await request(http)
+        .post("/client/checkout/reserve")
+        .set("Cookie", amiraCookie)
+        .expect(200);
 
       const checkout = await request(http)
         .post("/client/checkout")
@@ -320,7 +377,7 @@ describe("Critical Path Tests (e2e)", () => {
 
   describe("7. Payment failure handling", () => {
     it("declined payment creates no order and piece stays AVAILABLE", async () => {
-      const piece = await registerTestPiece(http, adminCookie);
+      const piece = await registerTestPiece(http, adminCookie, collectionId);
 
       await request(http)
         .post("/client/cart")
@@ -360,7 +417,7 @@ describe("Critical Path Tests (e2e)", () => {
 
   describe("7b. 3-D Secure redirect flow", () => {
     it("returns a redirect instead of an order, then settles on confirm", async () => {
-      const piece = await registerTestPiece(http, adminCookie);
+      const piece = await registerTestPiece(http, adminCookie, collectionId);
 
       await request(http)
         .post("/client/cart")
@@ -479,7 +536,7 @@ describe("Critical Path Tests (e2e)", () => {
 
   describe("10. Checkout hold is exclusive, cart is not", () => {
     it("two clients can add the same piece until checkout reserve", async () => {
-      const piece = await registerTestPiece(http, adminCookie);
+      const piece = await registerTestPiece(http, adminCookie, collectionId);
 
       await request(http)
         .post("/client/cart")
@@ -504,12 +561,70 @@ describe("Critical Path Tests (e2e)", () => {
         .send({ pieceId: piece.body.id });
 
       expect(attemptWhileReserved.status).toBe(400);
-      expect(attemptWhileReserved.body.message).toContain("PIECE_RESERVED");
+      expect(attemptWhileReserved.body.messageKey).toBe("errors.PIECE_RESERVED");
 
       await request(http)
         .delete(`/client/cart/${piece.body.id}`)
         .set("Cookie", amiraCookie)
         .expect(200);
+    });
+  });
+
+  /**
+   * `reserveForCheckout` used to `upsert` the hold unconditionally, so the second
+   * client silently took over a live reservation and both went on to pay for the
+   * same piece. The claim is now a conditional INSERT ... ON CONFLICT.
+   */
+  describe("11. Checkout reservations cannot be taken over", () => {
+    it("only one of two simultaneous reserves wins the piece", async () => {
+      const piece = await registerTestPiece(http, adminCookie, collectionId);
+      const pieceId = piece.body.id as string;
+
+      await clearCart(http, amiraCookie);
+      await clearCart(http, laylaCookie);
+
+      await request(http)
+        .post("/client/cart")
+        .set("Cookie", amiraCookie)
+        .send({ pieceId })
+        .expect(201);
+      await request(http)
+        .post("/client/cart")
+        .set("Cookie", laylaCookie)
+        .send({ pieceId })
+        .expect(201);
+
+      const [amira, layla] = await Promise.all([
+        request(http).post("/client/checkout/reserve").set("Cookie", amiraCookie),
+        request(http).post("/client/checkout/reserve").set("Cookie", laylaCookie),
+      ]);
+
+      const statuses = [amira.status, layla.status].sort();
+      expect(statuses).toEqual([200, 409]);
+
+      const loser = amira.status === 409 ? amira : layla;
+      expect(loser.body.messageKey).toBe("errors.PIECE_RESERVED");
+
+      await clearCart(http, amiraCookie);
+      await clearCart(http, laylaCookie);
+    });
+  });
+
+  /**
+   * Serial numbers came from `MAX(serialNumber) + 1` read outside the piece
+   * insert, so two registrations in the same collection could compute the same
+   * next value. Allocation now goes through the `SerialCounter` row.
+   */
+  describe("12. Serial number allocation is collision-free", () => {
+    it("two simultaneous registrations get distinct serials", async () => {
+      const [first, second] = await Promise.all([
+        registerTestPiece(http, adminCookie, collectionId, `race-a-${Date.now()}`),
+        registerTestPiece(http, adminCookie, collectionId, `race-b-${Date.now()}`),
+      ]);
+
+      expect(first.body.serialNumber).toBeTruthy();
+      expect(second.body.serialNumber).toBeTruthy();
+      expect(first.body.serialNumber).not.toBe(second.body.serialNumber);
     });
   });
 });

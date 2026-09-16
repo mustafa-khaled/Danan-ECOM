@@ -1,6 +1,6 @@
 "use client";
 
-import { useLocale } from "next-intl";
+import { useLocale, useTranslations } from "next-intl";
 import { useRouter } from "next/navigation";
 import { useTransition } from "react";
 import Image from "next/image";
@@ -37,6 +37,7 @@ interface LanguageToggleProps {
 
 export default function LanguageToggle({ className }: LanguageToggleProps) {
   const locale = (useLocale() as Locale) || "en";
+  const t = useTranslations("admin.topbar");
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
 
@@ -50,8 +51,10 @@ export default function LanguageToggle({ className }: LanguageToggleProps) {
     if (typeof document !== "undefined") {
       document.documentElement.dir = nextLocale === "ar" ? "rtl" : "ltr";
       document.documentElement.lang = nextLocale;
-      document.body.className =
-        nextLocale === "ar" ? "font-arabic" : "font-manrope";
+      document.body.classList.remove("font-arabic", "font-manrope");
+      document.body.classList.add(
+        nextLocale === "ar" ? "font-arabic" : "font-manrope",
+      );
     }
 
     startTransition(() => {
@@ -67,7 +70,7 @@ export default function LanguageToggle({ className }: LanguageToggleProps) {
     >
       <SelectTrigger
         size="sm"
-        aria-label="Switch language"
+        aria-label={t("switchLanguage")}
         className={cn(
           "h-auto min-h-0 cursor-pointer border-none! bg-transparent px-1 py-1 shadow-none focus-visible:shadow-none focus-visible:border-none! flex items-center gap-1.5",
           className,

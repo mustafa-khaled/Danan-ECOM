@@ -2,19 +2,13 @@ import { fetchAdminOwnershipDetail } from "@/features/admin/api/fetch-admin-owne
 import { OperationReviewActions } from "@/features/admin/components/operations/components/operation-review-actions";
 import { getAdminCookieHeader } from "@/features/auth/server/admin-session";
 import { ApiError } from "@/shared/lib/send-request";
+import { formatAdminDate } from "@/shared/utils/format";
 import { ArrowLeft } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
 import { notFound } from "next/navigation";
-
-function formatDate(value?: string | null) {
-  if (!value) return "";
-  return new Date(value).toLocaleDateString("en-GB", {
-    day: "2-digit",
-    month: "short",
-    year: "numeric",
-  });
-}
+import { getLocale, getTranslations } from "next-intl/server";
+import type { Locale } from "@/i18n/routing";
 
 export default async function OwnershipDetailsPage({
   params,
@@ -23,6 +17,10 @@ export default async function OwnershipDetailsPage({
 }) {
   const { id } = await params;
   const cookieHeader = await getAdminCookieHeader();
+  const [t, locale] = await Promise.all([
+    getTranslations("admin"),
+    getLocale() as Promise<Locale>,
+  ]);
   let record;
   try {
     record = await fetchAdminOwnershipDetail(id, cookieHeader);
@@ -40,12 +38,12 @@ export default async function OwnershipDetailsPage({
       <div className="flex gap-[16px] px-7.5 py-3 [&>div]:rounded-xl [&>div]:h-15.5 [&>div]:bg-white">
         <div className="flex items-center justify-center w-15.5">
           <Link href="/admin/ownership">
-            <ArrowLeft className="size-6" />
+            <ArrowLeft className="size-6 rtl:rotate-180" />
           </Link>
         </div>
         <div className="w-full px-7.5 flex items-center justify-between">
           <h4 className="font-bold text-h6 text-neutral-800">
-            Ownership Details
+            {t("topbar.ownershipDetails")}
           </h4>
           <div className="flex items-center gap-2">
             <Image
@@ -57,7 +55,7 @@ export default async function OwnershipDetailsPage({
 
             <span>/</span>
             <span className="text-[14px] text-[#BF7266] bg-[#FBF7F7] py-1 px-2 rounded-lg transition-all">
-              Access
+              {t("common.access")}
             </span>
           </div>
         </div>
@@ -71,17 +69,17 @@ export default async function OwnershipDetailsPage({
 
           <div className="pt-5 pb-[32px] border-b border-[#E1E4E8]">
             <h4 className="font-heading mb-5 text-h4 font-bold">
-              Member Overview
+              {t("members.overview")}
             </h4>
 
             <div className="grid grid-cols-2 gap-x-[32px] gap-y-3">
               <ReadField label="Mawaddah Ring" value={record.name} />
               <ReadField
-                label="Current Owner"
+                label={t("pieces.currentOwner")}
                 value={record.currentOwner?.displayName ?? ""}
               />
-              <ReadField label="Ownership Status" value={record.status} />
-              <ReadField label="Acquired" value={formatDate(currentOwnership?.acquiredAt)} />
+              <ReadField label={t("common.status")} value={record.status} />
+              <ReadField label={t("common.since")} value={formatAdminDate(currentOwnership?.acquiredAt, locale)} />
             </div>
           </div>
 
@@ -101,7 +99,7 @@ export default async function OwnershipDetailsPage({
                       index === 0 ? "pb-5 border-b border-[#E1E4E8]" : "pt-5"
                     }`}
                   >
-                    <h6 className="font-heading text-h4">{formatDate(item.acquiredAt)}</h6>
+                    <h6 className="font-heading text-h4">{formatAdminDate(item.acquiredAt, locale)}</h6>
                     <p className="text-[#353D48] text-h6">
                       {item.client.displayName}
                       <br />
@@ -138,11 +136,11 @@ export default async function OwnershipDetailsPage({
                 <p>
                   Requested
                   <br />
-                  {formatDate(transfer.initiatedAt)}
+                  {formatAdminDate(transfer.initiatedAt, locale)}
                 </p>
 
                 <p>
-                  Status
+                  {t("common.status")}
                   <br />
                   <span className="text-[#FFD648] font-medium text-[12px] bg-[#FFF9E5] px-2 py-1">
                     {transfer.status}

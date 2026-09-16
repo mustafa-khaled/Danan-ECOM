@@ -70,9 +70,9 @@ export default async function OrderDetailPage({
             {order.items.map((item) => (
               <li key={item.piece.id} className="flex gap-4">
                 <div className="relative h-20 w-16 shrink-0 overflow-hidden bg-(--color-surface)">
-                  {item.piece.imageUrls[0] ? (
+                  {item.piece.mainImageUrl ? (
                     <Image
-                      src={item.piece.imageUrls[0]}
+                      src={item.piece.mainImageUrl}
                       alt={item.piece.name}
                       fill
                       sizes="64px"

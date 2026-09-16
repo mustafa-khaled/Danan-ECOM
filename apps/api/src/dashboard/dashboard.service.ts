@@ -74,6 +74,7 @@ export class DashboardService {
       membership: membership.map((cls) => ({
         classId: cls.id,
         name: cls.name,
+        nameAr: cls.nameAr,
         clientCount: cls._count.clients,
       })),
       collections,
@@ -148,6 +149,7 @@ export class DashboardService {
       membershipDistribution: membership.map((cls) => ({
         classId: cls.id,
         name: cls.name,
+        nameAr: cls.nameAr,
         count: cls._count.clients,
         percentage: totalMembers === 0 ? 0 : Math.round((cls._count.clients / totalMembers) * 100),
       })),

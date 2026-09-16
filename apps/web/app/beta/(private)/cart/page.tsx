@@ -39,9 +39,9 @@ export default async function CartPage() {
                   className="flex flex-col gap-4 border border-border bg-white p-4 sm:flex-row sm:items-center"
                 >
                   <div className="relative h-24 w-20 shrink-0 overflow-hidden bg-(--color-surface)">
-                    {piece.imageUrls[0] ? (
+                    {piece.mainImageUrl ? (
                       <Image
-                        src={piece.imageUrls[0]}
+                        src={piece.mainImageUrl}
                         alt={piece.name}
                         fill
                         sizes="80px"

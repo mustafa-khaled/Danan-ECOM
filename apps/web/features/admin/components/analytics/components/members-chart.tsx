@@ -6,12 +6,14 @@ import {
   ChartTooltip,
   ChartTooltipContent,
 } from "@/components/ui/chart";
+import { useTranslations } from "next-intl";
 
 export default function MembersChart({
   data = [],
 }: {
   data?: Array<{ period: string; count: number }>;
 }) {
+  const t = useTranslations("admin");
   const memberData = data.map((row) => ({
     month: row.period.slice(5),
     members: row.count,
@@ -27,7 +29,7 @@ const memberConfig = {
   if (memberData.length === 0) {
     return (
       <article className="rounded-xl bg-card p-7 shadow-sm ring-1 ring-border/40">
-        <p className="text-[13px] font-medium uppercase text-foreground/80">Members</p>
+        <p className="text-[13px] font-medium uppercase text-foreground/80">{t("analytics.members")}</p>
         <p className="mt-4 text-sm text-muted-foreground">No member activity yet.</p>
       </article>
     );
@@ -41,7 +43,7 @@ const memberConfig = {
         </p>
 
         <h2 className="mt-1 text-[22px] font-semibold tracking-tight">
-          Members
+          {t("analytics.members")}
         </h2>
       </header>
 

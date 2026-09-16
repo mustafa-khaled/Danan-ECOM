@@ -1,6 +1,5 @@
 "use client";
 
-import { useRouter } from "next/navigation";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { cartKeys } from "@/shared/lib/query-keys";
 import { removeFromCart as removeFromCartApi } from "../api/remove-from-cart";
@@ -8,7 +7,6 @@ import type { CartItem } from "../types";
 
 export function useRemoveFromCart() {
   const queryClient = useQueryClient();
-  const router = useRouter();
   const {
     mutateAsync: removeFromCart,
     data,
@@ -31,7 +29,6 @@ export function useRemoveFromCart() {
     },
     onSettled: () => {
       queryClient.invalidateQueries({ queryKey: cartKeys.all });
-      router.refresh();
     },
   });
 

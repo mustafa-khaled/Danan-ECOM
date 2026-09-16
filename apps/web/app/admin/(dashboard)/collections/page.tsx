@@ -7,6 +7,7 @@ import { fetchAdminCollections } from "@/features/admin/api/fetch-admin-collecti
 import { fetchAdminCollectionStats } from "@/features/admin/api/fetch-admin-stats";
 import { getAdminCookieHeader } from "@/features/auth/server/admin-session";
 import { ADMIN_PAGE_SIZE, parseAdminPage } from "@/shared/lib/parse-admin-page";
+import { getTranslations } from "next-intl/server";
 
 export default async function CollectionsPage({
   searchParams,
@@ -16,6 +17,7 @@ export default async function CollectionsPage({
   const { page: pageParam, q } = await searchParams;
   const page = parseAdminPage(pageParam);
   const cookieHeader = await getAdminCookieHeader();
+  const t = await getTranslations("admin");
 
   const [{ items, total }, stats] = await Promise.all([
     fetchAdminCollections(page, ADMIN_PAGE_SIZE, cookieHeader, { q }),
@@ -25,7 +27,7 @@ export default async function CollectionsPage({
   return (
     <>
       <div className="bg-white h-15 px-7.5 flex items-center font-bold text-h5 text-neutral-800">
-        Curate the stories, pieces, and experiences that belong to the House
+        {t("collections.banner")}
       </div>
 
       <div className="px-7.5 py-6.75">

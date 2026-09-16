@@ -72,6 +72,8 @@ const ChartStyle = ({ id, config }: { id: string; config: ChartConfig }) => {
     return null
   }
 
+  // M-03: SECURITY — THEMES is a hardcoded static object. Never introduce user-controlled
+  // data into THEMES or this template, as it would create a stored XSS vector.
   return (
     <style
       dangerouslySetInnerHTML={{

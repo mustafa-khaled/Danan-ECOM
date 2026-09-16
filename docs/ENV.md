@@ -9,6 +9,13 @@ NODE_ENV=production
 # --- Database & cache ---
 
 DATABASE_URL=postgresql://dadan:YOUR_STRONG_DB_PASSWORD_HERE@db:5432/dadan
+
+# Connections each API replica opens. Multiply by the replica count and keep the
+
+# result below PgBouncer's max_client_conn.
+
+DATABASE_POOL_SIZE=10
+DATABASE_POOL_TIMEOUT_SECONDS=10
 REDIS_URL=redis://:YOUR_REDIS_PASSWORD@redis:6379
 POSTGRES_PASSWORD=YOUR_STRONG_DB_PASSWORD_HERE
 REDIS_PASSWORD=YOUR_REDIS_PASSWORD
@@ -48,6 +55,13 @@ STORAGE_LOCAL_PATH=/app/uploads
 # --- Payments (Tap Payments) ---
 
 PAYMENT_PROVIDER_KEY=sk_live_YOUR_TAP_LIVE_SECRET_KEY
+
+# Leave empty. Tap issues no separate webhook secret — the `hashstring` header
+
+# is an HMAC keyed with PAYMENT_PROVIDER_KEY itself. Set this only if Tap gave
+
+# this account a dedicated signing key.
+
 PAYMENT_PROVIDER_SECRET=
 PAYMENT_WEBHOOK_URL=https://yourdomain.com/api/payments/webhook
 PAYMENT_REDIRECT_URL=https://yourdomain.com/beta/checkout/return

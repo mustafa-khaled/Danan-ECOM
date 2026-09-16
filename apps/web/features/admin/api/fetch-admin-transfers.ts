@@ -35,10 +35,11 @@ export function approveTransfer(id: string, cookieHeader?: string) {
   });
 }
 
-export function rejectTransfer(id: string, cookieHeader?: string) {
+export function rejectTransfer(id: string, reason: string, cookieHeader?: string) {
   return sendRequest<{ success: boolean }>({
     method: "POST",
     url: `/admin/transfers/${id}/reject`,
+    body: { reason },
     cookieHeader,
   });
 }

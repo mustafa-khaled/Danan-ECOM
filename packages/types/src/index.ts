@@ -31,6 +31,8 @@ export interface AdminSession {
   email: string;
   role: "SUPER_ADMIN" | "STAFF" | "CURATOR" | "OPERATIONS" | "VIEWER";
   displayName: string;
+  /** While true every endpoint except change-password, logout and `me` is blocked. */
+  mustChangePassword: boolean;
 }
 
 export interface ShippingAddress {

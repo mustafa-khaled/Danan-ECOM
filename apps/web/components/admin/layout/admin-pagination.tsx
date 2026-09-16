@@ -1,4 +1,7 @@
+"use client";
+
 import Link from "next/link";
+import { useTranslations } from "next-intl";
 
 interface AdminPaginationProps {
   basePath: string;
@@ -8,6 +11,7 @@ interface AdminPaginationProps {
 }
 
 export function AdminPagination({ basePath, page, limit, total }: AdminPaginationProps) {
+  const t = useTranslations("admin.common");
   const totalPages = Math.max(1, Math.ceil(total / limit));
 
   if (totalPages <= 1) {
@@ -23,11 +27,11 @@ export function AdminPagination({ basePath, page, limit, total }: AdminPaginatio
 
   return (
     <nav
-      aria-label="Pagination"
+      aria-label={t("pagination")}
       className="flex flex-wrap items-center justify-between gap-4 border-t border-[var(--color-border)] pt-4"
     >
       <p className="text-xs tracking-[0.12em] uppercase text-[var(--color-ivory-muted)]">
-        Page {page} of {totalPages} · {total} total
+        {t("pageOf", { page, totalPages, total })}
       </p>
       <div className="flex gap-2">
         {prevPage ? (
@@ -35,11 +39,11 @@ export function AdminPagination({ basePath, page, limit, total }: AdminPaginatio
             href={hrefFor(prevPage)}
             className="inline-flex min-h-11 items-center rounded-[var(--radius-item)] border border-[var(--color-border)] px-4 text-xs tracking-[0.12em] uppercase text-[var(--color-ivory-muted)] transition-colors hover:border-[var(--color-gold)] hover:text-[var(--color-gold)]"
           >
-            Previous
+            {t("previous")}
           </Link>
         ) : (
           <span className="inline-flex min-h-11 items-center rounded-[var(--radius-item)] border border-[var(--color-border)] px-4 text-xs tracking-[0.12em] uppercase text-[var(--color-ivory-muted)] opacity-40">
-            Previous
+            {t("previous")}
           </span>
         )}
         {nextPage ? (
@@ -47,11 +51,11 @@ export function AdminPagination({ basePath, page, limit, total }: AdminPaginatio
             href={hrefFor(nextPage)}
             className="inline-flex min-h-11 items-center rounded-[var(--radius-item)] border border-[var(--color-border)] px-4 text-xs tracking-[0.12em] uppercase text-[var(--color-ivory-muted)] transition-colors hover:border-[var(--color-gold)] hover:text-[var(--color-gold)]"
           >
-            Next
+            {t("next")}
           </Link>
         ) : (
           <span className="inline-flex min-h-11 items-center rounded-[var(--radius-item)] border border-[var(--color-border)] px-4 text-xs tracking-[0.12em] uppercase text-[var(--color-ivory-muted)] opacity-40">
-            Next
+            {t("next")}
           </span>
         )}
       </div>

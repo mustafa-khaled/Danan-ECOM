@@ -31,17 +31,15 @@ export interface AdminClientListItem {
 export interface AdminPieceListItem {
   id: string;
   serialNumber: string;
-  name?: string;
-  pieceName?: string;
-  designName?: string;
+  name: string;
+  nameAr?: string | null;
   collection: string;
+  collectionAr?: string | null;
   collectionId?: string;
-  type?: string;
   material?: string;
+  materialAr?: string | null;
   currentOwner: string | null;
   status: string;
-  ownership?: string;
-  access?: string;
   updatedAt?: string;
   createdAt?: string;
 }
@@ -55,7 +53,7 @@ export interface AdminOrderListItem {
   currency: string;
   placedAt: string;
   client: { displayName: string; email: string };
-  items: Array<{ piece: { serialNumber: string } }>;
+  items: Array<{ piece: { serialNumber: string; name?: string; nameAr?: string | null } }>;
 }
 
 export interface AdminTransferListItem {
@@ -64,7 +62,7 @@ export interface AdminTransferListItem {
   transferType: string;
   initiatedAt: string;
   needsReview?: boolean;
-  piece: { serialNumber: string; name?: string; imageUrls?: string[] };
+  piece: { serialNumber: string; name?: string; nameAr?: string | null; mainImageUrl?: string | null };
   fromClient: { displayName: string; email: string };
   toClient: { displayName: string; email: string };
 }
@@ -88,7 +86,6 @@ export interface AdminCollectionListItem {
   isVisible: boolean;
   sortOrder: number;
   classes?: AdminClass[];
-  designCount?: number;
   pieceCount?: number;
   ownerCount?: number;
   createdAt?: string;
@@ -98,14 +95,8 @@ export interface AdminCollectionListItem {
 export interface AdminCollectionDetail extends AdminCollectionListItem {
   createdAt: string;
   updatedAt: string;
-  origin?: string | null;
-  meaning?: string | null;
-  inspiration?: string | null;
-  storyContent?: string | null;
-  storyImageUrls?: string[];
   stats?: { pieceCount: number; ownerCount: number; transferCount: number };
   health?: {
-    hasStory: boolean;
     hasCover: boolean;
     hasPieces: boolean;
     hasAccessRules: boolean;
@@ -118,7 +109,7 @@ export interface AdminCertificateListItem {
   isActive: boolean;
   issuedAt: string;
   pdfUrl: string | null;
-  piece: { serialNumber: string; name?: string };
+  piece: { serialNumber: string; name?: string; nameAr?: string | null };
   owner: { displayName: string } | null;
 }
 
@@ -135,7 +126,6 @@ export interface AdminVerificationLogItem {
 export interface AdminClientDetail {
   id: string;
   displayName: string;
-  displayNameAr?: string | null;
   email: string;
   phone?: string | null;
   houseId?: string;
@@ -149,24 +139,44 @@ export interface AdminClientDetail {
   ownedPieces?: Array<{
     id: string;
     name: string;
+    nameAr?: string | null;
     serialNumber: string;
-    imageUrls: string[];
-    collection?: { name: string };
+    mainImageUrl?: string | null;
+    collection?: { name: string; nameAr?: string | null };
   }>;
 }
 
 export interface AdminPieceDetail {
   id: string;
   serialNumber: string;
-  name?: string;
-  slug?: string;
+  name: string;
+  nameAr?: string | null;
+  slug: string;
+  story?: string | null;
+  storyAr?: string | null;
+  material?: string | null;
+  materialAr?: string | null;
+  dimensions?: string | null;
+  dimensionsAr?: string | null;
+  weight?: number | null;
+  price?: number | null;
+  notes?: string | null;
+  isActive?: boolean;
+  mainImageUrl?: string | null;
+  imageUrls?: string[];
   collectionId: string;
-  collection: string;
+  collection: { id: string; name: string; nameAr?: string | null; slug: string };
   currentOwner: string | null;
   currentOwnerId: string | null;
   status: string;
   createdAt: string;
   updatedAt: string;
+  specifications?: Array<{
+    key: string;
+    keyAr?: string | null;
+    value: string;
+    valueAr?: string | null;
+  }>;
 }
 
 export interface AdminOrderDetail {
@@ -181,7 +191,7 @@ export interface AdminOrderDetail {
   client: { id: string; displayName: string; email: string };
   items: Array<{
     id: string;
-    piece: { id: string; serialNumber: string; name?: string };
+    piece: { id: string; serialNumber: string; name?: string; nameAr?: string | null };
     priceAtPurchase: string | number;
   }>;
   shippingAddress?: string | null;

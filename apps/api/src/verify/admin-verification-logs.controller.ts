@@ -5,12 +5,15 @@ import {
   UseGuards,
 } from "@nestjs/common";
 import { AdminGuard } from "../admin/auth/guards/admin.guard";
+import { RequireAdminArea } from "../admin/auth/decorators/require-admin-area.decorator";
+import { AdminArea } from "../admin/auth/admin-permissions";
 import { PrismaService } from "../prisma/prisma.service";
 import { paginationParams } from "../common/constants";
 import { AdminVerificationLogQueryDto } from "./dto/admin-verification-log-query.dto";
 
 @Controller("admin/verification-logs")
 @UseGuards(AdminGuard)
+@RequireAdminArea(AdminArea.OWNERSHIP)
 export class AdminVerificationLogsController {
   constructor(private readonly prisma: PrismaService) {}
 

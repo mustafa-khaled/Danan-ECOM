@@ -2,12 +2,16 @@ import { notFound } from "next/navigation";
 import { fetchAdminCollectionDetail } from "@/features/admin/api/fetch-admin-collections";
 import { getAdminCookieHeader } from "@/features/auth/server/admin-session";
 import { ApiError } from "@/shared/lib/send-request";
+import { pickLocalized } from "@/shared/lib/pick-localized";
+import { formatAdminDate } from "@/shared/utils/format";
+import { getLocale, getTranslations } from "next-intl/server";
+import type { Locale } from "@/i18n/routing";
 import { Check } from "lucide-react";
 
 const fallbackStatus = [
-  { id: 1, title: "Pieces", count: 0 },
-  { id: 2, title: "Owners", count: 0 },
-  { id: 3, title: "Transfers", count: 0 },
+  { id: 1, titleKey: "common.pieces" as const, count: 0 },
+  { id: 2, titleKey: "common.owners" as const, count: 0 },
+  { id: 3, titleKey: "ownership.transfers" as const, count: 0 },
 ] as const;
 
 interface EditCollectionPageProps {
@@ -19,6 +23,10 @@ export default async function EditCollectionPage({
 }: EditCollectionPageProps) {
   const { id } = await params;
   const cookieHeader = await getAdminCookieHeader();
+  const [t, locale] = await Promise.all([
+    getTranslations("admin"),
+    getLocale() as Promise<Locale>,
+  ]);
 
   let collection;
   try {
@@ -30,43 +38,31 @@ export default async function EditCollectionPage({
     throw err;
   }
 
-  const createdDate = collection?.createdAt
-    ? new Date(collection.createdAt).toLocaleDateString("en-GB", {
-        day: "2-digit",
-        month: "short",
-        year: "numeric",
-      })
-    : "12 Jan 2026";
-
-  const updatedDate = collection?.updatedAt
-    ? new Date(collection.updatedAt).toLocaleDateString("en-GB", {
-        day: "2-digit",
-        month: "short",
-        year: "numeric",
-      })
-    : "02 Aug 2026";
+  const createdDate = formatAdminDate(collection?.createdAt, locale) || "12 Jan 2026";
+  const updatedDate = formatAdminDate(collection?.updatedAt, locale) || "02 Aug 2026";
 
   const status = collection.stats
     ? [
-        { id: 1, title: "Pieces", count: collection.stats.pieceCount },
-        { id: 2, title: "Owners", count: collection.stats.ownerCount },
-        { id: 3, title: "Transfers", count: collection.stats.transferCount },
+        { id: 1, title: t("common.pieces"), count: collection.stats.pieceCount },
+        { id: 2, title: t("common.owners"), count: collection.stats.ownerCount },
+        { id: 3, title: t("ownership.transfers"), count: collection.stats.transferCount },
       ]
-    : fallbackStatus;
+    : fallbackStatus.map((s) => ({ id: s.id, title: t(s.titleKey), count: s.count }));
 
   const health = collection.health ?? {
-    hasStory: false,
     hasCover: Boolean(collection.coverImageUrl),
     hasPieces: (collection.stats?.pieceCount ?? 0) > 0,
     hasAccessRules: (collection.classes?.length ?? 0) > 0,
   };
+
+  const description = pickLocalized(locale, collection.description ?? "", collection.descriptionAr);
 
   return (
     <div>
       <div className="grid grid-cols-3 gap-5 py-[32px] border-b border-[#E1E4E8]">
         <div className="h-28 flex flex-col items-start justify-center gap-3 bg-[#FBF7F7] p-6 rounded-xl">
           <h6 className="font-heading text-[#353D48] font-bold text-h5 leading-[100%]">
-            Collection ID
+            {t("collections.collectionId")}
           </h6>
           <p className="font-semibold text-h6">
             {collection?.slug ? collection.slug.toUpperCase() : id}
@@ -75,14 +71,14 @@ export default async function EditCollectionPage({
 
         <div className="h-28 flex flex-col items-start justify-center gap-3 bg-[#FBF7F7] p-6 rounded-xl">
           <h6 className="font-heading text-[#353D48] font-bold text-h5 leading-[100%]">
-            Created
+            {t("common.created")}
           </h6>
           <p className="font-semibold text-h6">{createdDate}</p>
         </div>
 
         <div className="h-28 flex flex-col items-start justify-center gap-3 bg-[#FBF7F7] p-6 rounded-xl">
           <h6 className="font-heading text-[#353D48] font-bold text-h5 leading-[100%]">
-            Last Updated
+            {t("common.lastUpdated")}
           </h6>
           <p className="font-semibold text-h6">{updatedDate}</p>
         </div>
@@ -90,7 +86,7 @@ export default async function EditCollectionPage({
 
       <div className="py-[32px] border-b border-[#E1E4E8]">
         <h4 className="uppercase font-heading mb-5 text-h4 font-bold">
-          Collection Stats
+          {t("collections.stats")}
         </h4>
 
         <div className="grid grid-cols-3 gap-5">
@@ -112,15 +108,14 @@ export default async function EditCollectionPage({
 
       <div className="py-[32px] border-b border-[#E1E4E8]">
         <h4 className="uppercase font-heading mb-5 text-h4 font-bold">
-          COLLECTION HEALTH
+          {t("collections.health")}
         </h4>
 
         <ul className="bg-[#FBF7F7] p-6 rounded-xl space-y-3 [&>li]:flex [&>li]:gap-3 [&>li]:items-center [&>li]:text-[#353D48] [&>li]:font-semibold [&>li]:text-h6">
           {[
-            ["Collection Story", health.hasStory],
-            ["Hero Image", health.hasCover],
-            ["Pieces Added", health.hasPieces],
-            ["Access Rules Configured", health.hasAccessRules],
+            [t("collections.heroImage"), health.hasCover],
+            [t("collections.piecesAdded"), health.hasPieces],
+            [t("collections.accessRules"), health.hasAccessRules],
           ].map(([label, ok]) => (
             <li key={String(label)}>
               <span
@@ -136,19 +131,17 @@ export default async function EditCollectionPage({
 
       <div className="py-[32px] border-b border-[#E1E4E8]">
         <h4 className="uppercase font-heading mb-5 text-h4 font-bold">
-          CONTENT
+          {t("collections.content")}
         </h4>
 
         <p className="bg-[#FBF7F7] p-6 rounded-xl font-semibold text-[#4B5563] text-h6">
-          {collection.storyContent ||
-            collection.description ||
-            "No collection story yet."}
+          {description || t("collections.noDescription")}
         </p>
       </div>
 
       <div className="py-[32px] border-b border-[#E1E4E8]">
         <h4 className="uppercase font-heading mb-5 text-h4 font-bold">
-          Access
+          {t("common.access")}
         </h4>
 
         <ul className="bg-[#FBF7F7] p-6 rounded-xl space-y-3 [&>li]:flex [&>li]:gap-3 [&>li]:items-center [&>li]:text-[#353D48] [&>li]:font-semibold [&>li]:text-h6">
@@ -157,7 +150,7 @@ export default async function EditCollectionPage({
               <span className="w-[16px] h-[16px] rounded-full flex items-center justify-center text-white bg-[#1EC58B]">
                 <Check className="size-3" />
               </span>
-              {cls.name}
+              {pickLocalized(locale, cls.name, cls.nameAr)}
             </li>
           ))}
         </ul>

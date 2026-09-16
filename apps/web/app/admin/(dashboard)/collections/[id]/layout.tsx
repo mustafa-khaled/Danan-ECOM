@@ -35,7 +35,7 @@ export default async function CollectionLayout({
       <div className="flex gap-[16px] px-7.5 py-3 [&>div]:rounded-xl [&>div]:h-15.5 [&>div]:bg-white">
         <div className="flex items-center justify-center w-15.5">
           <Link href="/admin/collections">
-            <ArrowLeft className="size-6" />
+            <ArrowLeft className="size-6 rtl:rotate-180" />
           </Link>
         </div>
 

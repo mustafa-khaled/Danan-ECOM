@@ -3,6 +3,7 @@ import {
   Controller,
   Get,
   Param,
+  ParseUUIDPipe,
   Patch,
   Post,
   Query,
@@ -10,12 +11,15 @@ import {
   UploadedFile,
   UseGuards,
   UseInterceptors,
+  BadRequestException,
 } from "@nestjs/common";
 import { FileInterceptor } from "@nestjs/platform-express";
 import type { Request } from "express";
 import { PiecesService } from "./pieces.service";
 import { AdminGuard } from "../admin/auth/guards/admin.guard";
 import { CurrentAdmin } from "../admin/auth/decorators/current-admin.decorator";
+import { RequireAdminArea } from "../admin/auth/decorators/require-admin-area.decorator";
+import { AdminArea } from "../admin/auth/admin-permissions";
 import type { AdminSession } from "@dadan/types";
 import { getClientIp } from "../common/constants";
 import { AdminPieceQueryDto } from "./dto/admin-piece-query.dto";
@@ -26,6 +30,7 @@ import { BulkSpecsDto } from "../collections/dto/spec-item.dto";
 
 @Controller("admin/pieces")
 @UseGuards(AdminGuard)
+@RequireAdminArea(AdminArea.PIECES)
 export class AdminPiecesController {
   constructor(private readonly pieces: PiecesService) {}
 
@@ -54,14 +59,14 @@ export class AdminPiecesController {
   }
 
   @Get(":id")
-  getOne(@Param("id") id: string) {
+  getOne(@Param("id", ParseUUIDPipe) id: string) {
     return this.pieces.getPieceById(id);
   }
 
   @Patch(":id")
   update(
     @CurrentAdmin() admin: AdminSession,
-    @Param("id") id: string,
+    @Param("id", ParseUUIDPipe) id: string,
     @Body() dto: UpdatePieceDto,
     @Req() req: Request,
   ) {
@@ -71,7 +76,7 @@ export class AdminPiecesController {
   @Post(":id/assign")
   assign(
     @CurrentAdmin() admin: AdminSession,
-    @Param("id") id: string,
+    @Param("id", ParseUUIDPipe) id: string,
     @Body() dto: AssignPieceDto,
     @Req() req: Request,
   ) {
@@ -90,15 +95,24 @@ export class AdminPiecesController {
   )
   uploadImage(
     @CurrentAdmin() admin: AdminSession,
-    @Param("id") id: string,
-    @UploadedFile() file: { buffer: Buffer; mimetype: string },
+    @Param("id", ParseUUIDPipe) id: string,
+    @Query("role") role: string | undefined,
+    @UploadedFile() file: { buffer: Buffer; mimetype: string } | undefined,
     @Req() req: Request,
   ) {
+    // Also covers a file rejected by fileFilter, which multer drops silently.
+    if (!file) {
+      throw new BadRequestException("An image file is required");
+    }
+    if (role !== undefined && role !== "main" && role !== "gallery") {
+      throw new BadRequestException("role must be 'main' or 'gallery'");
+    }
     return this.pieces.uploadPieceImage(
       admin.adminId,
       id,
       file.buffer,
       file.mimetype,
+      role as "main" | "gallery" | undefined,
       getClientIp(req),
     );
   }
@@ -106,7 +120,7 @@ export class AdminPiecesController {
   @Post(":id/specifications")
   upsertSpecs(
     @CurrentAdmin() admin: AdminSession,
-    @Param("id") id: string,
+    @Param("id", ParseUUIDPipe) id: string,
     @Body() dto: BulkSpecsDto,
     @Req() req: Request,
   ) {

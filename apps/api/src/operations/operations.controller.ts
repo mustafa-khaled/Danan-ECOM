@@ -3,6 +3,7 @@ import {
   Controller,
   Get,
   Param,
+  ParseUUIDPipe,
   Post,
   Query,
   Req,
@@ -11,6 +12,8 @@ import {
 import type { Request } from "express";
 import { AdminGuard } from "../admin/auth/guards/admin.guard";
 import { CurrentAdmin } from "../admin/auth/decorators/current-admin.decorator";
+import { RequireAdminArea } from "../admin/auth/decorators/require-admin-area.decorator";
+import { AdminArea } from "../admin/auth/admin-permissions";
 import type { AdminSession } from "@dadan/types";
 import { getClientIp } from "../common/constants";
 import { OperationsService } from "./operations.service";
@@ -20,6 +23,7 @@ import { ReviewStaffRequestDto } from "./dto/review-staff-request.dto";
 
 @Controller("admin/operations")
 @UseGuards(AdminGuard)
+@RequireAdminArea(AdminArea.OPERATIONS)
 export class OperationsController {
   constructor(private readonly operations: OperationsService) {}
 
@@ -39,7 +43,7 @@ export class OperationsController {
 
   @Get(":id")
   getOne(
-    @Param("id") id: string,
+    @Param("id", ParseUUIDPipe) id: string,
     @Query("kind") kind?: "transfer" | "staff",
   ) {
     return this.operations.getOne(id, kind);
@@ -57,7 +61,7 @@ export class OperationsController {
   @Post("staff-requests/:id/approve")
   approve(
     @CurrentAdmin() admin: AdminSession,
-    @Param("id") id: string,
+    @Param("id", ParseUUIDPipe) id: string,
     @Body() dto: ReviewStaffRequestDto,
     @Req() req: Request,
   ) {
@@ -73,7 +77,7 @@ export class OperationsController {
   @Post("staff-requests/:id/reject")
   reject(
     @CurrentAdmin() admin: AdminSession,
-    @Param("id") id: string,
+    @Param("id", ParseUUIDPipe) id: string,
     @Body() dto: ReviewStaffRequestDto,
     @Req() req: Request,
   ) {

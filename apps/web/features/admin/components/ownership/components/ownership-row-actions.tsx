@@ -3,6 +3,7 @@
 import { useState, useRef, useEffect } from "react";
 import Link from "next/link";
 import { Eye, ArrowRightLeft, FileText, EllipsisVertical } from "lucide-react";
+import { useTranslations } from "next-intl";
 import type { OwnershipRecordItem } from "../types";
 
 interface OwnershipRowActionsProps {
@@ -10,6 +11,7 @@ interface OwnershipRowActionsProps {
 }
 
 export function OwnershipRowActions({ record }: OwnershipRowActionsProps) {
+  const t = useTranslations("admin");
   const [isOpen, setIsOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
 
@@ -46,7 +48,7 @@ export function OwnershipRowActions({ record }: OwnershipRowActionsProps) {
       {isOpen && (
         <div
           onClick={(e) => e.stopPropagation()}
-          className="absolute right-0 top-full mt-1 z-30 w-44 rounded-lg border border-ds-border bg-ds-background shadow-lg py-1 animate-in fade-in zoom-in-95"
+          className="absolute end-0 top-full mt-1 z-30 w-44 rounded-lg border border-ds-border bg-ds-background shadow-lg py-1 animate-in fade-in zoom-in-95"
         >
           <Link
             href={`/admin/ownership/${record.id}`}
@@ -54,7 +56,7 @@ export function OwnershipRowActions({ record }: OwnershipRowActionsProps) {
             className="flex items-center gap-2 px-3 py-2 text-xs font-medium text-ds-text hover:bg-ds-surface hover:text-(--color-gold) transition-colors"
           >
             <Eye className="h-3.5 w-3.5" />
-            <span>View Details</span>
+            <span>{t("rowActions.view")}</span>
           </Link>
           <Link
             href={`/admin/ownership/${record.id}/transfer`}
@@ -62,7 +64,7 @@ export function OwnershipRowActions({ record }: OwnershipRowActionsProps) {
             className="flex items-center gap-2 px-3 py-2 text-xs font-medium text-ds-text hover:bg-ds-surface hover:text-(--color-gold) transition-colors"
           >
             <ArrowRightLeft className="h-3.5 w-3.5" />
-            <span>Transfer Ownership</span>
+            <span>{t("rowActions.transfer")}</span>
           </Link>
           <Link
             href={`/admin/ownership/${record.id}/certificate`}
@@ -70,7 +72,7 @@ export function OwnershipRowActions({ record }: OwnershipRowActionsProps) {
             className="flex items-center gap-2 px-3 py-2 text-xs font-medium text-ds-text hover:bg-ds-surface transition-colors"
           >
             <FileText className="h-3.5 w-3.5" />
-            <span>Ownership Certificate</span>
+            <span>{t("rowActions.certificate")}</span>
           </Link>
         </div>
       )}

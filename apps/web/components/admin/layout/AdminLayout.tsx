@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, type ReactNode } from "react";
+import { useTranslations } from "next-intl";
 import { AdminSidebar } from "./admin-sidebar";
 import { AdminTopbar } from "./admin-topbar";
 
@@ -23,9 +24,10 @@ export function AdminLayout({
   pendingCount,
 }: AdminLayoutProps) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const t = useTranslations("admin.common");
 
   const fallbackAdmin = admin || {
-    displayName: "Account Manager",
+    displayName: t("accountManager"),
     email: "ahmedgad@gmail.com",
     role: "SUPER_ADMIN",
   };

@@ -2,37 +2,40 @@ import { ArrowUpLeft } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
 import type { AdminOverview } from "@/features/admin/api/fetch-admin-overview";
+import { getTranslations } from "next-intl/server";
 
-export default function Stats({ data }: { data: AdminOverview["stats"] }) {
+export default async function Stats({ data }: { data: AdminOverview["stats"] }) {
+  const t = await getTranslations("admin");
+
   const cards = [
     {
       id: 1,
-      title: "Members",
+      title: t("overview.members"),
       count: data.members.total,
       icon: "/admin/profile-2user.svg",
       link: {
-        title: `+${data.members.addedThisMonth} This Month`,
+        title: t("overview.thisMonth", { count: data.members.addedThisMonth }),
         href: "/admin/members",
       },
     },
     {
       id: 2,
-      title: "Collections",
-      description: `${data.collections.hidden} Draft`,
+      title: t("overview.collections"),
+      description: t("overview.draftCount", { count: data.collections.hidden }),
       count: data.collections.total,
       icon: "/admin/trontron-(trx).svg",
     },
     {
       id: 3,
-      title: "Pieces",
-      description: `${data.pieces.addedLast30d} Recently Added`,
+      title: t("overview.pieces"),
+      description: t("overview.recentlyAdded", { count: data.pieces.addedLast30d }),
       count: data.pieces.total,
       icon: "/admin/binance-coin-(bnb).svg",
     },
     {
       id: 4,
-      title: "Pending Transfers",
-      description: "Require Review",
+      title: t("overview.pendingTransfers"),
+      description: t("overview.requireReview"),
       count: data.pendingTransfers.total,
       icon: "/admin/sms-tracking.svg",
     },

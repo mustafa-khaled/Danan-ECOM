@@ -2,41 +2,18 @@
 
 import Image from "next/image";
 import { usePathname, useParams } from "next/navigation";
-
-const TAB_TITLES: Record<string, { title: string; badge: string }> = {
-  overview: {
-    title: "Collection Overview",
-    badge: "Collection Preview",
-  },
-  story: {
-    title: "Collection Story",
-    badge: "Collection Story",
-  },
-  pieces: {
-    title: "Collection Pieces",
-    badge: "Collection Pieces",
-  },
-  access: {
-    title: "Collection Access",
-    badge: "Collection Access",
-  },
-  settings: {
-    title: "Collection Settings",
-    badge: "Collection Settings",
-  },
-};
+import { useTranslations } from "next-intl";
 
 export default function SingleCollectionHeader() {
+  const t = useTranslations("admin");
   const pathname = usePathname();
   const params = useParams();
   const id = params?.id as string;
 
   const basePath = `/admin/collections/${id}`;
 
-  let currentTab = "overview";
-  if (pathname.startsWith(`${basePath}/story`)) {
-    currentTab = "story";
-  } else if (pathname.startsWith(`${basePath}/pieces`)) {
+  let currentTab: "overview" | "pieces" | "access" | "settings" = "overview";
+  if (pathname.startsWith(`${basePath}/pieces`)) {
     currentTab = "pieces";
   } else if (pathname.startsWith(`${basePath}/access`)) {
     currentTab = "access";
@@ -44,9 +21,28 @@ export default function SingleCollectionHeader() {
     currentTab = "settings";
   }
 
-  const currentConfig = TAB_TITLES[currentTab] ?? TAB_TITLES.overview;
-  const title = currentConfig?.title ?? "Collection Overview";
-  const badge = currentConfig?.badge ?? "Collection Preview";
+  const TAB_TITLES = {
+    overview: {
+      title: t("topbar.collectionDetails"),
+      badge: t("topbar.collectionDetails"),
+    },
+    pieces: {
+      title: t("topbar.collectionPieces"),
+      badge: t("topbar.collectionPieces"),
+    },
+    access: {
+      title: t("topbar.collectionAccess"),
+      badge: t("topbar.collectionAccess"),
+    },
+    settings: {
+      title: t("topbar.collectionSettings"),
+      badge: t("topbar.collectionSettings"),
+    },
+  };
+
+  const currentConfig = TAB_TITLES[currentTab];
+  const title = currentConfig.title;
+  const badge = currentConfig.badge;
 
   return (
     <div className="w-full px-7.5 flex items-center justify-between">

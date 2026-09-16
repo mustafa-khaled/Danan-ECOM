@@ -49,6 +49,12 @@ export function getClientIp(req: {
   return req.ip ?? "unknown";
 }
 
+/**
+ * M-01: CSRF protection relies on SameSite: strict cookies in production.
+ * This prevents cross-origin request forgery for all modern browsers.
+ * If same-site subdomain attacks become a concern, add a double-submit
+ * CSRF token pattern or Origin header verification as defense-in-depth.
+ */
 export function cookieOptions(maxAgeMs: number) {
   const isProduction = process.env.NODE_ENV === "production";
   const cookieSecure = process.env.COOKIE_SECURE;
@@ -78,6 +84,11 @@ export function clearCookieOptions() {
  */
 export const MAX_CATALOG_ROWS = 500;
 
+/**
+ * TODO(M-06): Migrate high-volume tables (orders, audit logs, ownership records)
+ * to keyset pagination instead of offset pagination for better deep-page performance.
+ * See AGENTS.md for keyset pagination convention.
+ */
 export function paginationParams(page?: number, limit?: number) {
   const p = Math.max(1, page ?? 1);
   const l = Math.min(100, Math.max(1, limit ?? 20));

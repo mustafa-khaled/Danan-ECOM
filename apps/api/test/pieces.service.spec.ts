@@ -1,10 +1,9 @@
 import { BadRequestException, NotFoundException } from "@nestjs/common";
 import { Test, TestingModule } from "@nestjs/testing";
-import { getQueueToken } from "@nestjs/bullmq";
 import { PieceStatus } from "@dadan/db";
 import { PiecesService } from "../src/pieces/pieces.service";
 import { AuditService } from "../src/audit/audit.service";
-import { CERTIFICATE_QUEUE } from "../src/certificates/jobs/certificate-job.processor";
+import { CertificateOutboxService } from "../src/certificates/certificate-outbox.service";
 import { PrismaService } from "../src/prisma/prisma.service";
 import { StorageService } from "../src/storage/storage.service";
 import { VisibilityService } from "../src/visibility/visibility.service";
@@ -23,7 +22,7 @@ describe("PiecesService", () => {
     },
   };
   const auditMock = { log: jest.fn().mockResolvedValue(undefined) };
-  const certificateQueueMock = { add: jest.fn().mockResolvedValue(undefined) };
+  const outboxMock = { record: jest.fn().mockResolvedValue(undefined) };
   const storageMock = {
     resolvePublicUrls: jest.fn().mockResolvedValue([]),
   };
@@ -40,7 +39,7 @@ describe("PiecesService", () => {
         { provide: VisibilityService, useValue: visibilityMock },
         { provide: SerialNumberService, useValue: serialNumbersMock },
         { provide: ImageProcessingService, useValue: {} },
-        { provide: getQueueToken(CERTIFICATE_QUEUE), useValue: certificateQueueMock },
+        { provide: CertificateOutboxService, useValue: outboxMock },
       ],
     }).compile();
 

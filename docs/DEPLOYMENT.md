@@ -352,10 +352,10 @@ nano .env
 | `S3_REGION`           | S3 region (use `auto` for R2)                        | No       | `auto`         | `auto`                                          |
 
 > - Required only when `STORAGE_PROVIDER` is `s3`, `r2`, or `hetzner`. Ignored for `local`.
->   | `PAYMENT_PROVIDER_KEY` | Stripe secret key (`sk_live_...` or `sk_test_...`) | No | `(empty)` | `sk_live_...` |
->   | `PAYMENT_PROVIDER_SECRET` | Stripe webhook signing secret | No | `(empty)` | `whsec_...` |
+>   | `PAYMENT_PROVIDER_KEY` | Tap secret key (`sk_live_...` or `sk_test_...`). Also signs the webhook `hashstring`. | No | `(empty)` | `sk_live_...` |
+>   | `PAYMENT_PROVIDER_SECRET` | Override for webhook signature verification. Leave empty — Tap issues no separate webhook secret. | No | `(empty)` | `(empty)` |
 >   | `VAT_RATE` | VAT rate as decimal (0.15 = 15%) | No | `0.15` | `0.15` |
->   | `NEXT_PUBLIC_PAYMENT_MODE` | Checkout mode: `mock` or leave empty for Stripe | No | `mock` | `mock` |
+>   | `NEXT_PUBLIC_PAYMENT_MODE` | Checkout mode: `mock` or `live` (Tap Card SDK) | No | `mock` | `live` |
 >   | `ADMIN_EMAIL` | Admin email address (used in system notifications) | No | `(empty)` | `admin@dadan.sa` |
 >   | `SMTP_HOST` | SMTP server hostname | No | `(empty)` | `smtp.sendgrid.net` |
 >   | `SMTP_PORT` | SMTP server port | No | `(empty)` | `587` |
@@ -384,9 +384,10 @@ STORAGE_LOCAL_PATH=/app/uploads
 # S3_SECRET_KEY=your-secret-access-key
 # S3_REGION=auto
 PAYMENT_PROVIDER_KEY=sk_live_...
-PAYMENT_PROVIDER_SECRET=whsec_...
+# Leave empty: Tap signs webhooks with PAYMENT_PROVIDER_KEY itself
+PAYMENT_PROVIDER_SECRET=
 VAT_RATE=0.15
-NEXT_PUBLIC_PAYMENT_MODE=mock
+NEXT_PUBLIC_PAYMENT_MODE=live
 ADMIN_EMAIL=admin@dadan.sa
 SMTP_HOST=smtp.sendgrid.net
 SMTP_PORT=587

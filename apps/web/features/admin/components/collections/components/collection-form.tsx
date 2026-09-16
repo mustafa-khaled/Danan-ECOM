@@ -18,6 +18,10 @@ import {
   updateCollectionSchema,
   type CollectionFormValues,
 } from "@/features/admin/schemas";
+import { useTranslations } from "next-intl";
+import { useLocale } from "next-intl";
+import type { Locale } from "@/i18n/routing";
+import { pickLocalized } from "@/shared/lib/pick-localized";
 
 interface CollectionFormProps {
   collection?: AdminCollectionDetail | null;
@@ -29,6 +33,8 @@ const labelClassName = "mb-1 block text-xs uppercase tracking-[0.1em] text-[var(
 const errorClassName = "mt-1 text-xs text-red-500";
 
 export default function CollectionForm({ collection, mode }: CollectionFormProps) {
+  const t = useTranslations("admin");
+  const locale = useLocale() as Locale;
   const router = useRouter();
   const confirm = useConfirm();
   const [isDeleting, setIsDeleting] = useState(false);
@@ -122,7 +128,7 @@ export default function CollectionForm({ collection, mode }: CollectionFormProps
       <div className="grid gap-6 lg:grid-cols-2">
         <div className="space-y-4">
           <div>
-            <label htmlFor="col-name" className={labelClassName}>Name (English)</label>
+            <label htmlFor="col-name" className={labelClassName}>{t("common.nameEnglish")}</label>
             <input
               id="col-name"
               type="text"
@@ -133,7 +139,7 @@ export default function CollectionForm({ collection, mode }: CollectionFormProps
           </div>
 
           <div>
-            <label htmlFor="col-nameAr" className={labelClassName}>Name (Arabic)</label>
+            <label htmlFor="col-nameAr" className={labelClassName}>{t("common.nameArabic")}</label>
             <input
               id="col-nameAr"
               type="text"
@@ -145,7 +151,7 @@ export default function CollectionForm({ collection, mode }: CollectionFormProps
           </div>
 
           <div>
-            <label htmlFor="col-slug" className={labelClassName}>Slug</label>
+            <label htmlFor="col-slug" className={labelClassName}>{t("common.slug")}</label>
             <input
               id="col-slug"
               type="text"
@@ -154,14 +160,14 @@ export default function CollectionForm({ collection, mode }: CollectionFormProps
             />
             {errors.slug && <p className={errorClassName}>{errors.slug.message}</p>}
             <p className="mt-1 text-xs text-[var(--color-ivory-muted)]">
-              URL-friendly identifier (lowercase, numbers, hyphens only)
+              {t("collections.slugHint")}
             </p>
           </div>
         </div>
 
         <div className="space-y-4">
           <div>
-            <label htmlFor="col-description" className={labelClassName}>Description (English)</label>
+            <label htmlFor="col-description" className={labelClassName}>{t("common.descriptionEnglish")}</label>
             <textarea
               id="col-description"
               {...register("description")}
@@ -171,7 +177,7 @@ export default function CollectionForm({ collection, mode }: CollectionFormProps
           </div>
 
           <div>
-            <label htmlFor="col-descriptionAr" className={labelClassName}>Description (Arabic)</label>
+            <label htmlFor="col-descriptionAr" className={labelClassName}>{t("common.descriptionArabic")}</label>
             <textarea
               id="col-descriptionAr"
               {...register("descriptionAr")}
@@ -195,7 +201,7 @@ export default function CollectionForm({ collection, mode }: CollectionFormProps
         </div>
 
         <div className="lg:col-span-2">
-          <p className={labelClassName}>Visible to classes</p>
+          <p className={labelClassName}>{t("collections.visibleToClasses")}</p>
           <div className="mt-2 flex flex-wrap gap-4">
             {classes.map((cls) => (
               <label key={cls.id} className="flex cursor-pointer items-center gap-2 text-sm">
@@ -205,13 +211,13 @@ export default function CollectionForm({ collection, mode }: CollectionFormProps
                   {...register("classIds")}
                   className="h-4 w-4 accent-[var(--color-accent)]"
                 />
-                {cls.name}
-                {cls.isDefault ? " (default)" : ""}
+                {pickLocalized(locale, cls.name, cls.nameAr)}
+                {cls.isDefault ? ` ${t("common.default")}` : ""}
               </label>
             ))}
           </div>
           <p className="mt-1 text-xs text-[var(--color-ivory-muted)]">
-            Empty assignment hides this collection from all clients.
+            {t("collections.emptyAssignment")}
           </p>
         </div>
 
@@ -222,7 +228,7 @@ export default function CollectionForm({ collection, mode }: CollectionFormProps
               {...register("isVisible")}
               className="h-5 w-5 rounded border-[var(--color-border)] bg-[var(--color-surface)] accent-[var(--color-accent)]"
             />
-            <span className="text-sm">Collection is visible</span>
+            <span className="text-sm">{t("collections.isVisible")}</span>
           </label>
         </div>
       </div>
@@ -237,7 +243,7 @@ export default function CollectionForm({ collection, mode }: CollectionFormProps
           variant="outline"
           onClick={() => router.push("/admin/collections")}
         >
-          Cancel
+          {t("common.cancel")}
         </Button>
 
         {mode === "edit" && (

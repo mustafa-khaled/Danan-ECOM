@@ -1,12 +1,14 @@
 "use client";
 
 import { useRouter } from "next/navigation";
+import { useTranslations } from "next-intl";
 import { useLogout } from "@/features/auth";
 import { Button } from "@/components/ui/Button";
 
 export function AdminLogoutButton() {
   const router = useRouter();
   const { logout, isPending } = useLogout();
+  const t = useTranslations("admin.common");
 
   async function handleLogout() {
     try {
@@ -26,7 +28,7 @@ export function AdminLogoutButton() {
       variant="outline"
       size="sm"
     >
-      {isPending ? "Signing out…" : "Sign out"}
+      {isPending ? t("saving") : t("signOut")}
     </Button>
   );
 }

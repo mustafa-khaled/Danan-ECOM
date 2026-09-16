@@ -1,10 +1,13 @@
 "use client";
 
+import { useMemo } from "react";
+import { useLocale, useTranslations } from "next-intl";
 import { DataTable } from "@/components/ui/data-table";
 import { Pagination, PaginationSuspenseBoundary } from "@/components/ui/pagination";
 import type { AdminPieceListItem } from "@/features/admin/types";
 import { ADMIN_PAGE_SIZE } from "@/shared/lib/parse-admin-page";
-import { collectionPiecesColumns } from "./collection-pieces-columns";
+import { getCollectionPiecesColumns } from "./collection-pieces-columns";
+import type { Locale } from "@/i18n/routing";
 
 interface CollectionPiecesTableProps {
   items: AdminPieceListItem[];
@@ -15,11 +18,17 @@ export default function CollectionPiecesTable({
   items,
   total,
 }: CollectionPiecesTableProps) {
+  const t = useTranslations("admin");
+  const locale = useLocale() as Locale;
+  const columns = useMemo(
+    () => getCollectionPiecesColumns(t, locale),
+    [t, locale],
+  );
   return (
     <div className="space-y-4">
       <DataTable
         data={items}
-        columns={collectionPiecesColumns}
+        columns={columns}
         keyExtractor={(row) => row.id}
         showRowNumbers
         hoverable
@@ -28,8 +37,8 @@ export default function CollectionPiecesTable({
           <DataTable.Table>
             <DataTable.Header />
             <DataTable.Body
-              emptyTitle="No pieces found"
-              emptyMessage="There are no registered pieces in this collection yet."
+              emptyTitle={t("pieces.emptyTitle")}
+              emptyMessage={t("pieces.emptyMessage")}
             />
           </DataTable.Table>
         </DataTable.Container>
@@ -37,7 +46,7 @@ export default function CollectionPiecesTable({
         <DataTable.BulkBar>
           {(selected: Set<string>) => (
             <span className="text-xs font-body text-ds-text-secondary">
-              {selected.size} piece{selected.size !== 1 ? "s" : ""} selected
+              {t("common.selectedCount", { count: selected.size })}
             </span>
           )}
         </DataTable.BulkBar>

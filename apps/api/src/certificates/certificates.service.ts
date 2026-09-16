@@ -2,6 +2,7 @@ import { randomUUID } from "node:crypto";
 import { readFileSync } from "node:fs";
 import * as path from "node:path";
 import {
+  ConflictException,
   Injectable,
   NotFoundException,
 } from "@nestjs/common";
@@ -23,6 +24,8 @@ import { AuditService } from "../audit/audit.service";
 import { PrismaService } from "../prisma/prisma.service";
 import { StorageService } from "../storage/storage.service";
 import { paginationParams } from "../common/constants";
+
+const CERT_NUMBER_ATTEMPTS = 5;
 
 @Injectable()
 export class CertificatesService {
@@ -64,7 +67,11 @@ export class CertificatesService {
     if (!owner) throw new NotFoundException("errors.CLIENT_NOT_FOUND");
 
     const year = new Date().getFullYear();
-    const certificateNumber = generateCertificateNumber(year);
+    // Chosen before rendering because the number is printed on the PDF: retrying
+    // inside the transaction would commit a number the document does not show.
+    // A collision that survives this check fails the insert and the BullMQ job
+    // retries the whole generation with a fresh number.
+    const certificateNumber = await this.pickUnusedCertificateNumber(year);
     const certificateId = randomUUID();
 
     const token = createVerificationToken(
@@ -77,7 +84,7 @@ export class CertificatesService {
     const qrPng = await QRCode.toBuffer(verifyUrl, { type: "png", width: 200 });
 
     let imageBytes: Buffer | null = null;
-    const primaryImage = piece.imageUrls[0];
+    const primaryImage = piece.mainImageUrl;
     if (primaryImage) {
       try {
         imageBytes = await this.storage.download(primaryImage);
@@ -114,7 +121,7 @@ export class CertificatesService {
         data: { isActive: false },
       });
 
-      return tx.certificate.create({
+      const created = await tx.certificate.create({
         data: {
           id: certificateId,
           pieceId,
@@ -125,11 +132,16 @@ export class CertificatesService {
           isActive: true,
         },
       });
-    });
 
-    await this.prisma.db.ownershipRecord.updateMany({
-      where: { pieceId, clientId: ownerId, transferredAt: null },
-      data: { certificateId: certificate.id },
+      // Linked in the same transaction: as a separate statement it could fail
+      // after the commit, leaving an active certificate that the ownership
+      // record does not point at.
+      await tx.ownershipRecord.updateMany({
+        where: { pieceId, clientId: ownerId, transferredAt: null },
+        data: { certificateId: created.id },
+      });
+
+      return created;
     });
 
     await this.audit.log({
@@ -146,6 +158,24 @@ export class CertificatesService {
 
   async regenerateCertificate(pieceId: string, newOwnerId: string, adminId: string) {
     return this.generateCertificate(pieceId, newOwnerId, adminId);
+  }
+
+  /**
+   * `generateCertificateNumber` is 32 bits of randomness, so a duplicate is
+   * unlikely but not impossible, and losing to the unique index would waste a
+   * full PDF render and upload. A handful of cheap indexed lookups is a better
+   * trade than repeating that work.
+   */
+  private async pickUnusedCertificateNumber(year: number): Promise<string> {
+    for (let attempt = 0; attempt < CERT_NUMBER_ATTEMPTS; attempt++) {
+      const candidate = generateCertificateNumber(year);
+      const taken = await this.prisma.db.certificate.findUnique({
+        where: { certificateNumber: candidate },
+        select: { certificateNumber: true },
+      });
+      if (!taken) return candidate;
+    }
+    throw new ConflictException("errors.CERTIFICATE_NUMBER_UNAVAILABLE");
   }
 
   async getClientCertificate(clientId: string, pieceId: string) {
@@ -216,7 +246,7 @@ export class CertificatesService {
           isActive: true,
           issuedAt: true,
           pdfUrl: true,
-          piece: { select: { serialNumber: true, name: true } },
+          piece: { select: { serialNumber: true, name: true, nameAr: true } },
           owner: { select: { displayName: true } },
         },
       }),

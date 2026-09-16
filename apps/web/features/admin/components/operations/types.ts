@@ -25,5 +25,6 @@ export interface OperationItem {
   date: string;
   status: OperationStatus;
   pieceName?: string;
+  pieceNameAr?: string | null;
   details?: string;
 }

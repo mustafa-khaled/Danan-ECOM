@@ -4,6 +4,7 @@ import {
   Delete,
   Get,
   Param,
+  ParseUUIDPipe,
   Post,
   UseGuards,
 } from "@nestjs/common";
@@ -44,7 +45,7 @@ export class CartController {
   @Delete(":pieceId")
   removeFromCart(
     @CurrentClient() client: ClientSession,
-    @Param("pieceId") pieceId: string,
+    @Param("pieceId", ParseUUIDPipe) pieceId: string,
   ) {
     return this.cart.removeFromCart(client.clientId, pieceId);
   }

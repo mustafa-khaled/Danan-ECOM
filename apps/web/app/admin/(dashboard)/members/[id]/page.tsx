@@ -1,12 +1,16 @@
-import { PieceCard, Switch } from "@/components/ui";
+import { PieceCard } from "@/components/ui";
 import { MemberClassSelect, MemberOverviewForm } from "@/features/admin";
 import { fetchAdminClientDetail } from "@/features/admin/api/fetch-admin-clients";
 import { getAdminCookieHeader } from "@/features/auth/server/admin-session";
 import { ApiError } from "@/shared/lib/send-request";
+import { formatAdminDate } from "@/shared/utils/format";
+import { pickLocalized } from "@/shared/lib/pick-localized";
 import { ArrowLeft, MoveRight } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
 import { notFound } from "next/navigation";
+import { getLocale, getTranslations } from "next-intl/server";
+import type { Locale } from "@/i18n/routing";
 
 interface MemberDetailsPageProps {
   params: Promise<{ id: string }>;
@@ -17,6 +21,10 @@ export default async function MemberDetailsPage({
 }: MemberDetailsPageProps) {
   const { id } = await params;
   const cookieHeader = await getAdminCookieHeader();
+  const [t, locale] = await Promise.all([
+    getTranslations("admin"),
+    getLocale() as Promise<Locale>,
+  ]);
   let member;
   try {
     member = await fetchAdminClientDetail(id, cookieHeader);
@@ -25,20 +33,8 @@ export default async function MemberDetailsPage({
     throw err;
   }
 
-  const joined = member.createdAt
-    ? new Date(member.createdAt).toLocaleDateString("en-GB", {
-        day: "2-digit",
-        month: "short",
-        year: "numeric",
-      })
-    : "";
-  const lastActive = member.lastSeenAt
-    ? new Date(member.lastSeenAt).toLocaleDateString("en-GB", {
-        day: "2-digit",
-        month: "short",
-        year: "numeric",
-      })
-    : "";
+  const joined = formatAdminDate(member.createdAt, locale);
+  const lastActive = formatAdminDate(member.lastSeenAt, locale);
   const ownedPieces = member.ownedPieces ?? [];
 
   return (
@@ -46,11 +42,11 @@ export default async function MemberDetailsPage({
       <div className="flex gap-[16px] px-7.5 py-3 [&>div]:rounded-xl [&>div]:h-15.5 [&>div]:bg-white">
         <div className="flex items-center justify-center w-15.5">
           <Link href="/admin/members">
-            <ArrowLeft className="size-6" />
+            <ArrowLeft className="size-6 rtl:rotate-180" />
           </Link>
         </div>
         <div className="w-full px-7.5 flex items-center justify-between">
-          <h4 className="font-bold text-h6 text-neutral-800">Members </h4>
+          <h4 className="font-bold text-h6 text-neutral-800">{t("nav.members")}</h4>
           <div className="flex items-center gap-2">
             <Image
               src="/admin/solar_home-2-line-duotone.svg"
@@ -61,7 +57,7 @@ export default async function MemberDetailsPage({
 
             <span>/</span>
             <span className="text-[14px] text-[#BF7266] bg-[#FBF7F7] py-1 px-2 rounded-lg transition-all">
-              Access
+              {t("common.access")}
             </span>
           </div>
         </div>
@@ -70,12 +66,12 @@ export default async function MemberDetailsPage({
       <div className="px-7.5 py-[16px]">
         <div className="p-6 bg-white rounded-3xl">
           <h1 className="font-heading border-b border-[#E1E4E8] pt-[16px] pb-[32px] text-[32px] font-bold text-[#212630] leading-[100%]">
-            Member Details Page
+            {t("members.details")}
           </h1>
 
           <div className="pt-5 pb-[32px] border-b border-[#E1E4E8]">
             <h4 className="font-heading mb-5 text-h4 font-bold">
-              Member Overview
+              {t("members.overview")}
             </h4>
 
             <MemberOverviewForm
@@ -90,9 +86,9 @@ export default async function MemberDetailsPage({
           <div className="pt-5 pb-[32px] border-b border-[#E1E4E8]">
             <div className="flex items-start justify-between">
               <div>
-                <h4 className="font-heading text-h4 font-bold">Owned Pieces</h4>
+                <h4 className="font-heading text-h4 font-bold">{t("members.ownedPieces")}</h4>
                 <p className="text-h6 font-semibold text-[#4B5563]">
-                  {member.pieceCount} pieces currently owned by this member
+                  {t("members.ownedCount", { count: member.pieceCount })}
                 </p>
               </div>
 
@@ -100,8 +96,8 @@ export default async function MemberDetailsPage({
                 href="/admin/ownership"
                 className="h-14 w-51.75 p-[16px] flex items-center justify-between font-medium text-h6 border border-[#E1E4E8]"
               >
-                View All
-                <MoveRight className="size-6" />
+                {t("common.viewAll")}
+                <MoveRight className="size-6 rtl:rotate-180" />
               </Link>
             </div>
 
@@ -111,9 +107,9 @@ export default async function MemberDetailsPage({
                   <PieceCard
                     piece={{
                       id: piece.id,
-                      name: piece.name,
+                      name: pickLocalized(locale, piece.name, piece.nameAr),
                       ownedSince: piece.serialNumber,
-                      imageUrl: piece.imageUrls[0] ?? "/assets/wardrobe.avif",
+                      imageUrl: piece.mainImageUrl ?? "/assets/wardrobe.avif",
                     }}
                     className="lg:h-160! border-none"
                   />
@@ -124,56 +120,9 @@ export default async function MemberDetailsPage({
 
           <div className="py-[32px] border-b border-[#E1E4E8]">
             <h4 className="font-heading mb-5 text-h4 font-bold">
-              House Access
+              {t("members.houseAccess")}
             </h4>
-            <div className="mb-5">
-              <MemberClassSelect memberId={id} />
-            </div>
-
-            <div className="grid grid-cols-2 gap-x-[32px] gap-y-3">
-              <div className="flex items-center justify-between p-[16px] bg-[#F8FAFC] h-17.5">
-                <span className="text-h6 text-[#5D697A]">
-                  Enter Your Access Key
-                </span>
-                <Switch
-                  id="accessKeyToggle"
-                  variant="success"
-                  defaultChecked={true}
-                  aria-label="Enter Your Access Key"
-                />
-              </div>
-              <div className="flex items-center justify-between p-[16px] bg-[#F8FAFC] h-17.5">
-                <span className="text-h6 text-[#5D697A]">
-                  Require Private Key
-                </span>
-                <Switch
-                  id="privateKeyToggle"
-                  variant="success"
-                  defaultChecked={true}
-                  aria-label="Require Private Key"
-                />
-              </div>
-              <div className="flex items-center justify-between p-[16px] bg-[#F8FAFC] h-17.5">
-                <span className="text-h6 text-[#5D697A]">Admin Approval</span>
-                <Switch
-                  id="adminApprovalToggle"
-                  variant="success"
-                  defaultChecked={true}
-                  aria-label="Admin Approval"
-                />
-              </div>
-              <div className="flex items-center justify-between p-[16px] bg-[#F8FAFC] h-17.5">
-                <span className="text-h6 text-[#5D697A]">
-                  Allow Invitations
-                </span>
-                <Switch
-                  id="allowInvitations"
-                  variant="success"
-                  defaultChecked={true}
-                  aria-label="Allow Invitations"
-                />
-              </div>
-            </div>
+            <MemberClassSelect memberId={id} />
           </div>
         </div>
       </div>

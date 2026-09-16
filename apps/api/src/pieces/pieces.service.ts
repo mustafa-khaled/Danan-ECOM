@@ -3,15 +3,12 @@ import {
   Injectable,
   NotFoundException,
 } from "@nestjs/common";
-import { InjectQueue } from "@nestjs/bullmq";
-import { Queue } from "bullmq";
 import { AcquisitionType, ActorType, PieceStatus } from "@dadan/db";
 import type { Locale } from "@dadan/types";
 import { randomUUID } from "node:crypto";
 import { extFromMime, pieceImageKey } from "@dadan/storage";
 import { AuditService } from "../audit/audit.service";
-import { CERTIFICATE_QUEUE } from "../certificates/jobs/certificate-job.processor";
-import type { GenerateCertificateJobData } from "../certificates/jobs/certificate-job.processor";
+import { CertificateOutboxService } from "../certificates/certificate-outbox.service";
 import { PrismaService } from "../prisma/prisma.service";
 import { StorageService } from "../storage/storage.service";
 import { ImageProcessingService } from "../storage/image-processing.service";
@@ -40,27 +37,8 @@ export class PiecesService {
     private readonly storage: StorageService,
     private readonly imageProcessing: ImageProcessingService,
     private readonly visibility: VisibilityService,
-    @InjectQueue(CERTIFICATE_QUEUE)
-    private readonly certificateQueue: Queue<GenerateCertificateJobData>,
+    private readonly outbox: CertificateOutboxService,
   ) {}
-
-  private enqueueCertificate(
-    pieceId: string,
-    clientId: string,
-    adminId: string,
-  ): Promise<unknown> {
-    return this.certificateQueue.add(
-      "generate-certificate",
-      { pieceId, clientId, adminId },
-      {
-        attempts: 5,
-        backoff: { type: "exponential", delay: 2000 },
-        removeOnComplete: true,
-        removeOnFail: 50,
-        jobId: `generate:${pieceId}:${clientId}`,
-      },
-    );
-  }
 
   async getWardrobe(clientId: string, locale: Locale = "ar", limit?: number) {
     const take =
@@ -96,7 +74,7 @@ export class PiecesService {
     );
 
     const urlMap = await this.storage.resolvePublicUrlsBatch(
-      pieces.flatMap((piece) => piece.imageUrls),
+      pieces.map((piece) => piece.mainImageUrl).filter(Boolean) as string[],
     );
 
     return pieces.map((p) => ({
@@ -105,9 +83,11 @@ export class PiecesService {
       status: p.status,
       name: pickLocalized(locale, p.name, p.nameAr),
       slug: p.slug,
-      images: p.imageUrls
-        .map((key) => urlMap.get(key))
-        .filter((url): url is string => !!url),
+      mainImageUrl: p.mainImageUrl ? (urlMap.get(p.mainImageUrl) ?? null) : null,
+      mainImageLqip: p.mainImageLqip ?? null,
+      images: p.mainImageUrl && urlMap.get(p.mainImageUrl)
+        ? [urlMap.get(p.mainImageUrl) as string]
+        : [],
       specifications: localizeSpecifications(p.specifications, locale),
       collection: pickLocalized(locale, p.collection.name, p.collection.nameAr),
       certificate: p.certificates[0] ?? null,
@@ -163,12 +143,17 @@ export class PiecesService {
     if (!piece) throw new NotFoundException("errors.PIECE_NOT_FOUND");
 
     const { specifications, collection, ...pieceFields } = piece;
-    const signedImageUrls = await this.storage.resolvePublicUrls(piece.imageUrls);
+    const [signedMainImageUrl, signedGalleryUrls] = await Promise.all([
+      this.storage.resolvePublicUrl(piece.mainImageUrl),
+      this.storage.resolvePublicUrls(piece.imageUrls),
+    ]);
 
     return {
       ...localizePiece(pieceFields, locale),
       specifications: localizeSpecifications(specifications, locale),
-      imageUrls: signedImageUrls,
+      mainImageUrl: signedMainImageUrl,
+      mainImageLqip: piece.mainImageLqip ?? null,
+      imageUrls: signedGalleryUrls,
       collection: {
         id: collection.id,
         name: pickLocalized(locale, collection.name, collection.nameAr),
@@ -194,7 +179,7 @@ export class PiecesService {
     });
 
     const urlMap = await this.storage.resolvePublicUrlsBatch(
-      saved.flatMap((s) => s.piece.imageUrls),
+      saved.map((s) => s.piece.mainImageUrl).filter(Boolean) as string[],
     );
 
     return saved.map((s) => {
@@ -208,9 +193,10 @@ export class PiecesService {
             name: pickLocalized(locale, collection.name, collection.nameAr),
             slug: collection.slug,
           },
-          imageUrls: s.piece.imageUrls
-            .map((key) => urlMap.get(key))
-            .filter((url): url is string => !!url),
+          mainImageUrl: s.piece.mainImageUrl
+            ? (urlMap.get(s.piece.mainImageUrl) ?? null)
+            : null,
+          mainImageLqip: s.piece.mainImageLqip ?? null,
         },
       };
     });
@@ -237,7 +223,7 @@ export class PiecesService {
         serialNumber: s.piece.serialNumber,
         name: s.piece.name,
         slug: s.piece.slug,
-        imageUrl: s.piece.imageUrls[0] ?? null,
+        imageUrl: s.piece.mainImageUrl ?? null,
         savedAt: s.savedAt,
         collection: s.piece.collection.name,
         price: s.piece.price,
@@ -291,11 +277,15 @@ export class PiecesService {
     },
     ipAddress?: string,
   ) {
-    const serialNumber = await this.serialNumbers.generateForCollection(
-      data.collectionId,
-    );
-
     const piece = await this.prisma.db.$transaction(async (tx) => {
+      // Allocated inside this transaction so the counter row stays locked until
+      // the piece is inserted; allocating first and inserting afterwards let a
+      // concurrent registration take the same serial.
+      const serialNumber = await this.serialNumbers.allocateForCollection(
+        tx,
+        data.collectionId,
+      );
+
       const created = await tx.piece.create({
         data: {
           serialNumber,
@@ -313,6 +303,8 @@ export class PiecesService {
           price: data.price,
           currency: data.currency ?? "SAR",
           notes: data.notes,
+          mainImageUrl: null,
+          mainImageLqip: null,
           imageUrls: [],
           status: data.initialClientId ? PieceStatus.OWNED : PieceStatus.AVAILABLE,
           currentOwnerId: data.initialClientId ?? null,
@@ -328,14 +320,16 @@ export class PiecesService {
             notes: data.notes,
           },
         });
+
+        await this.outbox.record(tx, {
+          pieceId: created.id,
+          clientId: data.initialClientId,
+          adminId,
+        });
       }
 
       return created;
     });
-
-    if (data.initialClientId) {
-      await this.enqueueCertificate(piece.id, data.initialClientId, adminId);
-    }
 
     await this.audit.log({
       actorType: ActorType.ADMIN,
@@ -369,6 +363,7 @@ export class PiecesService {
         ? {
             OR: [
               { name: { contains: q, mode: "insensitive" as const } },
+              { nameAr: { contains: q, mode: "insensitive" as const } },
               { serialNumber: { contains: q.toUpperCase() } },
             ],
           }
@@ -384,14 +379,16 @@ export class PiecesService {
           id: true,
           serialNumber: true,
           name: true,
+          nameAr: true,
           slug: true,
           material: true,
+          materialAr: true,
           status: true,
           isActive: true,
           price: true,
           updatedAt: true,
           createdAt: true,
-          collection: { select: { id: true, name: true, slug: true } },
+          collection: { select: { id: true, name: true, nameAr: true, slug: true } },
           currentOwner: { select: { displayName: true } },
         },
       }),
@@ -403,9 +400,12 @@ export class PiecesService {
         id: row.id,
         serialNumber: row.serialNumber,
         name: row.name,
+        nameAr: row.nameAr,
         slug: row.slug,
         material: row.material,
+        materialAr: row.materialAr,
         collection: row.collection.name,
+        collectionAr: row.collection.nameAr,
         collectionId: row.collection.id,
         currentOwner: row.currentOwner?.displayName ?? null,
         status: row.status,
@@ -459,9 +459,14 @@ export class PiecesService {
       },
     });
     if (!piece) throw new NotFoundException("errors.PIECE_NOT_FOUND");
+    const [signedMainImageUrl, signedGalleryUrls] = await Promise.all([
+      this.storage.resolvePublicUrl(piece.mainImageUrl),
+      this.storage.resolvePublicUrls(piece.imageUrls),
+    ]);
     return {
       ...piece,
-      imageUrls: await this.storage.resolvePublicUrls(piece.imageUrls),
+      mainImageUrl: signedMainImageUrl,
+      imageUrls: signedGalleryUrls,
     };
   }
 
@@ -528,13 +533,22 @@ export class PiecesService {
     data: { clientId: string; acquisitionType?: AcquisitionType; notes?: string },
     ipAddress?: string,
   ) {
-    const piece = await this.prisma.db.piece.findUnique({ where: { id } });
-    if (!piece) throw new NotFoundException("errors.PIECE_NOT_FOUND");
-    if (piece.status !== PieceStatus.AVAILABLE) {
-      throw new BadRequestException("Piece is not available for assignment");
-    }
-
     await this.prisma.db.$transaction(async (tx) => {
+      // C-06: Lock the piece row with FOR UPDATE to prevent race conditions
+      const lockedPiece = await tx.$queryRaw<
+        Array<{ id: string; status: string }>
+      >`
+        SELECT id, status
+        FROM "Piece"
+        WHERE id = ${id}::text
+        FOR UPDATE
+      `;
+
+      if (!lockedPiece[0]) throw new NotFoundException("errors.PIECE_NOT_FOUND");
+      if (lockedPiece[0].status !== PieceStatus.AVAILABLE) {
+        throw new BadRequestException("Piece is not available for assignment");
+      }
+
       await tx.piece.update({
         where: { id },
         data: {
@@ -553,9 +567,13 @@ export class PiecesService {
       });
 
       await tx.savedPiece.deleteMany({ where: { pieceId: id } });
-    });
 
-    await this.enqueueCertificate(id, data.clientId, adminId);
+      await this.outbox.record(tx, {
+        pieceId: id,
+        clientId: data.clientId,
+        adminId,
+      });
+    });
 
     await this.audit.log({
       actorType: ActorType.ADMIN,
@@ -575,6 +593,7 @@ export class PiecesService {
     pieceId: string,
     buffer: Buffer,
     contentType: string,
+    role?: "main" | "gallery",
     ipAddress?: string,
   ) {
     const piece = await this.prisma.db.piece.findUnique({ where: { id: pieceId } });
@@ -585,12 +604,17 @@ export class PiecesService {
     const key = pieceImageKey(pieceId, fileId, ext);
     const variants = await this.imageProcessing.processAndUpload(buffer, key, contentType);
 
+    // Determine effective role: explicit param wins; if omitted, treat as main
+    // when no main exists yet, otherwise append to gallery.
+    const effectiveRole: "main" | "gallery" =
+      role === "gallery" ? "gallery" : role === "main" ? "main" : (piece.mainImageUrl ? "gallery" : "main");
+
     const updated = await this.prisma.db.piece.update({
       where: { id: pieceId },
-      data: {
-        imageUrls: { push: variants.webp },
-        imageLqips: { push: variants.lqipDataUrl },
-      },
+      data:
+        effectiveRole === "main"
+          ? { mainImageUrl: variants.webp, mainImageLqip: variants.lqipDataUrl }
+          : { imageUrls: { push: variants.webp }, imageLqips: { push: variants.lqipDataUrl } },
     });
 
     await this.audit.log({
@@ -599,7 +623,7 @@ export class PiecesService {
       action: "PIECE_IMAGE_UPLOADED",
       targetType: "Piece",
       targetId: pieceId,
-      metadata: { key: variants.webp, lqip: variants.lqip },
+      metadata: { key: variants.webp },
       ipAddress,
     });
 

@@ -19,8 +19,10 @@ import {
   fetchHouseSettings,
   updateHouseSettings,
 } from "@/features/admin/api/fetch-admin-settings";
+import { useTranslations } from "next-intl";
 
 export default function General() {
+  const t = useTranslations("admin");
   const queryClient = useQueryClient();
   const settingsQuery = useQuery({
     queryKey: ["admin-house-settings"],
@@ -63,21 +65,21 @@ export default function General() {
         <AccordionItem value="house">
           <AccordionTrigger className="py-[16px] px-6 border-b border-[#E1E4E8]">
             <div className="text-[#29343D]">
-              <h2 className="font-bold text-h5 leading-[100%]">General</h2>
+              <h2 className="font-bold text-h5 leading-[100%]">{t("settings.general")}</h2>
               <p className="text-[12px] font-semibold mt-3">
-                House information and basic preferences
+                {t("settings.generalHint")}
               </p>
             </div>
           </AccordionTrigger>
 
           <AccordionContent className="p-6">
             <h4 className="font-heading mb-5 text-h4 font-bold">
-              HOUSE INFORMATION
+              {t("settings.houseInfo")}
             </h4>
             <div className="grid py-5 border-t  border-b border-[#E1E4E8] grid-cols-2 gap-x-[32px] gap-y-3">
               <div className="flex flex-col gap-2">
                 <label htmlFor="houseName" className="text-[#272D35] text-h6 font-medium">
-                  House Name
+                  {t("settings.houseName")}
                 </label>
                 <input
                   type="text"
@@ -91,7 +93,7 @@ export default function General() {
               </div>
               <div className="flex flex-col gap-2">
                 <label htmlFor="description" className="text-[#272D35] text-h6 font-medium">
-                  Description
+                  {t("common.description")}
                 </label>
                 <input
                   type="text"
@@ -105,7 +107,7 @@ export default function General() {
               </div>
               <div className="flex flex-col gap-2">
                 <label htmlFor="contactEmail" className="text-[#272D35] text-h6 font-medium">
-                  Contact Email
+                  {t("settings.contactEmail")}
                 </label>
                 <input
                   type="text"
@@ -119,7 +121,7 @@ export default function General() {
               </div>
               <div className="flex flex-col gap-2">
                 <label htmlFor="supportContact" className="text-[#272D35] text-h6 font-medium">
-                  Support Contact
+                  {t("settings.supportContact")}
                 </label>
                 <input
                   type="text"
@@ -133,11 +135,11 @@ export default function General() {
               </div>
             </div>
 
-            <h4 className="font-heading my-5 text-h4 font-bold">REGIONAL </h4>
+            <h4 className="font-heading my-5 text-h4 font-bold">{t("settings.regional")}</h4>
             <div className="grid grid-cols-2 gap-x-[32px] gap-y-3">
               <div className="flex flex-col gap-2">
                 <label htmlFor="language" className="text-[#272D35] text-h6 font-medium">
-                  Language
+                  {t("settings.language")}
                 </label>
                 <Select value={language} onValueChange={setLanguage}>
                   <SelectTrigger
@@ -147,14 +149,14 @@ export default function General() {
                     <SelectValue placeholder="Select language" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="en">English</SelectItem>
-                    <SelectItem value="ar">Arabic</SelectItem>
+                    <SelectItem value="en">{t("settings.english")}</SelectItem>
+                    <SelectItem value="ar">{t("settings.arabic")}</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
               <div className="flex flex-col gap-2">
                 <label htmlFor="timezone" className="text-[#272D35] text-h6 font-medium">
-                  Timezone
+                  {t("settings.timezone")}
                 </label>
                 <Select value={timezone} onValueChange={setTimezone}>
                   <SelectTrigger
@@ -177,7 +179,7 @@ export default function General() {
                 onClick={() => save.mutate()}
                 className="w-24 h-11 bg-[#BF7266] rounded-lg text-[14px] font-medium text-white"
               >
-                Save
+                {t("common.save")}
               </button>
             </div>
           </AccordionContent>

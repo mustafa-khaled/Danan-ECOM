@@ -1,18 +1,19 @@
 import { Module } from "@nestjs/common";
-import { BullModule } from "@nestjs/bullmq";
 import { OrdersService } from "./orders.service";
 import { ClientOrdersController } from "./client-orders.controller";
 import { AdminOrdersController } from "./admin-orders.controller";
 import { AuthModule } from "../auth/auth.module";
 import { AdminAuthModule } from "../admin/auth/admin-auth.module";
-import { CERTIFICATE_QUEUE } from "../certificates/jobs/certificate-job.processor";
+import { CertificatesModule } from "../certificates/certificates.module";
 import { NotificationsModule } from "../notifications/notifications.module";
 
 @Module({
   imports: [
     AuthModule,
     AdminAuthModule,
-    BullModule.registerQueue({ name: CERTIFICATE_QUEUE }),
+    // Certificates are requested through the outbox rather than pushed to BullMQ
+    // directly, so the queue registration lives with the dispatcher.
+    CertificatesModule,
     NotificationsModule,
   ],
   controllers: [ClientOrdersController, AdminOrdersController],

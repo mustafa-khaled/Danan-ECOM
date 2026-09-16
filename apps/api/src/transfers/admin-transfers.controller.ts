@@ -3,6 +3,7 @@ import {
   Controller,
   Get,
   Param,
+  ParseUUIDPipe,
   Post,
   Query,
   Req,
@@ -13,6 +14,8 @@ import type { Request } from "express";
 import { TransfersService } from "./transfers.service";
 import { AdminGuard } from "../admin/auth/guards/admin.guard";
 import { Roles } from "../admin/auth/decorators/roles.decorator";
+import { RequireAdminArea } from "../admin/auth/decorators/require-admin-area.decorator";
+import { AdminArea } from "../admin/auth/admin-permissions";
 import { CurrentAdmin } from "../admin/auth/decorators/current-admin.decorator";
 import type { AdminSession } from "@dadan/types";
 import { getClientIp } from "../common/constants";
@@ -21,6 +24,7 @@ import { ApproveTransferDto, RejectTransferDto } from "./dto/transfer-action.dto
 
 @Controller("admin/transfers")
 @UseGuards(AdminGuard)
+@RequireAdminArea(AdminArea.OPERATIONS)
 export class AdminTransfersController {
   constructor(private readonly transfers: TransfersService) {}
 
@@ -35,7 +39,7 @@ export class AdminTransfersController {
   }
 
   @Get(":id")
-  getOne(@Param("id") id: string) {
+  getOne(@Param("id", ParseUUIDPipe) id: string) {
     return this.transfers.getAdminTransfer(id);
   }
 
@@ -43,7 +47,7 @@ export class AdminTransfersController {
   @Roles(AdminRole.SUPER_ADMIN)
   approve(
     @CurrentAdmin() admin: AdminSession,
-    @Param("id") id: string,
+    @Param("id", ParseUUIDPipe) id: string,
     @Body() dto: ApproveTransferDto,
     @Req() req: Request,
   ) {
@@ -54,7 +58,7 @@ export class AdminTransfersController {
   @Roles(AdminRole.SUPER_ADMIN)
   reject(
     @CurrentAdmin() admin: AdminSession,
-    @Param("id") id: string,
+    @Param("id", ParseUUIDPipe) id: string,
     @Body() dto: RejectTransferDto,
     @Req() req: Request,
   ) {
@@ -64,7 +68,7 @@ export class AdminTransfersController {
   @Post(":id/contact-sender")
   contactSender(
     @CurrentAdmin() admin: AdminSession,
-    @Param("id") id: string,
+    @Param("id", ParseUUIDPipe) id: string,
     @Req() req: Request,
   ) {
     return this.transfers.logContact(admin.adminId, id, "sender", getClientIp(req));
@@ -73,7 +77,7 @@ export class AdminTransfersController {
   @Post(":id/contact-recipient")
   contactRecipient(
     @CurrentAdmin() admin: AdminSession,
-    @Param("id") id: string,
+    @Param("id", ParseUUIDPipe) id: string,
     @Req() req: Request,
   ) {
     return this.transfers.logContact(admin.adminId, id, "recipient", getClientIp(req));

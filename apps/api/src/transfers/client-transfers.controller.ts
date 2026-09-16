@@ -3,6 +3,7 @@ import {
   Controller,
   Get,
   Param,
+  ParseUUIDPipe,
   Post,
   Query,
   Req,
@@ -36,7 +37,7 @@ export class ClientTransfersController {
   @Post(":transferId/confirm-sender")
   confirmSender(
     @CurrentClient() client: ClientSession,
-    @Param("transferId") transferId: string,
+    @Param("transferId", ParseUUIDPipe) transferId: string,
     @Req() req: Request,
   ) {
     return this.transfers.confirmSender(transferId, client.clientId, getClientIp(req));
@@ -45,7 +46,7 @@ export class ClientTransfersController {
   @Post(":transferId/confirm-recipient")
   confirmRecipient(
     @CurrentClient() client: ClientSession,
-    @Param("transferId") transferId: string,
+    @Param("transferId", ParseUUIDPipe) transferId: string,
     @Req() req: Request,
   ) {
     return this.transfers.confirmRecipient(transferId, client.clientId, getClientIp(req));
@@ -54,7 +55,7 @@ export class ClientTransfersController {
   @Post(":transferId/cancel")
   cancel(
     @CurrentClient() client: ClientSession,
-    @Param("transferId") transferId: string,
+    @Param("transferId", ParseUUIDPipe) transferId: string,
     @Req() req: Request,
   ) {
     return this.transfers.cancel(transferId, client.clientId, getClientIp(req));
@@ -77,7 +78,7 @@ export class ClientTransfersController {
   getOne(
     @CurrentClient() client: ClientSession,
     @CurrentLocale() locale: Locale,
-    @Param("transferId") transferId: string,
+    @Param("transferId", ParseUUIDPipe) transferId: string,
   ) {
     return this.transfers.getClientTransfer(transferId, client.clientId, locale);
   }

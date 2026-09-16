@@ -1,3 +1,4 @@
+import { randomInt } from "node:crypto";
 import {
   Injectable,
   NotFoundException,
@@ -35,7 +36,8 @@ export class ClientsService {
     const chars = "ABCDEFGHJKMNPQRSTUVWXYZ23456789";
     let result = "";
     for (let i = 0; i < 6; i++) {
-      result += chars.charAt(Math.floor(Math.random() * chars.length));
+      // M-10: Use crypto-secure RNG instead of Math.random()
+      result += chars.charAt(randomInt(chars.length));
     }
     return result;
   }
@@ -205,8 +207,10 @@ export class ClientsService {
     ]);
 
     return {
-      items: items.map(({ _count, ...c }) => ({
+      // H-08: Mask houseKeyPrefix in API responses — it's only needed internally
+      items: items.map(({ _count, houseKeyPrefix, ...c }) => ({
         ...c,
+        houseKeyPrefix: "****",
         pieceCount: _count.ownedPieces,
       })),
       total,
@@ -304,10 +308,11 @@ export class ClientsService {
           select: {
             id: true,
             name: true,
+            nameAr: true,
             serialNumber: true,
             status: true,
-            imageUrls: true,
-            collection: { select: { id: true, name: true } },
+            mainImageUrl: true,
+            collection: { select: { id: true, name: true, nameAr: true } },
           },
         },
         _count: { select: { ownedPieces: true } },
@@ -318,7 +323,7 @@ export class ClientsService {
             id: true,
             status: true,
             initiatedAt: true,
-            piece: { select: { id: true, name: true, serialNumber: true } },
+            piece: { select: { id: true, name: true, nameAr: true, serialNumber: true } },
             toClient: { select: { displayName: true } },
           },
         },
@@ -329,7 +334,7 @@ export class ClientsService {
             id: true,
             status: true,
             initiatedAt: true,
-            piece: { select: { id: true, name: true, serialNumber: true } },
+            piece: { select: { id: true, name: true, nameAr: true, serialNumber: true } },
             fromClient: { select: { displayName: true } },
           },
         },
@@ -337,14 +342,13 @@ export class ClientsService {
     });
     if (!client) throw new NotFoundException("errors.CLIENT_NOT_FOUND");
 
-    const { _count, ownedPieces, ...rest } = client;
+    // H-08: Mask houseKeyPrefix in API responses
+    const { _count, ownedPieces, houseKeyPrefix, ...rest } = client;
     return {
       ...rest,
+      houseKeyPrefix: "****",
       pieceCount: _count.ownedPieces,
-      ownedPieces: ownedPieces.map((piece) => ({
-        ...piece,
-        imageUrls: piece.imageUrls.slice(0, 1),
-      })),
+      ownedPieces: ownedPieces.map((piece) => ({ ...piece })),
     };
   }
 
@@ -389,17 +393,20 @@ export class ClientsService {
       include: { class: { select: CLASS_SELECT } },
     });
 
-    if (data.isActive === false) {
+    // H-02: Revoke sessions when classId changes so JWT reflects the new class
+    if (data.isActive === false || data.classId) {
       await this.auth.revokeAllClientSessions(id);
     }
 
+    // L-01: Only audit specific fields, never the full DTO
+    const { displayName, email, phone, locale, isActive, classId } = data;
     await this.audit.log({
       actorType: ActorType.ADMIN,
       actorId: adminId,
       action: "CLIENT_UPDATED",
       targetType: "Client",
       targetId: id,
-      metadata: data,
+      metadata: { displayName, email, phone, locale, isActive, classId },
       ipAddress,
     });
 
@@ -407,7 +414,11 @@ export class ClientsService {
   }
 
   async rotateKey(adminId: string, id: string, ipAddress?: string) {
-    const client = await this.prisma.db.client.findUnique({ where: { id } });
+    // Existence check only — never load the hash we are about to replace.
+    const client = await this.prisma.db.client.findUnique({
+      where: { id },
+      select: { id: true },
+    });
     if (!client) throw new NotFoundException("errors.CLIENT_NOT_FOUND");
 
     const plainKey = this.auth.generateHouseKey();

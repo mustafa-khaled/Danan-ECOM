@@ -3,6 +3,7 @@ import {
   Get,
   NotFoundException,
   Param,
+  ParseUUIDPipe,
   Post,
   Query,
   UseGuards,
@@ -15,6 +16,8 @@ import { CERTIFICATE_QUEUE } from "./jobs/certificate-job.processor";
 import type { GenerateCertificateJobData } from "./jobs/certificate-job.processor";
 import { AdminGuard } from "../admin/auth/guards/admin.guard";
 import { Roles } from "../admin/auth/decorators/roles.decorator";
+import { RequireAdminArea } from "../admin/auth/decorators/require-admin-area.decorator";
+import { AdminArea } from "../admin/auth/admin-permissions";
 import { CurrentAdmin } from "../admin/auth/decorators/current-admin.decorator";
 import type { AdminSession } from "@dadan/types";
 import { AdminCertificateQueryDto } from "./dto/admin-certificate-query.dto";
@@ -22,6 +25,7 @@ import { PrismaService } from "../prisma/prisma.service";
 
 @Controller("admin/certificates")
 @UseGuards(AdminGuard)
+@RequireAdminArea(AdminArea.OWNERSHIP)
 export class AdminCertificatesController {
   constructor(
     private readonly certificates: CertificatesService,
@@ -38,7 +42,7 @@ export class AdminCertificatesController {
   @Roles(AdminRole.SUPER_ADMIN)
   async regenerate(
     @CurrentAdmin() admin: AdminSession,
-    @Param("pieceId") pieceId: string,
+    @Param("pieceId", ParseUUIDPipe) pieceId: string,
   ) {
     const piece = await this.prisma.db.piece.findUnique({ where: { id: pieceId } });
     if (!piece?.currentOwnerId) {

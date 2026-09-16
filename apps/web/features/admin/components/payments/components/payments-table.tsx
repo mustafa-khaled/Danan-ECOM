@@ -1,7 +1,9 @@
 "use client";
 
+import { useMemo } from "react";
+import { useTranslations } from "next-intl";
 import { DataTable } from "@/components/ui/data-table";
-import { paymentsColumns } from "./payments-columns";
+import { getPaymentsColumns } from "./payments-columns";
 import type { AdminPaymentListItem } from "../types";
 
 interface PaymentsTableProps {
@@ -13,11 +15,14 @@ export default function PaymentsTable({
   items,
   isLoading = false,
 }: PaymentsTableProps) {
+  const t = useTranslations("admin");
+  const columns = useMemo(() => getPaymentsColumns(t), [t]);
+
   return (
     <div className="space-y-4">
       <DataTable
         data={items}
-        columns={paymentsColumns}
+        columns={columns}
         keyExtractor={(row) => row.id}
         hoverable
         isLoading={isLoading}
@@ -26,8 +31,8 @@ export default function PaymentsTable({
           <DataTable.Table>
             <DataTable.Header />
             <DataTable.Body
-              emptyTitle="No payments found"
-              emptyMessage="No payments match the selected filters or search query."
+              emptyTitle={t("payments.emptyFound")}
+              emptyMessage={t("payments.emptyFoundMessage")}
             />
           </DataTable.Table>
         </DataTable.Container>

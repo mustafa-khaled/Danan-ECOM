@@ -2,6 +2,7 @@ import {
   Controller,
   Get,
   Param,
+  ParseUUIDPipe,
   Redirect,
   UseGuards,
 } from "@nestjs/common";
@@ -18,7 +19,7 @@ export class ClientCertificatesController {
   @Get()
   getCertificate(
     @CurrentClient() client: ClientSession,
-    @Param("pieceId") pieceId: string,
+    @Param("pieceId", ParseUUIDPipe) pieceId: string,
   ) {
     return this.certificates.getClientCertificate(client.clientId, pieceId);
   }
@@ -27,7 +28,7 @@ export class ClientCertificatesController {
   @Redirect(undefined, 302)
   async download(
     @CurrentClient() client: ClientSession,
-    @Param("pieceId") pieceId: string,
+    @Param("pieceId", ParseUUIDPipe) pieceId: string,
   ) {
     const url = await this.certificates.getCertificateDownloadUrl(
       client.clientId,

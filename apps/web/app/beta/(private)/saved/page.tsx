@@ -35,7 +35,7 @@ export default async function SavedPage() {
                     piece={{
                       id: entry.piece.id,
                       name: entry.piece.name,
-                      imageUrl: entry.piece.imageUrls?.[0],
+                      imageUrl: entry.piece.mainImageUrl ?? entry.piece.imageUrls?.[0],
                     }}
                   />
                 </Link>

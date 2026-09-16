@@ -14,11 +14,17 @@ import {
   updateClass,
 } from "@/features/admin/api/fetch-admin-classes";
 import type { AdminClass } from "@/features/admin/types";
+import { pickLocalized } from "@/shared/lib/pick-localized";
+import { useLocale, useTranslations } from "next-intl";
+import type { Locale } from "@/i18n/routing";
 
 export default function MembershipClasses() {
+  const t = useTranslations("admin");
+  const locale = useLocale() as Locale;
   const [classes, setClasses] = useState<AdminClass[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [name, setName] = useState("");
+  const [nameAr, setNameAr] = useState("");
   const [slug, setSlug] = useState("");
   const [description, setDescription] = useState("");
   const [saving, setSaving] = useState(false);
@@ -28,7 +34,7 @@ export default function MembershipClasses() {
       setClasses(await fetchAdminClasses());
       setError(null);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to load classes");
+      setError(err instanceof Error ? err.message : t("settings.failedLoad"));
     }
   };
 
@@ -42,15 +48,17 @@ export default function MembershipClasses() {
     try {
       await createClass({
         name: name.trim(),
+        nameAr: nameAr.trim() || undefined,
         slug: slug.trim(),
         description: description.trim() || undefined,
       });
       setName("");
+      setNameAr("");
       setSlug("");
       setDescription("");
       await load();
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to create class");
+      setError(err instanceof Error ? err.message : t("settings.failedCreate"));
     } finally {
       setSaving(false);
     }
@@ -61,7 +69,7 @@ export default function MembershipClasses() {
       await updateClass(cls.id, { isDefault: true });
       await load();
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to set default");
+      setError(err instanceof Error ? err.message : t("settings.failedDefault"));
     }
   };
 
@@ -70,7 +78,7 @@ export default function MembershipClasses() {
       await deleteClass(cls.id);
       await load();
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to hide class");
+      setError(err instanceof Error ? err.message : t("settings.failedHide"));
     }
   };
 
@@ -81,10 +89,10 @@ export default function MembershipClasses() {
           <AccordionTrigger className="py-[16px] px-6 border-b border-[#E1E4E8]">
             <div className="text-[#29343D]">
               <h2 className="font-bold text-h5 leading-[100%]">
-                Membership Classes
+                {t("settings.membershipClasses")}
               </h2>
               <p className="text-[12px] font-semibold mt-3">
-                Default class for new clients is Class C unless changed here
+                {t("settings.membershipHint")}
               </p>
             </div>
           </AccordionTrigger>
@@ -96,25 +104,25 @@ export default function MembershipClasses() {
               {classes.map((cls) => (
                 <div key={cls.id} className="p-[16px] bg-[#FBF7F7]">
                   <h4 className="font-bold text-h4 text-[#272D35] leading-[100%]">
-                    {cls.name}
-                    {!cls.isActive ? " (hidden)" : ""}
+                    {pickLocalized(locale, cls.name, cls.nameAr)}
+                    {!cls.isActive ? ` ${t("common.hidden")}` : ""}
                   </h4>
                   <h5 className="text-body-lg font-semibold text-[#353D48] mt-3 mb-[16px]">
                     {cls.description || cls.slug}
-                    {cls.isDefault ? " · Default for new clients" : ""}
+                    {cls.isDefault ? ` ${t("settings.defaultForNew")}` : ""}
                   </h5>
                   <h6 className="text-h6 font-medium text-[#4B5563] uppercase">
-                    {cls.clientCount ?? 0} Members · {cls.collectionCount ?? 0} Collections
+                    {t("settings.classMeta", { members: cls.clientCount ?? 0, collections: cls.collectionCount ?? 0 })}
                   </h6>
                   <div className="mt-[16px] flex gap-3 text-[#BF7266] font-semibold text-sm">
                     {!cls.isDefault && cls.isActive && (
                       <button type="button" onClick={() => void handleSetDefault(cls)}>
-                        Make default
+                        {t("settings.makeDefault")}
                       </button>
                     )}
                     {cls.isActive && (
                       <button type="button" onClick={() => void handleDelete(cls)}>
-                        Hide
+                        {t("settings.hide")}
                       </button>
                     )}
                   </div>
@@ -126,20 +134,27 @@ export default function MembershipClasses() {
               <input
                 value={name}
                 onChange={(e) => setName(e.target.value)}
-                placeholder="Class name"
+                placeholder={t("settings.className")}
+                className="border-none bg-[#F8FAFC] h-12 px-4"
+              />
+              <input
+                value={nameAr}
+                onChange={(e) => setNameAr(e.target.value)}
+                placeholder={t("settings.classNameAr")}
+                dir="rtl"
                 className="border-none bg-[#F8FAFC] h-12 px-4"
               />
               <input
                 value={slug}
                 onChange={(e) => setSlug(e.target.value)}
-                placeholder="slug (class-d)"
+                placeholder={t("settings.slugPlaceholder")}
                 className="border-none bg-[#F8FAFC] h-12 px-4"
               />
               <input
                 value={description}
                 onChange={(e) => setDescription(e.target.value)}
                 placeholder="Description"
-                className="border-none bg-[#F8FAFC] h-12 px-4"
+                className="border-none bg-[#F8FAFC] h-12 px-4 sm:col-span-3"
               />
               <button
                 type="button"
@@ -147,7 +162,7 @@ export default function MembershipClasses() {
                 onClick={() => void handleCreate()}
                 className="h-11 bg-[#BF7266] rounded-lg text-[14px] font-medium text-white sm:col-span-3"
               >
-                {saving ? "Creating…" : "Create class"}
+                {saving ? t("common.creating") : t("settings.createClass")}
               </button>
             </div>
           </AccordionContent>

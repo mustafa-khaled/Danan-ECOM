@@ -111,6 +111,7 @@ export interface SeedTransfer {
 }
 
 export const COLLECTIONS: SeedCollection[] = [
+  // --- Original four ---
   {
     slug: "noir-collection",
     name: "Collection Noir",
@@ -149,6 +150,47 @@ export const COLLECTIONS: SeedCollection[] = [
     descriptionAr: "قطع تحتفي بالروابط — الهدايا والإخلاص والحب.",
     cover: "collection-4.avif",
     sortOrder: 4,
+    classSlugs: ["class-a"],
+  },
+  // --- Four new collections ---
+  {
+    slug: "al-nour",
+    name: "Al-Nour",
+    nameAr: "النور",
+    description: "Radiant forms inspired by light breaking through carved stone.",
+    descriptionAr: "أشكال مضيئة مستوحاة من الضوء يخترق الحجر المنحوت.",
+    cover: "collection-1.avif",
+    sortOrder: 5,
+    classSlugs: ["class-a"],
+  },
+  {
+    slug: "zenith",
+    name: "Zenith",
+    nameAr: "الذروة",
+    description: "Pieces that mark the highest point — rare, elevated, exact.",
+    descriptionAr: "قطع تُعلي من القمة — نادرة، راقية، دقيقة.",
+    cover: "collection-2.avif",
+    sortOrder: 6,
+    classSlugs: ["class-a", "class-b"],
+  },
+  {
+    slug: "desert-rose",
+    name: "Desert Rose",
+    nameAr: "وردة الصحراء",
+    description: "The crystalline beauty of the desert — raw yet refined.",
+    descriptionAr: "جمال الصحراء الكريستالي — خام في أصله، مصقول في صياغته.",
+    cover: "collection-3.avif",
+    sortOrder: 7,
+    classSlugs: ["class-a", "class-b", "class-c"],
+  },
+  {
+    slug: "oud",
+    name: "Oud",
+    nameAr: "العود",
+    description: "Deep resonance in precious metal — layered, warm, enduring.",
+    descriptionAr: "رنين عميق في المعدن الثمين — متعدد الطبقات، دافئ، دائم.",
+    cover: "collection-4.avif",
+    sortOrder: 8,
     classSlugs: ["class-a"],
   },
 ];
@@ -293,7 +335,7 @@ export const CATALOG_TEMPLATES: SeedCatalogTemplate[] = [
       { key: "Pearls", keyAr: "اللؤلؤ", value: "South Sea", valueAr: "بحار الجنوب", sortOrder: 1 },
     ],
   },
-  // --- Mawaddah (2 designs) ---
+  // --- Mawaddah (2 original + 1 new = 3 designs) ---
   {
     slug: "mawaddah-eternity-band",
     name: "Mawaddah Eternity Band",
@@ -329,6 +371,318 @@ export const CATALOG_TEMPLATES: SeedCatalogTemplate[] = [
     price: 28000,
     specifications: [
       { key: "Motif", keyAr: "الرمز", value: "Heart", valueAr: "قلب", sortOrder: 1 },
+    ],
+  },
+  {
+    slug: "mawaddah-link-bracelet",
+    name: "Mawaddah Link Bracelet",
+    nameAr: "سوار مودّة المتصل",
+    collectionSlug: "mawaddah",
+    story: "Interlocking gold links — a bond that holds across time.",
+    storyAr: "حلقات ذهبية متشابكة — رابطة تصمد عبر الزمن.",
+    material: "18K Gold",
+    materialAr: "ذهب ١٨ قيراط",
+    weight: 18.0,
+    dimensions: "19 cm length",
+    dimensionsAr: "طول ١٩ سم",
+    images: ["product-21.avif", "product-22.avif"],
+    price: 32000,
+    specifications: [
+      { key: "Links", keyAr: "الحلقات", value: "36 interlocking", valueAr: "٣٦ حلقة متشابكة", sortOrder: 1 },
+    ],
+  },
+
+  // --- Noir (2 original + 1 new = 3 designs) ---
+  // (existing noir templates already above; new one here)
+  {
+    slug: "noir-geometric-pendant",
+    name: "Noir Geometric Pendant",
+    nameAr: "قلادة نوار الهندسية",
+    collectionSlug: "noir-collection",
+    story: "A sharp-edged black diamond rhombus suspended on a gold wire — geometry meeting night.",
+    storyAr: "معين من الماس الأسود ذو حواف حادة معلق على خيط ذهبي — الهندسة تلتقي الليل.",
+    material: "18K Gold, Black Diamond",
+    materialAr: "ذهب ١٨ قيراط، ماس أسود",
+    weight: 6.8,
+    dimensions: "40 cm chain, 2 cm pendant",
+    dimensionsAr: "سلسلة ٤٠ سم، قلادة ٢ سم",
+    images: ["product-2.avif", "product-3.avif"],
+    price: 38000,
+    specifications: [
+      { key: "Shape", keyAr: "الشكل", value: "Rhombus", valueAr: "معين", sortOrder: 1 },
+    ],
+  },
+
+  // --- Heritage (2 original + 1 new = 3 designs) ---
+  {
+    slug: "heritage-filigree-ring",
+    name: "Heritage Filigree Ring",
+    nameAr: "خاتم التراث بالزخرفة الدقيقة",
+    collectionSlug: "gold-heritage",
+    story: "Intricate gold filigree work forming a delicate lace-like band.",
+    storyAr: "زخرفة ذهبية دقيقة تشكّل حزامًا يشبه الدانتيل.",
+    material: "22K Gold",
+    materialAr: "ذهب ٢٢ قيراط",
+    weight: 6.4,
+    dimensions: "Ring size 56",
+    dimensionsAr: "مقاس الخاتم ٥٦",
+    images: ["product-7.avif", "product-8.avif"],
+    price: 52000,
+    specifications: [
+      { key: "Technique", keyAr: "الأسلوب", value: "Filigree", valueAr: "زخرفة دقيقة", sortOrder: 1 },
+    ],
+  },
+
+  // --- Oasis (2 original + 1 new = 3 designs) ---
+  {
+    slug: "oasis-sand-bangle",
+    name: "Oasis Sand Bangle",
+    nameAr: "سوار الواحة الرملي",
+    collectionSlug: "oasis",
+    story: "A smooth white gold bangle with a brushed sand-grain texture.",
+    storyAr: "سوار من الذهب الأبيض الناعم بنسيج حبيبات الرمل المصقولة.",
+    material: "18K White Gold",
+    materialAr: "ذهب أبيض ١٨ قيراط",
+    weight: 22.5,
+    dimensions: "6.2 cm inner diameter",
+    dimensionsAr: "قطر داخلي ٦٫٢ سم",
+    images: ["product-12.avif", "product-13.avif"],
+    price: 47000,
+    specifications: [
+      { key: "Finish", keyAr: "التشطيب", value: "Brushed", valueAr: "مصقول بالفرشاة", sortOrder: 1 },
+    ],
+  },
+
+  // =====================================================================
+  // --- Al-Nour (3 designs) ---
+  // =====================================================================
+  {
+    slug: "al-nour-crescent-ring",
+    name: "Al-Nour Crescent Ring",
+    nameAr: "خاتم النور الهلالي",
+    collectionSlug: "al-nour",
+    story: "A crescent of white diamonds set in yellow gold — light made wearable.",
+    storyAr: "هلال من الماس الأبيض مرصع في الذهب الأصفر — الضوء يُلبَس.",
+    material: "18K Yellow Gold, Diamond",
+    materialAr: "ذهب أصفر ١٨ قيراط، ماس",
+    weight: 4.5,
+    dimensions: "Ring size 54",
+    dimensionsAr: "مقاس الخاتم ٥٤",
+    images: ["product-1.avif", "product-2.avif"],
+    price: 39000,
+    specifications: [
+      { key: "Setting", keyAr: "الترصيع", value: "Pavé", valueAr: "بافيه", sortOrder: 1 },
+    ],
+  },
+  {
+    slug: "al-nour-star-pendant",
+    name: "Al-Nour Star Pendant",
+    nameAr: "قلادة النور النجمية",
+    collectionSlug: "al-nour",
+    story: "An eight-pointed star pendant — a symbol of guidance and illumination.",
+    storyAr: "قلادة نجمة ثمانية الرؤوس — رمز الإرشاد والإضاءة.",
+    material: "18K Gold, White Sapphire",
+    materialAr: "ذهب ١٨ قيراط، ياقوت أبيض",
+    weight: 7.2,
+    dimensions: "40 cm chain, 2.2 cm pendant",
+    dimensionsAr: "سلسلة ٤٠ سم، قلادة ٢٫٢ سم",
+    images: ["product-3.avif", "product-4.avif"],
+    price: 44000,
+    specifications: [
+      { key: "Points", keyAr: "الرؤوس", value: "8", valueAr: "٨", sortOrder: 1 },
+    ],
+  },
+  {
+    slug: "al-nour-arc-bracelet",
+    name: "Al-Nour Arc Bracelet",
+    nameAr: "سوار النور المقوّس",
+    collectionSlug: "al-nour",
+    story: "Arched gold panels reflecting light from every angle.",
+    storyAr: "ألواح ذهبية مقوّسة تعكس الضوء من كل زاوية.",
+    material: "18K Gold",
+    materialAr: "ذهب ١٨ قيراط",
+    weight: 24.0,
+    dimensions: "18 cm length",
+    dimensionsAr: "طول ١٨ سم",
+    images: ["product-5.avif", "product-6.avif"],
+    price: 61000,
+    specifications: [
+      { key: "Panels", keyAr: "الألواح", value: "12 arched", valueAr: "١٢ لوحة مقوّسة", sortOrder: 1 },
+    ],
+  },
+
+  // =====================================================================
+  // --- Zenith (3 designs) ---
+  // =====================================================================
+  {
+    slug: "zenith-summit-ring",
+    name: "Zenith Summit Ring",
+    nameAr: "خاتم الذروة القمة",
+    collectionSlug: "zenith",
+    story: "A princess-cut diamond elevated on a high cathedral setting — reaching its zenith.",
+    storyAr: "ماسة ذات قطع الأميرة مرفوعة على إعداد كاتدرائي — تبلغ ذروتها.",
+    material: "18K White Gold, Diamond",
+    materialAr: "ذهب أبيض ١٨ قيراط، ماس",
+    weight: 5.3,
+    dimensions: "Ring size 52",
+    dimensionsAr: "مقاس الخاتم ٥٢",
+    images: ["product-7.avif", "product-8.avif"],
+    price: 58000,
+    specifications: [
+      { key: "Cut", keyAr: "القطع", value: "Princess", valueAr: "أميرة", sortOrder: 1 },
+      { key: "Setting", keyAr: "الترصيع", value: "Cathedral", valueAr: "كاتدرائي", sortOrder: 2 },
+    ],
+  },
+  {
+    slug: "zenith-peak-earrings",
+    name: "Zenith Peak Earrings",
+    nameAr: "أقراط الذروة المدببة",
+    collectionSlug: "zenith",
+    story: "Tapered gold spikes tipped with blue sapphires — sharp precision.",
+    storyAr: "مسامير ذهبية مدببة مرصعة بالياقوت الأزرق — دقة حادة.",
+    material: "18K Gold, Blue Sapphire",
+    materialAr: "ذهب ١٨ قيراط، ياقوت أزرق",
+    weight: 9.1,
+    dimensions: "3.5 cm drop",
+    dimensionsAr: "تدلٍّ ٣٫٥ سم",
+    images: ["product-9.avif", "product-10.avif"],
+    price: 49000,
+    specifications: [
+      { key: "Stone", keyAr: "الحجر", value: "Blue Sapphire", valueAr: "ياقوت أزرق", sortOrder: 1 },
+    ],
+  },
+  {
+    slug: "zenith-apex-necklace",
+    name: "Zenith Apex Necklace",
+    nameAr: "عقد الذروة القمة",
+    collectionSlug: "zenith",
+    story: "A collar necklace rising to a diamond apex — architecture you wear.",
+    storyAr: "عقد طوق يرتفع نحو قمة ماسية — هندسة معمارية ترتديها.",
+    material: "18K White Gold, Diamond",
+    materialAr: "ذهب أبيض ١٨ قيراط، ماس",
+    weight: 42.0,
+    dimensions: "38 cm",
+    dimensionsAr: "٣٨ سم",
+    images: ["product-11.avif", "product-12.avif"],
+    price: 130000,
+    specifications: [
+      { key: "Diamonds", keyAr: "الماس", value: "18 round-cut", valueAr: "١٨ قطعة مستديرة", sortOrder: 1 },
+    ],
+  },
+
+  // =====================================================================
+  // --- Desert Rose (3 designs) ---
+  // =====================================================================
+  {
+    slug: "desert-rose-bloom-ring",
+    name: "Desert Rose Bloom Ring",
+    nameAr: "خاتم وردة الصحراء المتفتحة",
+    collectionSlug: "desert-rose",
+    story: "Pink tourmaline petals set in rose gold — nature blooming on the hand.",
+    storyAr: "بتلات من التورمالين الوردي مرصعة في الذهب الوردي — الطبيعة تتفتح على اليد.",
+    material: "18K Rose Gold, Pink Tourmaline",
+    materialAr: "ذهب وردي ١٨ قيراط، تورمالين وردي",
+    weight: 6.0,
+    dimensions: "Ring size 54",
+    dimensionsAr: "مقاس الخاتم ٥٤",
+    images: ["product-13.avif", "product-14.avif"],
+    price: 33000,
+    specifications: [
+      { key: "Stone", keyAr: "الحجر", value: "Pink Tourmaline", valueAr: "تورمالين وردي", sortOrder: 1 },
+    ],
+  },
+  {
+    slug: "desert-rose-sand-choker",
+    name: "Desert Rose Sand Choker",
+    nameAr: "طوق وردة الصحراء الرملي",
+    collectionSlug: "desert-rose",
+    story: "Rose gold grains fused into a fluid choker — the desert's textures elevated.",
+    storyAr: "حبيبات ذهب وردي مدمجة في طوق سائل — ملامس الصحراء مُسامات.",
+    material: "18K Rose Gold",
+    materialAr: "ذهب وردي ١٨ قيراط",
+    weight: 38.0,
+    dimensions: "36 cm",
+    dimensionsAr: "٣٦ سم",
+    images: ["product-15.avif", "product-16.avif"],
+    price: 72000,
+    specifications: [
+      { key: "Technique", keyAr: "الأسلوب", value: "Granulation", valueAr: "تحبيب", sortOrder: 1 },
+    ],
+  },
+  {
+    slug: "desert-rose-dune-bracelet",
+    name: "Desert Rose Dune Bracelet",
+    nameAr: "سوار وردة الصحراء الكثيبي",
+    collectionSlug: "desert-rose",
+    story: "Wavy gold bands echoing sand dune ridges — beauty born from movement.",
+    storyAr: "حزم ذهبية متموجة تُردد صدى قمم الكثبان الرملية — جمال يولد من الحركة.",
+    material: "18K Rose Gold, Diamond",
+    materialAr: "ذهب وردي ١٨ قيراط، ماس",
+    weight: 20.5,
+    dimensions: "19 cm length",
+    dimensionsAr: "طول ١٩ سم",
+    images: ["product-17.avif", "product-18.avif"],
+    price: 55000,
+    specifications: [
+      { key: "Waves", keyAr: "الأمواج", value: "3 layers", valueAr: "٣ طبقات", sortOrder: 1 },
+    ],
+  },
+
+  // =====================================================================
+  // --- Oud (3 designs) ---
+  // =====================================================================
+  {
+    slug: "oud-resonance-pendant",
+    name: "Oud Resonance Pendant",
+    nameAr: "قلادة العود الرنانة",
+    collectionSlug: "oud",
+    story: "A teardrop amber encased in gold — warmth that echoes like the oud.",
+    storyAr: "قطرة كهرمان محاطة بالذهب — دفء يتردد مثل صوت العود.",
+    material: "18K Gold, Amber",
+    materialAr: "ذهب ١٨ قيراط، كهرمان",
+    weight: 9.5,
+    dimensions: "42 cm chain, 3 cm pendant",
+    dimensionsAr: "سلسلة ٤٢ سم، قلادة ٣ سم",
+    images: ["product-19.avif", "product-20.avif"],
+    price: 29000,
+    specifications: [
+      { key: "Stone", keyAr: "الحجر", value: "Amber", valueAr: "كهرمان", sortOrder: 1 },
+    ],
+  },
+  {
+    slug: "oud-harmony-ring",
+    name: "Oud Harmony Ring",
+    nameAr: "خاتم العود المتناغم",
+    collectionSlug: "oud",
+    story: "Two interlocking bands — one yellow, one rose gold — playing in perfect harmony.",
+    storyAr: "حلقتان متشابكتان — واحدة صفراء وأخرى وردية — تتناغمان بشكل مثالي.",
+    material: "18K Yellow & Rose Gold",
+    materialAr: "ذهب أصفر ووردي ١٨ قيراط",
+    weight: 7.0,
+    dimensions: "Ring size 56",
+    dimensionsAr: "مقاس الخاتم ٥٦",
+    images: ["product-21.avif", "product-22.avif"],
+    price: 34000,
+    specifications: [
+      { key: "Bands", keyAr: "الحزم", value: "2 interlocking", valueAr: "٢ متشابكتان", sortOrder: 1 },
+    ],
+  },
+  {
+    slug: "oud-echo-earrings",
+    name: "Oud Echo Earrings",
+    nameAr: "أقراط العود الصدوية",
+    collectionSlug: "oud",
+    story: "Textured gold discs that capture and scatter light — an echo of deep, warm tones.",
+    storyAr: "أقراص ذهبية ذات نسيج تلتقط الضوء وتبعثره — صدى نغمات دافئة عميقة.",
+    material: "18K Gold",
+    materialAr: "ذهب ١٨ قيراط",
+    weight: 11.0,
+    dimensions: "2.5 cm diameter",
+    dimensionsAr: "قطر ٢٫٥ سم",
+    images: ["product-23.avif", "product-1.avif"],
+    price: 26000,
+    specifications: [
+      { key: "Finish", keyAr: "التشطيب", value: "Hammered", valueAr: "مطروق", sortOrder: 1 },
     ],
   },
 ];
@@ -373,52 +727,108 @@ export const CLIENTS: SeedClient[] = [
 ];
 
 export const PIECES: SeedPiece[] = [
-  // Noir
+  // --- Noir (6 pieces across 3 templates) ---
   { serialNumber: "DADAN-2026-NC-000001", templateSlug: "noir-solitaire-ring", ownerKey: "amira" },
   { serialNumber: "DADAN-2026-NC-000002", templateSlug: "noir-solitaire-ring" },
   { serialNumber: "DADAN-2026-NC-000003", templateSlug: "noir-cascade-necklace" },
   { serialNumber: "DADAN-2026-NC-000004", templateSlug: "noir-cascade-necklace" },
-  // Heritage
+  { serialNumber: "DADAN-2026-NC-000005", templateSlug: "noir-geometric-pendant" },
+  { serialNumber: "DADAN-2026-NC-000006", templateSlug: "noir-geometric-pendant" },
+  // --- Heritage (6 pieces across 3 templates) ---
   { serialNumber: "DADAN-2026-GH-000001", templateSlug: "heritage-cuff-bracelet", ownerKey: "khalid" },
   { serialNumber: "DADAN-2026-GH-000002", templateSlug: "heritage-cuff-bracelet" },
   { serialNumber: "DADAN-2026-GH-000003", templateSlug: "heritage-drop-earrings" },
   { serialNumber: "DADAN-2026-GH-000004", templateSlug: "heritage-drop-earrings" },
-  // Oasis
+  { serialNumber: "DADAN-2026-GH-000005", templateSlug: "heritage-filigree-ring" },
+  { serialNumber: "DADAN-2026-GH-000006", templateSlug: "heritage-filigree-ring" },
+  // --- Oasis (6 pieces across 3 templates) ---
   { serialNumber: "DADAN-2026-OA-000001", templateSlug: "oasis-duet-ring", ownerKey: "layla" },
   { serialNumber: "DADAN-2026-OA-000002", templateSlug: "oasis-duet-ring" },
   { serialNumber: "DADAN-2026-OA-000003", templateSlug: "oasis-pearl-choker" },
   { serialNumber: "DADAN-2026-OA-000004", templateSlug: "oasis-pearl-choker" },
-  // Mawaddah
+  { serialNumber: "DADAN-2026-OA-000005", templateSlug: "oasis-sand-bangle" },
+  { serialNumber: "DADAN-2026-OA-000006", templateSlug: "oasis-sand-bangle" },
+  // --- Mawaddah (6 pieces across 3 templates) ---
   { serialNumber: "DADAN-2026-MA-000001", templateSlug: "mawaddah-eternity-band", ownerKey: "amira" },
   { serialNumber: "DADAN-2026-MA-000002", templateSlug: "mawaddah-eternity-band" },
   { serialNumber: "DADAN-2026-MA-000003", templateSlug: "mawaddah-pendant-heart" },
   { serialNumber: "DADAN-2026-MA-000004", templateSlug: "mawaddah-pendant-heart" },
+  { serialNumber: "DADAN-2026-MA-000005", templateSlug: "mawaddah-link-bracelet" },
+  { serialNumber: "DADAN-2026-MA-000006", templateSlug: "mawaddah-link-bracelet" },
+  // --- Al-Nour (6 pieces across 3 templates) ---
+  { serialNumber: "DADAN-2026-AN-000001", templateSlug: "al-nour-crescent-ring", ownerKey: "amira" },
+  { serialNumber: "DADAN-2026-AN-000002", templateSlug: "al-nour-crescent-ring" },
+  { serialNumber: "DADAN-2026-AN-000003", templateSlug: "al-nour-star-pendant" },
+  { serialNumber: "DADAN-2026-AN-000004", templateSlug: "al-nour-star-pendant" },
+  { serialNumber: "DADAN-2026-AN-000005", templateSlug: "al-nour-arc-bracelet" },
+  { serialNumber: "DADAN-2026-AN-000006", templateSlug: "al-nour-arc-bracelet" },
+  // --- Zenith (6 pieces across 3 templates) ---
+  { serialNumber: "DADAN-2026-ZN-000001", templateSlug: "zenith-summit-ring", ownerKey: "layla" },
+  { serialNumber: "DADAN-2026-ZN-000002", templateSlug: "zenith-summit-ring" },
+  { serialNumber: "DADAN-2026-ZN-000003", templateSlug: "zenith-peak-earrings", ownerKey: "layla" },
+  { serialNumber: "DADAN-2026-ZN-000004", templateSlug: "zenith-peak-earrings" },
+  { serialNumber: "DADAN-2026-ZN-000005", templateSlug: "zenith-apex-necklace" },
+  { serialNumber: "DADAN-2026-ZN-000006", templateSlug: "zenith-apex-necklace" },
+  // --- Desert Rose (6 pieces across 3 templates) ---
+  { serialNumber: "DADAN-2026-DR-000001", templateSlug: "desert-rose-bloom-ring", ownerKey: "khalid" },
+  { serialNumber: "DADAN-2026-DR-000002", templateSlug: "desert-rose-bloom-ring" },
+  { serialNumber: "DADAN-2026-DR-000003", templateSlug: "desert-rose-sand-choker", ownerKey: "khalid" },
+  { serialNumber: "DADAN-2026-DR-000004", templateSlug: "desert-rose-sand-choker" },
+  { serialNumber: "DADAN-2026-DR-000005", templateSlug: "desert-rose-dune-bracelet" },
+  { serialNumber: "DADAN-2026-DR-000006", templateSlug: "desert-rose-dune-bracelet" },
+  // --- Oud (6 pieces across 3 templates) ---
+  { serialNumber: "DADAN-2026-OU-000001", templateSlug: "oud-resonance-pendant" },
+  { serialNumber: "DADAN-2026-OU-000002", templateSlug: "oud-resonance-pendant" },
+  { serialNumber: "DADAN-2026-OU-000003", templateSlug: "oud-harmony-ring" },
+  { serialNumber: "DADAN-2026-OU-000004", templateSlug: "oud-harmony-ring" },
+  { serialNumber: "DADAN-2026-OU-000005", templateSlug: "oud-echo-earrings" },
+  { serialNumber: "DADAN-2026-OU-000006", templateSlug: "oud-echo-earrings" },
 ];
 
 export const CERTIFICATES: SeedCertificate[] = [
+  // Original 4
   { certificateNumber: "CERT-2026-A3F1C09B", serialNumber: "DADAN-2026-NC-000001", ownerKey: "amira" },
   { certificateNumber: "CERT-2026-B7E2D04A", serialNumber: "DADAN-2026-GH-000001", ownerKey: "khalid" },
   { certificateNumber: "CERT-2026-C1D4E88F", serialNumber: "DADAN-2026-OA-000001", ownerKey: "layla" },
   { certificateNumber: "CERT-2026-D9A6F21C", serialNumber: "DADAN-2026-MA-000001", ownerKey: "amira" },
+  // New 5 — one per newly owned piece
+  { certificateNumber: "CERT-2026-E2B8H33D", serialNumber: "DADAN-2026-AN-000001", ownerKey: "amira" },
+  { certificateNumber: "CERT-2026-F5C9I44E", serialNumber: "DADAN-2026-ZN-000001", ownerKey: "layla" },
+  { certificateNumber: "CERT-2026-G6D0J55F", serialNumber: "DADAN-2026-ZN-000003", ownerKey: "layla" },
+  { certificateNumber: "CERT-2026-H7E1K66G", serialNumber: "DADAN-2026-DR-000001", ownerKey: "khalid" },
+  { certificateNumber: "CERT-2026-I8F2L77H", serialNumber: "DADAN-2026-DR-000003", ownerKey: "khalid" },
 ];
 
 export const ORDERS: SeedOrder[] = [
-  { clientKey: "amira", pieceSerials: ["DADAN-2026-NC-000001", "DADAN-2026-MA-000001"], status: "FULFILLED" },
+  // Original 3
+  { clientKey: "amira",  pieceSerials: ["DADAN-2026-NC-000001", "DADAN-2026-MA-000001"], status: "FULFILLED" },
   { clientKey: "khalid", pieceSerials: ["DADAN-2026-GH-000001"], status: "PAID" },
-  { clientKey: "layla", pieceSerials: ["DADAN-2026-OA-000001"], status: "FULFILLED" },
+  { clientKey: "layla",  pieceSerials: ["DADAN-2026-OA-000001"], status: "FULFILLED" },
+  // New 3 — one per ownership batch
+  { clientKey: "amira",  pieceSerials: ["DADAN-2026-AN-000001"], status: "FULFILLED" },
+  { clientKey: "layla",  pieceSerials: ["DADAN-2026-ZN-000001", "DADAN-2026-ZN-000003"], status: "FULFILLED" },
+  { clientKey: "khalid", pieceSerials: ["DADAN-2026-DR-000001", "DADAN-2026-DR-000003"], status: "PAID" },
 ];
 
 export const SAVED_PIECES: SeedSavedPiece[] = [
-  { clientKey: "amira", serialNumber: "DADAN-2026-OA-000003" },
-  { clientKey: "amira", serialNumber: "DADAN-2026-GH-000002" },
+  // Original
+  { clientKey: "amira",  serialNumber: "DADAN-2026-OA-000003" },
+  { clientKey: "amira",  serialNumber: "DADAN-2026-GH-000002" },
   { clientKey: "khalid", serialNumber: "DADAN-2026-MA-000004" },
   { clientKey: "khalid", serialNumber: "DADAN-2026-NC-000004" },
-  { clientKey: "layla", serialNumber: "DADAN-2026-NC-000002" },
-  { clientKey: "layla", serialNumber: "DADAN-2026-GH-000004" },
+  { clientKey: "layla",  serialNumber: "DADAN-2026-NC-000002" },
+  { clientKey: "layla",  serialNumber: "DADAN-2026-GH-000004" },
+  // New — coverage across new collections
+  { clientKey: "amira",  serialNumber: "DADAN-2026-ZN-000005" },
+  { clientKey: "khalid", serialNumber: "DADAN-2026-OU-000003" },
+  { clientKey: "layla",  serialNumber: "DADAN-2026-AN-000005" },
 ];
 
 export const CART_ITEMS: SeedCartItem[] = [
-  { clientKey: "amira", serialNumber: "DADAN-2026-OA-000004" },
+  // Original
+  { clientKey: "amira",  serialNumber: "DADAN-2026-OA-000004" },
+  // New
+  { clientKey: "khalid", serialNumber: "DADAN-2026-OU-000001" },
 ];
 
 export const TRANSFERS: SeedTransfer[] = [

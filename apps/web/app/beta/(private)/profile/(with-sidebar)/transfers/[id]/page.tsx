@@ -62,9 +62,9 @@ export default async function TransferDetailPage({ params }: TransferDetailPageP
         <section className="border border-[var(--color-border)] bg-white p-6">
           <h2 className="font-english text-xl text-[var(--color-text)]">{t("piece")}</h2>
           <div className="relative mt-4 aspect-[4/3] overflow-hidden bg-[var(--color-surface)]">
-            {transfer.piece.imageUrls[0] ? (
+            {transfer.piece.mainImageUrl ? (
               <Image
-                src={transfer.piece.imageUrls[0]}
+                src={transfer.piece.mainImageUrl}
                 alt={transfer.piece.name}
                 fill
                 sizes="(max-width: 1024px) 100vw, 50vw"

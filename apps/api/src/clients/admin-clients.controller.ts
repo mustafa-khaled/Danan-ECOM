@@ -3,6 +3,7 @@ import {
   Controller,
   Get,
   Param,
+  ParseUUIDPipe,
   Patch,
   Post,
   Query,
@@ -13,6 +14,8 @@ import { AdminRole } from "@dadan/db";
 import { ClientsService } from "./clients.service";
 import { AdminGuard } from "../admin/auth/guards/admin.guard";
 import { Roles } from "../admin/auth/decorators/roles.decorator";
+import { RequireAdminArea } from "../admin/auth/decorators/require-admin-area.decorator";
+import { AdminArea } from "../admin/auth/admin-permissions";
 import { CurrentAdmin } from "../admin/auth/decorators/current-admin.decorator";
 import type { AdminSession } from "@dadan/types";
 import type { Request } from "express";
@@ -23,6 +26,7 @@ import { UpdateClientDto } from "./dto/update-client.dto";
 
 @Controller("admin/clients")
 @UseGuards(AdminGuard)
+@RequireAdminArea(AdminArea.MEMBERS)
 export class AdminClientsController {
   constructor(private readonly clients: ClientsService) {}
 
@@ -51,14 +55,14 @@ export class AdminClientsController {
   }
 
   @Get(":id")
-  getOne(@Param("id") id: string) {
+  getOne(@Param("id", ParseUUIDPipe) id: string) {
     return this.clients.getClientById(id);
   }
 
   @Patch(":id")
   update(
     @CurrentAdmin() admin: AdminSession,
-    @Param("id") id: string,
+    @Param("id", ParseUUIDPipe) id: string,
     @Body() dto: UpdateClientDto,
     @Req() req: Request,
   ) {
@@ -69,7 +73,7 @@ export class AdminClientsController {
   @Roles(AdminRole.SUPER_ADMIN)
   rotateKey(
     @CurrentAdmin() admin: AdminSession,
-    @Param("id") id: string,
+    @Param("id", ParseUUIDPipe) id: string,
     @Req() req: Request,
   ) {
     return this.clients.rotateKey(admin.adminId, id, getClientIp(req));

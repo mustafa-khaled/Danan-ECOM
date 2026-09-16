@@ -9,6 +9,16 @@ export const envSchema = z
     DATABASE_URL: z.string().min(1),
     /** Statement timeout in milliseconds. Prevents runaway queries. Default: 30000 (30s). */
     DATABASE_STATEMENT_TIMEOUT_MS: z.coerce.number().int().min(1000).max(300_000).default(30_000),
+    /**
+     * Connections this replica opens to PgBouncer. Set explicitly instead of
+     * relying on Prisma's core-count default, which scales with the host rather
+     * than with the pooler's capacity. Multiply by the replica count and keep the
+     * result under PgBouncer's `max_client_conn`.
+     */
+    DATABASE_POOL_SIZE: z.coerce.number().int().min(1).max(100).default(10),
+    /** Seconds a query waits for a free pool connection before failing. */
+    DATABASE_POOL_TIMEOUT_SECONDS: z.coerce.number().int().min(1).max(120).default(10),
+    // M-09: Validate Redis URL uses TLS (rediss://) in production
     REDIS_URL: z.string().min(1),
     /**
      * Time-to-first-byte budget for a request. Kept under nginx's 30s
@@ -46,6 +56,11 @@ export const envSchema = z
     BASE_URL: z.string().url(),
     PDF_WATERMARK_TEXT: z.string().optional(),
     PAYMENT_PROVIDER_KEY: z.string().optional(),
+    /**
+     * Optional override for webhook signature verification. Tap signs the
+     * `hashstring` header with PAYMENT_PROVIDER_KEY itself, so leave this unset
+     * unless Tap issued a separate signing key for this account.
+     */
     PAYMENT_PROVIDER_SECRET: z.string().optional(),
     PAYMENT_WEBHOOK_URL: z.string().url().optional().or(z.literal("")),
     /** Where Tap returns the cardholder after 3-D Secure. Falls back to WEB_ORIGIN. */
@@ -81,7 +96,28 @@ export const envSchema = z
     message:
       "ADMIN_JWT_SECRET must differ from JWT_SECRET so a leaked client signing key cannot mint admin sessions",
     path: ["ADMIN_JWT_SECRET"],
-  });
+  })
+  .refine(
+    (data) => {
+      // M-09: Enforce TLS for Redis connections in production
+      if (data.NODE_ENV === "production") {
+        return data.REDIS_URL.startsWith("rediss://");
+      }
+      return true;
+    },
+    {
+      message: "REDIS_URL must use rediss:// (TLS) in production",
+      path: ["REDIS_URL"],
+    },
+  )
+  .refine(
+    (data) => data.NODE_ENV !== "production" || Boolean(data.WEB_ORIGIN),
+    {
+      message:
+        "WEB_ORIGIN is required in production — it is the CORS allowlist, and without it the API would fall back to localhost",
+      path: ["WEB_ORIGIN"],
+    },
+  );
 
 export type EnvConfig = z.infer<typeof envSchema>;
 

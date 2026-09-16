@@ -18,41 +18,40 @@ import {
   type LucideIcon,
 } from "lucide-react";
 import { usePathname } from "next/navigation";
+import { useTranslations } from "next-intl";
 
 interface SubItem {
-  label: string;
+  labelKey: string;
   href: string;
   icon: LucideIcon;
 }
 
 interface NavGroup {
   key: string;
-  main: string;
+  mainKey: string;
   icon: LucideIcon;
   subItems: SubItem[];
 }
 
-// Single source of truth — no more duplicated House/Members/Ownership arrays.
 const navLinks: NavGroup[] = [
   {
     key: "house",
-    main: "House",
+    mainKey: "house",
     icon: Landmark,
     subItems: [
-      { label: "Overview", href: "/admin/overview", icon: Triangle },
-      { label: "Collections", href: "/admin/collections", icon: Gem },
-      { label: "Pieces", href: "/admin/pieces", icon: Boxes },
+      { labelKey: "overview", href: "/admin/overview", icon: Triangle },
+      { labelKey: "collections", href: "/admin/collections", icon: Gem },
+      { labelKey: "pieces", href: "/admin/pieces", icon: Boxes },
     ],
   },
 ];
 
-// Links that are single destinations, not accordions.
 const directLinks: SubItem[] = [
-  { label: "Members", href: "/admin/members", icon: Users },
-  { label: "Ownership", href: "/admin/ownership", icon: Crown },
-  { label: "Operations", href: "/admin/operations", icon: LayoutGrid },
-  { label: "Payments", href: "/admin/payments", icon: CreditCard },
-  { label: "Analytics", href: "/admin/analytics", icon: LineChart },
+  { labelKey: "members", href: "/admin/members", icon: Users },
+  { labelKey: "ownership", href: "/admin/ownership", icon: Crown },
+  { labelKey: "operations", href: "/admin/operations", icon: LayoutGrid },
+  { labelKey: "payments", href: "/admin/payments", icon: CreditCard },
+  { labelKey: "analytics", href: "/admin/analytics", icon: LineChart },
 ];
 
 // --- shared styling ---------------------------------------------------
@@ -71,6 +70,7 @@ interface NavigationAreaProps {
 
 export default function NavigationArea({ setMobileOpen }: NavigationAreaProps) {
   const pathname = usePathname();
+  const t = useTranslations("admin.nav");
 
   const [openGroups, setOpenGroups] = useState<Record<string, boolean>>(() => {
     const initial: Record<string, boolean> = { house: true };
@@ -109,7 +109,7 @@ export default function NavigationArea({ setMobileOpen }: NavigationAreaProps) {
                 <GroupIcon
                   className={cn("size-5", !isGroupActive && "text-neutral-400")}
                 />
-                <span>{group.main}</span>
+                <span>{t(group.mainKey)}</span>
               </div>
               <ChevronDown
                 className={cn(
@@ -154,7 +154,7 @@ export default function NavigationArea({ setMobileOpen }: NavigationAreaProps) {
                             active ? "text-[#3C9A8D]" : "text-neutral-400",
                           )}
                         />
-                        <span>{sub.label}</span>
+                        <span>{t(sub.labelKey)}</span>
                       </Link>
                     );
                   })}
@@ -186,7 +186,7 @@ export default function NavigationArea({ setMobileOpen }: NavigationAreaProps) {
                 )}
               >
                 <Icon className={cn("size-5", !active && "text-neutral-400")} />
-                <span>{link.label}</span>
+                <span>{t(link.labelKey)}</span>
               </button>
             </Link>
             {showDivider && <hr className="mt-2 border-t border-neutral-200" />}
@@ -213,7 +213,7 @@ export default function NavigationArea({ setMobileOpen }: NavigationAreaProps) {
                   !isSettingsActive && "text-neutral-400",
                 )}
               />
-              <span>Settings</span>
+              <span>{t("settings")}</span>
             </button>
           </Link>
         );

@@ -35,9 +35,9 @@ export default async function PieceDetails({
     <div className="flex flex-col gap-[16px] xl:flex-row xl:h-225 h-258.5">
       {/* Left: Main Product Image */}
       <div className="relative w-full xl:h-auto h-108 overflow-hidden">
-        {piece.imageUrls[0] ? (
+        {(piece.mainImageUrl ?? piece.imageUrls?.[0]) ? (
           <Image
-            src={piece.imageUrls[0]}
+            src={(piece.mainImageUrl ?? piece.imageUrls?.[0])!}
             alt={piece.name}
             fill
             priority

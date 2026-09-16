@@ -4,7 +4,8 @@ services:
     container_name: dadan-postgres
     restart: unless-stopped
     ports:
-      - "5433:5432"
+      # L-10: Bind to localhost only to prevent external access in dev
+      - "127.0.0.1:5433:5432"
     environment:
       POSTGRES_USER: dadan
       POSTGRES_PASSWORD: dadan
@@ -17,7 +18,7 @@ services:
     container_name: dadan-redis
     restart: unless-stopped
     ports:
-      - "6379:6379"
+      - "127.0.0.1:6379:6379"
 
 volumes:
   postgres_data:

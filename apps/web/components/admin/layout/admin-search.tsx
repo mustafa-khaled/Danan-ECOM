@@ -2,13 +2,16 @@
 
 import { useRouter, usePathname, useSearchParams } from "next/navigation";
 import { useCallback, useState, useTransition } from "react";
+import { useTranslations } from "next-intl";
 
 interface AdminSearchProps {
   placeholder?: string;
   paramName?: string;
 }
 
-export function AdminSearch({ placeholder = "Search...", paramName = "q" }: AdminSearchProps) {
+export function AdminSearch({ placeholder, paramName = "q" }: AdminSearchProps) {
+  const t = useTranslations("admin.common");
+  const searchPlaceholder = placeholder ?? t("search");
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
@@ -38,12 +41,12 @@ export function AdminSearch({ placeholder = "Search...", paramName = "q" }: Admi
         type="search"
         value={value}
         onChange={(e) => handleSearch(e.target.value)}
-        placeholder={placeholder}
-        aria-label={placeholder}
+        placeholder={searchPlaceholder}
+        aria-label={searchPlaceholder}
         className="w-full max-w-sm rounded-(--radius-sm) border border-(--color-border) bg-(--color-surface) px-4 py-2 text-sm text-(--color-text) placeholder:text-(--color-ivory-muted) focus:border-(--color-accent) focus:outline-none"
       />
       {isPending && (
-        <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-(--color-ivory-muted)">
+        <span className="absolute end-3 top-1/2 -translate-y-1/2 text-xs text-(--color-ivory-muted)">
           ...
         </span>
       )}

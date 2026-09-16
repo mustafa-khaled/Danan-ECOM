@@ -20,7 +20,9 @@ export interface TransferDetail {
     id: string;
     serialNumber: string;
     name: string;
-    imageUrls: string[];
+    mainImageUrl?: string | null;
+    mainImageLqip?: string | null;
+    imageUrls?: string[];
   };
   fromClient: { displayName: string };
   toClient: { displayName: string };

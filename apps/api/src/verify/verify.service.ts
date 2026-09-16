@@ -34,8 +34,9 @@ export class VerifyService {
     clientId?: string,
     locale: Locale = "ar",
   ) {
+    // L-03: Reduced from 30 to 15 requests/minute to limit serial enumeration
     const rateLimitKey = `verify:${ipAddress}`;
-    const limited = await this.redis.isRateLimited(rateLimitKey, 30, 60);
+    const limited = await this.redis.isRateLimited(rateLimitKey, 15, 60);
     if (limited) {
       throw new HttpException("errors.TOO_MANY_REQUESTS", HttpStatus.TOO_MANY_REQUESTS);
     }

@@ -21,6 +21,8 @@ interface TapCardElementProps {
   amount: number;
   currency: string;
   locale: "ar" | "en";
+  /** Prefills the cardholder field so the token's name matches the order. */
+  cardholderName?: string;
   onSuccess: (tokenId: string) => void;
   onError: (message: string) => void;
   onReady?: () => void;
@@ -48,7 +50,7 @@ const CURRENCY_MAP: Partial<Record<string, Currencies>> = {
  */
 export const TapCardElement = forwardRef<TapCardElementHandle, TapCardElementProps>(
   function TapCardElement(
-    { amount, currency, locale, onSuccess, onError, onReady, configError },
+    { amount, currency, locale, cardholderName, onSuccess, onError, onReady, configError },
     ref,
   ) {
     useImperativeHandle(ref, () => ({
@@ -75,8 +77,15 @@ export const TapCardElement = forwardRef<TapCardElementHandle, TapCardElementPro
           amount,
           currency: CURRENCY_MAP[currency.toUpperCase()] ?? Currencies.SAR,
         }}
+        {...(cardholderName
+          ? { customer: { nameOnCard: cardholderName, editable: true } }
+          : {})}
         acceptance={{
-          supportedBrands: ["VISA", "MASTERCARD", "MADA", "AMEX"],
+          // Tap forwards these verbatim as its `paymentAllowed` list, so the
+          // names must match its own brand vocabulary exactly — "AMEX" is
+          // silently unrecognised. https://developers.tap.company/docs/card-sdk-web-v2
+          supportedBrands: ["VISA", "MASTERCARD", "MADA", "AMERICAN_EXPRESS"],
+          // The SDK maps CREDIT+DEBIT to its "all" funding source.
           supportedCards: ["CREDIT", "DEBIT"],
         }}
         fields={{ cardHolder: true }}

@@ -23,3 +23,11 @@ export function fetchAdminOrderDetail(id: string, cookieHeader?: string) {
     cookieHeader,
   });
 }
+
+export function updateOrderStatus(id: string, status: string) {
+  return sendRequest<AdminOrderDetail>({
+    method: "PATCH",
+    url: `/admin/orders/${id}/status`,
+    body: { status },
+  });
+}

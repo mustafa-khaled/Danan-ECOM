@@ -62,8 +62,10 @@ export interface UpdatePieceInput {
   story?: string;
   storyAr?: string;
   material?: string;
+  materialAr?: string;
   weight?: number;
   dimensions?: string;
+  dimensionsAr?: string;
   price?: number;
 }
 
@@ -88,5 +90,16 @@ export function assignPiece(id: string, data: AssignPieceInput, cookieHeader?: s
     url: `/admin/pieces/${id}/assign`,
     body: data,
     cookieHeader,
+  });
+}
+
+export function uploadPieceImage(id: string, file: File, role?: "main" | "gallery") {
+  const formData = new FormData();
+  formData.append("file", file);
+  return sendRequest<AdminPieceDetail>({
+    method: "POST",
+    url: `/admin/pieces/${id}/images`,
+    params: role ? { role } : undefined,
+    body: formData,
   });
 }

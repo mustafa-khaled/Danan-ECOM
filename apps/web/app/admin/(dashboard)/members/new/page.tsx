@@ -1,45 +1,53 @@
 "use client";
 
-import { useEffect, useState, type FormEvent } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
 import { createClient } from "@/features/admin/api/fetch-admin-clients";
 import { fetchAdminClasses } from "@/features/admin/api/fetch-admin-classes";
+import {
+  createClientSchema,
+  type CreateClientFormValues,
+} from "@/features/admin/schemas";
 import type { AdminClass } from "@/features/admin/types";
+import { defaultLocale } from "@/i18n/routing";
+
+const inputClassName = "border-none bg-[#F8FAFC] h-14 w-full p-[16px]";
+const errorClassName = "mt-1 text-xs text-red-500";
 
 export default function NewMemberPage() {
   const router = useRouter();
   const [classes, setClasses] = useState<AdminClass[]>([]);
-  const [displayName, setDisplayName] = useState("");
-  const [email, setEmail] = useState("");
-  const [phone, setPhone] = useState("");
-  const [classId, setClassId] = useState("");
-  const [error, setError] = useState<string | null>(null);
-  const [saving, setSaving] = useState(false);
+
+  const {
+    register,
+    handleSubmit,
+    setValue,
+    formState: { errors, isSubmitting },
+  } = useForm<CreateClientFormValues>({
+    resolver: zodResolver(createClientSchema),
+    defaultValues: { locale: defaultLocale },
+  });
 
   useEffect(() => {
     void fetchAdminClasses().then((items) => {
-      setClasses(items.filter((cls) => cls.isActive));
-      const fallback = items.find((cls) => cls.isDefault);
-      if (fallback) setClassId(fallback.id);
+      const active = items.filter((cls) => cls.isActive);
+      setClasses(active);
+      const fallback = active.find((cls) => cls.isDefault);
+      if (fallback) setValue("classId", fallback.id);
     });
-  }, []);
+  }, [setValue]);
 
-  const onSubmit = async (event: FormEvent) => {
-    event.preventDefault();
-    setSaving(true);
-    setError(null);
-    try {
-      const created = await createClient({
-        displayName,
-        email,
-        phone: phone || undefined,
-        classId: classId || undefined,
-      });
-      router.push(`/admin/members/${created.id}`);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to create member");
-      setSaving(false);
-    }
+  const onSubmit = async (data: CreateClientFormValues) => {
+    const created = await createClient({
+      displayName: data.displayName,
+      email: data.email,
+      phone: data.phone || undefined,
+      locale: data.locale,
+      classId: data.classId || undefined,
+    });
+    router.push(`/admin/members/${created.id}`);
   };
 
   return (
@@ -48,42 +56,51 @@ export default function NewMemberPage() {
         <h1 className="font-heading text-[32px] font-bold text-[#212630]">
           New member
         </h1>
-        {error && <p className="text-sm text-red-500">{error}</p>}
-        <form onSubmit={onSubmit} className="grid gap-4 max-w-xl">
-          <label className="space-y-1">
+        <form onSubmit={handleSubmit(onSubmit)} className="grid gap-4 max-w-xl">
+          <div className="space-y-1">
             <span className="text-[#272D35] text-h6 font-medium">Display name</span>
             <input
-              required
-              value={displayName}
-              onChange={(e) => setDisplayName(e.target.value)}
-              className="border-none bg-[#F8FAFC] h-14 w-full p-[16px]"
+              {...register("displayName")}
+              className={inputClassName}
+              placeholder="Full name"
             />
-          </label>
-          <label className="space-y-1">
+            {errors.displayName && (
+              <p className={errorClassName}>{errors.displayName.message}</p>
+            )}
+          </div>
+
+          <div className="space-y-1">
             <span className="text-[#272D35] text-h6 font-medium">Email</span>
             <input
-              required
               type="email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              className="border-none bg-[#F8FAFC] h-14 w-full p-[16px]"
+              {...register("email")}
+              className={inputClassName}
+              placeholder="email@example.com"
             />
-          </label>
-          <label className="space-y-1">
+            {errors.email && (
+              <p className={errorClassName}>{errors.email.message}</p>
+            )}
+          </div>
+
+          <div className="space-y-1">
             <span className="text-[#272D35] text-h6 font-medium">Phone</span>
             <input
-              value={phone}
-              onChange={(e) => setPhone(e.target.value)}
-              className="border-none bg-[#F8FAFC] h-14 w-full p-[16px]"
+              {...register("phone")}
+              className={inputClassName}
+              placeholder="+966 5xx xxx xxxx"
             />
-          </label>
-          <label className="space-y-1">
+            {errors.phone && (
+              <p className={errorClassName}>{errors.phone.message}</p>
+            )}
+          </div>
+
+          <div className="space-y-1">
             <span className="text-[#272D35] text-h6 font-medium">Class</span>
             <select
-              value={classId}
-              onChange={(e) => setClassId(e.target.value)}
-              className="border-none bg-[#F8FAFC] h-14 w-full p-[16px]"
+              {...register("classId")}
+              className={inputClassName}
             >
+              <option value="">— Select class —</option>
               {classes.map((cls) => (
                 <option key={cls.id} value={cls.id}>
                   {cls.name}
@@ -91,13 +108,14 @@ export default function NewMemberPage() {
                 </option>
               ))}
             </select>
-          </label>
+          </div>
+
           <button
             type="submit"
-            disabled={saving}
-            className="w-32 h-11 bg-[#BF7266] rounded-lg text-[14px] font-medium text-white"
+            disabled={isSubmitting}
+            className="w-32 h-11 bg-[#BF7266] rounded-lg text-[14px] font-medium text-white disabled:opacity-60"
           >
-            {saving ? "Saving…" : "Create"}
+            {isSubmitting ? "Saving…" : "Create"}
           </button>
         </form>
       </div>

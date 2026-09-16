@@ -10,10 +10,6 @@ const tabs = [
     title: "Overview",
   },
   {
-    segment: "story",
-    title: "Story",
-  },
-  {
     segment: "pieces",
     title: "Pieces",
   },
@@ -35,7 +31,7 @@ export default function SingleCollectionTabs() {
   const basePath = `/admin/collections/${id}`;
 
   return (
-    <div className="grid grid-cols-5 gap-3">
+    <div className="grid grid-cols-4 gap-3">
       {tabs.map((tab) => {
         const tabHref = tab.segment ? `${basePath}/${tab.segment}` : basePath;
         const isActive = tab.segment

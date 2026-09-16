@@ -11,14 +11,6 @@ export function certificatePdfKey(certId: string): string {
   return `certificates/${certId}.pdf`;
 }
 
-export function designImageKey(
-  designId: string,
-  fileId: string,
-  ext: string,
-): string {
-  return `designs/${designId}/${fileId}.${ext}`;
-}
-
 export function pieceImageKey(
   pieceId: string,
   fileId: string,

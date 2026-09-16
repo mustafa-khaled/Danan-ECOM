@@ -19,6 +19,9 @@ export function buildCsp(nonce?: string, extraConnectSrc = ""): string {
   return [
     "default-src 'self'",
     scriptSrc,
+    // TODO(H-03): 'unsafe-inline' is required until Next.js supports nonce-based styles.
+    // Track: https://github.com/vercel/next.js/issues/39706
+    // When available, replace with: `style-src 'self' 'nonce-${nonce}'`
     "style-src 'self' 'unsafe-inline'",
     "img-src 'self' data: blob: https://*.tap.company",
     "font-src 'self'",

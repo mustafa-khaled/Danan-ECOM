@@ -2,22 +2,16 @@ import { fetchAdminOperationDetail } from "@/features/admin/api/fetch-admin-oper
 import { fetchAdminPieceDetail } from "@/features/admin/api/fetch-admin-pieces";
 import { getAdminCookieHeader } from "@/features/auth/server/admin-session";
 import { ApiError } from "@/shared/lib/send-request";
+import { formatAdminDate } from "@/shared/utils/format";
 import { ArrowLeft } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
 import { notFound } from "next/navigation";
+import { getLocale, getTranslations } from "next-intl/server";
+import type { Locale } from "@/i18n/routing";
 
 function text(value: unknown) {
   return typeof value === "string" ? value : "";
-}
-
-function formatDate(value?: string | null) {
-  if (!value) return "";
-  return new Date(value).toLocaleDateString("en-GB", {
-    day: "2-digit",
-    month: "short",
-    year: "numeric",
-  });
 }
 
 export default async function OperationCertificatePage({
@@ -30,6 +24,10 @@ export default async function OperationCertificatePage({
   const { id } = await params;
   const { kind } = await searchParams;
   const cookieHeader = await getAdminCookieHeader();
+  const [t, locale] = await Promise.all([
+    getTranslations("admin"),
+    getLocale() as Promise<Locale>,
+  ]);
 
   let operation: Record<string, unknown>;
   try {
@@ -62,7 +60,7 @@ export default async function OperationCertificatePage({
       };
       const active = detail.certificates?.find((cert) => cert.isActive);
       certificateNumber = active?.certificateNumber ?? "";
-      issuedAt = formatDate(active?.issuedAt);
+      issuedAt = formatAdminDate(active?.issuedAt, locale);
       ownerName = detail.currentOwner?.displayName ?? "";
     } catch {
       certificateNumber = "";
@@ -74,12 +72,12 @@ export default async function OperationCertificatePage({
       <div className="flex gap-[16px] px-7.5 py-3 [&>div]:rounded-xl [&>div]:h-15.5 [&>div]:bg-white">
         <div className="flex items-center justify-center w-15.5">
           <Link href={`/admin/operations/${id}${kind ? `?kind=${kind}` : ""}`}>
-            <ArrowLeft className="size-6" />
+            <ArrowLeft className="size-6 rtl:rotate-180" />
           </Link>
         </div>
         <div className="w-full px-7.5 flex items-center justify-between">
           <h4 className="font-bold text-h6 text-neutral-800">
-            Operation Certificate
+            {t("topbar.operationCertificate")}
           </h4>
           <div className="flex items-center gap-2">
             <Image
@@ -90,7 +88,7 @@ export default async function OperationCertificatePage({
             />
             <span>/</span>
             <span className="text-[14px] text-[#BF7266] bg-[#FBF7F7] py-1 px-2 rounded-lg transition-all">
-              Access
+              {t("common.access")}
             </span>
           </div>
         </div>
@@ -102,10 +100,10 @@ export default async function OperationCertificatePage({
             {piece?.name || text(operation.type) || "Certificate"}
           </h1>
           <div className="pt-5 grid grid-cols-2 gap-x-[32px] gap-y-3">
-            <ReadField label="Serial" value={piece?.serialNumber ?? ""} />
+            <ReadField label={t("common.serial")} value={piece?.serialNumber ?? ""} />
             <ReadField label="Certificate number" value={certificateNumber} />
-            <ReadField label="Issued" value={issuedAt} />
-            <ReadField label="Owner" value={ownerName} />
+            <ReadField label={t("common.since")} value={issuedAt} />
+            <ReadField label={t("common.owner")} value={ownerName} />
           </div>
         </div>
       </div>

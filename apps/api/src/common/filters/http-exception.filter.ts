@@ -133,7 +133,8 @@ export class GlobalExceptionFilter implements ExceptionFilter {
       case "P2003":
         return { status: HttpStatus.BAD_REQUEST, message: "Related resource not found", error: "Bad Request" };
       default:
-        return null;
+        // M-08: Catch-all for unmapped Prisma errors — never leak internal details
+        return { status: HttpStatus.INTERNAL_SERVER_ERROR, message: "Internal server error", error: "Internal Server Error" };
     }
   }
 

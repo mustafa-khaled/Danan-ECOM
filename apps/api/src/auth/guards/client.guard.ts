@@ -55,6 +55,8 @@ export class ClientGuard implements CanActivate {
 
       // Re-check the client in the DB so deactivation and class
       // changes take effect immediately instead of when the JWT expires.
+      // L-11: Always use request.client (populated from DB below), never the JWT
+      // payload directly, because the JWT may contain a stale classId.
       const client = await this.prisma.db.client.findUnique({
         where: { id: payload.sub },
         select: {

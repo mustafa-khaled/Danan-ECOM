@@ -11,6 +11,7 @@ import { useCheckout, useReserveForCheckout, type TapCardElementHandle } from "@
 import type { ShippingAddress } from "@/features/checkout/types";
 import { parseShippingAddressFromFormData } from "@/features/checkout/schemas/shipping-address";
 import { isSafePaymentRedirectUrl } from "@/shared/lib/validate-payment-redirect";
+import { useClientContext } from "@/shared/providers/client-context";
 import type { CartSummary } from "@/features/cart";
 
 const TapCardElement = dynamic(
@@ -28,6 +29,7 @@ interface CheckoutFormProps {
 export function CheckoutForm({ summary }: CheckoutFormProps) {
   const router = useRouter();
   const locale = useLocale() as "ar" | "en";
+  const { displayName } = useClientContext();
   const t = useTranslations("checkout");
   const tCart = useTranslations("cart");
   const [step, setStep] = useState<1 | 2>(1);
@@ -191,6 +193,7 @@ export function CheckoutForm({ summary }: CheckoutFormProps) {
                     amount={summary.total}
                     currency={summary.currency}
                     locale={locale}
+                    cardholderName={displayName}
                     onSuccess={handleTokenSuccess}
                     onError={handleTokenError}
                     configError={t("paymentNotConfigured")}

@@ -1,21 +1,24 @@
+import { useTranslations } from "next-intl";
+
 export default function MembershipDistribution({
   memberships = [],
 }: {
   memberships?: Array<{ label: string; value: number; percentage: number }>;
 }) {
+  const t = useTranslations("admin");
   return (
     <section aria-labelledby="membership-distribution-title" className="w-full">
       <h4
         id="membership-distribution-title"
         className="mb-6 font-heading text-h4 font-bold uppercase"
       >
-        Membership Distribution
+        {t("analytics.membershipDistribution")}
       </h4>
 
       <div
         className="flex flex-col gap-4"
         role="list"
-        aria-label="Membership classes"
+        aria-label={t("analytics.membershipClasses")}
       >
         {memberships.map((membership) => (
           <div

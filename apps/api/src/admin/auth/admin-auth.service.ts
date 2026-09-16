@@ -27,6 +27,7 @@ export interface AdminAuthTokens {
     email: string;
     role: string;
     displayName: string;
+    mustChangePassword: boolean;
   };
 }
 
@@ -121,8 +122,42 @@ export class AdminAuthService {
         email: admin.email,
         role: admin.role,
         displayName: admin.displayName,
+        mustChangePassword: admin.mustChangePassword,
       },
     };
+  }
+
+  async changePassword(
+    adminId: string,
+    currentPassword: string,
+    newPassword: string,
+    ipAddress: string,
+  ): Promise<void> {
+    const admin = await this.prisma.db.adminUser.findUnique({
+      where: { id: adminId },
+    });
+    if (!admin) throw new UnauthorizedException(AUTH_FAILURE_MESSAGE);
+
+    const valid = await bcrypt.compare(currentPassword, admin.passwordHash);
+    if (!valid) throw new UnauthorizedException("errors.INVALID_CURRENT_PASSWORD");
+
+    const newHash = await bcrypt.hash(newPassword, 12);
+    await this.prisma.db.adminUser.update({
+      where: { id: adminId },
+      data: { passwordHash: newHash, mustChangePassword: false },
+    });
+
+    // Revoke all existing sessions to force re-login with the new password
+    await this.revokeAllAdminSessions(adminId);
+
+    await this.audit.log({
+      actorType: ActorType.ADMIN,
+      actorId: adminId,
+      action: "ADMIN_PASSWORD_CHANGED",
+      targetType: "AdminUser",
+      targetId: adminId,
+      ipAddress,
+    });
   }
 
   async logoutAll(adminId: string, ipAddress: string, accessToken?: string) {
@@ -196,6 +231,7 @@ export class AdminAuthService {
     email: string;
     role: string;
     displayName: string;
+    mustChangePassword: boolean;
   }): Promise<AdminAuthTokens> {
     const accessToken = await this.signAdminAccessToken(admin);
     const { token: refreshToken } = await this.refreshTokens.issueRefreshToken(
@@ -212,6 +248,7 @@ export class AdminAuthService {
         email: admin.email,
         role: admin.role,
         displayName: admin.displayName,
+        mustChangePassword: admin.mustChangePassword,
       },
     };
   }

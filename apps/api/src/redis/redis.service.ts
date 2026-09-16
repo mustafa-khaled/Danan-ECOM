@@ -47,6 +47,21 @@ export class RedisService implements OnModuleDestroy {
     await this.client.set(key, value, "EX", ttlSeconds);
   }
 
+  /**
+   * Atomic set-if-absent. Returns false when the key already existed, which is
+   * what makes this usable both as a dedup marker and as a cross-instance lease
+   * — unlike an `exists` check followed by a `set`, which two callers can both
+   * pass before either writes.
+   */
+  async setIfAbsent(
+    key: string,
+    value: string,
+    ttlSeconds: number,
+  ): Promise<boolean> {
+    const result = await this.client.set(key, value, "EX", ttlSeconds, "NX");
+    return result === "OK";
+  }
+
   async exists(key: string): Promise<boolean> {
     return (await this.client.exists(key)) === 1;
   }

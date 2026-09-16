@@ -13,6 +13,9 @@ import type { AdminRole } from "@dadan/db";
 import type { Request } from "express";
 import { ROLES_KEY } from "../decorators/roles.decorator";
 import { ALLOW_VIEWER_WRITE_KEY } from "../decorators/allow-viewer-write.decorator";
+import { ALLOW_PASSWORD_CHANGE_PENDING_KEY } from "../decorators/allow-password-change-pending.decorator";
+import { ADMIN_AREA_KEY } from "../decorators/require-admin-area.decorator";
+import { canAccessArea, type AdminArea } from "../admin-permissions";
 import { PrismaService } from "../../../prisma/prisma.service";
 import { RedisService } from "../../../redis/redis.service";
 import {
@@ -67,7 +70,13 @@ export class AdminGuard implements CanActivate {
       // when the 24h JWT expires.
       const admin = await this.prisma.db.adminUser.findUnique({
         where: { id: payload.sub },
-        select: { isActive: true, role: true, email: true, displayName: true },
+        select: {
+          isActive: true,
+          role: true,
+          email: true,
+          displayName: true,
+          mustChangePassword: true,
+        },
       });
       if (!admin || !admin.isActive) {
         throw new UnauthorizedException(AUTH_FAILURE_MESSAGE);
@@ -79,7 +88,19 @@ export class AdminGuard implements CanActivate {
         email: admin.email,
         role,
         displayName: admin.displayName,
+        mustChangePassword: admin.mustChangePassword,
       };
+
+      // A provisioned password grants access to nothing but its own rotation.
+      if (admin.mustChangePassword) {
+        const allowPending = this.reflector.getAllAndOverride<boolean>(
+          ALLOW_PASSWORD_CHANGE_PENDING_KEY,
+          [context.getHandler(), context.getClass()],
+        );
+        if (!allowPending) {
+          throw new ForbiddenException("errors.PASSWORD_CHANGE_REQUIRED");
+        }
+      }
 
       const requiredRoles = this.reflector.getAllAndOverride<AdminRole[]>(
         ROLES_KEY,
@@ -90,6 +111,15 @@ export class AdminGuard implements CanActivate {
         if (!requiredRoles.includes(role)) {
           throw new ForbiddenException("Insufficient permissions");
         }
+      }
+
+      const area = this.reflector.getAllAndOverride<AdminArea>(ADMIN_AREA_KEY, [
+        context.getHandler(),
+        context.getClass(),
+      ]);
+
+      if (area && !canAccessArea(role, area)) {
+        throw new ForbiddenException("Insufficient permissions");
       }
 
       // VIEWER is read-only: block all mutating requests unless explicitly exempted.

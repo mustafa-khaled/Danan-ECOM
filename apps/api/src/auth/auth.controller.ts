@@ -32,6 +32,7 @@ export class AuthController {
   constructor(private readonly authService: AuthService) {}
 
   @Public()
+  @Throttle({ default: { limit: 5, ttl: 900_000 } })
   @Post("validate-key")
   async validateKey(
     @Body() dto: ValidateKeyDto,

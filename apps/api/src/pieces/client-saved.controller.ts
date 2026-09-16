@@ -3,6 +3,7 @@ import {
   Delete,
   Get,
   Param,
+  ParseUUIDPipe,
   Post,
   UseGuards,
 } from "@nestjs/common";
@@ -28,7 +29,7 @@ export class ClientSavedController {
   @Post(":pieceId")
   save(
     @CurrentClient() client: ClientSession,
-    @Param("pieceId") pieceId: string,
+    @Param("pieceId", ParseUUIDPipe) pieceId: string,
   ) {
     return this.pieces.savePiece(client.clientId, client.classId, pieceId);
   }
@@ -36,7 +37,7 @@ export class ClientSavedController {
   @Delete(":pieceId")
   unsave(
     @CurrentClient() client: ClientSession,
-    @Param("pieceId") pieceId: string,
+    @Param("pieceId", ParseUUIDPipe) pieceId: string,
   ) {
     return this.pieces.unsavePiece(client.clientId, pieceId);
   }

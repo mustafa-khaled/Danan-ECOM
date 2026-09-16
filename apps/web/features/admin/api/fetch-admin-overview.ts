@@ -12,10 +12,11 @@ export interface AdminOverview {
     membershipRequests: number;
     certificatesReady: number;
   };
-  membership: Array<{ classId: string; name: string; clientCount: number }>;
+    membership: Array<{ classId: string; name: string; nameAr?: string | null; clientCount: number }>;
   collections: Array<{
     id: string;
     name: string;
+    nameAr?: string | null;
     pieceCount: number;
     ownerCount: number;
   }>;

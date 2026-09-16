@@ -7,6 +7,7 @@ import { fetchAdminPieceStats } from "@/features/admin/api/fetch-admin-stats";
 import { getAdminCookieHeader } from "@/features/auth/server/admin-session";
 import { parseAdminPage, ADMIN_PAGE_SIZE } from "@/shared/lib/parse-admin-page";
 import type { AdminPieceListItem } from "@/features/admin/types";
+import { getTranslations } from "next-intl/server";
 
 export default async function AdminPiecesPage({
   searchParams,
@@ -16,6 +17,7 @@ export default async function AdminPiecesPage({
   const { page: pageParam, q } = await searchParams;
   const page = parseAdminPage(pageParam);
   const cookieHeader = await getAdminCookieHeader();
+  const t = await getTranslations("admin");
 
   let items: AdminPieceListItem[] = [];
   let total = 0;
@@ -35,16 +37,16 @@ export default async function AdminPiecesPage({
   }
 
   const stats = [
-    { id: 1, title: "Pieces", count: pieceStats.total },
-    { id: 2, title: "Published", count: pieceStats.published },
-    { id: 3, title: "Drafts", count: pieceStats.drafts },
-    { id: 4, title: "Archived", count: pieceStats.archived },
+    { id: 1, title: t("pieces.statsPieces"), count: pieceStats.total },
+    { id: 2, title: t("pieces.statsPublished"), count: pieceStats.published },
+    { id: 3, title: t("pieces.statsDrafts"), count: pieceStats.drafts },
+    { id: 4, title: t("pieces.statsArchived"), count: pieceStats.archived },
   ];
 
   return (
     <>
       <div className="bg-white h-15 px-7.5 flex items-center font-bold text-h5 text-neutral-800">
-        House pieces across every collection
+        {t("pieces.banner")}
       </div>
 
       <div className="px-7.5 py-6.75">

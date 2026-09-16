@@ -5,11 +5,13 @@ export interface AdminOwnershipListItem {
   id: string;
   pieceId: string;
   pieceName: string;
+  pieceNameAr?: string | null;
   pieceSerial: string;
   pieceImageUrl: string | null;
   ownerName: string | null;
   ownerEmail: string | null;
   collectionName: string;
+  collectionNameAr?: string | null;
   status: "OWNED" | "IN_TRANSFER" | "PENDING" | "AVAILABLE";
   transferType: string | null;
   since: string | null;

@@ -2,6 +2,7 @@ import {
   Controller,
   Get,
   Param,
+  ParseUUIDPipe,
   Post,
   Query,
   UseGuards,
@@ -31,7 +32,7 @@ export class ClientOrdersController {
   getOne(
     @CurrentClient() client: ClientSession,
     @CurrentLocale() locale: Locale,
-    @Param("orderId") orderId: string,
+    @Param("orderId", ParseUUIDPipe) orderId: string,
   ) {
     return this.orders.getClientOrder(client.clientId, orderId, locale);
   }
@@ -39,7 +40,7 @@ export class ClientOrdersController {
   @Post(":orderId/cancel")
   cancel(
     @CurrentClient() client: ClientSession,
-    @Param("orderId") orderId: string,
+    @Param("orderId", ParseUUIDPipe) orderId: string,
   ) {
     return this.orders.cancelOrder(client.clientId, orderId);
   }

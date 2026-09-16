@@ -12,18 +12,20 @@ import {
   fetchHouseSettings,
   updateHouseSettings,
 } from "@/features/admin/api/fetch-admin-settings";
+import { useTranslations } from "next-intl";
 
 const NOTIFICATION_TOGGLES = [
-  { key: "ownershipTransferRequest", label: "Ownership Transfer Request" },
-  { key: "transferCompleted", label: "Transfer Completed" },
-  { key: "newMemberInvitation", label: "New Member Invitation" },
-  { key: "certificateIssued", label: "Certificate Issued" },
-  { key: "accessRequest", label: "Access Request" },
-  { key: "paymentCompleted", label: "Payment Completed" },
-  { key: "paymentFailed", label: "Payment Failed" },
+  { key: "ownershipTransferRequest" },
+  { key: "transferCompleted" },
+  { key: "newMemberInvitation" },
+  { key: "certificateIssued" },
+  { key: "accessRequest" },
+  { key: "paymentCompleted" },
+  { key: "paymentFailed" },
 ] as const;
 
 export default function SystemNotifications() {
+  const t = useTranslations("admin.settings");
   const queryClient = useQueryClient();
   const settingsQuery = useQuery({
     queryKey: ["admin-house-settings"],
@@ -48,7 +50,7 @@ export default function SystemNotifications() {
         <AccordionItem value="house">
           <AccordionTrigger className="py-[16px] px-6 border-b border-[#E1E4E8]">
             <h2 className="font-bold text-h5 leading-[100%] text-[#29343D]">
-              System Notifications
+              {t("notifications")}
             </h2>
           </AccordionTrigger>
 
@@ -61,13 +63,13 @@ export default function SystemNotifications() {
                     index === NOTIFICATION_TOGGLES.length - 1 ? "col-span-2" : ""
                   }`}
                 >
-                  <span className="text-h6 text-[#5D697A]">{toggle.label}</span>
+                  <span className="text-h6 text-[#5D697A]">{t(toggle.key)}</span>
                   <Switch
                     id={toggle.key}
                     variant="success"
                     checked={prefs[toggle.key] !== false}
                     disabled={!settingsQuery.data || save.isPending}
-                    aria-label={toggle.label}
+                    aria-label={t(toggle.key)}
                     onCheckedChange={(details) =>
                       save.mutate({ key: toggle.key, checked: details.checked })
                     }

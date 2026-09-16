@@ -30,7 +30,8 @@ export interface OrderDetail {
       id: string;
       serialNumber: string;
       name: string;
-      imageUrls: string[];
+      mainImageUrl?: string | null;
+      mainImageLqip?: string | null;
     };
     nameSnapshot?: string;
     priceAtPurchase: string;

@@ -2,19 +2,13 @@ import { fetchAdminOperationDetail } from "@/features/admin/api/fetch-admin-oper
 import { OperationReviewActions } from "@/features/admin/components/operations/components/operation-review-actions";
 import { getAdminCookieHeader } from "@/features/auth/server/admin-session";
 import { ApiError } from "@/shared/lib/send-request";
+import { formatAdminDate } from "@/shared/utils/format";
 import { ArrowLeft, Check } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
 import { notFound } from "next/navigation";
-
-function formatDate(value?: string | null) {
-  if (!value) return "";
-  return new Date(value).toLocaleDateString("en-GB", {
-    day: "2-digit",
-    month: "short",
-    year: "numeric",
-  });
-}
+import { getLocale, getTranslations } from "next-intl/server";
+import type { Locale } from "@/i18n/routing";
 
 function displayName(value: unknown) {
   if (value && typeof value === "object" && "displayName" in value) {
@@ -37,6 +31,10 @@ export default async function OperationsDePage({
   const { id } = await params;
   const { kind } = await searchParams;
   const cookieHeader = await getAdminCookieHeader();
+  const [t, locale] = await Promise.all([
+    getTranslations("admin"),
+    getLocale() as Promise<Locale>,
+  ]);
   let operation;
   try {
     operation = await fetchAdminOperationDetail(id, kind, cookieHeader);
@@ -53,8 +51,9 @@ export default async function OperationsDePage({
       ? String((operation.collection as { name?: string }).name ?? "")
       : "");
   const requestType = text(operation.transferType) || text(operation.type);
-  const requestedAt = formatDate(
+  const requestedAt = formatAdminDate(
     text(operation.initiatedAt) || text(operation.createdAt),
+    locale,
   );
   const status = text(operation.status);
   const canReview = !["APPROVED", "REJECTED", "CANCELLED", "COMPLETED"].includes(status);
@@ -88,7 +87,7 @@ export default async function OperationsDePage({
       <div className="flex gap-[16px] px-7.5 py-3 [&>div]:rounded-xl [&>div]:h-15.5 [&>div]:bg-white">
         <div className="flex items-center justify-center w-15.5">
           <Link href="/admin/operations">
-            <ArrowLeft className="size-6" />
+            <ArrowLeft className="size-6 rtl:rotate-180" />
           </Link>
         </div>
         <div className="w-full px-7.5 flex items-center justify-between">
@@ -107,7 +106,7 @@ export default async function OperationsDePage({
 
             <span>/</span>
             <span className="text-[14px] text-[#BF7266] bg-[#FBF7F7] py-1 px-2 rounded-lg transition-all">
-              Access
+              {t("common.access")}
             </span>
           </div>
         </div>
@@ -142,7 +141,7 @@ export default async function OperationsDePage({
               <ReadField label="Transfer Type" value={requestType} />
               <ReadField label="Requested" value={requestedAt} />
               <div className="col-span-2">
-                <ReadField label="Status" value={status} />
+                <ReadField label={t("common.status")} value={status} />
               </div>
             </div>
           </div>

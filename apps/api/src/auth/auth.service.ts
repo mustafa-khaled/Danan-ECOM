@@ -34,6 +34,12 @@ export interface ClientAuthTokens {
 export class AuthService {
   private readonly saltRounds: number;
   private readonly jwtSecret: string;
+  /**
+   * Hash of a value nobody can present, compared against on every failed
+   * lookup so a key whose prefix matches no client costs the same as one whose
+   * prefix does. Without it, response time reveals whether a prefix exists.
+   */
+  private readonly decoyHash: Promise<string>;
 
   constructor(
     private readonly prisma: PrismaService,
@@ -45,6 +51,10 @@ export class AuthService {
   ) {
     this.saltRounds = parseInt(config.get<string>("HOUSE_KEY_SALT") ?? "12", 10);
     this.jwtSecret = config.getOrThrow<string>("JWT_SECRET");
+    this.decoyHash = bcrypt.hash(
+      randomBytes(32).toString("hex"),
+      this.saltRounds,
+    );
   }
 
   async validateKey(
@@ -64,10 +74,29 @@ export class AuthService {
     const normalizedKey = houseKey.trim();
     const keyPrefix = normalizedKey.slice(0, 4);
 
+    // H-06: Per-prefix rate limiting to prevent targeted brute-force
+    const prefixRateLimitKey = `auth:prefix:${keyPrefix}`;
+    const prefixLimited = await this.redis.isRateLimited(
+      prefixRateLimitKey,
+      RATE_LIMIT_MAX,
+      RATE_LIMIT_WINDOW_SECONDS,
+    );
+    if (prefixLimited) {
+      throw new HttpException("errors.TOO_MANY_REQUESTS", HttpStatus.TOO_MANY_REQUESTS);
+    }
+
     const candidates = await this.prisma.db.client.findMany({
       where: {
         isActive: true,
         houseKeyPrefix: keyPrefix,
+      },
+      select: {
+        id: true,
+        houseKey: true,
+        displayName: true,
+        locale: true,
+        classId: true,
+        class: { select: { id: true, slug: true, name: true } },
       },
     });
 
@@ -81,6 +110,8 @@ export class AuthService {
     }
 
     if (!matched) {
+      // Equalise the no-candidate path with the wrong-key path.
+      await bcrypt.compare(normalizedKey, await this.decoyHash);
       throw new UnauthorizedException(AUTH_FAILURE_MESSAGE);
     }
 

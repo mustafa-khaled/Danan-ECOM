@@ -746,7 +746,7 @@ Differences between **product spec** and **current code** — review before exte
 | Order cancel               | Client can cancel `PENDING` orders                 | Checkout typically creates `PAID`; cancel only works while `PENDING`                                 |
 | Transfer recipient confirm | Status → `RECIPIENT_CONFIRMED` then `DADAN_REVIEW` | May skip `RECIPIENT_CONFIRMED` persistence                                                           |
 | `RETIRED` status           | Defined in schema                                  | Rarely used in services                                                                              |
-| CURATOR / OPERATIONS roles | Distinct admin roles                               | Assignable; API treats them like STAFF except `@Roles(SUPER_ADMIN)` endpoints                        |
+| CURATOR / OPERATIONS roles | Distinct admin roles                               | Enforced per console area by `ADMIN_AREA_ROLES` in `apps/api/src/admin/auth/admin-permissions.ts`    |
 | Storybook / E2E tests      | Prompt 08/14 deliverables                          | Partial                                                                                              |
 
 When fixing gaps, update this document and the relevant service in `apps/api/src/`.

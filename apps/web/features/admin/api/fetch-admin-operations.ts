@@ -13,6 +13,7 @@ export interface AdminOperationListItem {
   date: string;
   status: string;
   pieceName?: string;
+  pieceNameAr?: string | null;
 }
 
 export function fetchAdminOperations(

@@ -1,6 +1,7 @@
 import { Module } from "@nestjs/common";
 import { BullModule } from "@nestjs/bullmq";
 import { CertificatesService } from "./certificates.service";
+import { CertificateOutboxService } from "./certificate-outbox.service";
 import { CertificateJobProcessor, CERTIFICATE_QUEUE } from "./jobs/certificate-job.processor";
 import { ClientCertificatesController } from "./client-certificates.controller";
 import { AdminCertificatesController } from "./admin-certificates.controller";
@@ -14,7 +15,7 @@ import { AdminAuthModule } from "../admin/auth/admin-auth.module";
     BullModule.registerQueue({ name: CERTIFICATE_QUEUE }),
   ],
   controllers: [ClientCertificatesController, AdminCertificatesController],
-  providers: [CertificatesService, CertificateJobProcessor],
-  exports: [CertificatesService],
+  providers: [CertificatesService, CertificateOutboxService, CertificateJobProcessor],
+  exports: [CertificatesService, CertificateOutboxService],
 })
 export class CertificatesModule {}
