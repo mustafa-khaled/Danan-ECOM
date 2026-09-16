@@ -14,7 +14,7 @@
   "scripts": {
     "build": "tsc -p tsconfig.json",
     "typecheck": "tsc --noEmit",
-    "lint": "ESLINT_USE_FLAT_CONFIG=false eslint \"src/**/*.ts\""
+    "lint": "eslint \"src/**/*.ts\""
   },
   "dependencies": {
     "file-type": "^22.0.1"

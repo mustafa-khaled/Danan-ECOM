@@ -210,7 +210,7 @@ export class ClientsService {
 
     return {
       // H-08: Mask houseKeyPrefix in API responses — it's only needed internally
-      items: items.map(({ _count, houseKeyPrefix, ...c }) => ({
+      items: items.map(({ _count, houseKeyPrefix: _houseKeyPrefix, ...c }) => ({
         ...c,
         houseKeyPrefix: "****",
         pieceCount: _count.ownedPieces,
@@ -345,7 +345,7 @@ export class ClientsService {
     if (!client) throw new NotFoundException("errors.CLIENT_NOT_FOUND");
 
     // H-08: Mask houseKeyPrefix in API responses
-    const { _count, ownedPieces, houseKeyPrefix, ...rest } = client;
+    const { _count, ownedPieces, houseKeyPrefix: _houseKeyPrefix, ...rest } = client;
 
     const urlMap = await this.storage.resolvePublicUrlsBatch(
       ownedPieces.map((piece) => piece.mainImageUrl),

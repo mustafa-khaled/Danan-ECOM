@@ -20,6 +20,7 @@ import {
   AUTH_FAILURE_MESSAGE,
   CLIENT_COOKIE,
   CLIENT_REFRESH_COOKIE,
+  RATE_LIMIT_MAX,
   SESSION_DURATION_SECONDS,
   clearCookieOptions,
   cookieOptions,
@@ -32,7 +33,7 @@ export class AuthController {
   constructor(private readonly authService: AuthService) {}
 
   @Public()
-  @Throttle({ default: { limit: 5, ttl: 900_000 } })
+  @Throttle({ default: { limit: RATE_LIMIT_MAX, ttl: 900_000 } })
   @Post("validate-key")
   async validateKey(
     @Body() dto: ValidateKeyDto,

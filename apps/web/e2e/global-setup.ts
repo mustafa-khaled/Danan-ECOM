@@ -5,6 +5,7 @@ const RATE_LIMIT_PATTERNS = [
   "admin:login:*",
   "verify:*",
   "transfer:initiate:*",
+  "throttler:*",
 ];
 
 export default async function globalSetup(): Promise<void> {

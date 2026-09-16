@@ -147,7 +147,7 @@ export class HomeService {
   ): Promise<void> {
     const cacheKey = `home:popular-pieces:${classId}`;
 
-    let pieceIds: string[] | null = null;
+    let pieceIds: string[] | null;
     const cached = await this.redis.get(cacheKey);
 
     if (cached) {
