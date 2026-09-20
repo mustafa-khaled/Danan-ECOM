@@ -84,3 +84,18 @@ export function deleteCollection(
     cookieHeader,
   });
 }
+
+export async function uploadCollectionCover(
+  id: string,
+  file: File,
+): Promise<{ coverImageUrl: string }> {
+  const formData = new FormData();
+  formData.append("file", file);
+
+  return sendRequest<{ coverImageUrl: string }, FormData>({
+    method: "POST",
+    url: `/admin/collections/${id}/cover`,
+    body: formData,
+  });
+}
+
