@@ -1,5 +1,39 @@
 import { z } from "zod";
 
+/**
+ * M-09: TLS is only enforceable where the Redis endpoint is reachable across an
+ * untrusted network. The production deployment runs Redis on a Docker bridge
+ * network under a single-label alias (`redis`), and TLS there adds nothing —
+ * traffic never leaves the host. Managed Redis (Upstash, ElastiCache, …) uses
+ * a public FQDN, which still requires `rediss://`.
+ */
+function redisEndpointIsPublic(rawUrl: string): boolean {
+  let host: string;
+  try {
+    host = new URL(rawUrl).hostname;
+  } catch {
+    return true;
+  }
+  const address = host.replace(/^\[|\]$/g, "");
+  if (
+    address === "localhost" ||
+    address === "127.0.0.1" ||
+    address === "::1" ||
+    /^10\./.test(address) ||
+    /^192\.168\./.test(address) ||
+    /^172\.(1[6-9]|2\d|3[01])\./.test(address) ||
+    /^fd[0-9a-f]{2}:/i.test(address) ||
+    /^fe8[0-9a-f]:/i.test(address)
+  ) {
+    return false;
+  }
+  // Single-label hostname = Docker/Kubernetes service alias, internal by design.
+  if (/^[a-z0-9](?:[a-z0-9-]*[a-z0-9])?$/i.test(address)) {
+    return false;
+  }
+  return true;
+}
+
 export const envSchema = z
   .object({
     NODE_ENV: z
@@ -100,13 +134,14 @@ export const envSchema = z
   .refine(
     (data) => {
       // M-09: Enforce TLS for Redis connections in production
-      if (data.NODE_ENV === "production") {
-        return data.REDIS_URL.startsWith("rediss://");
+      if (data.NODE_ENV === "production" && !data.REDIS_URL.startsWith("rediss://")) {
+        return !redisEndpointIsPublic(data.REDIS_URL);
       }
       return true;
     },
     {
-      message: "REDIS_URL must use rediss:// (TLS) in production",
+      message:
+        "REDIS_URL must use rediss:// (TLS) in production for public/remote Redis endpoints",
       path: ["REDIS_URL"],
     },
   )
