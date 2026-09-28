@@ -83,7 +83,7 @@ export default async function PieceDetails({
               <SpecRow key={spec.key} label={spec.key} value={spec.value} />
             ))}
             <SpecRow label={t("weight")} value={`${piece.weight}g`} />
-            <SpecRow label={t("origin")} value="Crafted in Saudi Arabia" />
+            <SpecRow label={t("origin")} value={t("craftedInSaudi")} />
           </ul>
 
           {/* Action Buttons */}
@@ -102,13 +102,12 @@ export default async function PieceDetails({
                 activeTransfer={wardrobeInfo.activeTransfer}
               />
             ) : canPurchase ? (
-              <DesignActions
-                pieceId={piece.id}
-                initialSaved={piece.isSaved}
-              />
+              <DesignActions pieceId={piece.id} initialSaved={piece.isSaved} />
             ) : (
               <p className="text-sm text-ds-text-muted font-body">
-                No pieces are currently available for this design.
+                {piece.status === "OWNED"
+                  ? t("alreadyAcquired")
+                  : t("unavailable")}
               </p>
             )}
           </div>

@@ -116,7 +116,11 @@
     "storyOfProtection": "قصة الحماية",
     "addToCart": "أضف إلى السلة",
     "unsave": "إلغاء الحفظ",
-    "addToCartError": "تعذرت الإضافة إلى السلة"
+    "addToCartError": "تعذرت الإضافة إلى السلة",
+    "authenticNote": "هذه القطعة مسجلة وموثقة رسمياً من قبل مجوهرات دادان الراقية.",
+    "craftedInSaudi": "صُنعت في المملكة العربية السعودية",
+    "unavailable": "هذه القطعة غير متاحة للشراء حالياً.",
+    "alreadyAcquired": "تم اقتناء هذه القطعة مسبقاً."
   },
   "pieces": {
     "title": "استكشف جميع القطع",
@@ -300,7 +304,13 @@
     "verifiedPiece": "قطعة موثقة",
     "collection": "المجموعة",
     "material": "الخامة",
-    "dimensions": "الأبعاد"
+    "dimensions": "الأبعاد",
+    "officialHeritage": "أصالة رسمية",
+    "officialHeritageDesc": "تحقق فوري عبر السجل الدائم المعتمد لمجوهرات دادان.",
+    "certificateCard": "بطاقة الشهادة",
+    "certificateCardDesc": "مطابقة مع شهادة الأصالة الورقية الصادرة مع قطعتك.",
+    "secureToken": "رمز آمن",
+    "secureTokenDesc": "توثيق مشفر يحمي ملكية وأصالة مجوهراتك الراقية."
   },
   "certificates": {
     "title": "الشهادات",
@@ -497,6 +507,8 @@
     "errors": {
       "title": "حدث خطأ ما",
       "description": "حدث خطأ غير متوقع أثناء تحميل هذه الصفحة. يرجى المحاولة مرة أخرى أو العودة إلى لوحة التحكم.",
+      "accessDeniedTitle": "تم رفض الوصول",
+      "accessDeniedDescription": "ليس لديك الصلاحية للوصول إلى هذه الصفحة. يرجى التواصل مع المسؤول إذا كنت تعتقد أن هذا خطأ.",
       "errorId": "معرّف الخطأ: {id}"
     },
     "overview": {
@@ -640,7 +652,11 @@
       "member": "العضو",
       "piece": "القطعة",
       "emptyFound": "لا توجد مدفوعات",
-      "emptyFoundMessage": "لا توجد مدفوعات مطابقة للفلاتر أو البحث."
+      "emptyFoundMessage": "لا توجد مدفوعات مطابقة للفلاتر أو البحث.",
+      "totalRevenue": "إجمالي الإيرادات",
+      "successfulPayments": "المدفوعات الناجحة",
+      "pendingPayments": "المدفوعات المعلقة",
+      "refunded": "المستردة"
     },
     "analytics": {
       "banner": "فهم نشاط البيت وتفاعل الأعضاء والقطع والملكية والإيرادات.",
@@ -713,7 +729,8 @@
       "approve": "قبول",
       "reject": "رفض",
       "transfer": "نقل",
-      "certificate": "شهادة"
+      "certificate": "شهادة",
+      "rotateKey": "تحديث مفتاح الدار"
     }
   }
 }

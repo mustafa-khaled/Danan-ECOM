@@ -116,7 +116,11 @@
     "storyOfProtection": "A Story of Protection",
     "addToCart": "Add to Cart",
     "unsave": "Unsave",
-    "addToCartError": "Could not add to cart"
+    "addToCartError": "Could not add to cart",
+    "authenticNote": "This piece is officially registered and verified by DADAN Haute Joaillerie.",
+    "craftedInSaudi": "Crafted in Saudi Arabia",
+    "unavailable": "This piece is currently unavailable for purchase.",
+    "alreadyAcquired": "This piece has already been acquired."
   },
   "pieces": {
     "title": "Explore All Pieces",
@@ -300,7 +304,13 @@
     "verifiedPiece": "Verified Piece",
     "collection": "Collection",
     "material": "Material",
-    "dimensions": "Dimensions"
+    "dimensions": "Dimensions",
+    "officialHeritage": "Official Heritage",
+    "officialHeritageDesc": "Instant authentication against the permanent DADAN registry.",
+    "certificateCard": "Certificate Card",
+    "certificateCardDesc": "Cross-referenced with your physical Certificate of Authenticity.",
+    "secureToken": "Secure Token",
+    "secureTokenDesc": "Cryptographic validation protecting your fine jewellery ownership."
   },
   "certificates": {
     "title": "Certificates",
@@ -497,6 +507,8 @@
     "errors": {
       "title": "Something went wrong",
       "description": "An unexpected error occurred while loading this page. Please try again or return to the dashboard.",
+      "accessDeniedTitle": "Access Denied",
+      "accessDeniedDescription": "You do not have permission to access this page. Please contact an administrator if you believe this is an error.",
       "errorId": "Error ID: {id}"
     },
     "overview": {
@@ -640,7 +652,11 @@
       "member": "Member",
       "piece": "Piece",
       "emptyFound": "No payments found",
-      "emptyFoundMessage": "No payments match the selected filters or search query."
+      "emptyFoundMessage": "No payments match the selected filters or search query.",
+      "totalRevenue": "Total Revenue",
+      "successfulPayments": "Successful Payments",
+      "pendingPayments": "Pending Payments",
+      "refunded": "Refunded"
     },
     "analytics": {
       "banner": "Understand House activity, member engagement, pieces, ownership and revenue.",
@@ -713,7 +729,8 @@
       "approve": "Approve",
       "reject": "Reject",
       "transfer": "Transfer",
-      "certificate": "Certificate"
+      "certificate": "Certificate",
+      "rotateKey": "Rotate House Key"
     }
   }
 }

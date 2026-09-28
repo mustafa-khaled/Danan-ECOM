@@ -48,7 +48,7 @@ export function CollectionAccessRowActions({ member }: CollectionAccessRowAction
       {isOpen && (
         <div
           onClick={(e) => e.stopPropagation()}
-          className="absolute end-0 top-full mt-1 z-30 w-40 rounded-lg border border-ds-border bg-ds-background shadow-lg py-1 animate-in fade-in zoom-in-95"
+          className="absolute inset-e-0 top-full mt-1 z-30 w-40 rounded-lg border border-ds-border bg-ds-background shadow-lg py-1 animate-in fade-in zoom-in-95"
         >
           <Link
             href={`/admin/clients/${member.id}`}

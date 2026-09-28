@@ -12,10 +12,11 @@ import {
 } from "@/features/admin";
 import { fetchAdminOrders } from "@/features/admin/api/fetch-admin-orders";
 import { fetchAdminOrderStats } from "@/features/admin/api/fetch-admin-stats";
-import { useTranslations } from "next-intl";
+import { useLocale, useTranslations } from "next-intl";
 
 export default function PaymentsPage() {
   const t = useTranslations("admin");
+  const locale = useLocale();
   const [searchValue, setSearchValue] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
   const [amountFilter, setAmountFilter] = useState("all");
@@ -52,10 +53,27 @@ export default function PaymentsPage() {
   }, [paymentsQuery.data, amountFilter]);
 
   const stats = [
-    { id: 1, title: "Total Revenue", count: statsQuery.data?.totalRevenue ?? 0 },
-    { id: 2, title: "Successful Payments", count: statsQuery.data?.successful ?? 0 },
-    { id: 3, title: "Pending Payments", count: statsQuery.data?.pending ?? 0 },
-    { id: 4, title: "Refunded", count: statsQuery.data?.refunded ?? 0 },
+    {
+      id: 1,
+      title: t("payments.totalRevenue"),
+      count: Number(statsQuery.data?.totalRevenue ?? 0).toLocaleString(),
+      currency: locale === "ar" ? "ر.س" : "SAR",
+    },
+    {
+      id: 2,
+      title: t("payments.successfulPayments"),
+      count: Number(statsQuery.data?.successful ?? 0).toLocaleString(),
+    },
+    {
+      id: 3,
+      title: t("payments.pendingPayments"),
+      count: Number(statsQuery.data?.pending ?? 0).toLocaleString(),
+    },
+    {
+      id: 4,
+      title: t("payments.refunded"),
+      count: Number(statsQuery.data?.refunded ?? 0).toLocaleString(),
+    },
   ];
 
   return (
@@ -72,7 +90,14 @@ export default function PaymentsPage() {
                 key={stat.id}
                 className="flex flex-col font-medium items-start justify-center rounded-2xl border border-[#F3F3F3] p-6 h-30"
               >
-                <h4 className="font-heading text-[40px]">${stat.count}</h4>
+                <h4 className="font-heading text-h3 sm:text-[32px] 2xl:text-[40px] truncate max-w-full">
+                  {stat.currency ? (
+                    <span className="text-sm 2xl:text-base font-sans font-normal text-neutral-500 me-2 inline-block">
+                      {stat.currency}
+                    </span>
+                  ) : null}
+                  {stat.count}
+                </h4>
                 <p className="text-[#5D697A] text-[12px]">{stat.title}</p>
               </div>
             ))}

@@ -4,6 +4,8 @@ import { useState, type ReactNode } from "react";
 import { useTranslations } from "next-intl";
 import { AdminSidebar } from "./admin-sidebar";
 import { AdminTopbar } from "./admin-topbar";
+import { AdminProvider, type AdminContextValue } from "@/shared/providers/admin-context";
+import type { AdminRole } from "@/shared/lib/admin-nav";
 
 export interface AdminLayoutProps {
   children: ReactNode;
@@ -26,32 +28,35 @@ export function AdminLayout({
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const t = useTranslations("admin.common");
 
-  const fallbackAdmin = admin || {
-    displayName: t("accountManager"),
-    email: "ahmedgad@gmail.com",
-    role: "SUPER_ADMIN",
+  const fallbackAdmin: AdminContextValue = {
+    displayName: admin?.displayName ?? t("accountManager"),
+    email: admin?.email ?? "ahmedgad@gmail.com",
+    role: (admin?.role ?? "SUPER_ADMIN") as AdminRole,
+    avatarUrl: admin?.avatarUrl,
   };
 
   return (
-    <div
-      data-theme="admin"
-      className="min-h-screen flex bg-[#A7AEC129] text-ds-text font-body"
-    >
-      <AdminSidebar
-        mobileOpen={sidebarOpen}
-        onMobileClose={() => setSidebarOpen(false)}
-        admin={fallbackAdmin}
-      />
-      <div className="flex-1 flex flex-col min-w-0">
-        <AdminTopbar
-          title={title}
+    <AdminProvider admin={fallbackAdmin}>
+      <div
+        data-theme="admin"
+        className="min-h-screen flex bg-[#A7AEC129] text-ds-text font-body"
+      >
+        <AdminSidebar
+          mobileOpen={sidebarOpen}
+          onMobileClose={() => setSidebarOpen(false)}
           admin={fallbackAdmin}
-          pendingCount={pendingCount}
-          onToggleSidebar={() => setSidebarOpen((prev) => !prev)}
         />
+        <div className="flex-1 flex flex-col min-w-0">
+          <AdminTopbar
+            title={title}
+            admin={fallbackAdmin}
+            pendingCount={pendingCount}
+            onToggleSidebar={() => setSidebarOpen((prev) => !prev)}
+          />
 
-        <main className="flex-1">{children}</main>
+          <main className="flex-1">{children}</main>
+        </div>
       </div>
-    </div>
+    </AdminProvider>
   );
 }

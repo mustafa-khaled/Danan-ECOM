@@ -12,6 +12,9 @@ import { getLocale, getTranslations } from "next-intl/server";
 import type { Locale } from "@/i18n/routing";
 import Link from "next/link";
 
+export const dynamic = "force-dynamic";
+export const revalidate = 0;
+
 export default async function AnalyticsPage() {
   const cookieHeader = await getAdminCookieHeader();
   const [analytics, t, locale] = await Promise.all([
@@ -25,25 +28,38 @@ export default async function AnalyticsPage() {
       id: 1,
       title: t("analytics.members"),
       count: analytics.kpis.members.toLocaleString(),
-      link: { title: `${analytics.kpis.deltas.members}%`, href: "/admin/members" },
+      link: {
+        title: `${analytics.kpis.deltas.members > 0 ? `+${analytics.kpis.deltas.members}` : analytics.kpis.deltas.members}%`,
+        href: "/admin/members",
+      },
     },
     {
       id: 2,
       title: t("analytics.activeMembers"),
       count: analytics.kpis.activeMembers.toLocaleString(),
-      link: { title: `${analytics.kpis.deltas.activeMembers}%`, href: "/admin/members" },
+      link: {
+        title: `${analytics.kpis.deltas.activeMembers > 0 ? `+${analytics.kpis.deltas.activeMembers}` : analytics.kpis.deltas.activeMembers}%`,
+        href: "/admin/members",
+      },
     },
     {
       id: 3,
       title: t("analytics.piecesOwned"),
       count: analytics.kpis.piecesOwned.toLocaleString(),
-      link: { title: `${analytics.kpis.deltas.piecesOwned}%`, href: "/admin/ownership" },
+      link: {
+        title: `${analytics.kpis.deltas.piecesOwned > 0 ? `+${analytics.kpis.deltas.piecesOwned}` : analytics.kpis.deltas.piecesOwned}%`,
+        href: "/admin/ownership",
+      },
     },
     {
       id: 4,
       title: t("analytics.revenue"),
       count: analytics.kpis.revenue.toLocaleString(),
-      link: { title: `${analytics.kpis.deltas.revenue}%`, href: "/admin/payments" },
+      currency: locale === "ar" ? "ر.س" : "SAR",
+      link: {
+        title: `${analytics.kpis.deltas.revenue > 0 ? `+${analytics.kpis.deltas.revenue}` : analytics.kpis.deltas.revenue}%`,
+        href: "/admin/payments",
+      },
     },
   ];
 
@@ -61,7 +77,14 @@ export default async function AnalyticsPage() {
                 key={stat.id}
                 className="flex flex-col font-medium items-start justify-center rounded-2xl border border-[#F3F3F3] p-6 h-30"
               >
-                <h4 className="font-heading text-[40px]">${stat.count}</h4>
+                <h4 className="font-heading text-h3 sm:text-[32px] 2xl:text-[40px] truncate max-w-full">
+                  {stat.currency ? (
+                    <span className="text-sm 2xl:text-base font-sans font-normal text-neutral-500 me-2 inline-block">
+                      {stat.currency}
+                    </span>
+                  ) : null}
+                  {stat.count}
+                </h4>
 
                 <div className="flex items-center w-full justify-between text-[12px] text-neutral-600">
                   <span>{stat.title}</span>
