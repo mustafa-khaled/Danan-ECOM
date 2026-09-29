@@ -3,6 +3,8 @@
 import { type ColumnDef } from "@/components/ui/data-table";
 import { Badge } from "@/components/ui/Badge";
 import { PaymentRowActions } from "./payment-row-actions";
+import { formatPrice } from "@/shared/utils/format";
+import type { Locale } from "@/i18n/routing";
 import type { AdminPaymentListItem } from "../types";
 
 type TranslateFn = (key: string) => string;
@@ -15,6 +17,7 @@ const statusVariant: Record<string, "success" | "warning" | "error"> = {
 
 export function getPaymentsColumns(
   t: TranslateFn,
+  locale: Locale,
 ): ColumnDef<AdminPaymentListItem>[] {
   const methodLabels: Record<string, string> = {
     CARD: t("payments.card"),
@@ -92,7 +95,7 @@ export function getPaymentsColumns(
       align: "right",
       render: (value) => (
         <span className="text-sm font-medium text-neutral-900">
-          SAR {Number(value).toLocaleString()}
+          {formatPrice(Number(value), "SAR", locale)}
         </span>
       ),
     },

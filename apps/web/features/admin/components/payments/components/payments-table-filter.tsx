@@ -9,6 +9,9 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Search } from "lucide-react";
+import { useLocale, useTranslations } from "next-intl";
+import { formatPrice } from "@/shared/utils/format";
+import type { Locale } from "@/i18n/routing";
 import type {
   PaymentStatusFilter,
   PaymentAmountFilter,
@@ -36,6 +39,10 @@ export default function PaymentsTableFilter({
   methodFilter = "all",
   onMethodFilterChange,
 }: PaymentsTableFilterProps) {
+  const t = useTranslations("admin");
+  const locale = useLocale() as Locale;
+  const money = (amount: number) => formatPrice(amount, "SAR", locale);
+
   return (
     <div className="bg-[#F9F9FA] rounded-lg p-3 px-[16px] min-h-18.25 flex flex-wrap items-center justify-between gap-4">
       <div className="relative flex-1 min-w-60 max-w-md bg-white flex items-center rounded-md">
@@ -79,10 +86,16 @@ export default function PaymentsTableFilter({
             <SelectValue placeholder="Amount" />
           </SelectTrigger>
           <SelectContent align="end">
-            <SelectItem value="all">All Amounts</SelectItem>
-            <SelectItem value="under500">Under 500 SAR</SelectItem>
-            <SelectItem value="500-1000">500 - 1,000 SAR</SelectItem>
-            <SelectItem value="over1000">Over 1,000 SAR</SelectItem>
+            <SelectItem value="all">{t("payments.amountAll")}</SelectItem>
+            <SelectItem value="under500">
+              {t("payments.amountUnder", { amount: money(500) })}
+            </SelectItem>
+            <SelectItem value="500-1000">
+              {t("payments.amountBetween", { from: money(500), to: money(1000) })}
+            </SelectItem>
+            <SelectItem value="over1000">
+              {t("payments.amountOver", { amount: money(1000) })}
+            </SelectItem>
           </SelectContent>
         </Select>
 

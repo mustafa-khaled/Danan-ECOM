@@ -99,7 +99,8 @@
     "emptyDescription": "Collections will appear here when available.",
     "theStory": "The Story",
     "designInspiration": "Design Inspiration",
-    "pieces": "Pieces"
+    "pieces": "Pieces",
+    "pieceCount": "{count} Pieces"
   },
   "piece": {
     "addToCollection": "Add To Your Collection",
@@ -143,7 +144,7 @@
     "emptyDescription": "Purchased and transferred pieces will appear here.",
     "transferOwnership": "Transfer Ownership",
     "viewCertificate": "View Certificate",
-    "verifyAuthenticity": "View Certificate",
+    "verifyAuthenticity": "Verify Authenticity",
     "specs": "Specifications",
     "transferInProgress": "A transfer is in progress.",
     "viewTransfer": "View transfer",
@@ -277,7 +278,14 @@
     "viewOrder": "View Order",
     "backToCart": "Back to Cart",
     "paymentUnavailable": "Payment is unavailable",
-    "paymentNotConfigured": "The payment gateway is not configured. Please contact support."
+    "paymentNotConfigured": "The payment gateway is not configured. Please contact support.",
+    "validation": {
+      "required": "This field is required",
+      "tooLong": "This is too long",
+      "countryCode": "Use a 2-letter country code, e.g. SA",
+      "phoneInvalid": "Enter a valid phone number",
+      "invalid": "Please check this field"
+    }
   },
   "orders": {
     "title": "Orders",
@@ -304,6 +312,8 @@
     "verifiedPiece": "Verified Piece",
     "collection": "Collection",
     "material": "Material",
+    "weight": "Weight",
+    "issuedAt": "Issued At",
     "dimensions": "Dimensions",
     "officialHeritage": "Official Heritage",
     "officialHeritageDesc": "Instant authentication against the permanent DADAN registry.",
@@ -323,6 +333,7 @@
     "certificateNumber": "Certificate No.",
     "issuedLabel": "Issued",
     "qrHint": "Scan the QR code on your physical certificate or use Verify to confirm authenticity.",
+    "qrAlt": "QR code linking to this certificate's verification page",
     "unavailable": "Certificate unavailable"
   },
   "history": {
@@ -653,6 +664,10 @@
       "piece": "Piece",
       "emptyFound": "No payments found",
       "emptyFoundMessage": "No payments match the selected filters or search query.",
+      "amountAll": "All Amounts",
+      "amountUnder": "Under {amount}",
+      "amountBetween": "{from} – {to}",
+      "amountOver": "Over {amount}",
       "totalRevenue": "Total Revenue",
       "successfulPayments": "Successful Payments",
       "pendingPayments": "Pending Payments",
@@ -702,6 +717,7 @@
       "arabic": "Arabic",
       "houseAccess": "House Access",
       "houseAccessHint": "Control how members enter the private House.",
+      "houseKeyPermanent": "A House Key is permanent. It never expires and stays valid until an admin rotates it or deactivates the member.",
       "roles": "Roles & Permissions",
       "rolesHint": "Manage staff access across the House.",
       "notifications": "System Notifications",
@@ -731,6 +747,17 @@
       "transfer": "Transfer",
       "certificate": "Certificate",
       "rotateKey": "Rotate House Key"
+    },
+    "rotateKey": {
+      "confirmTitle": "Rotate house key?",
+      "confirmMessage": "{name} will be signed out of every device and their current key will stop working immediately. The new key is shown once — copy it before closing.",
+      "confirmLabel": "Rotate key",
+      "revealTitle": "New house key",
+      "revealMessage": "Copy this key now and hand it to the member. It is shown once and cannot be retrieved again.",
+      "copy": "Copy key",
+      "copied": "Copied",
+      "errorTitle": "Rotation failed",
+      "errorMessage": "The house key was not rotated. The member's existing key still works — try again."
     }
   }
 }

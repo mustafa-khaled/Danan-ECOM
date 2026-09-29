@@ -3,13 +3,19 @@ import {
   Injectable,
   NotFoundException,
 } from "@nestjs/common";
-import { ActorType } from "@dadan/db";
+import {
+  ActorType,
+  Prisma,
+  StaffRequestStatus,
+  StaffRequestType,
+} from "@dadan/db";
 import { AuditService } from "../audit/audit.service";
 import { AuthService } from "../auth/auth.service";
 import { ClassesService } from "../classes/classes.service";
 import { PrismaService } from "../prisma/prisma.service";
 import { StorageService } from "../storage/storage.service";
 import { paginationParams } from "../common/constants";
+import { CollectionAccessSyncService } from "../collections/collection-access-sync.service";
 
 const CLASS_SELECT = { id: true, slug: true, name: true, nameAr: true } as const;
 
@@ -21,6 +27,7 @@ export class ClientsService {
     private readonly auth: AuthService,
     private readonly classes: ClassesService,
     private readonly storage: StorageService,
+    private readonly accessSync: CollectionAccessSyncService,
   ) {}
 
   /** Never let the bcrypt House Key hash leave the API. */
@@ -154,36 +161,54 @@ export class ClientsService {
   ) {
     const { skip, take, page: p, limit: l } = paginationParams(page, limit);
     const q = filters?.q?.trim();
-    let classIds = filters?.classId ? [filters.classId] : undefined;
+    const collectionId = filters?.collectionId;
 
-    if (filters?.collectionId) {
-      const rows = await this.prisma.db.collectionClass.findMany({
-        where: { collectionId: filters.collectionId },
-        select: { classId: true },
-      });
-      const accessClassIds = rows.map((row) => row.classId);
-      classIds = classIds
-        ? classIds.filter((id) => accessClassIds.includes(id))
-        : accessClassIds;
-      if (classIds.length === 0) {
-        return { items: [], total: 0, page: p, limit: l };
-      }
+    // Each filter is an independent condition so none can overwrite another's
+    // `OR` — the collection scope and the search both need one.
+    const conditions: Prisma.ClientWhereInput[] = [];
+    let accessClassIds: string[] = [];
+
+    if (filters?.classId) {
+      conditions.push({ classId: filters.classId });
     }
 
-    const where = {
-      ...(classIds ? { classId: { in: classIds } } : {}),
-      ...(filters?.isActive !== undefined ? { isActive: filters.isActive } : {}),
-      ...(q
-        ? {
-            OR: [
-              { displayName: { startsWith: q, mode: "insensitive" as const } },
-              { email: { startsWith: q.toLowerCase() } },
-              { houseId: { startsWith: q.toUpperCase() } },
-              { houseKeyPrefix: { startsWith: q } },
-            ],
-          }
-        : {}),
-    };
+    if (collectionId) {
+      const rows = await this.prisma.db.collectionClass.findMany({
+        where: { collectionId },
+        select: { classId: true },
+      });
+      accessClassIds = rows.map((row) => row.classId);
+
+      // Scoped to a collection the caller wants the access roster: members whose
+      // class already has access, plus members still waiting on a request.
+      // Without the second group the Access column could only ever say "granted".
+      conditions.push({
+        OR: [
+          ...(accessClassIds.length > 0
+            ? [{ classId: { in: accessClassIds } }]
+            : []),
+          { staffRequests: { some: this.openAccessRequestWhere(collectionId) } },
+        ],
+      });
+    }
+
+    if (filters?.isActive !== undefined) {
+      conditions.push({ isActive: filters.isActive });
+    }
+
+    if (q) {
+      conditions.push({
+        OR: [
+          { displayName: { startsWith: q, mode: "insensitive" as const } },
+          { email: { startsWith: q.toLowerCase() } },
+          { houseId: { startsWith: q.toUpperCase() } },
+          { houseKeyPrefix: { startsWith: q } },
+        ],
+      });
+    }
+
+    const where: Prisma.ClientWhereInput =
+      conditions.length > 0 ? { AND: conditions } : {};
 
     const [items, total] = await Promise.all([
       this.prisma.db.client.findMany({
@@ -199,6 +224,7 @@ export class ClientsService {
           phone: true,
           houseKeyPrefix: true,
           isActive: true,
+          classId: true,
           createdAt: true,
           lastSeenAt: true,
           class: { select: CLASS_SELECT },
@@ -208,17 +234,77 @@ export class ClientsService {
       this.prisma.db.client.count({ where }),
     ]);
 
+    const pendingClientIds = collectionId
+      ? await this.findPendingAccessClientIds(
+          collectionId,
+          items.map((client) => client.id),
+        )
+      : new Set<string>();
+
     return {
       // H-08: Mask houseKeyPrefix in API responses — it's only needed internally
-      items: items.map(({ _count, houseKeyPrefix: _houseKeyPrefix, ...c }) => ({
-        ...c,
-        houseKeyPrefix: "****",
-        pieceCount: _count.ownedPieces,
-      })),
+      items: items.map(
+        ({ _count, houseKeyPrefix: _houseKeyPrefix, classId, ...c }) => ({
+          ...c,
+          houseKeyPrefix: "****",
+          pieceCount: _count.ownedPieces,
+          ...(collectionId
+            ? {
+                accessStatus: this.resolveAccessStatus({
+                  isActive: c.isActive,
+                  hasClassAccess: accessClassIds.includes(classId),
+                  hasPendingRequest: pendingClientIds.has(c.id),
+                }),
+              }
+            : {}),
+        }),
+      ),
       total,
       page: p,
       limit: l,
     };
+  }
+
+  private openAccessRequestWhere(
+    collectionId: string,
+  ): Prisma.StaffRequestWhereInput {
+    return {
+      collectionId,
+      type: StaffRequestType.ACCESS_REQUEST,
+      status: {
+        in: [StaffRequestStatus.PENDING, StaffRequestStatus.UNDER_REVIEW],
+      },
+    };
+  }
+
+  /** One query for the whole page — never per row. */
+  private async findPendingAccessClientIds(
+    collectionId: string,
+    clientIds: string[],
+  ): Promise<Set<string>> {
+    if (clientIds.length === 0) return new Set();
+    const rows = await this.prisma.db.staffRequest.findMany({
+      where: {
+        ...this.openAccessRequestWhere(collectionId),
+        clientId: { in: clientIds },
+      },
+      select: { clientId: true },
+    });
+    return new Set(rows.map((row) => row.clientId));
+  }
+
+  /**
+   * A live class grant always wins: once the class can see the collection the
+   * member has access, so a stale request must not present as pending.
+   */
+  private resolveAccessStatus(state: {
+    isActive: boolean;
+    hasClassAccess: boolean;
+    hasPendingRequest: boolean;
+  }): "GRANTED" | "PENDING" | "REVOKED" {
+    if (state.hasClassAccess) return state.isActive ? "GRANTED" : "REVOKED";
+    if (state.hasPendingRequest) return "PENDING";
+    return "REVOKED";
   }
 
   async getClientStats() {
@@ -399,10 +485,20 @@ export class ClientsService {
       ...(data.email ? { email: data.email.toLowerCase().trim() } : {}),
     };
 
-    const client = await this.prisma.db.client.update({
-      where: { id },
-      data: updateData,
-      include: { class: { select: CLASS_SELECT } },
+    const client = await this.prisma.db.$transaction(async (tx) => {
+      const updated = await tx.client.update({
+        where: { id },
+        data: updateData,
+        include: { class: { select: CLASS_SELECT } },
+      });
+
+      // Moving a member into a class that already has access must close their
+      // open access requests for those collections.
+      if (data.classId) {
+        await this.accessSync.syncForClientClass(tx, id, data.classId, adminId);
+      }
+
+      return updated;
     });
 
     // H-02: Revoke sessions when classId changes so JWT reflects the new class

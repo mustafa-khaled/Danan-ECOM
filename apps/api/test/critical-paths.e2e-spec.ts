@@ -253,6 +253,46 @@ describe("Critical Path Tests (e2e)", () => {
           .expect(404);
       }
     });
+
+    it("Client B cannot fetch Client A's certificate QR", async () => {
+      const wardrobe = await request(http)
+        .get("/client/wardrobe")
+        .set("Cookie", amiraCookie)
+        .expect(200);
+
+      if (wardrobe.body.length > 0) {
+        const amiraPieceId = wardrobe.body[0].id;
+
+        await request(http)
+          .get(`/client/wardrobe/${amiraPieceId}/certificate/qr`)
+          .set("Cookie", laylaCookie)
+          .expect(404);
+      }
+    });
+
+    it("Client A is served their own certificate QR as a PNG", async () => {
+      const wardrobe = await request(http)
+        .get("/client/wardrobe")
+        .set("Cookie", amiraCookie)
+        .expect(200);
+
+      const withCertificate = wardrobe.body.find(
+        (piece: { id: string; certificate?: unknown }) =>
+          piece.certificate != null,
+      );
+      if (!withCertificate) return;
+
+      const response = await request(http)
+        .get(`/client/wardrobe/${withCertificate.id}/certificate/qr`)
+        .set("Cookie", amiraCookie)
+        .expect(200);
+
+      expect(response.headers["content-type"]).toContain("image/png");
+      // A valid PNG starts with the 8-byte signature.
+      expect(response.body.subarray(0, 8)).toEqual(
+        Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]),
+      );
+    });
   });
 
   describe("3. IDOR: order access protection", () => {

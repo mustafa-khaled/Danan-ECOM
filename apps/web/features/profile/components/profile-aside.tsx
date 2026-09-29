@@ -14,9 +14,13 @@ export default function ProfileAside() {
 
   const navItems = [
     { labelKey: "ownedPiecesNav" as const, href: "/beta/profile/wardrobe" },
-    { labelKey: "certificatesNav" as const, href: "/beta/profile/certificates" },
+    {
+      labelKey: "certificatesNav" as const,
+      href: "/beta/profile/certificates",
+    },
     { labelKey: "historyNav" as const, href: "/beta/profile/history" },
     { labelKey: "transfersNav" as const, href: "/beta/profile/transfers" },
+    { labelKey: "wishlist" as const, href: "/beta/profile/wishlist" },
     { labelKey: "management" as const, href: "/beta/profile" },
   ];
 

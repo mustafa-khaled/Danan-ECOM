@@ -74,6 +74,11 @@ const nextConfig: NextConfig = {
         source: "/api/uploads/:path*",
         destination: `${apiUrl}/uploads/:path*`,
       },
+      // Certificate QR codes encode `${BASE_URL}/verify?serial=..&token=..`, but
+      // the route lives under the [locale] segment. This keeps that already
+      // printed URL (and every seeded certificate's QR) resolving without
+      // re-issuing certificates.
+      { source: "/verify", destination: "/en/verify" },
     ];
   },
 };

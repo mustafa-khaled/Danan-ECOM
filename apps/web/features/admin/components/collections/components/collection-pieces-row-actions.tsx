@@ -4,6 +4,7 @@ import { useState, useRef, useEffect } from "react";
 import Link from "next/link";
 import { Eye, Pencil, ArrowRightLeft, MoreVertical } from "lucide-react";
 import { useTranslations } from "next-intl";
+import { useAdmin } from "@/shared/providers/admin-context";
 import type { AdminPieceListItem } from "@/features/admin/types";
 
 interface CollectionPiecesRowActionsProps {
@@ -12,6 +13,7 @@ interface CollectionPiecesRowActionsProps {
 
 export function CollectionPiecesRowActions({ piece }: CollectionPiecesRowActionsProps) {
   const t = useTranslations("admin");
+  const { canWrite } = useAdmin();
   const [isOpen, setIsOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
 
@@ -58,22 +60,26 @@ export function CollectionPiecesRowActions({ piece }: CollectionPiecesRowActions
             <Eye className="h-3.5 w-3.5" />
             <span>{t("rowActions.view")}</span>
           </Link>
-          <Link
-            href={`/admin/pieces/${piece.id}/edit`}
-            onClick={() => setIsOpen(false)}
-            className="flex items-center gap-2 px-3 py-2 text-xs font-medium text-ds-text hover:bg-ds-surface hover:text-(--color-gold) transition-colors"
-          >
-            <Pencil className="h-3.5 w-3.5" />
-            <span>{t("rowActions.edit")}</span>
-          </Link>
-          <Link
-            href={`/admin/transfers/new?pieceId=${piece.id}`}
-            onClick={() => setIsOpen(false)}
-            className="flex items-center gap-2 px-3 py-2 text-xs font-medium text-ds-text hover:bg-ds-surface hover:text-(--color-gold) transition-colors"
-          >
-            <ArrowRightLeft className="h-3.5 w-3.5" />
-            <span>{t("rowActions.transfer")}</span>
-          </Link>
+          {canWrite && (
+            <>
+              <Link
+                href={`/admin/pieces/${piece.id}/edit`}
+                onClick={() => setIsOpen(false)}
+                className="flex items-center gap-2 px-3 py-2 text-xs font-medium text-ds-text hover:bg-ds-surface hover:text-(--color-gold) transition-colors"
+              >
+                <Pencil className="h-3.5 w-3.5" />
+                <span>{t("rowActions.edit")}</span>
+              </Link>
+              <Link
+                href={`/admin/transfers/new?pieceId=${piece.id}`}
+                onClick={() => setIsOpen(false)}
+                className="flex items-center gap-2 px-3 py-2 text-xs font-medium text-ds-text hover:bg-ds-surface hover:text-(--color-gold) transition-colors"
+              >
+                <ArrowRightLeft className="h-3.5 w-3.5" />
+                <span>{t("rowActions.transfer")}</span>
+              </Link>
+            </>
+          )}
         </div>
       )}
     </div>

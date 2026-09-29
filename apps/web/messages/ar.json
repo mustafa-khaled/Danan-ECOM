@@ -99,7 +99,8 @@
     "emptyDescription": "ستظهر المجموعات هنا عند توفرها.",
     "theStory": "القصة",
     "designInspiration": "إلهام التصميم",
-    "pieces": "القطع"
+    "pieces": "القطع",
+    "pieceCount": "{count} قطعة"
   },
   "piece": {
     "addToCollection": "أضف إلى مجموعتك",
@@ -143,7 +144,7 @@
     "emptyDescription": "ستظهر القطع المشتراة والمحولة هنا.",
     "transferOwnership": "تحويل الملكية",
     "viewCertificate": "عرض الشهادة",
-    "verifyAuthenticity": "عرض الشهادة",
+    "verifyAuthenticity": "التأكد من صحة",
     "specs": "المواصفات",
     "transferInProgress": "تحويل جارٍ.",
     "viewTransfer": "عرض التحويل",
@@ -277,6 +278,13 @@
     "viewOrder": "عرض الطلب",
     "backToCart": "العودة إلى السلة",
     "paymentUnavailable": "الدفع غير متاح",
+    "validation": {
+      "required": "هذا الحقل مطلوب",
+      "tooLong": "النص طويل جدًا",
+      "countryCode": "استخدم رمز الدولة من حرفين، مثل SA",
+      "phoneInvalid": "أدخل رقم هاتف صحيح",
+      "invalid": "يرجى التحقق من هذا الحقل"
+    },
     "paymentNotConfigured": "بوابة الدفع غير مهيأة. يرجى التواصل مع الدعم."
   },
   "orders": {
@@ -304,6 +312,8 @@
     "verifiedPiece": "قطعة موثقة",
     "collection": "المجموعة",
     "material": "الخامة",
+    "weight": "الوزن",
+    "issuedAt": "تاريخ الإصدار",
     "dimensions": "الأبعاد",
     "officialHeritage": "أصالة رسمية",
     "officialHeritageDesc": "تحقق فوري عبر السجل الدائم المعتمد لمجوهرات دادان.",
@@ -323,6 +333,7 @@
     "certificateNumber": "رقم الشهادة",
     "issuedLabel": "تاريخ الإصدار",
     "qrHint": "قم بمسح رمز الاستجابة السريعة على شهادتك الورقية أو استخدم صفحة التحقق لتأكيد الأصالة.",
+    "qrAlt": "رمز الاستجابة السريعة الذي يفتح صفحة التحقق من هذه الشهادة",
     "unavailable": "الشهادة غير متوفرة"
   },
   "history": {
@@ -653,6 +664,10 @@
       "piece": "القطعة",
       "emptyFound": "لا توجد مدفوعات",
       "emptyFoundMessage": "لا توجد مدفوعات مطابقة للفلاتر أو البحث.",
+      "amountAll": "جميع المبالغ",
+      "amountUnder": "أقل من {amount}",
+      "amountBetween": "{from} – {to}",
+      "amountOver": "أكثر من {amount}",
       "totalRevenue": "إجمالي الإيرادات",
       "successfulPayments": "المدفوعات الناجحة",
       "pendingPayments": "المدفوعات المعلقة",
@@ -702,6 +717,7 @@
       "arabic": "العربية",
       "houseAccess": "وصول البيت",
       "houseAccessHint": "التحكم في كيفية دخول الأعضاء إلى البيت الخاص.",
+      "houseKeyPermanent": "مفتاح الدار دائم. لا تنتهي صلاحيته ويظل صالحًا إلى أن يقوم المسؤول بتحديثه أو بتعطيل العضو.",
       "roles": "الأدوار والصلاحيات",
       "rolesHint": "إدارة وصول الموظفين عبر البيت.",
       "notifications": "إشعارات النظام",
@@ -731,6 +747,17 @@
       "transfer": "نقل",
       "certificate": "شهادة",
       "rotateKey": "تحديث مفتاح الدار"
+    },
+    "rotateKey": {
+      "confirmTitle": "تحديث مفتاح الدار؟",
+      "confirmMessage": "سيتم تسجيل خروج {name} من جميع الأجهزة وسيتوقف مفتاحه الحالي عن العمل فورًا. يُعرض المفتاح الجديد مرة واحدة فقط — انسخه قبل الإغلاق.",
+      "confirmLabel": "تحديث المفتاح",
+      "revealTitle": "مفتاح الدار الجديد",
+      "revealMessage": "انسخ هذا المفتاح الآن وسلّمه للعضو. يُعرض مرة واحدة فقط ولا يمكن استرجاعه.",
+      "copy": "نسخ المفتاح",
+      "copied": "تم النسخ",
+      "errorTitle": "فشل التحديث",
+      "errorMessage": "لم يتم تحديث مفتاح الدار. مفتاح العضو الحالي لا يزال يعمل — حاول مرة أخرى."
     }
   }
 }

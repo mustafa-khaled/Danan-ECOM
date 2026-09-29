@@ -10,12 +10,15 @@ import {
 } from "@/components/ui/select";
 import { MoveDown, Plus, Search } from "lucide-react";
 import Link from "next/link";
+import { useAdmin } from "@/shared/providers/admin-context";
 
 interface CollectionAccessFilterProps {
   collectionId?: string;
 }
 
 export default function CollectionAccessFilter({}: CollectionAccessFilterProps) {
+  const { canWrite } = useAdmin();
+
   return (
     <div className="bg-[#F9F9FA] rounded-lg p-3 px-[16px] h-18.25 flex justify-between gap-[32px]">
       <div className="relative w-150.5 bg-white flex items-center">
@@ -83,15 +86,15 @@ export default function CollectionAccessFilter({}: CollectionAccessFilterProps) 
             Download
             <MoveDown className="size-5" />
           </button>
-          <Link href="/admin/clients/new">
-            <button
-              type="button"
+          {canWrite && (
+            <Link
+              href="/admin/members/new"
               className="w-58 h-12.25 text-body-lg font-semibold flex items-center justify-center gap-[16px] px-3 text-teal-900 bg-[#4CBEAE] hover:opacity-90 transition-opacity"
             >
               Invite Member
               <Plus className="size-5" />
-            </button>
-          </Link>
+            </Link>
+          )}
         </div>
       </div>
     </div>

@@ -3,13 +3,18 @@
 import dynamic from "next/dynamic";
 import { useLocale, useTranslations } from "next-intl";
 import { useRouter } from "next/navigation";
-import { FormEvent, Suspense, useRef, useState } from "react";
+import { FocusEvent, FormEvent, Suspense, useRef, useState } from "react";
 import { Button, Input } from "@/components/ui";
 import { formatPrice } from "@/shared/utils/format";
 import { PAYMENT_MODE } from "@/shared/lib/constants";
 import { useCheckout, useReserveForCheckout, type TapCardElementHandle } from "@/features/checkout";
 import type { ShippingAddress } from "@/features/checkout/types";
-import { parseShippingAddressFromFormData } from "@/features/checkout/schemas/shipping-address";
+import {
+  parseShippingAddressFromFormData,
+  validateShippingAddressField,
+  type ShippingAddressErrorKey,
+  type ShippingAddressField,
+} from "@/features/checkout/schemas/shipping-address";
 import { isSafePaymentRedirectUrl } from "@/shared/lib/validate-payment-redirect";
 import { useClientContext } from "@/shared/providers/client-context";
 import type { CartSummary } from "@/features/cart";
@@ -33,7 +38,9 @@ export function CheckoutForm({ summary }: CheckoutFormProps) {
   const t = useTranslations("checkout");
   const tCart = useTranslations("cart");
   const [step, setStep] = useState<1 | 2>(1);
-  const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
+  const [fieldErrors, setFieldErrors] = useState<
+    Partial<Record<ShippingAddressField, ShippingAddressErrorKey>>
+  >({});
   const [cardError, setCardError] = useState<string | null>(null);
   const [reserveError, setReserveError] = useState<string | null>(null);
   const [isTokenizing, setIsTokenizing] = useState(false);
@@ -86,6 +93,31 @@ export function CheckoutForm({ summary }: CheckoutFormProps) {
     setCardError(message);
     setIsTokenizing(false);
   }
+
+  /**
+   * Field errors used to survive until the next submit, so a shopper who fixed
+   * a field kept staring at the old message. Clearing on change and
+   * re-checking on blur gives feedback while they type.
+   */
+  const addressFieldProps = (field: ShippingAddressField) => ({
+    name: field,
+    error: fieldErrors[field] ? t(`validation.${fieldErrors[field]}`) : undefined,
+    onChange: () =>
+      setFieldErrors((prev) => {
+        if (!prev[field]) return prev;
+        const next = { ...prev };
+        delete next[field];
+        return next;
+      }),
+    onBlur: (event: FocusEvent<HTMLInputElement>) => {
+      // Only flag what they actually typed — tabbing past an empty field should
+      // not nag; missing values are caught on submit.
+      const value = event.target.value;
+      if (value.trim() === "") return;
+      const key = validateShippingAddressField(field, value);
+      setFieldErrors((prev) => (key ? { ...prev, [field]: key } : prev));
+    },
+  });
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -157,29 +189,31 @@ export function CheckoutForm({ summary }: CheckoutFormProps) {
             <div className="mt-6 grid gap-4 sm:grid-cols-2">
               <Input
                 label={t("fullName")}
-                name="fullName"
                 required
                 className="sm:col-span-2"
-                error={fieldErrors.fullName}
+                {...addressFieldProps("fullName")}
               />
-              <Input label={t("phone")} name="phone" required error={fieldErrors.phone} />
+              <Input label={t("phone")} required {...addressFieldProps("phone")} />
               <Input
                 label={t("addressLine1")}
-                name="line1"
                 required
                 className="sm:col-span-2"
-                error={fieldErrors.line1}
+                {...addressFieldProps("line1")}
               />
               <Input
                 label={t("addressLine2")}
-                name="line2"
                 className="sm:col-span-2"
-                error={fieldErrors.line2}
+                {...addressFieldProps("line2")}
               />
-              <Input label={t("city")} name="city" required error={fieldErrors.city} />
-              <Input label={t("region")} name="region" required error={fieldErrors.region} />
-              <Input label={t("postalCode")} name="postalCode" required error={fieldErrors.postalCode} />
-              <Input label={t("country")} name="country" defaultValue="SA" required error={fieldErrors.country} />
+              <Input label={t("city")} required {...addressFieldProps("city")} />
+              <Input label={t("region")} required {...addressFieldProps("region")} />
+              <Input label={t("postalCode")} required {...addressFieldProps("postalCode")} />
+              <Input
+                label={t("country")}
+                defaultValue="SA"
+                required
+                {...addressFieldProps("country")}
+              />
             </div>
           </section>
 
@@ -231,7 +265,11 @@ export function CheckoutForm({ summary }: CheckoutFormProps) {
           <Button
             type="button"
             variant="outline"
-            onClick={() => setStep(1)}
+            onClick={() => {
+              // Stale address errors must not greet them when they come back.
+              setFieldErrors({});
+              setStep(1);
+            }}
             disabled={isSubmitting}
           >
             {t("back")}

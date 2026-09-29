@@ -11,6 +11,7 @@ import {
   approveTransfer,
   rejectTransfer,
 } from "@/features/admin/api/fetch-admin-transfers";
+import { useAdmin } from "@/shared/providers/admin-context";
 
 export function OperationReviewActions({
   kind,
@@ -24,6 +25,9 @@ export function OperationReviewActions({
   approveLabel: string;
 }) {
   const router = useRouter();
+  // `canReview` describes the operation's state; a VIEWER must not see the
+  // buttons even when the operation is still reviewable.
+  const { canWrite } = useAdmin();
   const [rejectState, setRejectState] = useState<"idle" | "confirming">("idle");
   const [rejectReason, setRejectReason] = useState("");
   const [issuedKey, setIssuedKey] = useState<string | null>(null);
@@ -62,7 +66,7 @@ export function OperationReviewActions({
     },
   });
 
-  if (!canReview) return null;
+  if (!canReview || !canWrite) return null;
 
   if (issuedKey) {
     return (

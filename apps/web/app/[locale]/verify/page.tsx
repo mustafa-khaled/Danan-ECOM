@@ -1,6 +1,7 @@
 import { Suspense } from "react";
 import { getTranslations } from "next-intl/server";
 import { LoadingState } from "@/shared/components/feedback/loading-state";
+import { fetchVerification, type VerificationResult } from "@/features/verify";
 import { PublicVerifyContent } from "./verify-content";
 
 interface VerifyPageProps {
@@ -10,6 +11,18 @@ interface VerifyPageProps {
 export default async function PublicVerifyPage({ searchParams }: VerifyPageProps) {
   const params = await searchParams;
   const t = await getTranslations("verify");
+
+  let initialResult: VerificationResult | null = null;
+  let initialError: string | null = null;
+
+  if (params.serial && params.token) {
+    try {
+      initialResult = await fetchVerification(params.serial, params.token);
+    } catch (error) {
+      initialError =
+        error instanceof Error ? error.message : t("verificationFailed");
+    }
+  }
 
   return (
     <main className="min-h-screen bg-void">
@@ -30,6 +43,8 @@ export default async function PublicVerifyPage({ searchParams }: VerifyPageProps
           <PublicVerifyContent
             initialSerial={params.serial}
             initialToken={params.token}
+            initialResult={initialResult}
+            initialError={initialError}
           />
         </Suspense>
 

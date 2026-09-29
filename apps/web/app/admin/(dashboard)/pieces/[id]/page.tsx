@@ -1,3 +1,4 @@
+import { AdminWriteOnly } from "@/components/admin/admin-write-only";
 import { fetchAdminPieceDetail } from "@/features/admin/api/fetch-admin-pieces";
 import type { AdminPieceDetail } from "@/features/admin/types";
 import { getAdminCookieHeader } from "@/features/auth/server/admin-session";
@@ -114,14 +115,16 @@ export default async function AdminPieceDetailPage({
                 </div>
               </div>
             )}
-            <div className="flex items-center justify-end gap-3 w-full mt-[16px]">
-              <Link
-                href={`/admin/pieces/${id}/edit`}
-                className="w-24 h-11 bg-[#BF7266] rounded-lg text-[14px] font-medium text-white flex items-center justify-center"
-              >
-                {t("common.edit")}
-              </Link>
-            </div>
+            <AdminWriteOnly>
+              <div className="flex items-center justify-end gap-3 w-full mt-[16px]">
+                <Link
+                  href={`/admin/pieces/${id}/edit`}
+                  className="w-24 h-11 bg-[#BF7266] rounded-lg text-[14px] font-medium text-white flex items-center justify-center"
+                >
+                  {t("common.edit")}
+                </Link>
+              </div>
+            </AdminWriteOnly>
           </div>
         </div>
       </div>

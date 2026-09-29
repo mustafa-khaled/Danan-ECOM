@@ -1,5 +1,15 @@
 export type Locale = "ar" | "en";
 
+/**
+ * IANA zones the House may operate in, most likely first.
+ *
+ * `HouseSettings.timezone` stores an IANA identifier, so the admin Select and
+ * the API's validation both read this list rather than keeping their own copies.
+ */
+export const HOUSE_TIMEZONES = ["Asia/Riyadh", "Asia/Dubai", "UTC"] as const;
+
+export type HouseTimezone = (typeof HOUSE_TIMEZONES)[number];
+
 export interface MembershipClass {
   id: string;
   slug: string;

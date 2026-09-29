@@ -1,54 +1,19 @@
-import { CollectionsBanner } from "@/features/collections";
-import { getSessionCookieHeader } from "@/features/auth/server/session";
-import CollectionsGrid from "@/features/collections/components/collections-grid";
+import { getTranslations } from "next-intl/server";
+import { CollectionsBanner, CollectionsCatalog } from "@/features/collections";
 import Container from "@/components/ui/container";
-import { fetchMyCollection } from "@/features/wardrobe";
-import { OwnedPieceItem, SavedPieceItem } from "@/features/collections/types";
-
-function formatAcquiredAt(dateStr: string): string {
-  const date = new Date(dateStr);
-  return `OWNED SINCE: ${date.toLocaleDateString("en-US", { month: "long", year: "numeric" }).toUpperCase()}`;
-}
 
 export default async function CollectionsPage() {
-  const cookie = await getSessionCookieHeader();
-
-  let ownedPieces: OwnedPieceItem[] = [];
-  let savedPieces: SavedPieceItem[] = [];
-
-  try {
-    const collection = await fetchMyCollection(cookie);
-    if (collection) {
-      ownedPieces = collection.owned.map((item) => ({
-        id: item.id,
-        name: item.name,
-        serialNumber: item.serialNumber,
-        imageUrl: item.imageUrl ?? undefined,
-        acquiredAt: formatAcquiredAt(item.acquiredAt),
-        slug: item.slug,
-      }));
-
-      savedPieces = collection.saved.map((item) => ({
-        id: item.id,
-        name: item.name,
-        serialNumber: item.serialNumber,
-        imageUrl: item.imageUrl ?? undefined,
-        collectionName: item.collection,
-        price: item.price,
-        currency: item.currency,
-        slug: item.slug,
-      }));
-    }
-  } catch {
-    // Fallback to empty if unauthenticated or endpoint error
-  }
+  const t = await getTranslations("collections");
 
   return (
     <>
       <CollectionsBanner />
 
-      <Container>
-        <CollectionsGrid ownedPieces={ownedPieces} savedPieces={savedPieces} />
+      <Container className="lg:py-[64px] py-[32px]">
+        <h1 className="mb-[16px] font-heading text-h4 font-bold text-neutral-900 lg:mb-[32px] lg:text-h1">
+          {t("title")}
+        </h1>
+        <CollectionsCatalog />
       </Container>
     </>
   );

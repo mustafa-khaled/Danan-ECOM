@@ -65,6 +65,7 @@ export const verifyKeys = {
 
 export const adminKeys = {
   all: ["admin"] as const,
+  classes: () => [...adminKeys.all, "classes"] as const,
   clients: (page = 1, limit = 20) =>
     [...adminKeys.all, "clients", page, limit] as const,
   pieces: (page = 1, limit = 20) =>

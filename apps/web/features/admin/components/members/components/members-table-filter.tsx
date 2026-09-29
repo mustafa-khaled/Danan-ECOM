@@ -10,6 +10,7 @@ import {
 } from "@/components/ui/select";
 import { MoveDown, Plus, Search } from "lucide-react";
 import Link from "next/link";
+import { useAdmin } from "@/shared/providers/admin-context";
 
 interface MembersTableFilterProps {
   searchValue?: string;
@@ -34,6 +35,8 @@ export default function MembersTableFilter({
   onHouseKeyFilterChange,
   onDownload,
 }: MembersTableFilterProps) {
+  const { canWrite } = useAdmin();
+
   return (
     <div className="bg-[#F9F9FA] rounded-lg p-3 px-[16px] min-h-18.25 flex flex-wrap items-center justify-between gap-4">
       <div className="relative flex-1 min-w-60 max-w-md bg-white flex items-center rounded-md">
@@ -110,15 +113,15 @@ export default function MembersTableFilter({
             Download
             <MoveDown className="size-5" />
           </button>
-          <Link href="/admin/members/new">
-            <button
-              type="button"
+          {canWrite && (
+            <Link
+              href="/admin/members/new"
               className="w-58 h-12.25 text-body-lg font-semibold flex items-center justify-center gap-[16px] px-3 text-teal-900 bg-[#4CBEAE] hover:opacity-90 transition-opacity"
             >
               Add Member
               <Plus className="size-5" />
-            </button>
-          </Link>
+            </Link>
+          )}
         </div>
       </div>
     </div>

@@ -7,13 +7,6 @@ import {
   AccordionItem,
   AccordionTrigger,
 } from "@/components/ui/accordion";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import { Switch } from "@/components/ui";
 import {
   fetchHouseSettings,
@@ -35,7 +28,6 @@ export default function HouseAccess() {
   });
 
   const settings = settingsQuery.data;
-  const keyValidity = String(settings?.keyValidityMonths ?? 12);
 
   return (
     <section>
@@ -83,43 +75,9 @@ export default function HouseAccess() {
             </div>
 
             <h4 className="font-heading my-5 text-h4 font-bold">House Key</h4>
-            <div className="grid grid-cols-2 items-end gap-x-[32px] gap-y-3">
-              <div className="flex flex-col gap-2">
-                <label
-                  htmlFor="keyValidity"
-                  className="text-[#272D35] text-h6 font-medium"
-                >
-                  Key validity
-                </label>
-                <Select
-                  value={keyValidity}
-                  onValueChange={(value) =>
-                    save.mutate({ keyValidityMonths: Number(value) })
-                  }
-                  disabled={!settings || save.isPending}
-                >
-                  <SelectTrigger
-                    id="keyValidity"
-                    className="w-full border-none bg-[#F8FAFC] h-17.5 px-[16px] text-[#272D35]"
-                  >
-                    <SelectValue placeholder="Select validity" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="12">12 months</SelectItem>
-                    <SelectItem value="6">6 months</SelectItem>
-                    <SelectItem value="3">3 months</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-
-              <AccessToggle
-                id="requireKeyRenewal"
-                label="Require key renewal"
-                checked={settings?.requireKeyRenewal ?? true}
-                disabled={!settings || save.isPending}
-                onChange={(checked) => save.mutate({ requireKeyRenewal: checked })}
-              />
-            </div>
+            <p className="p-[16px] bg-[#F8FAFC] text-h6 text-[#5D697A]">
+              {t("houseKeyPermanent")}
+            </p>
           </AccordionContent>
         </AccordionItem>
       </Accordion>

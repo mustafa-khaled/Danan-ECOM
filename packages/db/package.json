@@ -18,6 +18,7 @@
     "db:migrate": "dotenv -e ../../.env -- prisma migrate dev",
     "db:seed": "dotenv -e ../../.env -- tsx prisma/seed.ts",
     "db:seed:reset": "dotenv -e ../../.env -- tsx prisma/seed.ts --reset",
+    "db:backfill-certificates": "dotenv -e ../../.env -- tsx prisma/backfill-certificates.ts",
     "db:check-drift": "node scripts/check-schema-drift.mjs",
     "typecheck": "tsc --noEmit",
     "lint": "eslint \"src/**/*.ts\""

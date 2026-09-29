@@ -67,6 +67,7 @@ export function CertificateViewer({
         open={open}
         onClose={() => setOpen(false)}
         certificate={certificate}
+        pieceId={pieceId}
       />
     </div>
   );

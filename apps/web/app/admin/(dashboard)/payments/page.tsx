@@ -13,10 +13,12 @@ import {
 import { fetchAdminOrders } from "@/features/admin/api/fetch-admin-orders";
 import { fetchAdminOrderStats } from "@/features/admin/api/fetch-admin-stats";
 import { useLocale, useTranslations } from "next-intl";
+import type { Locale } from "@/i18n/routing";
+import { formatPrice } from "@/shared/utils/format";
 
 export default function PaymentsPage() {
   const t = useTranslations("admin");
-  const locale = useLocale();
+  const locale = useLocale() as Locale;
   const [searchValue, setSearchValue] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
   const [amountFilter, setAmountFilter] = useState("all");
@@ -56,8 +58,7 @@ export default function PaymentsPage() {
     {
       id: 1,
       title: t("payments.totalRevenue"),
-      count: Number(statsQuery.data?.totalRevenue ?? 0).toLocaleString(),
-      currency: locale === "ar" ? "ر.س" : "SAR",
+      count: formatPrice(Number(statsQuery.data?.totalRevenue ?? 0), "SAR", locale),
     },
     {
       id: 2,
@@ -91,11 +92,6 @@ export default function PaymentsPage() {
                 className="flex flex-col font-medium items-start justify-center rounded-2xl border border-[#F3F3F3] p-6 h-30"
               >
                 <h4 className="font-heading text-h3 sm:text-[32px] 2xl:text-[40px] truncate max-w-full">
-                  {stat.currency ? (
-                    <span className="text-sm 2xl:text-base font-sans font-normal text-neutral-500 me-2 inline-block">
-                      {stat.currency}
-                    </span>
-                  ) : null}
                   {stat.count}
                 </h4>
                 <p className="text-[#5D697A] text-[12px]">{stat.title}</p>

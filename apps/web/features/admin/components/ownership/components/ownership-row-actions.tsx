@@ -4,6 +4,7 @@ import { useState, useRef, useEffect } from "react";
 import Link from "next/link";
 import { Eye, ArrowRightLeft, FileText, EllipsisVertical } from "lucide-react";
 import { useTranslations } from "next-intl";
+import { useAdmin } from "@/shared/providers/admin-context";
 import type { OwnershipRecordItem } from "../types";
 
 interface OwnershipRowActionsProps {
@@ -12,6 +13,7 @@ interface OwnershipRowActionsProps {
 
 export function OwnershipRowActions({ record }: OwnershipRowActionsProps) {
   const t = useTranslations("admin");
+  const { canWrite } = useAdmin();
   const [isOpen, setIsOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
 
@@ -58,14 +60,16 @@ export function OwnershipRowActions({ record }: OwnershipRowActionsProps) {
             <Eye className="h-3.5 w-3.5" />
             <span>{t("rowActions.view")}</span>
           </Link>
-          <Link
-            href={`/admin/ownership/${record.id}/transfer`}
-            onClick={() => setIsOpen(false)}
-            className="flex items-center gap-2 px-3 py-2 text-xs font-medium text-ds-text hover:bg-ds-surface hover:text-(--color-gold) transition-colors"
-          >
-            <ArrowRightLeft className="h-3.5 w-3.5" />
-            <span>{t("rowActions.transfer")}</span>
-          </Link>
+          {canWrite && (
+            <Link
+              href={`/admin/ownership/${record.id}/transfer`}
+              onClick={() => setIsOpen(false)}
+              className="flex items-center gap-2 px-3 py-2 text-xs font-medium text-ds-text hover:bg-ds-surface hover:text-(--color-gold) transition-colors"
+            >
+              <ArrowRightLeft className="h-3.5 w-3.5" />
+              <span>{t("rowActions.transfer")}</span>
+            </Link>
+          )}
           <Link
             href={`/admin/ownership/${record.id}/certificate`}
             onClick={() => setIsOpen(false)}

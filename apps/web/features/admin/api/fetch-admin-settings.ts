@@ -12,8 +12,6 @@ export interface HouseSettings {
   privateKeyRequired: boolean;
   adminApprovalRequired: boolean;
   allowInvitations: boolean;
-  keyValidityMonths: number;
-  requireKeyRenewal: boolean;
   notificationPrefs: Record<string, boolean>;
 }
 

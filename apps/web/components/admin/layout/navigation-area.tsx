@@ -19,6 +19,8 @@ import {
 } from "lucide-react";
 import { usePathname } from "next/navigation";
 import { useTranslations } from "next-intl";
+import { canAccessAdminPath } from "@/shared/lib/admin-nav";
+import { useAdmin } from "@/shared/providers/admin-context";
 
 interface SubItem {
   labelKey: string;
@@ -71,6 +73,18 @@ interface NavigationAreaProps {
 export default function NavigationArea({ setMobileOpen }: NavigationAreaProps) {
   const pathname = usePathname();
   const t = useTranslations("admin.nav");
+  const { role } = useAdmin();
+
+  // Don't advertise sections the role cannot open — the API rejects them and
+  // the admin just gets an error page.
+  const canOpen = (href: string) => canAccessAdminPath(role, href);
+  const visibleGroups = navLinks
+    .map((group) => ({
+      ...group,
+      subItems: group.subItems.filter((item) => canOpen(item.href)),
+    }))
+    .filter((group) => group.subItems.length > 0);
+  const visibleDirectLinks = directLinks.filter((link) => canOpen(link.href));
 
   const [openGroups, setOpenGroups] = useState<Record<string, boolean>>(() => {
     const initial: Record<string, boolean> = { house: true };
@@ -86,9 +100,11 @@ export default function NavigationArea({ setMobileOpen }: NavigationAreaProps) {
   const toggleGroup = (key: string) =>
     setOpenGroups((prev) => ({ ...prev, [key]: !prev[key] }));
 
+  const isSettingsActive = pathname.startsWith("/admin/settings");
+
   return (
     <div className="flex-1 overflow-y-auto px-2.5 py-5.5 space-y-3 font-body text-sm">
-      {navLinks.map((group) => {
+      {visibleGroups.map((group) => {
         const GroupIcon = group.icon;
         const isOpen = !!openGroups[group.key];
         const isGroupActive = group.subItems.some((item) =>
@@ -169,7 +185,7 @@ export default function NavigationArea({ setMobileOpen }: NavigationAreaProps) {
         );
       })}
 
-      {directLinks.map((link) => {
+      {visibleDirectLinks.map((link) => {
         const Icon = link.icon;
         const active = pathname.startsWith(link.href);
         const showDivider =
@@ -177,47 +193,39 @@ export default function NavigationArea({ setMobileOpen }: NavigationAreaProps) {
 
         return (
           <div key={link.href}>
-            <Link href={link.href} onClick={() => setMobileOpen(false)}>
-              <button
-                className={cn(
-                  NAV_ROW_BASE,
-                  "gap-3",
-                  active && PRIMARY_GROUP_STYLES,
-                )}
-              >
-                <Icon className={cn("size-5", !active && "text-neutral-400")} />
-                <span>{t(link.labelKey)}</span>
-              </button>
+            <Link
+              href={link.href}
+              onClick={() => setMobileOpen(false)}
+              className={cn(NAV_ROW_BASE, "gap-3", active && PRIMARY_GROUP_STYLES)}
+            >
+              <Icon className={cn("size-5", !active && "text-neutral-400")} />
+              <span>{t(link.labelKey)}</span>
             </Link>
             {showDivider && <hr className="mt-2 border-t border-neutral-200" />}
           </div>
         );
       })}
 
-      <hr className="mt-2 border-t border-neutral-200" />
+      {canOpen("/admin/settings") && (
+        <>
+          <hr className="mt-2 border-t border-neutral-200" />
 
-      {(() => {
-        const isSettingsActive = pathname.startsWith("/admin/settings");
-        return (
-          <Link href="/admin/settings" onClick={() => setMobileOpen(false)}>
-            <button
-              className={cn(
-                NAV_ROW_BASE,
-                "gap-3",
-                isSettingsActive && PRIMARY_GROUP_STYLES,
-              )}
-            >
-              <Settings
-                className={cn(
-                  "size-5",
-                  !isSettingsActive && "text-neutral-400",
-                )}
-              />
-              <span>{t("settings")}</span>
-            </button>
+          <Link
+            href="/admin/settings"
+            onClick={() => setMobileOpen(false)}
+            className={cn(
+              NAV_ROW_BASE,
+              "gap-3",
+              isSettingsActive && PRIMARY_GROUP_STYLES,
+            )}
+          >
+            <Settings
+              className={cn("size-5", !isSettingsActive && "text-neutral-400")}
+            />
+            <span>{t("settings")}</span>
           </Link>
-        );
-      })()}
+        </>
+      )}
     </div>
   );
 }

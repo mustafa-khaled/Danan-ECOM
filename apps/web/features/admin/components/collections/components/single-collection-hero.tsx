@@ -9,6 +9,7 @@ import { useTranslations } from "next-intl";
 import { useLocale } from "next-intl";
 import type { Locale } from "@/i18n/routing";
 import { pickLocalized } from "@/shared/lib/pick-localized";
+import { useAdmin } from "@/shared/providers/admin-context";
 
 interface SingleCollectionHeroProps {
   collection: AdminCollectionDetail | null;
@@ -20,6 +21,7 @@ export default function SingleCollectionHero({
   const t = useTranslations("admin");
   const locale = useLocale() as Locale;
   const pathname = usePathname();
+  const { canWrite } = useAdmin();
 
   const isAccess =
     pathname.endsWith("/access") || pathname.includes("/access/");
@@ -89,15 +91,15 @@ export default function SingleCollectionHero({
               {t("common.download")}
               <MoveDown className="size-5" />
             </button>
-            <Link href="/admin/collections/new">
-              <button
-                type="button"
+            {canWrite && (
+              <Link
+                href="/admin/collections/new"
                 className="w-58 h-12.25 text-body-lg font-semibold flex items-center justify-center gap-[16px] px-3 text-teal-900 bg-[#4CBEAE] rounded-lg hover:opacity-90 transition-opacity"
               >
                 {t("collections.addNew")}
                 <Plus className="size-5" />
-              </button>
-            </Link>
+              </Link>
+            )}
           </div>
         )}
       </div>

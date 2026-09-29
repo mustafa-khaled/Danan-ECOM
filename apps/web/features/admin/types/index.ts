@@ -21,7 +21,8 @@ export interface AdminClientListItem {
   class?: AdminClass;
   pieceCount: number;
   memberClass?: string;
-  accessStatus?: string;
+  /** Only sent when the list is scoped to a collection. */
+  accessStatus?: "GRANTED" | "PENDING" | "REVOKED";
   joinedAt?: string;
   createdAt?: string;
   lastSeenAt?: string | null;

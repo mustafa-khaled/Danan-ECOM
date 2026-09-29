@@ -35,9 +35,10 @@ export interface CertificateModalProps {
   open: boolean;
   onClose: () => void;
   certificate: CertificateData | null;
+  pieceId?: string;
 }
 
-export function CertificateModal({ open, onClose, certificate }: CertificateModalProps) {
+export function CertificateModal({ open, onClose, certificate, pieceId }: CertificateModalProps) {
   const t = useTranslations("certificates");
   const locale = useLocale();
   if (!certificate) return null;
@@ -85,7 +86,23 @@ export function CertificateModal({ open, onClose, certificate }: CertificateModa
           </div>
         </dl>
         {certificate.qrCodeData ? (
-          <p className="text-xs leading-relaxed text-ds-text-muted">{t("qrHint")}</p>
+          <div className="flex flex-col items-center gap-2 rounded-lg border border-ds-border-light bg-white p-4">
+            {pieceId ? (
+              // Same-origin via the /backend proxy, so the session cookie is
+              // forwarded and the request satisfies `img-src 'self'`.
+              // eslint-disable-next-line @next/next/no-img-element
+              <img
+                src={`/backend/client/wardrobe/${pieceId}/certificate/qr`}
+                alt={t("qrAlt")}
+                width={160}
+                height={160}
+                className="size-40 rounded-sm"
+              />
+            ) : null}
+            <p className="text-center text-xs leading-relaxed text-ds-text-muted">
+              {t("qrHint")}
+            </p>
+          </div>
         ) : null}
       </div>
     </Modal>

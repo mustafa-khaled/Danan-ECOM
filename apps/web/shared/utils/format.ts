@@ -17,6 +17,13 @@ export function formatTransferStatus(status: string): string {
   return status.replace(/_/g, " ");
 }
 
+/**
+ * The House operates on Riyadh time. Without a fixed zone the same timestamp
+ * renders as a different day depending on where the admin's browser is, so
+ * "joined 3 Oct" in Riyadh became "2 Oct" for anyone west of GMT+3.
+ */
+export const HOUSE_DISPLAY_TIMEZONE = "Asia/Riyadh";
+
 export function formatAdminDate(
   value?: string | Date | null,
   locale: "ar" | "en" = "en",
@@ -29,5 +36,6 @@ export function formatAdminDate(
     month: "short",
     year: "numeric",
     calendar: "gregory",
+    timeZone: HOUSE_DISPLAY_TIMEZONE,
   });
 }

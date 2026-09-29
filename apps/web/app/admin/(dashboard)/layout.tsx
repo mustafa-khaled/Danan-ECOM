@@ -1,4 +1,5 @@
 import { AdminLayout } from "@/components/admin/layout";
+import { AdminAccessGuard } from "@/components/admin/admin-access-guard";
 import { ConfirmProvider } from "@/components/confirm-dialog";
 import {
   requireAdminSession,
@@ -19,7 +20,9 @@ export default async function DashboardLayout({
 
   return (
     <AdminLayout admin={admin} pendingCount={stats.pending}>
-      <ConfirmProvider>{children}</ConfirmProvider>
+      <ConfirmProvider>
+        <AdminAccessGuard>{children}</AdminAccessGuard>
+      </ConfirmProvider>
     </AdminLayout>
   );
 }

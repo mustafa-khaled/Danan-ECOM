@@ -28,10 +28,12 @@ export function AdminLayout({
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const t = useTranslations("admin.common");
 
+  // Fail closed: a render path that forgot to pass the session must not hand
+  // out the write-enabled UI.
   const fallbackAdmin: AdminContextValue = {
     displayName: admin?.displayName ?? t("accountManager"),
-    email: admin?.email ?? "ahmedgad@gmail.com",
-    role: (admin?.role ?? "SUPER_ADMIN") as AdminRole,
+    email: admin?.email,
+    role: (admin?.role ?? "VIEWER") as AdminRole,
     avatarUrl: admin?.avatarUrl,
   };
 

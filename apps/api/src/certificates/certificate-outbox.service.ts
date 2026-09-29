@@ -101,7 +101,8 @@ export class CertificateOutboxService {
             removeOnFail: 50,
             // Keyed on the outbox row so a re-dispatch after a crash between the
             // enqueue and the `dispatchedAt` write reuses the same job.
-            jobId: `outbox:${row.id}`,
+            // BullMQ rejects ":" in custom job ids, so the separator must be "-".
+            jobId: `outbox-${row.id}`,
           },
         );
 

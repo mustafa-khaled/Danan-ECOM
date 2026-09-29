@@ -1,3 +1,5 @@
+"use client";
+
 import { Input } from "@/components/ui";
 import {
   Select,
@@ -8,8 +10,11 @@ import {
 } from "@/components/ui/select";
 import { MoveDown, Plus, Search } from "lucide-react";
 import Link from "next/link";
+import { useAdmin } from "@/shared/providers/admin-context";
 
 export default function CollectionsTableFilter() {
+  const { canWrite } = useAdmin();
+
   return (
     <div className="bg-[#F9F9FA] rounded-lg p-3 px-[16px] h-18.25 flex justify-between gap-[32px]">
       <div className="relative w-150.5 bg-white flex items-center">
@@ -94,12 +99,15 @@ export default function CollectionsTableFilter() {
             Download
             <MoveDown className="size-5" />
           </button>
-          <Link href="/admin/collections/new">
-            <button className="w-58 h-12.25 text-body-lg font-semibold flex items-center justify-center gap-[16px] px-3 text-teal-900 bg-[#4CBEAE]">
+          {canWrite && (
+            <Link
+              href="/admin/collections/new"
+              className="w-58 h-12.25 text-body-lg font-semibold flex items-center justify-center gap-[16px] px-3 text-teal-900 bg-[#4CBEAE]"
+            >
               Add New Collection
               <Plus className="size-5" />
-            </button>
-          </Link>
+            </Link>
+          )}
         </div>
       </div>
     </div>

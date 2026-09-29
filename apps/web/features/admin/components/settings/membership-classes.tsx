@@ -1,6 +1,7 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   Accordion,
   AccordionContent,
@@ -15,71 +16,80 @@ import {
 } from "@/features/admin/api/fetch-admin-classes";
 import type { AdminClass } from "@/features/admin/types";
 import { pickLocalized } from "@/shared/lib/pick-localized";
+import { adminKeys } from "@/shared/lib/query-keys";
 import { useLocale, useTranslations } from "next-intl";
 import type { Locale } from "@/i18n/routing";
 
 export default function MembershipClasses() {
   const t = useTranslations("admin");
   const locale = useLocale() as Locale;
-  const [classes, setClasses] = useState<AdminClass[]>([]);
+  const queryClient = useQueryClient();
   const [error, setError] = useState<string | null>(null);
   const [name, setName] = useState("");
   const [nameAr, setNameAr] = useState("");
   const [slug, setSlug] = useState("");
   const [description, setDescription] = useState("");
-  const [saving, setSaving] = useState(false);
 
-  const load = async () => {
-    try {
-      setClasses(await fetchAdminClasses());
-      setError(null);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : t("settings.failedLoad"));
-    }
-  };
+  const classesQuery = useQuery({
+    queryKey: adminKeys.classes(),
+    queryFn: () => fetchAdminClasses(),
+    retry: false,
+  });
 
-  useEffect(() => {
-    void load();
-  }, []);
+  const invalidate = () =>
+    queryClient.invalidateQueries({ queryKey: adminKeys.classes() });
 
-  const handleCreate = async () => {
-    if (!name.trim() || !slug.trim()) return;
-    setSaving(true);
-    try {
-      await createClass({
+  const create = useMutation({
+    mutationFn: () =>
+      createClass({
         name: name.trim(),
         nameAr: nameAr.trim() || undefined,
         slug: slug.trim(),
         description: description.trim() || undefined,
-      });
+      }),
+    onSuccess: async () => {
       setName("");
       setNameAr("");
       setSlug("");
       setDescription("");
-      await load();
-    } catch (err) {
-      setError(err instanceof Error ? err.message : t("settings.failedCreate"));
-    } finally {
-      setSaving(false);
-    }
-  };
+      setError(null);
+      await invalidate();
+    },
+    onError: (err) =>
+      setError(err instanceof Error ? err.message : t("settings.failedCreate")),
+  });
 
-  const handleSetDefault = async (cls: AdminClass) => {
-    try {
-      await updateClass(cls.id, { isDefault: true });
-      await load();
-    } catch (err) {
-      setError(err instanceof Error ? err.message : t("settings.failedDefault"));
-    }
-  };
+  const setDefault = useMutation({
+    mutationFn: (cls: AdminClass) => updateClass(cls.id, { isDefault: true }),
+    onSuccess: async () => {
+      setError(null);
+      await invalidate();
+    },
+    onError: (err) =>
+      setError(err instanceof Error ? err.message : t("settings.failedDefault")),
+  });
 
-  const handleDelete = async (cls: AdminClass) => {
-    try {
-      await deleteClass(cls.id);
-      await load();
-    } catch (err) {
-      setError(err instanceof Error ? err.message : t("settings.failedHide"));
-    }
+  const hide = useMutation({
+    mutationFn: (cls: AdminClass) => deleteClass(cls.id),
+    onSuccess: async () => {
+      setError(null);
+      await invalidate();
+    },
+    onError: (err) =>
+      setError(err instanceof Error ? err.message : t("settings.failedHide")),
+  });
+
+  const classes = classesQuery.data ?? [];
+  const loadError = classesQuery.error
+    ? classesQuery.error instanceof Error
+      ? classesQuery.error.message
+      : t("settings.failedLoad")
+    : null;
+  const message = error ?? loadError;
+
+  const handleCreate = () => {
+    if (!name.trim() || !slug.trim()) return;
+    create.mutate();
   };
 
   return (
@@ -98,7 +108,7 @@ export default function MembershipClasses() {
           </AccordionTrigger>
 
           <AccordionContent className="p-6">
-            {error && <p className="mb-4 text-sm text-red-500">{error}</p>}
+            {message && <p className="mb-4 text-sm text-red-500">{message}</p>}
 
             <div className="grid grid-cols-2 gap-x-[16px] gap-y-5">
               {classes.map((cls) => (
@@ -116,12 +126,20 @@ export default function MembershipClasses() {
                   </h6>
                   <div className="mt-[16px] flex gap-3 text-[#BF7266] font-semibold text-sm">
                     {!cls.isDefault && cls.isActive && (
-                      <button type="button" onClick={() => void handleSetDefault(cls)}>
+                      <button
+                        type="button"
+                        disabled={setDefault.isPending}
+                        onClick={() => setDefault.mutate(cls)}
+                      >
                         {t("settings.makeDefault")}
                       </button>
                     )}
                     {cls.isActive && (
-                      <button type="button" onClick={() => void handleDelete(cls)}>
+                      <button
+                        type="button"
+                        disabled={hide.isPending}
+                        onClick={() => hide.mutate(cls)}
+                      >
                         {t("settings.hide")}
                       </button>
                     )}
@@ -158,11 +176,13 @@ export default function MembershipClasses() {
               />
               <button
                 type="button"
-                disabled={saving}
-                onClick={() => void handleCreate()}
+                disabled={create.isPending}
+                onClick={handleCreate}
                 className="h-11 bg-[#BF7266] rounded-lg text-[14px] font-medium text-white sm:col-span-3"
               >
-                {saving ? t("common.creating") : t("settings.createClass")}
+                {create.isPending
+                  ? t("common.creating")
+                  : t("settings.createClass")}
               </button>
             </div>
           </AccordionContent>

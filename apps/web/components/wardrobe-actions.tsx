@@ -2,10 +2,9 @@
 
 import Link from "next/link";
 import { useTranslations } from "next-intl";
-import { BadgeCheck } from "lucide-react";
 import { CertificateViewer } from "@/components/certificate-viewer";
+import { VerifyAuthenticityButton } from "@/components/verify-authenticity-button";
 import { TransferInitiate } from "@/components/transfer-initiate";
-import { Button } from "@/components/ui/Button";
 
 interface WardrobeActionsProps {
   pieceId: string;
@@ -43,17 +42,10 @@ export function WardrobeActions({
           serialNumber={serialNumber}
         />
 
-        <Link href="/beta/verify">
-          <Button
-            variant="outline"
-            size="lg"
-            fullWidth
-            className="lg:px-8 px-3"
-            iconRight={<BadgeCheck className="size-[16px]" />}
-          >
-            {t("verifyAuthenticity")}
-          </Button>
-        </Link>
+        <VerifyAuthenticityButton
+          pieceId={pieceId}
+          serialNumber={serialNumber}
+        />
       </div>
 
       {/* Active Transfer Notice */}

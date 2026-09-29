@@ -3,7 +3,8 @@ export interface VerificationResult {
   serialNumber?: string;
   collection?: string;
   material?: string;
-  weight?: string;
+  weight?: string | number | null;
   dimensions?: string;
+  issuedAt?: string | null;
   [key: string]: unknown;
 }

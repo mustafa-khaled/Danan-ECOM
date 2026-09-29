@@ -4,6 +4,7 @@ import { useState, useRef, useEffect } from "react";
 import Link from "next/link";
 import { Eye, Pencil, EllipsisVertical } from "lucide-react";
 import { useTranslations } from "next-intl";
+import { useAdmin } from "@/shared/providers/admin-context";
 import type { MemberListItem } from "../types";
 
 interface MemberRowActionsProps {
@@ -12,6 +13,7 @@ interface MemberRowActionsProps {
 
 export function MemberRowActions({ member }: MemberRowActionsProps) {
   const t = useTranslations("admin");
+  const { canWrite } = useAdmin();
   const [isOpen, setIsOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
 
@@ -58,14 +60,16 @@ export function MemberRowActions({ member }: MemberRowActionsProps) {
             <Eye className="h-3.5 w-3.5" />
             <span>{t("rowActions.view")}</span>
           </Link>
-          <Link
-            href={`/admin/members/${member.id}/edit`}
-            onClick={() => setIsOpen(false)}
-            className="flex items-center gap-2 px-3 py-2 text-xs font-medium text-ds-text hover:bg-ds-surface hover:text-(--color-gold) transition-colors"
-          >
-            <Pencil className="h-3.5 w-3.5" />
-            <span>{t("rowActions.edit")}</span>
-          </Link>
+          {canWrite && (
+            <Link
+              href={`/admin/members/${member.id}/edit`}
+              onClick={() => setIsOpen(false)}
+              className="flex items-center gap-2 px-3 py-2 text-xs font-medium text-ds-text hover:bg-ds-surface hover:text-(--color-gold) transition-colors"
+            >
+              <Pencil className="h-3.5 w-3.5" />
+              <span>{t("rowActions.edit")}</span>
+            </Link>
+          )}
         </div>
       )}
     </div>

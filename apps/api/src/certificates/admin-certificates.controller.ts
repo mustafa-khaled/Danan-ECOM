@@ -64,7 +64,8 @@ export class AdminCertificatesController {
         removeOnFail: 50,
         // One in-flight regeneration per piece; a double-click or retry
         // reuses the pending job instead of queueing another render.
-        jobId: `regenerate:${pieceId}`,
+        // BullMQ rejects ":" in custom job ids, so the separator must be "-".
+        jobId: `regenerate-${pieceId}`,
       },
     );
 

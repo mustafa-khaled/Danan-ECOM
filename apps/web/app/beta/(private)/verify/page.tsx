@@ -2,15 +2,34 @@ import { getTranslations } from "next-intl/server";
 import { ShieldCheck, Award, Sparkles, Lock } from "lucide-react";
 import { VerifyForm } from "@/components/verify-form";
 import Container from "@/components/ui/container";
+import { fetchVerification, type VerificationResult } from "@/features/verify";
+
+import "server-only";
 
 interface VerifyPageProps {
-  searchParams?: Promise<{ serial?: string; token?: string }>;
+  searchParams?: Promise<{
+    serial?: string;
+    token?: string;
+  }>;
 }
 
 export default async function VerifyPage({ searchParams }: VerifyPageProps) {
   const params = searchParams ? await searchParams : {};
+
   const t = await getTranslations("verify");
   const certT = await getTranslations("certificates");
+
+  let initialResult: VerificationResult | null = null;
+  let initialError: string | null = null;
+
+  if (params.serial && params.token) {
+    try {
+      initialResult = await fetchVerification(params.serial, params.token);
+    } catch (error) {
+      initialError =
+        error instanceof Error ? error.message : t("verificationFailed");
+    }
+  }
 
   return (
     <div className="relative isolate min-h-[calc(100dvh-200px)] overflow-hidden py-12 sm:py-16 md:py-20 bg-ds-surface-warm/25">
@@ -23,10 +42,11 @@ export default async function VerifyPage({ searchParams }: VerifyPageProps) {
       </div>
 
       <Container className="flex flex-col items-center">
-        {/* Centered Header Section */}
+        {/* Header */}
         <div className="w-full max-w-2xl text-center">
           <div className="inline-flex items-center gap-2 rounded-full border border-ds-border-light bg-white/90 px-4 py-1.5 shadow-2xs backdrop-blur-xs">
             <ShieldCheck className="size-4 text-ds-primary" />
+
             <span className="font-mono text-xs font-semibold uppercase tracking-widest text-ds-secondary">
               {certT("certificateOfAuthenticity")}
             </span>
@@ -41,26 +61,29 @@ export default async function VerifyPage({ searchParams }: VerifyPageProps) {
           </p>
         </div>
 
-        {/* Centered Form Wrapper */}
+        {/* Verification Form */}
         <div className="mt-8 sm:mt-10 w-full max-w-xl">
           <VerifyForm
             initialSerial={params.serial}
             initialToken={params.token}
-            autoVerify={Boolean(params.serial && params.token)}
+            initialResult={initialResult}
+            initialError={initialError}
             fullWidth
             showAuthenticityMessage
           />
         </div>
 
-        {/* Trust & Verification Information Pillars */}
+        {/* Trust & Verification Information */}
         <div className="mt-12 sm:mt-16 w-full max-w-2xl grid grid-cols-1 sm:grid-cols-3 gap-6 border-t border-ds-border-light/80 pt-8 sm:pt-10">
           <div className="flex flex-col items-center text-center px-2">
             <div className="flex size-10 items-center justify-center rounded-full bg-ds-surface-rose text-ds-primary mb-3 shadow-2xs">
               <Sparkles className="size-4.5" />
             </div>
+
             <h3 className="font-heading text-base text-ds-text font-medium">
               {t("officialHeritage")}
             </h3>
+
             <p className="mt-1 text-xs text-ds-text-muted leading-relaxed font-body">
               {t("officialHeritageDesc")}
             </p>
@@ -70,9 +93,11 @@ export default async function VerifyPage({ searchParams }: VerifyPageProps) {
             <div className="flex size-10 items-center justify-center rounded-full bg-ds-surface-warm text-ds-secondary mb-3 shadow-2xs">
               <Award className="size-4.5" />
             </div>
+
             <h3 className="font-heading text-base text-ds-text font-medium">
               {t("certificateCard")}
             </h3>
+
             <p className="mt-1 text-xs text-ds-text-muted leading-relaxed font-body">
               {t("certificateCardDesc")}
             </p>
@@ -82,9 +107,11 @@ export default async function VerifyPage({ searchParams }: VerifyPageProps) {
             <div className="flex size-10 items-center justify-center rounded-full bg-ds-surface-rose text-ds-primary mb-3 shadow-2xs">
               <Lock className="size-4.5" />
             </div>
+
             <h3 className="font-heading text-base text-ds-text font-medium">
               {t("secureToken")}
             </h3>
+
             <p className="mt-1 text-xs text-ds-text-muted leading-relaxed font-body">
               {t("secureTokenDesc")}
             </p>

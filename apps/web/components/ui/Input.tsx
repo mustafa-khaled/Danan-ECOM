@@ -135,7 +135,7 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(function Input(
               : "text-ds-text-muted",
           )}
         >
-          {status !== "default" && <StatusIcon status={status} />}
+          {status !== "default" && <StatusIcon />}
           {statusMessage || helperText}
         </p>
       )}
@@ -144,8 +144,7 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(function Input(
 });
 
 /* ── Small status icon for helper messages ── */
-function StatusIcon({ status }: { status: Exclude<InputStatus, "default"> }) {
-  console.log(status);
+function StatusIcon() {
   return (
     <svg
       className="size-3.5 shrink-0"

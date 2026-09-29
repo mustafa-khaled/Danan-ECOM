@@ -215,6 +215,34 @@ export class CertificatesService {
     return this.storage.getSignedUrl(certificate.pdfUrl, { expiresInSeconds: 3600 });
   }
 
+  /**
+   * Renders the certificate's verification URL as a PNG for on-screen display.
+   * Encodes the exact same `qrCodeData` that is baked into the printed PDF, so a
+   * scan from the modal and a scan from the certificate card resolve identically.
+   * Ownership is enforced the same way as the other client reads — a client who
+   * does not own the piece gets a 404 before any certificate is looked up.
+   */
+  async getCertificateQrPng(clientId: string, pieceId: string): Promise<Buffer> {
+    const piece = await this.prisma.db.piece.findFirst({
+      where: { id: pieceId, currentOwnerId: clientId },
+      select: { id: true },
+    });
+    if (!piece) throw new NotFoundException("errors.PIECE_NOT_FOUND");
+
+    const certificate = await this.prisma.db.certificate.findFirst({
+      where: { pieceId, ownerId: clientId, isActive: true },
+      select: { qrCodeData: true },
+    });
+    if (!certificate) throw new NotFoundException("errors.CERTIFICATE_NOT_FOUND");
+
+    return QRCode.toBuffer(certificate.qrCodeData, {
+      type: "png",
+      width: 320,
+      margin: 2,
+      errorCorrectionLevel: "M",
+    });
+  }
+
   async listCertificates(
     page?: number,
     limit?: number,

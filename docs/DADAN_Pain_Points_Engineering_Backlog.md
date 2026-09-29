@@ -18,6 +18,131 @@ Do not rebuild functionality that the review explicitly confirms as working. Re-
 
 ---
 
+# Status Log — 2026-09-29
+
+Statuses use the vocabulary in [Definition of Done](#definition-of-done). This pass audited all 24 items and implemented the confirmed **P1 code bugs**; P0 payment/certificate/verify work and the P2 operations evidence were left for their own passes.
+
+| #   | Item                              | Status                     |
+| --- | --------------------------------- | -------------------------- |
+| 1   | Key House permanence              | `FIXED`                    |
+| 2   | Real payment gateway              | `IN PROGRESS`              |
+| 3   | Certificate creation after purch. | `FIXED` (pre-existing)     |
+| 4   | Certificate lifecycle after xfer  | `TODO`                     |
+| 5   | Verify — QR / token / serial      | `TODO`                     |
+| 6   | Security & data integrity         | `VERIFIED` (see below)     |
+| 7   | Collections main route            | `FIXED`                    |
+| 8   | Collection access status          | `FIXED`                    |
+| 9   | Admin collection access actions   | `FIXED`                    |
+| 10  | Analytics navigation              | `FIXED`                    |
+| 11  | Analytics counter formatting      | `NOT APPLICABLE`           |
+| 12  | Currency consistency              | `FIXED`                    |
+| 13  | Timezone                          | `FIXED`                    |
+| 14  | Checkout validation               | `FIXED`                    |
+| 15  | Viewer permission UX              | `FIXED`                    |
+| 16  | Inheritance transfer E2E          | `TODO`                     |
+| 17  | Sale transfer E2E                 | `TODO`                     |
+| 18  | Upload scenarios E2E              | `TODO`                     |
+| 19  | CI/CD                             | `NEEDS TECHNICAL EVIDENCE` |
+| 20  | Rollback                          | `NEEDS TECHNICAL EVIDENCE` |
+| 21  | Monitoring                        | `NEEDS TECHNICAL EVIDENCE` |
+| 22  | Backup & restore                  | `NEEDS TECHNICAL EVIDENCE` |
+| 23  | Technical documentation           | `NEEDS TECHNICAL EVIDENCE` |
+| 24  | Figma vs implementation           | `TODO`                     |
+
+Gate results for this pass: `pnpm typecheck` clean, `pnpm lint` 0 errors (1 pre-existing `react-hooks/exhaustive-deps` warning in `membership-classes.tsx`), `pnpm test` 131 API + 60 web tests passing.
+
+**Not yet re-run:** the [regression scenarios](#regression-tests--already-confirmed-working) and the Playwright suite. They need Postgres, Redis and a running API, none of which were available in this environment. `playwright test --list` confirms all 17 specs — including the 3 new collections specs — are discovered and parse, but they have not been executed. Checkout, gift transfer, ownership history and viewer restrictions all sit downstream of changes in this pass and must be re-run before sign-off. The two new migrations (`20260929060000_key_house_permanent`, `20260929061000_staff_request_collection_index`) have also not been applied to a live database.
+
+## 1. Key House permanence — `FIXED`
+
+- **Changed:** Key House is now permanent everywhere. Removed `keyValidityMonths` and `requireKeyRenewal`, which nothing ever read — auth never loaded `HouseSettings` and `Client` has no expiry column, so they only advertised a renewal policy the system did not implement.
+- **Where:** `packages/db/prisma/schema.prisma` (+ migration `20260929060000_key_house_permanent`), `apps/api/src/settings/dto/update-house-settings.dto.ts`, `apps/web/features/admin/components/settings/house-access.tsx`, `apps/web/features/admin/api/fetch-admin-settings.ts`, new `admin.settings.houseKeyPermanent` copy in `en.json`/`ar.json`.
+- **Tested:** typecheck + lint + full suite; i18n parity test covers the new key.
+- **Expected/actual:** The settings screen states the key is permanent and offers no validity or renewal control; the API rejects both removed fields via `forbidNonWhitelisted`. Matches.
+- **Limitation:** Rotation and deactivation remain the only ways to invalidate a key; `Client.houseKey` carries a doc comment warning against reintroducing expiry semantics.
+
+## 6. Security & data integrity — `VERIFIED`
+
+Audited, no change required. Already present: a global exception filter that strips stack traces in production, `helmet` and `compression` registered before routes, env-whitelisted CORS, a Redis-backed throttler with stricter limits on auth routes, `whitelist` + `forbidNonWhitelisted` on the global `ValidationPipe`, a default-deny `GlobalAuthGuard` with explicit `@Public()`, refresh-token rotation with reuse detection, a Redis access-token deny-list, bcrypt hashing, and HMAC-signed private storage URLs. Integrity is enforced in Postgres, not only in application code: partial unique indexes for one current owner per piece, one active certificate per piece and one active transfer per piece, a `piece_owned_has_owner` CHECK, and `Piece.serialNumber @unique` behind a locked `SerialCounter`. Client-scoped `where` clauses have an IDOR e2e suite.
+
+## 7. Collections main route — `FIXED`
+
+- **Changed:** `/beta/collections` rendered the member's own wardrobe with wishlist tabs instead of the Collections catalogue. It now lists the collections the signed-in member's class can see, each linking to `/beta/collections/[slug]`.
+- **Where:** new `apps/web/features/collections/components/collections-catalog.tsx`, rewritten `apps/web/app/beta/(private)/collections/page.tsx`; deleted the now-dead `collections-grid.tsx` and `sidebar.tsx`; new `collections.pieceCount` copy.
+- **Tested:** new Playwright spec `apps/web/e2e/collections.spec.ts` asserts the catalogue heading renders, the wishlist tabs are gone, the header nav reaches the page, and a card opens its detail page.
+- **Expected/actual:** Catalogue renders for a signed-in member, empty state otherwise. Matches.
+- **Limitation:** Visibility is enforced server-side — the API only returns collections the member's class can see — so the page does no filtering of its own.
+
+## 8. Collection access status — `FIXED`
+
+- **Changed:** Two defects. Granting a class access to a collection left the matching `ACCESS_REQUEST` rows `PENDING` forever, and the admin roster's Access column was derived from `isActive` rather than from actual access. A new `CollectionAccessSyncService` completes satisfied open requests inside the transactions that grant access, writing the audit rows on the same transaction so the trail cannot disagree with state. `listClients` now computes a real `GRANTED`/`PENDING`/`REVOKED` per row and includes members with open requests in the collection-scoped roster.
+- **Where:** new `apps/api/src/collections/collection-access-sync.{service,module}.ts`, wired into `collections.service.ts` (`updateCollection`) and `clients.service.ts` (`updateClient`, `listClients`); `apps/web/features/admin/types/index.ts`; `collection-access-columns.tsx` now keys off the union instead of substring-matching `"PEND"`. Added `@@index([collectionId, type, status])` (migration `20260929061000_staff_request_collection_index`) for the roster lookup.
+- **Tested:** new `apps/api/test/collection-access-sync.service.spec.ts` (6 tests) plus 10 rewritten/added cases in `admin-clients-list.spec.ts`, including that a live class grant wins over a stale open request.
+- **Expected/actual:** Requests close when access is granted; the roster reflects real access. Matches.
+- **Limitation:** Sync is deliberately one-directional — revoking a class grant does not reopen a completed request. The per-page pending lookup is one extra query, not one per row.
+
+## 9. Admin collection access actions — `FIXED`
+
+- **Changed:** Three row/filter links pointed at `/admin/clients*`, which has no page and 404s — the routes are `/admin/members*`. Rotate Key was a dead button: `rotateClientKey` existed in the API client but was imported nowhere. It is now a `useMutation` behind a danger `useConfirm` that warns the key stops working and every session is revoked, and the new key is revealed once in a `Modal` with a copy action rather than a `window.alert`. The action is hidden from non-super-admins because the endpoint is `@Roles(SUPER_ADMIN)`.
+- **Where:** `collection-access-row-actions.tsx`, `collection-access-filter.tsx`, new `features/admin/hooks/use-rotate-client-key.ts`, new `admin.rotateKey.*` copy in both locales.
+- **Tested:** new `apps/web/shared/lib/admin-routes.test.ts` walks `app/admin/**/page.tsx` into route patterns and asserts every `/admin/...` href in `app/admin`, `features/admin` and `components/admin` resolves to a real page. Verified non-vacuous by reintroducing `/admin/clients/new` and watching it fail.
+- **Expected/actual:** Links navigate; rotation asks for confirmation and shows the key once. Matches.
+- **Limitation:** The reported i18n key `rotateKey.rowActions.admin` does not exist in the codebase; the real key is `admin.rowActions.rotateKey` and it was already translated in both locales (see item 11's note on the same pattern).
+
+## 10. Analytics navigation — `FIXED`
+
+- **Changed:** The sidebar's direct links and Settings row wrapped a `<button>` inside the `<Link>` — interactive content inside an anchor, which is invalid HTML and swallowed the navigation. Row styling moved onto the `Link`, matching the sub-link pattern that already worked.
+- **Where:** `apps/web/components/admin/layout/navigation-area.tsx`.
+- **Tested:** new `navigation-area.test.tsx` asserts Analytics, Members, Payments and Settings each render as a plain link with the right `href` and no nested `button`.
+- **Expected/actual:** Clicking Analytics in the sidebar navigates. Matches.
+
+## 11. Analytics counter formatting — `NOT APPLICABLE`
+
+Audited, no change required. The count KPIs already use plain `toLocaleString()` and no `$` literal exists anywhere in `apps/web`. The one money KPI on that page was the real problem and is covered by item 12.
+
+## 12. Currency consistency — `FIXED`
+
+- **Changed:** Money was assembled by hand in three places — `currency: locale === "ar" ? "ر.س" : "SAR"` rendered in a separate span on the analytics and payments KPIs, and a literal `SAR {value}` in the payments amount column. All now go through `formatPrice(value, "SAR", locale)`, which puts the currency where the locale expects it instead of always before the number. The payments amount-range filter labels were hardcoded English with embedded "SAR" and are now `admin.payments.amount*` keys with the bounds formatted through `formatPrice`.
+- **Where:** `app/admin/(dashboard)/analytics/page.tsx`, `app/admin/(dashboard)/payments/page.tsx`, `payments-columns.tsx`, `payments-table.tsx`, `payments-table-filter.tsx`, new copy in both locales.
+- **Tested:** new `shared/utils/format.test.ts` covers SAR formatting in both locales; typecheck + lint + full suite.
+- **Expected/actual:** One currency helper renders every money value. Matches.
+- **Limitation:** The status and method selects in `payments-table-filter.tsx` are still hardcoded English. That is a separate i18n gap, not a currency one, and was left out of this pass.
+
+## 13. Timezone — `FIXED`
+
+- **Changed:** The settings Select offered `value="utc"` labelled "UTC (Gulf Standard Time - 4)" and `value="est"` — neither is a valid IANA identifier, and the column stores one. It now renders the shared `HOUSE_TIMEZONES` list with labels whose offsets come from `Intl`, so they cannot drift or go stale across DST. The API validates the field with `@IsIn(HOUSE_TIMEZONES)` instead of `@IsString()`. Separately, `formatAdminDate` had no `timeZone`, so the same timestamp showed a different calendar day depending on where the admin's browser was; it is now pinned to `Asia/Riyadh`.
+- **Where:** new `HOUSE_TIMEZONES` in `packages/types/src/index.ts` (read by both apps so the Select and the validation cannot diverge), `apps/api/src/settings/dto/update-house-settings.dto.ts`, `apps/web/features/admin/components/settings/general.tsx`, `apps/web/shared/utils/format.ts`.
+- **Tested:** `shared/utils/format.test.ts` asserts a 21:30 UTC timestamp renders as the next Riyadh day; the suite passes under `TZ=America/New_York`, which is where the old behaviour would have shown the previous day.
+- **Expected/actual:** Dates read the same for every admin. Matches.
+- **Limitation:** Legacy rows holding `"utc"` fall back to `Asia/Riyadh` in the Select rather than failing; the DB default was already `Asia/Riyadh`.
+
+## 14. Checkout validation — `FIXED`
+
+- **Changed:** Field errors were set only on submit and cleared only at the start of the next submit, so a shopper who corrected a field kept staring at the stale message, and stepping back to the review step carried the errors along. Errors now clear on change and revalidate on blur (only for fields that actually have a value, so tabbing through does not nag), and reset when returning to step 1. The schema's messages were hardcoded English in a bilingual checkout; they are now stable keys translated through `checkout.validation.*`.
+- **Where:** `apps/web/features/checkout/schemas/shipping-address.ts`, `apps/web/components/checkout-form.tsx`, new copy in both locales. Also removed a `console.log` that fired from `Input`'s `StatusIcon` on every error render.
+- **Tested:** `shipping-address.test.ts` rewritten — asserts the parser returns keys rather than prose, that single-field validation reports the same keys, and that every key the schema can emit has English copy. New `checkout-form.test.tsx` drives the rendered form: a required error clears on the first keystroke with no second submit, clearing is scoped to the one field that changed, blur flags a badly formatted phone but stays quiet on an untouched empty field, stepping back to the review drops the errors, and the same empty submit under `locale="ar"` renders the Arabic copy. Verified non-vacuous by removing the `onChange` clearing and watching the two clearing cases fail.
+- **Expected/actual:** Feedback tracks what the shopper typed, in their language. Matches.
+
+## 15. Viewer permission UX — `FIXED`
+
+- **Changed:** `useAdmin()` and `getAdminNavItems()` both existed but were called from nowhere, so every role saw the full sidebar and every write control, then hit a 403. `AdminLayout` also defaulted a missing session to `SUPER_ADMIN`, failing open. Now: the layout fails closed to `VIEWER`; the sidebar filters its rows through `ADMIN_NAV_ITEMS`; write affordances are gated on `canWrite` across the collection, piece, member, ownership and operation row actions and the "add new" buttons; and a new `AdminAccessGuard` renders an explicit Access Denied for sections a role cannot open and for any create/edit route when the role is read-only. Gating the write _route_ covers every current and future form, rather than each submit button.
+- **Where:** `shared/lib/admin-nav.ts` (`findAdminNavItem`, `canAccessAdminPath`, `isAdminWritePath`), new `components/admin/admin-access-guard.tsx` and `admin-write-only.tsx`, `AdminLayout.tsx`, `navigation-area.tsx`, and the row-action/filter components listed above.
+- **Tested:** new `admin-access-guard.test.tsx` (7 cases incl. nested routes and create/edit paths) and role cases in `navigation-area.test.tsx`, one of which asserts every sidebar row has a rule in `ADMIN_NAV_ITEMS` — an unmapped row would otherwise be visible to every role.
+- **Expected/actual:** A VIEWER sees only readable sections and no write controls. Matches.
+- **Limitation:** This is UX, not enforcement; the API guards remain the authority. `error.tsx` still string-matches for 403 as a fallback for failures that originate in the API rather than in routing.
+
+## Confirmed broken, deliberately out of scope
+
+These were verified as real defects during the audit but fall outside this pass:
+
+- **4** — `getClientCertificate` gates on `currentOwnerId: clientId` before anything else, so a former owner gets a 404 instead of their archived certificate.
+- **5** — `CertificateModal.tsx` renders no QR code or token.
+- **2** — the mock gateway can still reach `PAID`; production blocks it unless `ALLOW_MOCK_PAYMENTS=true`, but the dev path remains.
+- **16 / 17** — Inheritance and Sale have no type-specific logic and no E2E coverage.
+- **19–23** — no CD job, no Alertmanager or application alert rules, no API-side Sentry, Postgres-only unencrypted backups, and zero tests for transfers, certificates or verify.
+
+---
+
 # P0 — Critical / Final Approval Blockers
 
 ## 1. Key House — Permanence vs 12-Month Expiration

@@ -26,24 +26,3 @@ export interface CollectionDetail extends CollectionSummary {
     currency: string;
   }>;
 }
-
-
-export interface OwnedPieceItem {
-  id: string;
-  name: string;
-  serialNumber?: string;
-  imageUrl?: string | null;
-  acquiredAt?: string;
-  slug?: string;
-}
-
-export interface SavedPieceItem {
-  id: string;
-  name: string;
-  serialNumber?: string;
-  imageUrl?: string | null;
-  collectionName?: string;
-  price?: string;
-  currency?: string;
-  slug?: string;
-}

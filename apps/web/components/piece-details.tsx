@@ -32,87 +32,128 @@ export default async function PieceDetails({
   const canPurchase = piece.status === "AVAILABLE";
 
   return (
-    <div className="flex flex-col gap-[16px] xl:flex-row xl:h-225 h-258.5">
-      {/* Left: Main Product Image */}
-      <div className="relative w-full xl:h-auto h-108 overflow-hidden">
-        {(piece.mainImageUrl ?? piece.imageUrls?.[0]) ? (
-          <Image
-            src={(piece.mainImageUrl ?? piece.imageUrls?.[0])!}
-            alt={piece.name}
-            fill
-            priority
-            sizes="(max-width: 1024px) 100vw, 50vw"
-            className="object-cover object-center"
-          />
-        ) : (
-          <div className="flex h-full items-center justify-center bg-ds-surface font-heading text-4xl text-ds-text-muted">
-            DADAN
-          </div>
-        )}
+    <div>
+      <div className="flex flex-col gap-[16px] xl:flex-row xl:h-225 h-258.5">
+        {/* Left: Main Product Image */}
+        <div className="relative w-full xl:h-auto h-108 overflow-hidden">
+          {(piece.mainImageUrl ?? piece.imageUrls?.[0]) ? (
+            <Image
+              src={(piece.mainImageUrl ?? piece.imageUrls?.[0])!}
+              alt={piece.name}
+              fill
+              priority
+              sizes="(max-width: 1024px) 100vw, 50vw"
+              className="object-cover object-center"
+            />
+          ) : (
+            <div className="flex h-full items-center justify-center bg-ds-surface font-heading text-4xl text-ds-text-muted">
+              DADAN
+            </div>
+          )}
+        </div>
+
+        {/* Right: Product Details */}
+        <Container
+          className={cn(
+            "xl:pt-6 xl:px-[16px] xl:pb-10.5 py-5",
+            isWardrobe ? "px-0" : "",
+          )}
+        >
+          <section>
+            {/* Title & Collection Subtitle */}
+            <div className="xl:mb-[32px] xl:pb-0 pb-[16px]">
+              <h1 className="font-heading font-bold lg:leading-15.75 xl:text-h1 text-h4 text-neutral-900">
+                {piece.name}
+              </h1>
+              <p className="my-[16px] xl:text-h3 text-h6 font-semibold text-neutral-800">
+                {t("partOfCollection", { collection: piece.collection.name })}
+              </p>
+
+              {/* Story / Description */}
+              {piece.story ? (
+                <p className="xl:text-h5 text-[14px] text-neutral-800 font-medium">
+                  {piece.story}
+                </p>
+              ) : null}
+            </div>
+
+            {/* Specs Bullet List */}
+            <ul className="xl:py-[32px] py-[16px] border-y border-neutral-200 xl:space-y-6 space-y-3">
+              <SpecRow label={t("material")} value={piece.material} />
+              {piece.specifications.map((spec) => (
+                <SpecRow key={spec.key} label={spec.key} value={spec.value} />
+              ))}
+              <SpecRow label={t("weight")} value={`${piece.weight}g`} />
+              <SpecRow label={t("origin")} value={t("craftedInSaudi")} />
+            </ul>
+
+            {/* Action Buttons */}
+            <div className="xl:pt-12 pt-[16px]">
+              <div className="xl:text-h3 text-h6 font-bold text-neutral-800 xl:mb-[32px] mb-[16px]">
+                <p>{t("becomePartOfStory")}</p>
+                <p>{formatPrice(piece.price, piece.currency, locale)}</p>
+              </div>
+
+              {isWardrobe && wardrobeInfo ? (
+                <WardrobeActions
+                  pieceId={wardrobeInfo.pieceId}
+                  pieceName={piece.name}
+                  serialNumber={wardrobeInfo.serialNumber}
+                  status={wardrobeInfo.status}
+                  activeTransfer={wardrobeInfo.activeTransfer}
+                />
+              ) : canPurchase ? (
+                <DesignActions
+                  pieceId={piece.id}
+                  initialSaved={piece.isSaved}
+                />
+              ) : (
+                <p className="text-sm text-ds-text-muted font-body">
+                  {piece.status === "OWNED"
+                    ? t("alreadyAcquired")
+                    : t("unavailable")}
+                </p>
+              )}
+            </div>
+          </section>
+        </Container>
       </div>
 
-      {/* Right: Product Details */}
-      <Container
-        className={cn(
-          "xl:pt-6 xl:px-[16px] xl:pb-10.5 py-5",
-          isWardrobe ? "px-0" : "",
-        )}
-      >
-        <section>
-          {/* Title & Collection Subtitle */}
-          <div className="xl:mb-[32px] xl:pb-0 pb-[16px]">
-            <h1 className="font-heading font-bold lg:leading-15.75 xl:text-h1 text-h4 text-neutral-900">
-              {piece.name}
-            </h1>
-            <p className="my-[16px] xl:text-h3 text-h6 font-semibold text-neutral-800">
-              {t("partOfCollection", { collection: piece.collection.name })}
-            </p>
+      {!isWardrobe && piece.imageUrls.length > 1 && (
+        <div className="flex flex-col justify-start lg:gap-[16px] lg:flex-row lg:h-152.5 h-125">
+          {/* Left: Other product Images in a 2-cols grid */}
+          <div className="relative w-full lg:h-152.5 h-55 overflow-hidden">
+            <div className="grid grid-cols-2 gap-2 h-full">
+              {piece.imageUrls.slice(0, 4).map((imageUrl, index) => (
+                <div
+                  key={index}
+                  className="relative h-full w-full aspect-square overflow-hidden"
+                >
+                  <Image
+                    src={imageUrl}
+                    alt={`${piece.name} - view ${index + 1}`}
+                    fill
+                    sizes="(max-width: 1024px) 50vw, 25vw"
+                    className="object-cover object-center "
+                  />
+                </div>
+              ))}
+            </div>
+          </div>
 
-            {/* Story / Description */}
+          {/* Right: Story Section */}
+          <Container className="lg:pt-6 lg:px-[16px] lg:pb-10.5 py-5">
+            <h3 className="font-heading font-bold lg:text-h1 text-h4 text-neutral-900 mb-4">
+              {t("storyOfProtection")}
+            </h3>
             {piece.story ? (
-              <p className="xl:text-h5 text-[14px] text-neutral-800 font-medium">
+              <p className="lg:text-h5 text-[14px] text-neutral-800 font-medium leading-relaxed">
                 {piece.story}
               </p>
             ) : null}
-          </div>
-
-          {/* Specs Bullet List */}
-          <ul className="xl:py-[32px] py-[16px] border-y border-neutral-200 xl:space-y-6 space-y-3">
-            <SpecRow label={t("material")} value={piece.material} />
-            {piece.specifications.map((spec) => (
-              <SpecRow key={spec.key} label={spec.key} value={spec.value} />
-            ))}
-            <SpecRow label={t("weight")} value={`${piece.weight}g`} />
-            <SpecRow label={t("origin")} value={t("craftedInSaudi")} />
-          </ul>
-
-          {/* Action Buttons */}
-          <div className="xl:pt-12 pt-[16px]">
-            <div className="xl:text-h3 text-h6 font-bold text-neutral-800 xl:mb-[32px] mb-[16px]">
-              <p>{t("becomePartOfStory")}</p>
-              <p>{formatPrice(piece.price, piece.currency, locale)}</p>
-            </div>
-
-            {isWardrobe && wardrobeInfo ? (
-              <WardrobeActions
-                pieceId={wardrobeInfo.pieceId}
-                pieceName={piece.name}
-                serialNumber={wardrobeInfo.serialNumber}
-                status={wardrobeInfo.status}
-                activeTransfer={wardrobeInfo.activeTransfer}
-              />
-            ) : canPurchase ? (
-              <DesignActions pieceId={piece.id} initialSaved={piece.isSaved} />
-            ) : (
-              <p className="text-sm text-ds-text-muted font-body">
-                {piece.status === "OWNED"
-                  ? t("alreadyAcquired")
-                  : t("unavailable")}
-              </p>
-            )}
-          </div>
-        </section>
-      </Container>
+          </Container>
+        </div>
+      )}
     </div>
   );
 }

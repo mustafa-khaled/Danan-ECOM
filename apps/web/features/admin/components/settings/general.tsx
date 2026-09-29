@@ -19,17 +19,43 @@ import {
   fetchHouseSettings,
   updateHouseSettings,
 } from "@/features/admin/api/fetch-admin-settings";
-import { useTranslations } from "next-intl";
+import { useLocale, useTranslations } from "next-intl";
+import { HOUSE_TIMEZONES, type HouseTimezone } from "@dadan/types";
+
+/**
+ * Derives the offset from `Intl` instead of hardcoding it, so the label stays
+ * right across DST changes and cannot drift from the zone it describes.
+ */
+function timezoneLabel(zone: HouseTimezone, locale: string): string {
+  const city = zone.includes("/")
+    ? zone.split("/").pop()!.replace(/_/g, " ")
+    : zone;
+  const offset = new Intl.DateTimeFormat(locale, {
+    timeZone: zone,
+    timeZoneName: "shortOffset",
+  })
+    .formatToParts(new Date())
+    .find((part) => part.type === "timeZoneName")?.value;
+
+  return offset ? `${city} (${offset})` : city;
+}
+
+function toHouseTimezone(value: string): HouseTimezone {
+  return HOUSE_TIMEZONES.includes(value as HouseTimezone)
+    ? (value as HouseTimezone)
+    : "Asia/Riyadh";
+}
 
 export default function General() {
   const t = useTranslations("admin");
+  const locale = useLocale();
   const queryClient = useQueryClient();
   const settingsQuery = useQuery({
     queryKey: ["admin-house-settings"],
     queryFn: () => fetchHouseSettings(),
   });
   const [language, setLanguage] = useState("en");
-  const [timezone, setTimezone] = useState("utc");
+  const [timezone, setTimezone] = useState<HouseTimezone>("Asia/Riyadh");
   const [houseName, setHouseName] = useState("");
   const [description, setDescription] = useState("");
   const [contactEmail, setContactEmail] = useState("");
@@ -43,7 +69,8 @@ export default function General() {
     setContactEmail(settings.contactEmail ?? "");
     setSupportContact(settings.supportContact ?? "");
     setLanguage(settings.locale);
-    setTimezone(settings.timezone);
+    // Rows saved before the Select offered real IANA ids can hold "utc"/"est".
+    setTimezone(toHouseTimezone(settings.timezone));
   }, [settingsQuery.data]);
 
   const save = useMutation({
@@ -158,7 +185,10 @@ export default function General() {
                 <label htmlFor="timezone" className="text-[#272D35] text-h6 font-medium">
                   {t("settings.timezone")}
                 </label>
-                <Select value={timezone} onValueChange={setTimezone}>
+                <Select
+                  value={timezone}
+                  onValueChange={(value) => setTimezone(toHouseTimezone(value))}
+                >
                   <SelectTrigger
                     id="timezone"
                     className="w-full border-none bg-[#F8FAFC] h-17.5 px-[16px] text-[#272D35]"
@@ -166,9 +196,11 @@ export default function General() {
                     <SelectValue placeholder="Select timezone" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="utc">UTC (Gulf Standard Time - 4)</SelectItem>
-                    <SelectItem value="Asia/Riyadh">GST (Gulf Standard Time)</SelectItem>
-                    <SelectItem value="est">EST (Eastern Standard Time)</SelectItem>
+                    {HOUSE_TIMEZONES.map((zone) => (
+                      <SelectItem key={zone} value={zone}>
+                        {timezoneLabel(zone, locale)}
+                      </SelectItem>
+                    ))}
                   </SelectContent>
                 </Select>
               </div>

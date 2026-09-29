@@ -14,6 +14,7 @@ import { ImageProcessingService } from "../storage/image-processing.service";
 import { VisibilityService } from "../visibility/visibility.service";
 import { MAX_CATALOG_ROWS, paginationParams } from "../common/constants";
 import { localizeSpecifications, pickLocalized } from "../common/i18n/localize";
+import { CollectionAccessSyncService } from "./collection-access-sync.service";
 
 const PIECE_FILE_RETENTION_DAYS = 30;
 
@@ -38,6 +39,7 @@ export class CollectionsService {
     private readonly audit: AuditService,
     private readonly storage: StorageService,
     private readonly imageProcessing: ImageProcessingService,
+    private readonly accessSync: CollectionAccessSyncService,
   ) {}
 
   async getVisibleCollections(classId: string, locale: Locale = "ar") {
@@ -470,6 +472,9 @@ export class CollectionsService {
             data: classIds.map((classId) => ({ collectionId: id, classId })),
           });
         }
+        // Granting access here must close the matching access requests, or they
+        // stay PENDING while the member can already open the collection.
+        await this.accessSync.syncForCollectionClasses(tx, id, classIds, adminId);
       }
 
       return tx.collection.update({

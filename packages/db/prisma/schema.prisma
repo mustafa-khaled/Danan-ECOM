@@ -137,6 +137,9 @@ model Client {
   id             String   @id @default(uuid())
   /// Shareable 6-character identifier for transfers (e.g., "A7X9B2"). NOT the login credential.
   houseId        String   @unique
+  /// bcrypt hash of the login credential. A Key House is permanent: it never expires
+  /// and is only invalidated when an admin rotates it or deactivates the client.
+  /// Do not add expiry/renewal semantics here without a requirement change.
   houseKey       String   @unique
   houseKeyPrefix String
   displayName    String
@@ -553,8 +556,6 @@ model HouseSettings {
   privateKeyRequired     Boolean  @default(true)
   adminApprovalRequired  Boolean  @default(true)
   allowInvitations       Boolean  @default(true)
-  keyValidityMonths      Int      @default(12)
-  requireKeyRenewal      Boolean  @default(true)
   notificationPrefs      Json
   updatedAt              DateTime @updatedAt
 }
@@ -623,4 +624,6 @@ model StaffRequest {
   @@index([status, createdAt(sort: Desc)])
   @@index([type, status])
   @@index([clientId])
+  /// Collection access roster: open ACCESS_REQUESTs for one collection.
+  @@index([collectionId, type, status])
 }

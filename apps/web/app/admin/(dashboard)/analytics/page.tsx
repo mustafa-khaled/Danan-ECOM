@@ -7,6 +7,7 @@ import {
 import { fetchAdminAnalytics } from "@/features/admin/api/fetch-admin-analytics";
 import { getAdminCookieHeader } from "@/features/auth/server/admin-session";
 import { pickLocalized } from "@/shared/lib/pick-localized";
+import { formatPrice } from "@/shared/utils/format";
 import { ArrowUpLeft } from "lucide-react";
 import { getLocale, getTranslations } from "next-intl/server";
 import type { Locale } from "@/i18n/routing";
@@ -54,8 +55,7 @@ export default async function AnalyticsPage() {
     {
       id: 4,
       title: t("analytics.revenue"),
-      count: analytics.kpis.revenue.toLocaleString(),
-      currency: locale === "ar" ? "ر.س" : "SAR",
+      count: formatPrice(analytics.kpis.revenue, "SAR", locale),
       link: {
         title: `${analytics.kpis.deltas.revenue > 0 ? `+${analytics.kpis.deltas.revenue}` : analytics.kpis.deltas.revenue}%`,
         href: "/admin/payments",
@@ -78,11 +78,6 @@ export default async function AnalyticsPage() {
                 className="flex flex-col font-medium items-start justify-center rounded-2xl border border-[#F3F3F3] p-6 h-30"
               >
                 <h4 className="font-heading text-h3 sm:text-[32px] 2xl:text-[40px] truncate max-w-full">
-                  {stat.currency ? (
-                    <span className="text-sm 2xl:text-base font-sans font-normal text-neutral-500 me-2 inline-block">
-                      {stat.currency}
-                    </span>
-                  ) : null}
                   {stat.count}
                 </h4>
 

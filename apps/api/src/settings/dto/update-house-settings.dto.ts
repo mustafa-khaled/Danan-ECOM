@@ -2,15 +2,14 @@ import { Type } from "class-transformer";
 import {
   IsBoolean,
   IsEmail,
-  IsInt,
+  IsIn,
   IsObject,
   IsOptional,
   IsString,
-  Max,
   MaxLength,
-  Min,
   ValidateNested,
 } from "class-validator";
+import { HOUSE_TIMEZONES, type HouseTimezone } from "@dadan/types";
 
 export class NotificationPrefsDto {
   @IsOptional() @IsBoolean() ownershipTransferRequest?: boolean;
@@ -28,13 +27,13 @@ export class UpdateHouseSettingsDto {
   @IsOptional() @IsEmail() contactEmail?: string;
   @IsOptional() @IsString() @MaxLength(64) supportContact?: string;
   @IsOptional() @IsString() @MaxLength(8) locale?: string;
-  @IsOptional() @IsString() @MaxLength(64) timezone?: string;
+  // The column holds an IANA identifier; the old @IsString let the admin UI
+  // persist labels like "utc" that no date formatter accepts.
+  @IsOptional() @IsIn(HOUSE_TIMEZONES) timezone?: HouseTimezone;
   @IsOptional() @IsBoolean() privateHouseAccess?: boolean;
   @IsOptional() @IsBoolean() privateKeyRequired?: boolean;
   @IsOptional() @IsBoolean() adminApprovalRequired?: boolean;
   @IsOptional() @IsBoolean() allowInvitations?: boolean;
-  @IsOptional() @IsInt() @Min(1) @Max(60) keyValidityMonths?: number;
-  @IsOptional() @IsBoolean() requireKeyRenewal?: boolean;
   @IsOptional()
   @IsObject()
   @ValidateNested()

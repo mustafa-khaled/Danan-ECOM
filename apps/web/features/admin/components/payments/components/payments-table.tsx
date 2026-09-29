@@ -1,9 +1,10 @@
 "use client";
 
 import { useMemo } from "react";
-import { useTranslations } from "next-intl";
+import { useLocale, useTranslations } from "next-intl";
 import { DataTable } from "@/components/ui/data-table";
 import { getPaymentsColumns } from "./payments-columns";
+import type { Locale } from "@/i18n/routing";
 import type { AdminPaymentListItem } from "../types";
 
 interface PaymentsTableProps {
@@ -16,7 +17,8 @@ export default function PaymentsTable({
   isLoading = false,
 }: PaymentsTableProps) {
   const t = useTranslations("admin");
-  const columns = useMemo(() => getPaymentsColumns(t), [t]);
+  const locale = useLocale() as Locale;
+  const columns = useMemo(() => getPaymentsColumns(t, locale), [t, locale]);
 
   return (
     <div className="space-y-4">

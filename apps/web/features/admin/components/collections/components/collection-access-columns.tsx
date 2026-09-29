@@ -46,19 +46,26 @@ export function getCollectionAccessColumns(
       accessor: "accessStatus",
       width: "160px",
       render: (v, row) => {
-        const statusStr = String(
-          v || (row.isActive ? "GRANTED" : "REVOKED"),
-        ).toUpperCase();
-        let badgeStyle = "bg-[#ECFDFD] text-[#4CBEAE]";
-        let label = t("status.granted");
-
-        if (statusStr.includes("PEND") || statusStr.includes("INVIT")) {
-          badgeStyle = "bg-[#FFFBEB] text-[#D97706]";
-          label = t("status.pending");
-        } else if (statusStr.includes("REVOK") || statusStr.includes("INACT")) {
-          badgeStyle = "bg-[#FEF2F2] text-[#EF4444]";
-          label = t("status.revoked");
-        }
+        // The API computes this from the live class grant and any open request.
+        // Only fall back when the list was not scoped to a collection.
+        const status = (v ?? (row.isActive ? "GRANTED" : "REVOKED")) as
+          | "GRANTED"
+          | "PENDING"
+          | "REVOKED";
+        const { badgeStyle, label } = {
+          GRANTED: {
+            badgeStyle: "bg-[#ECFDFD] text-[#4CBEAE]",
+            label: t("status.granted"),
+          },
+          PENDING: {
+            badgeStyle: "bg-[#FFFBEB] text-[#D97706]",
+            label: t("status.pending"),
+          },
+          REVOKED: {
+            badgeStyle: "bg-[#FEF2F2] text-[#EF4444]",
+            label: t("status.revoked"),
+          },
+        }[status];
 
         return (
           <span
