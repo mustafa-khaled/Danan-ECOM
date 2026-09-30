@@ -2,7 +2,6 @@ import Link from "next/link";
 import Image from "next/image";
 import { getTranslations } from "next-intl/server";
 import { EmptyState } from "@/shared/components/feedback/empty-state";
-import type { CollectionSummary } from "../types";
 import { getSessionCookieHeader } from "@/features/auth/server/session";
 import { fetchCollections } from "@/features/collections";
 

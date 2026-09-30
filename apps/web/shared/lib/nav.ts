@@ -11,7 +11,7 @@ export const primaryNavItems: NavItem[] = [
 ];
 
 export const secondaryNavItems = [
-  { href: "/beta/saved", labelKey: "saved" as const },
+  { href: "/beta/profile/wishlist", labelKey: "saved" as const },
   { href: "/beta/cart", labelKey: "cart" as const },
   { href: "/beta/orders", labelKey: "orders" as const },
   { href: "/beta/profile", labelKey: "profile" as const },

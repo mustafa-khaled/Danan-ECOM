@@ -12,6 +12,8 @@ interface WardrobeActionsProps {
   serialNumber: string;
   status: string;
   activeTransfer?: { id: string };
+  transferOpen: boolean;
+  onTransferOpenChange: (open: boolean) => void;
 }
 
 export function WardrobeActions({
@@ -20,6 +22,8 @@ export function WardrobeActions({
   serialNumber,
   status,
   activeTransfer,
+  transferOpen,
+  onTransferOpenChange,
 }: WardrobeActionsProps) {
   const t = useTranslations("wardrobe");
 
@@ -31,22 +35,26 @@ export function WardrobeActions({
           pieceId={pieceId}
           pieceName={pieceName}
           serialNumber={serialNumber}
+          open={transferOpen}
+          onOpenChange={onTransferOpenChange}
         />
       ) : null}
 
       {/* Secondary Row: View Certificate + Verify Authenticity */}
-      <div className="grid grid-cols-2 gap-3 sm:gap-3.5 w-full">
-        <CertificateViewer
-          pieceId={pieceId}
-          pieceName={pieceName}
-          serialNumber={serialNumber}
-        />
+      {!transferOpen ? (
+        <div className="grid grid-cols-2 gap-3 sm:gap-3.5 w-full">
+          <CertificateViewer
+            pieceId={pieceId}
+            pieceName={pieceName}
+            serialNumber={serialNumber}
+          />
 
-        <VerifyAuthenticityButton
-          pieceId={pieceId}
-          serialNumber={serialNumber}
-        />
-      </div>
+          <VerifyAuthenticityButton
+            pieceId={pieceId}
+            serialNumber={serialNumber}
+          />
+        </div>
+      ) : null}
 
       {/* Active Transfer Notice */}
       {activeTransfer ? (

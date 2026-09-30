@@ -2,7 +2,7 @@
 
 import Image from "next/image";
 import { useRouter } from "next/navigation";
-import { FormEvent, useState } from "react";
+import { FormEvent } from "react";
 import { useTranslations } from "next-intl";
 import { CheckCircle2 } from "lucide-react";
 import { useInitiateTransfer } from "@/features/transfers";
@@ -12,18 +12,21 @@ interface TransferInitiateProps {
   pieceId: string;
   pieceName: string;
   serialNumber: string;
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
 }
 
 export function TransferInitiate({
   pieceId,
   pieceName,
   serialNumber,
+  open,
+  onOpenChange,
 }: TransferInitiateProps) {
   const router = useRouter();
   const t = useTranslations("transfers");
   const common = useTranslations("common");
   const wardrobeT = useTranslations("wardrobe");
-  const [open, setOpen] = useState(false);
   const { initiateTransfer, isPending, error } = useInitiateTransfer();
 
   const TRANSFER_TYPES = [
@@ -60,7 +63,7 @@ export function TransferInitiate({
     return (
       <Button
         type="button"
-        onClick={() => setOpen(true)}
+        onClick={() => onOpenChange(true)}
         variant="teal"
         size="lg"
         fullWidth
@@ -143,7 +146,7 @@ export function TransferInitiate({
             type="button"
             variant="outline"
             size="md"
-            onClick={() => setOpen(false)}
+            onClick={() => onOpenChange(false)}
           >
             {common("cancel")}
           </Button>

@@ -25,7 +25,6 @@ The DADAN Design System is the authoritative visual and component language for t
    - [Container](#container)
    - [SectionHead](#sectionhead)
    - [SplitHeroLayout](#splitherolayout)
-   - [AccountLayout](#accountlayout)
    - [AdminLayout](#adminlayout)
 4. [Building New Features](#4-building-new-features)
 

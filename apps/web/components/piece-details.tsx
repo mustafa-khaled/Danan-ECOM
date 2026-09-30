@@ -2,7 +2,7 @@ import Image from "next/image";
 import { getTranslations, getLocale } from "next-intl/server";
 import type { Locale } from "@/i18n/routing";
 import { DesignActions } from "./design-actions";
-import { WardrobeActions } from "./wardrobe-actions";
+import { WardrobeDetails } from "./wardrobe-details";
 import { formatPrice } from "@/shared/utils/format";
 import type { PieceDetail } from "@/features/pieces";
 import { Container } from "./ui";
@@ -30,6 +30,24 @@ export default async function PieceDetails({
   const locale = (await getLocale()) as Locale;
 
   const canPurchase = piece.status === "AVAILABLE";
+
+  const specsList = (
+    <ul className="xl:py-[32px] py-[16px] border-y border-neutral-200 xl:space-y-6 space-y-3">
+      <SpecRow label={t("material")} value={piece.material} />
+      {piece.specifications.map((spec) => (
+        <SpecRow key={spec.key} label={spec.key} value={spec.value} />
+      ))}
+      <SpecRow label={t("weight")} value={`${piece.weight}g`} />
+      <SpecRow label={t("origin")} value={t("craftedInSaudi")} />
+    </ul>
+  );
+
+  const priceBlock = (
+    <div className="xl:text-h3 text-h6 font-bold text-neutral-800 xl:mb-[32px] mb-[16px]">
+      <p>{t("becomePartOfStory")}</p>
+      <p>{formatPrice(piece.price, piece.currency, locale)}</p>
+    </div>
+  );
 
   return (
     <div>
@@ -77,44 +95,40 @@ export default async function PieceDetails({
               ) : null}
             </div>
 
-            {/* Specs Bullet List */}
-            <ul className="xl:py-[32px] py-[16px] border-y border-neutral-200 xl:space-y-6 space-y-3">
-              <SpecRow label={t("material")} value={piece.material} />
-              {piece.specifications.map((spec) => (
-                <SpecRow key={spec.key} label={spec.key} value={spec.value} />
-              ))}
-              <SpecRow label={t("weight")} value={`${piece.weight}g`} />
-              <SpecRow label={t("origin")} value={t("craftedInSaudi")} />
-            </ul>
+            {isWardrobe && wardrobeInfo ? (
+              <WardrobeDetails
+                specs={specsList}
+                priceBlock={priceBlock}
+                pieceId={wardrobeInfo.pieceId}
+                pieceName={piece.name}
+                serialNumber={wardrobeInfo.serialNumber}
+                status={wardrobeInfo.status}
+                activeTransfer={wardrobeInfo.activeTransfer}
+              />
+            ) : (
+              <>
+                {/* Specs Bullet List */}
+                {specsList}
 
-            {/* Action Buttons */}
-            <div className="xl:pt-12 pt-[16px]">
-              <div className="xl:text-h3 text-h6 font-bold text-neutral-800 xl:mb-[32px] mb-[16px]">
-                <p>{t("becomePartOfStory")}</p>
-                <p>{formatPrice(piece.price, piece.currency, locale)}</p>
-              </div>
+                {/* Action Buttons */}
+                <div className="xl:pt-12 pt-[16px]">
+                  {priceBlock}
 
-              {isWardrobe && wardrobeInfo ? (
-                <WardrobeActions
-                  pieceId={wardrobeInfo.pieceId}
-                  pieceName={piece.name}
-                  serialNumber={wardrobeInfo.serialNumber}
-                  status={wardrobeInfo.status}
-                  activeTransfer={wardrobeInfo.activeTransfer}
-                />
-              ) : canPurchase ? (
-                <DesignActions
-                  pieceId={piece.id}
-                  initialSaved={piece.isSaved}
-                />
-              ) : (
-                <p className="text-sm text-ds-text-muted font-body">
-                  {piece.status === "OWNED"
-                    ? t("alreadyAcquired")
-                    : t("unavailable")}
-                </p>
-              )}
-            </div>
+                  {canPurchase ? (
+                    <DesignActions
+                      pieceId={piece.id}
+                      initialSaved={piece.isSaved}
+                    />
+                  ) : (
+                    <p className="text-sm text-ds-text-muted font-body">
+                      {piece.status === "OWNED"
+                        ? t("alreadyAcquired")
+                        : t("unavailable")}
+                    </p>
+                  )}
+                </div>
+              </>
+            )}
           </section>
         </Container>
       </div>

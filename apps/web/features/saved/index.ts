@@ -3,4 +3,5 @@ export { savePiece } from "./api/save-piece";
 export { unsavePiece } from "./api/unsave-piece";
 export { useSavePiece } from "./hooks/use-save-piece";
 export { useUnsavePiece } from "./hooks/use-unsave-piece";
+export { SavedPieceCard } from "./components/saved-piece-card";
 export type { SavedEntry } from "./types";

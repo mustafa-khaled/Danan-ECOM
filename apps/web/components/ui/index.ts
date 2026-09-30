@@ -25,7 +25,6 @@ export {
 export { default as Container } from "./container";
 export { default as SectionHead } from "./section-head";
 export { SplitHeroLayout } from "./SplitHeroLayout";
-export { AccountLayout } from "./AccountLayout";
 
 /* ── Navigation ── */
 export { SiteHeader } from "./SiteHeader";
